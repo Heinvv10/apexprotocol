@@ -448,6 +448,87 @@
   border: 1px solid hsl(var(--border) / 0.5) !important;
 }
 
+/* Clerk Modal Dark Theme Override */
+.cl-modalContent,
+.cl-card,
+.cl-userProfile-root,
+.cl-profilePage,
+.cl-navbar,
+.cl-pageScrollBox,
+.cl-scrollBox,
+.cl-page,
+.cl-userProfile__account,
+.cl-profileSection__profile,
+.cl-profileSectionContent,
+.cl-accordionContent,
+.cl-formContainer,
+.cl-form,
+[data-localization-key] {
+  background-color: #0d1224 !important;
+  color: #FAFAFA !important;
+}
+
+.cl-modalBackdrop {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+.cl-userButtonPopoverCard,
+.cl-userButtonPopoverMain,
+.cl-userButtonPopoverFooter,
+.cl-userButtonPopoverActions {
+  background-color: #0d1224 !important;
+}
+
+.cl-profileSection,
+.cl-profileSectionHeader {
+  border-color: hsl(var(--border) / 0.5) !important;
+}
+
+.cl-profileSectionTitle__profile,
+.cl-profileSectionTitle__emailAddresses,
+.cl-profileSectionTitle__connectedAccounts,
+.cl-headerTitle,
+.cl-profileSectionTitleText,
+.cl-formFieldLabel,
+.cl-identityPreviewText,
+.cl-userPreviewMainIdentifier,
+.cl-userPreviewSecondaryIdentifier,
+.cl-internal-1e1g7t0 {
+  color: #FAFAFA !important;
+}
+
+.cl-profileSectionContent__profile,
+.cl-profileSectionContent__emailAddresses,
+.cl-profileSectionPrimaryButton,
+.cl-formFieldAction {
+  color: #4926FA !important;
+}
+
+.cl-navbarButton,
+.cl-navbarButtonIcon {
+  color: #A09DA2 !important;
+}
+
+.cl-navbarButton:hover,
+.cl-navbarButton[data-active="true"] {
+  background-color: rgba(73, 38, 250, 0.1) !important;
+  color: #4926FA !important;
+}
+
+.cl-formButtonPrimary {
+  background-color: #4926FA !important;
+  color: #FAFAFA !important;
+}
+
+.cl-formButtonPrimary:hover {
+  background-color: rgba(73, 38, 250, 0.9) !important;
+}
+
+.cl-avatarBox {
+  border: 2px solid rgba(73, 38, 250, 0.3) !important;
+}
+
 /* ============================================
    STATUS INDICATORS
    ============================================ */
