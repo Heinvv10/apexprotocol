@@ -86,16 +86,16 @@
      Reference: docs/images UI/ (source of truth)
      ============================================ */
 
-  /* Background Layers - Deep space aesthetic (from reference images) */
-  --bg-deep: 230 67% 2%;        /* #02030A - Page background */
-  --bg-base: 228 50% 4%;        /* #060812 - Main content area */
-  --bg-elevated: 228 40% 7%;    /* #0A0D1A - Elevated surfaces */
-  --bg-card: 232 35% 10%;       /* #0F1225 - Card backgrounds */
-  --bg-card-hover: 232 30% 14%; /* #151935 - Card hover state */
-  --bg-input: 230 35% 8%;       /* #0D1020 - Input backgrounds */
+  /* Background Layers - Deep space aesthetic (matching dashboard-bg gradient) */
+  --bg-deep: 225 40% 6%;        /* #0a0f1a - Base gradient color */
+  --bg-base: 227 50% 9%;        /* #0d1224 - Main content area */
+  --bg-elevated: 228 40% 11%;   /* #111827 - Elevated surfaces */
+  --bg-card: 232 35% 12%;       /* #141930 - Card backgrounds */
+  --bg-card-hover: 232 30% 16%; /* #1a2040 - Card hover state */
+  --bg-input: 230 35% 10%;      /* #101828 - Input backgrounds */
 
-  /* 1. Background */
-  --background: 230 67% 2%;
+  /* 1. Background - Matching dashboard-bg gradient */
+  --background: 225 40% 6%;     /* #0a0f1a */
 
   /* 2. Cards */
   --card: 232 35% 10%;
@@ -177,14 +177,14 @@
   --gradient-chart-cyan: linear-gradient(180deg, rgba(0, 229, 204, 0.3) 0%, rgba(0, 229, 204, 0) 100%);
   --gradient-chart-purple: linear-gradient(180deg, rgba(139, 92, 246, 0.3) 0%, rgba(139, 92, 246, 0) 100%);
 
-  /* Sidebar */
-  --sidebar: 230 50% 3%;
+  /* Sidebar - Matching dashboard-bg gradient base colors */
+  --sidebar: 225 40% 7%;  /* #0a0f1a - matches dashboard-bg */
   --sidebar-foreground: 0 0% 100%;
   --sidebar-primary: 170 100% 45%;
   --sidebar-primary-foreground: 230 67% 2%;
-  --sidebar-accent: 235 35% 15%;
+  --sidebar-accent: 227 50% 12%;  /* Slightly brighter for hover */
   --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-border: 0 0% 100% / 0.05;
+  --sidebar-border: 0 0% 100% / 0.08;
   --sidebar-ring: 170 100% 45%;
 
   /* AI Platform Colors (from Dash idea.png bottom cards) */
@@ -665,6 +665,52 @@
 /* ============================================
    SIDEBAR NAVIGATION
    ============================================ */
+
+/* Sidebar container with gradient matching dashboard-bg */
+.sidebar-gradient {
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+  position: relative;
+}
+
+.sidebar-gradient::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70%;
+  background: radial-gradient(
+    ellipse at top left,
+    rgba(139, 92, 246, 0.15) 0%,
+    rgba(0, 229, 204, 0.08) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Header with matching gradient */
+.header-gradient {
+  background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.header-gradient::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60%;
+  height: 100%;
+  background: radial-gradient(
+    ellipse at top right,
+    rgba(139, 92, 246, 0.1) 0%,
+    rgba(0, 229, 204, 0.05) 30%,
+    transparent 60%
+  );
+  pointer-events: none;
+}
 
 .sidebar-nav-item {
   @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium;
@@ -1483,7 +1529,7 @@
 /* Main Dashboard Background with Gradient Glow */
 .dashboard-bg {
   @apply relative;
-  background: linear-gradient(135deg, #0a0f1a 0%, #0d1224 50%, #0a0f1a 100%);
+  background: linear-gradient(135deg, #0d1224 0%, #111827 50%, #0d1224 100%);
 }
 
 .dashboard-bg::before {

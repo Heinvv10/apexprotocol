@@ -157,7 +157,7 @@ export function Sidebar({ collapsed = false, onCollapsedChange }: SidebarProps) 
     <TooltipProvider>
       <aside
         className={cn(
-          "flex flex-col h-screen border-r border-sidebar-border bg-sidebar transition-all duration-300 ease-in-out",
+          "flex flex-col h-screen border-r border-sidebar-border sidebar-gradient transition-all duration-300 ease-in-out",
           collapsed ? "w-[68px]" : "w-[240px]"
         )}
       >

@@ -13,7 +13,7 @@ export function DashboardShell({ children, title }: DashboardShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden dashboard-bg">
       {/* Sidebar */}
       <Sidebar
         collapsed={sidebarCollapsed}
