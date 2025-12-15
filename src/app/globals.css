@@ -448,6 +448,28 @@
   border: 1px solid hsl(var(--border) / 0.5) !important;
 }
 
+/* Select/Combobox Dark Theme Override */
+[data-radix-popper-content-wrapper] [role="listbox"],
+[data-radix-select-content] {
+  background-color: #0d1224 !important;
+  color: white !important;
+  border: 1px solid hsl(var(--border) / 0.5) !important;
+}
+
+[data-radix-select-content] [role="option"] {
+  color: white !important;
+}
+
+[data-radix-select-content] [role="option"]:hover,
+[data-radix-select-content] [role="option"][data-highlighted] {
+  background-color: rgba(73, 38, 250, 0.2) !important;
+  color: white !important;
+}
+
+[data-radix-select-content] [role="option"][data-state="checked"] {
+  background-color: rgba(73, 38, 250, 0.3) !important;
+}
+
 /* Clerk Modal Dark Theme Override */
 .cl-modalContent,
 .cl-card,

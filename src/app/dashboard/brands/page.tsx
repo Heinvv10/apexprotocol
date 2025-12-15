@@ -26,6 +26,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // AI Platforms for monitoring
 const AI_PLATFORMS = [
@@ -646,18 +653,21 @@ export default function BrandsPage() {
                   {/* Industry */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Industry</label>
-                    <select
+                    <Select
                       value={formData.industry}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, industry: e.target.value }))}
-                      className="w-full h-10 px-3 rounded-lg bg-muted/50 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      onValueChange={(value) => setFormData((prev) => ({ ...prev, industry: value }))}
                     >
-                      <option value="">Select industry...</option>
-                      {INDUSTRIES.map((industry) => (
-                        <option key={industry} value={industry}>
-                          {industry}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full h-10 bg-muted/50 border-border">
+                        <SelectValue placeholder="Select industry..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {INDUSTRIES.map((industry) => (
+                          <SelectItem key={industry} value={industry}>
+                            {industry}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Brand Color */}
@@ -831,22 +841,26 @@ export default function BrandsPage() {
                   {/* Voice Tone */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Voice Tone</label>
-                    <select
+                    <Select
                       value={formData.voiceTone}
-                      onChange={(e) =>
+                      onValueChange={(value) =>
                         setFormData((prev) => ({
                           ...prev,
-                          voiceTone: e.target.value as Brand["voice"]["tone"],
+                          voiceTone: value as Brand["voice"]["tone"],
                         }))
                       }
-                      className="w-full h-10 px-3 rounded-lg bg-muted/50 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
-                      {VOICE_TONES.map((tone) => (
-                        <option key={tone.value} value={tone.value}>
-                          {tone.label}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full h-10 bg-muted/50 border-border">
+                        <SelectValue placeholder="Select tone..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {VOICE_TONES.map((tone) => (
+                          <SelectItem key={tone.value} value={tone.value}>
+                            {tone.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Target Audience */}
