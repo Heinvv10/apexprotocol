@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { brands, organizations } from "@/lib/db/schema";
-import { eq, count } from "drizzle-orm";
 import { z } from "zod";
-import { detectBrandAdded, detectMonitoringConfigured } from "@/lib/onboarding/auto-detection";
 import { getOrganizationId } from "@/lib/auth";
+
+// Check if database is configured
+const isDatabaseConfigured = () => {
+  const url = process.env.DATABASE_URL;
+  return !!url && url !== "postgresql://placeholder";
+};
 
 // Validation schema for creating a brand
 const createBrandSchema = z.object({
@@ -52,6 +54,27 @@ export async function GET(_request: NextRequest) {
         { status: 401 }
       );
     }
+
+    // In development without database, return empty brands list
+    if (!isDatabaseConfigured() && process.env.NODE_ENV === "development") {
+      return NextResponse.json({
+        success: true,
+        data: {
+          brands: [],
+          meta: {
+            total: 0,
+            limit: 5,
+            plan: "growth",
+            canAddMore: true,
+          },
+        },
+      });
+    }
+
+    // Dynamic imports for database operations
+    const { db } = await import("@/lib/db");
+    const { brands, organizations } = await import("@/lib/db/schema");
+    const { eq } = await import("drizzle-orm");
 
     // Get all brands for this organization
     const brandList = await db
@@ -109,6 +132,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const body = await request.json();
+    const validatedData = createBrandSchema.parse(body);
+
+    // In development without database, return mock created brand
+    if (!isDatabaseConfigured() && process.env.NODE_ENV === "development") {
+      const mockBrand = {
+        id: `mock-brand-${Date.now()}`,
+        organizationId: orgId,
+        name: validatedData.name,
+        domain: validatedData.domain || null,
+        description: validatedData.description || null,
+        industry: validatedData.industry || null,
+        logoUrl: validatedData.logoUrl || null,
+        keywords: validatedData.keywords,
+        competitors: validatedData.competitors,
+        voice: {
+          tone: validatedData.voice?.tone || "professional",
+          personality: validatedData.voice?.personality || [],
+          targetAudience: validatedData.voice?.targetAudience || "",
+          keyMessages: validatedData.voice?.keyMessages || [],
+          avoidTopics: validatedData.voice?.avoidTopics || [],
+        },
+        visual: {
+          primaryColor: validatedData.visual?.primaryColor || null,
+          secondaryColor: validatedData.visual?.secondaryColor || null,
+          fontFamily: validatedData.visual?.fontFamily || null,
+        },
+        monitoringEnabled: validatedData.monitoringEnabled,
+        monitoringPlatforms: validatedData.monitoringPlatforms,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      return NextResponse.json({
+        success: true,
+        data: mockBrand,
+      });
+    }
+
+    // Dynamic imports for database operations
+    const { db } = await import("@/lib/db");
+    const { brands, organizations } = await import("@/lib/db/schema");
+    const { eq, count } = await import("drizzle-orm");
+    const { detectBrandAdded, detectMonitoringConfigured } = await import("@/lib/onboarding/auto-detection");
+
     // Check organization exists and get brand limit
     const org = await db
       .select({
@@ -158,9 +225,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-    const validatedData = createBrandSchema.parse(body);
-
     // Create the brand
     const newBrand = await db
       .insert(brands)
@@ -198,14 +262,14 @@ export async function POST(request: NextRequest) {
         .from(organizations)
         .where(eq(organizations.id, orgId))
         .limit(1);
-      
+
       if (orgData[0]?.clerkOrgId) {
         const clerkOrgId = orgData[0].clerkOrgId;
         // Run detections in background (don't await to avoid blocking response)
         detectBrandAdded(clerkOrgId).catch((err: Error) => {
           console.error("Failed to auto-detect brand added:", err.message);
         });
-        
+
         // If monitoring is enabled, mark monitoring as configured
         if (newBrand[0].monitoringEnabled) {
           detectMonitoringConfigured(clerkOrgId).catch((err: Error) => {

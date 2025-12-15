@@ -21,6 +21,13 @@ interface HeaderProps {
 }
 
 export function Header({ title = "Dashboard" }: HeaderProps) {
+  const [mounted, setMounted] = React.useState(false);
+
+  // Prevent hydration mismatch for dropdowns
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <header className="sticky top-0 z-40 flex items-center justify-between h-16 px-6 header-gradient">
       {/* Left side - Brand Selector and Page title */}
@@ -58,29 +65,38 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
         <ThemeToggle />
 
         {/* User Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-lg"
-            >
-              <div className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-primary">
-                <User className="h-4 w-4" />
-              </div>
-              <span className="sr-only">User menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 glass-tooltip">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Billing</DropdownMenuItem>
-            <DropdownMenuItem>Team</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-error">Sign out</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {mounted ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-lg"
+              >
+                <div className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-primary">
+                  <User className="h-4 w-4" />
+                </div>
+                <span className="sr-only">User menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 glass-tooltip">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Profile</DropdownMenuItem>
+              <DropdownMenuItem>Billing</DropdownMenuItem>
+              <DropdownMenuItem>Team</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-error">Sign out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" disabled>
+            <div className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-primary">
+              <User className="h-4 w-4" />
+            </div>
+            <span className="sr-only">User menu</span>
+          </Button>
+        )}
       </div>
     </header>
   );

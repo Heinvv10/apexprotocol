@@ -1,30 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { db } from "@/lib/db";
-import { organizations } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
-import { initializeOnboardingStatus } from "@/lib/onboarding/initialize";
+import { getUserId, getOrganizationId } from "@/lib/auth";
+
+// Check if database is configured
+const isDatabaseConfigured = () => {
+  const url = process.env.DATABASE_URL;
+  return !!url && url !== "postgresql://placeholder";
+};
+
+// Default onboarding status for dev mode without database
+const DEFAULT_ONBOARDING_STATUS = {
+  brandAdded: false,
+  monitoringConfigured: false,
+  auditRun: false,
+  recommendationsReviewed: false,
+  completedAt: null,
+  dismissedAt: null,
+};
 
 /**
  * GET /api/onboarding/status
  * Get onboarding status for current user's organization
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fallback to demo org if no Clerk organization
+    // In development without database, return default status
+    if (!isDatabaseConfigured() && process.env.NODE_ENV === "development") {
+      return NextResponse.json({
+        status: DEFAULT_ONBOARDING_STATUS,
+        organizationId: orgId || "demo-org-id",
+      });
+    }
+
+    // Dynamic imports for database operations (only when db is configured)
+    const { db } = await import("@/lib/db");
+    const { organizations } = await import("@/lib/db/schema");
+    const { eq } = await import("drizzle-orm");
+    const { initializeOnboardingStatus } = await import("@/lib/onboarding/initialize");
+
+    // Fallback to demo org if no organization
     const effectiveOrgId = orgId || "demo-org-id";
 
     // Get organization - try by clerkOrgId first, then by id
     let org = orgId ? await db.query.organizations.findFirst({
       where: eq(organizations.clerkOrgId, orgId),
     }) : null;
-    
+
     // Fallback to demo-org-id for development
     if (!org) {
       org = await db.query.organizations.findFirst({
@@ -38,23 +65,16 @@ export async function GET(request: NextRequest) {
 
     // Initialize onboarding status based on existing data
     await initializeOnboardingStatus(org.id);
-    
+
     // Re-fetch to get updated status
     const updatedOrg = await db.query.organizations.findFirst({
       where: eq(organizations.id, org.id),
     });
-    
-    // Return onboarding status (or defaults if null)
-    const onboardingStatus = updatedOrg?.onboardingStatus || {
-      brandAdded: false,
-      monitoringConfigured: false,
-      auditRun: false,
-      recommendationsReviewed: false,
-      completedAt: null,
-      dismissedAt: null,
-    };
 
-    return NextResponse.json({ 
+    // Return onboarding status (or defaults if null)
+    const onboardingStatus = updatedOrg?.onboardingStatus || DEFAULT_ONBOARDING_STATUS;
+
+    return NextResponse.json({
       status: onboardingStatus,
       organizationId: org.id,
     });
@@ -74,29 +94,48 @@ export async function GET(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fallback to demo org if no Clerk organization
-    const effectiveOrgId = orgId || "demo-org-id";
-
     const body = await request.json();
-    const { 
-      brandAdded, 
-      monitoringConfigured, 
-      auditRun, 
+    const {
+      brandAdded,
+      monitoringConfigured,
+      auditRun,
       recommendationsReviewed,
       dismissedAt,
     } = body;
+
+    // In development without database, return mock updated status
+    if (!isDatabaseConfigured() && process.env.NODE_ENV === "development") {
+      const updatedStatus = {
+        brandAdded: brandAdded ?? DEFAULT_ONBOARDING_STATUS.brandAdded,
+        monitoringConfigured: monitoringConfigured ?? DEFAULT_ONBOARDING_STATUS.monitoringConfigured,
+        auditRun: auditRun ?? DEFAULT_ONBOARDING_STATUS.auditRun,
+        recommendationsReviewed: recommendationsReviewed ?? DEFAULT_ONBOARDING_STATUS.recommendationsReviewed,
+        dismissedAt: dismissedAt ?? DEFAULT_ONBOARDING_STATUS.dismissedAt,
+        completedAt: DEFAULT_ONBOARDING_STATUS.completedAt,
+      };
+      return NextResponse.json({
+        status: updatedStatus,
+        organizationId: orgId || "demo-org-id",
+      });
+    }
+
+    // Dynamic imports for database operations (only when db is configured)
+    const { db } = await import("@/lib/db");
+    const { organizations } = await import("@/lib/db/schema");
+    const { eq } = await import("drizzle-orm");
 
     // Get current organization - try by clerkOrgId first, then by id
     let org = orgId ? await db.query.organizations.findFirst({
       where: eq(organizations.clerkOrgId, orgId),
     }) : null;
-    
+
     // Fallback to demo-org-id for development
     if (!org) {
       org = await db.query.organizations.findFirst({
@@ -109,14 +148,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Merge with existing status
-    const currentStatus = org.onboardingStatus || {
-      brandAdded: false,
-      monitoringConfigured: false,
-      auditRun: false,
-      recommendationsReviewed: false,
-      completedAt: null,
-      dismissedAt: null,
-    };
+    const currentStatus = org.onboardingStatus || DEFAULT_ONBOARDING_STATUS;
 
     const updatedStatus = {
       brandAdded: brandAdded !== undefined ? brandAdded : currentStatus.brandAdded,
@@ -128,7 +160,7 @@ export async function PATCH(request: NextRequest) {
     };
 
     // Check if all steps are complete
-    const allComplete = 
+    const allComplete =
       updatedStatus.brandAdded &&
       updatedStatus.monitoringConfigured &&
       updatedStatus.auditRun &&
@@ -148,7 +180,7 @@ export async function PATCH(request: NextRequest) {
       })
       .where(eq(organizations.id, org.id));
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       status: updatedStatus,
       organizationId: org.id,
     });

@@ -4,6 +4,15 @@ import type { User as ClerkUser } from "@clerk/nextjs/server";
 // Re-export Clerk auth function for server-side use
 export { auth, currentUser, clerkClient };
 
+// Check if Clerk is properly configured
+const CLERK_CONFIGURED =
+  !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "pk_test_placeholder";
+
+// Dev mode fallback values
+const DEV_USER_ID = "dev-user-id";
+const DEV_ORG_ID = "demo-org-id";
+
 // Type for authenticated session
 export interface AuthSession {
   userId: string;
@@ -167,6 +176,11 @@ export function extractOrgData(data: Record<string, unknown>): ClerkOrgData {
 // Get organization ID for API routes
 // Returns the org ID from Clerk session, falls back to demo-org-id in development
 export async function getOrganizationId(): Promise<string | null> {
+  // In development without Clerk, return demo org ID
+  if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
+    return DEV_ORG_ID;
+  }
+
   try {
     const { orgId, userId } = await auth();
 
@@ -180,24 +194,36 @@ export async function getOrganizationId(): Promise<string | null> {
     if (userId && !orgId) {
       // In development, fall back to demo-org-id for testing
       if (process.env.NODE_ENV === "development") {
-        return "demo-org-id";
+        return DEV_ORG_ID;
       }
       return null;
     }
 
     return null;
   } catch {
-    // If auth fails entirely, return null (unauthenticated)
+    // If auth fails entirely, return demo org in development
+    if (process.env.NODE_ENV === "development") {
+      return DEV_ORG_ID;
+    }
     return null;
   }
 }
 
 // Get user ID for API routes
 export async function getUserId(): Promise<string | null> {
+  // In development without Clerk, return demo user ID
+  if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
+    return DEV_USER_ID;
+  }
+
   try {
     const { userId } = await auth();
     return userId;
   } catch {
+    // If auth fails entirely, return demo user in development
+    if (process.env.NODE_ENV === "development") {
+      return DEV_USER_ID;
+    }
     return null;
   }
 }
