@@ -1,0 +1,211 @@
+/**
+ * Brand Scrape API Endpoint
+ * POST - Start scraping a brand's website to extract information
+ */
+
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { z } from "zod";
+import { getRedisClient, cacheSet } from "@/lib/redis";
+import { createId } from "@paralleldrive/cuid2";
+
+// Request validation schema
+const scrapeRequestSchema = z.object({
+  url: z.string().url("Please enter a valid URL"),
+});
+
+// Job status types
+export type ScrapeJobStatus = "pending" | "processing" | "completed" | "failed";
+
+// Scraped brand data interface
+export interface ScrapedBrandData {
+  brandName: string;
+  description: string;
+  industry: string;
+  primaryColor: string;
+  logoUrl: string | null;
+  keywords: string[];
+  competitors: Array<{
+    name: string;
+    url: string;
+    reason: string;
+  }>;
+  confidence: {
+    overall: number;
+    perField: Record<string, number>;
+  };
+  rawData?: {
+    title: string;
+    metaDescription: string;
+    ogData: Record<string, string>;
+    images: Array<{ src: string; alt: string }>;
+  };
+}
+
+// Job data stored in Redis
+export interface ScrapeJob {
+  id: string;
+  url: string;
+  status: ScrapeJobStatus;
+  progress: number;
+  progressMessage: string;
+  data?: ScrapedBrandData;
+  error?: string;
+  createdAt: string;
+  completedAt?: string;
+  userId: string;
+  orgId?: string;
+}
+
+// Redis key for scrape jobs
+const SCRAPE_JOB_KEY = (jobId: string) => `brand:scrape:${jobId}`;
+
+/**
+ * POST /api/brands/scrape
+ * Start a brand scraping job
+ */
+export async function POST(request: NextRequest) {
+  try {
+    // Authenticate user
+    const { userId, orgId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Parse and validate request body
+    const body = await request.json();
+    const validation = scrapeRequestSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.errors[0].message },
+        { status: 400 }
+      );
+    }
+
+    const { url } = validation.data;
+
+    // Normalize URL
+    let normalizedUrl = url;
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      normalizedUrl = `https://${url}`;
+    }
+
+    // Create job ID
+    const jobId = `scrape_${createId()}`;
+
+    // Create job record
+    const job: ScrapeJob = {
+      id: jobId,
+      url: normalizedUrl,
+      status: "pending",
+      progress: 0,
+      progressMessage: "Starting website analysis...",
+      createdAt: new Date().toISOString(),
+      userId,
+      orgId: orgId ?? undefined,
+    };
+
+    // Store job in Redis (expires in 1 hour)
+    await cacheSet(SCRAPE_JOB_KEY(jobId), job, 3600);
+
+    // Start the scraping process in the background
+    // We use a dynamic import to avoid blocking the response
+    processScrapeJob(jobId, normalizedUrl, userId, orgId ?? undefined).catch(
+      (error) => {
+        console.error(`[BrandScrape] Job ${jobId} failed:`, error);
+      }
+    );
+
+    return NextResponse.json({
+      success: true,
+      jobId,
+      message: "Scraping job started",
+    });
+  } catch (error) {
+    console.error("[BrandScrape] Error starting scrape job:", error);
+    return NextResponse.json(
+      { error: "Failed to start scraping job" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Process the scrape job in the background
+ */
+async function processScrapeJob(
+  jobId: string,
+  url: string,
+  userId: string,
+  orgId?: string
+) {
+  const redis = getRedisClient();
+  const jobKey = SCRAPE_JOB_KEY(jobId);
+
+  try {
+    // Update status to processing
+    await updateJobProgress(jobKey, "processing", 10, "Fetching website...");
+
+    // Import scraper dynamically to avoid loading at module init
+    const { scrapeBrandFromUrl } = await import("@/lib/services/brand-scraper");
+
+    // Run the scraper with progress callbacks
+    const result = await scrapeBrandFromUrl(url, async (progress, message) => {
+      await updateJobProgress(jobKey, "processing", progress, message);
+    });
+
+    // Update job with results
+    const job = await getJob(jobKey);
+    if (job) {
+      job.status = "completed";
+      job.progress = 100;
+      job.progressMessage = "Analysis complete!";
+      job.data = result;
+      job.completedAt = new Date().toISOString();
+      await redis.set(jobKey, JSON.stringify(job), { ex: 3600 });
+    }
+  } catch (error) {
+    console.error(`[BrandScrape] Job ${jobId} error:`, error);
+
+    // Update job with error
+    const job = await getJob(jobKey);
+    if (job) {
+      job.status = "failed";
+      job.progress = 0;
+      job.progressMessage = "Analysis failed";
+      job.error = error instanceof Error ? error.message : "Unknown error occurred";
+      job.completedAt = new Date().toISOString();
+      await redis.set(jobKey, JSON.stringify(job), { ex: 3600 });
+    }
+  }
+}
+
+/**
+ * Update job progress in Redis
+ */
+async function updateJobProgress(
+  jobKey: string,
+  status: ScrapeJobStatus,
+  progress: number,
+  progressMessage: string
+) {
+  const redis = getRedisClient();
+  const job = await getJob(jobKey);
+  if (job) {
+    job.status = status;
+    job.progress = progress;
+    job.progressMessage = progressMessage;
+    await redis.set(jobKey, JSON.stringify(job), { ex: 3600 });
+  }
+}
+
+/**
+ * Get job from Redis
+ */
+async function getJob(jobKey: string): Promise<ScrapeJob | null> {
+  const redis = getRedisClient();
+  const data = await redis.get(jobKey);
+  if (!data) return null;
+  return typeof data === "string" ? JSON.parse(data) : (data as ScrapeJob);
+}

@@ -34,6 +34,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ScrapeWizard } from "@/components/brands/scrape-wizard";
+import type { ScrapedBrandData } from "@/app/api/brands/scrape/route";
 
 // AI Platforms for monitoring
 const AI_PLATFORMS = [
@@ -85,6 +87,7 @@ export default function BrandsPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [deleteConfirm, setDeleteConfirm] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [wizardMode, setWizardMode] = React.useState<"wizard" | "form">("wizard");
 
   // Form state
   const [formData, setFormData] = React.useState({
@@ -129,6 +132,7 @@ export default function BrandsPage() {
   // Open modal for new brand
   const openNewBrandModal = () => {
     setEditingBrand(null);
+    setWizardMode("wizard"); // Start with wizard for new brands
     setFormData({
       name: "",
       domain: "",
@@ -149,9 +153,46 @@ export default function BrandsPage() {
     setIsModalOpen(true);
   };
 
+  // Handle scraped data from wizard
+  const handleScrapedData = (data: ScrapedBrandData) => {
+    // Extract domain from raw data if available
+    let domain = "";
+    try {
+      const urlStr = data.rawData?.ogData?.url;
+      if (urlStr) {
+        domain = new URL(urlStr).hostname.replace(/^www\./, "");
+      }
+    } catch {
+      // URL parsing failed, leave domain empty
+    }
+
+    // Pre-fill form with scraped data
+    setFormData({
+      name: data.brandName,
+      domain,
+      description: data.description,
+      industry: data.industry,
+      logoUrl: data.logoUrl || "",
+      keywords: data.keywords,
+      competitors: data.competitors.map((c) => c.name),
+      voiceTone: "professional",
+      targetAudience: "",
+      primaryColor: data.primaryColor,
+      monitoringEnabled: true,
+      monitoringPlatforms: ["chatgpt", "claude", "gemini", "perplexity", "grok", "deepseek", "copilot"],
+    });
+    setWizardMode("form"); // Switch to form view to edit/confirm
+  };
+
+  // Handle manual mode from wizard
+  const handleManualMode = () => {
+    setWizardMode("form");
+  };
+
   // Open modal for editing
   const openEditModal = (brand: Brand) => {
     setEditingBrand(brand);
+    setWizardMode("form"); // Skip wizard when editing
     setFormData({
       name: brand.name,
       domain: brand.domain || "",
@@ -592,26 +633,49 @@ export default function BrandsPage() {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={closeModal} />
-          <div className="relative glass-modal p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold">
-                {editingBrand ? "Edit Brand" : "Create New Brand"}
-              </h2>
-              <Button variant="ghost" size="icon" onClick={closeModal}>
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
+          <div className={cn(
+            "relative glass-modal p-6 mx-4 max-h-[90vh] overflow-y-auto",
+            // Smaller modal for wizard step, larger for form
+            !editingBrand && wizardMode === "wizard" ? "max-w-md w-full" : "max-w-2xl w-full"
+          )}>
+            {/* Show wizard for new brands */}
+            {!editingBrand && wizardMode === "wizard" ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={closeModal}
+                  className="absolute top-4 right-4"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+                <ScrapeWizard
+                  onComplete={handleScrapedData}
+                  onManual={handleManualMode}
+                  onCancel={closeModal}
+                />
+              </>
+            ) : (
+              <>
+                {/* Modal Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold">
+                    {editingBrand ? "Edit Brand" : "Create New Brand"}
+                  </h2>
+                  <Button variant="ghost" size="icon" onClick={closeModal}>
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm">
-                {error}
-              </div>
-            )}
+                {/* Error Message */}
+                {error && (
+                  <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm">
+                    {error}
+                  </div>
+                )}
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="space-y-6">
               {/* Basic Info */}
               <div className="space-y-4">
                 <h3 className="text-sm font-medium text-muted-foreground">Basic Information</h3>
@@ -949,6 +1013,8 @@ export default function BrandsPage() {
                 </Button>
               </div>
             </form>
+              </>
+            )}
           </div>
         </div>
       )}
