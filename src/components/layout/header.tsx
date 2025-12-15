@@ -93,7 +93,7 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
                 <span className="sr-only">User menu</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 glass-tooltip">
+            <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 {user?.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : "My Account"}
               </DropdownMenuLabel>

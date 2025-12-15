@@ -440,6 +440,14 @@
   border: 1px solid hsl(var(--border) / 0.3);
 }
 
+/* Dropdown Menu Dark Theme Override */
+[data-slot="dropdown-menu-content"],
+[data-radix-popper-content-wrapper] [role="menu"] {
+  background-color: #0d1224 !important;
+  color: white !important;
+  border: 1px solid hsl(var(--border) / 0.5) !important;
+}
+
 /* ============================================
    STATUS INDICATORS
    ============================================ */
