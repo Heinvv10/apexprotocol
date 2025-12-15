@@ -258,14 +258,17 @@ function UrlStep({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="website-url">Website URL</Label>
+        <Label htmlFor="website-url" className="text-sm font-medium text-foreground">Website URL</Label>
         <Input
           id="website-url"
           type="text"
           placeholder="https://example.com"
           value={url}
           onChange={(e) => onUrlChange(e.target.value)}
-          className={cn(error && "border-destructive")}
+          className={cn(
+            "bg-zinc-900/80 border-zinc-700 text-white placeholder:text-zinc-500",
+            error && "border-destructive"
+          )}
           autoFocus
         />
         {error && (
