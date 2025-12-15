@@ -1,5 +1,6 @@
 /**
  * Redis Client - Upstash Redis for caching and rate limiting
+ * Falls back to in-memory storage for development when Redis is not configured
  */
 
 import { Redis } from "@upstash/redis";
@@ -7,8 +8,206 @@ import { Redis } from "@upstash/redis";
 // Singleton Redis client
 let redisClient: Redis | null = null;
 
+// In-memory fallback storage for development
+const inMemoryStore = new Map<string, { value: string; expiresAt?: number }>();
+
+/**
+ * In-memory Redis-like client for development
+ */
+class InMemoryRedis {
+  async get(key: string): Promise<string | null> {
+    const item = inMemoryStore.get(key);
+    if (!item) return null;
+    if (item.expiresAt && Date.now() > item.expiresAt) {
+      inMemoryStore.delete(key);
+      return null;
+    }
+    return item.value;
+  }
+
+  async set(key: string, value: string, options?: { ex?: number }): Promise<"OK"> {
+    const expiresAt = options?.ex ? Date.now() + options.ex * 1000 : undefined;
+    inMemoryStore.set(key, { value, expiresAt });
+    return "OK";
+  }
+
+  async setex(key: string, seconds: number, value: string): Promise<"OK"> {
+    return this.set(key, value, { ex: seconds });
+  }
+
+  async del(key: string): Promise<number> {
+    return inMemoryStore.delete(key) ? 1 : 0;
+  }
+
+  async exists(key: string): Promise<number> {
+    const item = inMemoryStore.get(key);
+    if (!item) return 0;
+    if (item.expiresAt && Date.now() > item.expiresAt) {
+      inMemoryStore.delete(key);
+      return 0;
+    }
+    return 1;
+  }
+
+  async expire(key: string, seconds: number): Promise<number> {
+    const item = inMemoryStore.get(key);
+    if (!item) return 0;
+    item.expiresAt = Date.now() + seconds * 1000;
+    return 1;
+  }
+
+  async ttl(key: string): Promise<number> {
+    const item = inMemoryStore.get(key);
+    if (!item) return -2;
+    if (!item.expiresAt) return -1;
+    const ttl = Math.ceil((item.expiresAt - Date.now()) / 1000);
+    return ttl > 0 ? ttl : -2;
+  }
+
+  async incr(key: string): Promise<number> {
+    const current = parseInt((await this.get(key)) || "0", 10);
+    const newVal = current + 1;
+    await this.set(key, String(newVal));
+    return newVal;
+  }
+
+  async incrby(key: string, increment: number): Promise<number> {
+    const current = parseInt((await this.get(key)) || "0", 10);
+    const newVal = current + increment;
+    await this.set(key, String(newVal));
+    return newVal;
+  }
+
+  async decr(key: string): Promise<number> {
+    return this.incrby(key, -1);
+  }
+
+  async decrby(key: string, decrement: number): Promise<number> {
+    return this.incrby(key, -decrement);
+  }
+
+  async mget<T>(...keys: string[]): Promise<(T | null)[]> {
+    return Promise.all(keys.map(async (k) => {
+      const v = await this.get(k);
+      return v ? (JSON.parse(v) as T) : null;
+    }));
+  }
+
+  async rpush(key: string, ...values: string[]): Promise<number> {
+    const existing = await this.get(key);
+    const arr: string[] = existing ? JSON.parse(existing) : [];
+    arr.push(...values);
+    await this.set(key, JSON.stringify(arr));
+    return arr.length;
+  }
+
+  async lpop(key: string): Promise<string | null> {
+    const existing = await this.get(key);
+    if (!existing) return null;
+    const arr: string[] = JSON.parse(existing);
+    const item = arr.shift();
+    await this.set(key, JSON.stringify(arr));
+    return item || null;
+  }
+
+  async lrange(key: string, start: number, stop: number): Promise<string[]> {
+    const existing = await this.get(key);
+    if (!existing) return [];
+    const arr: string[] = JSON.parse(existing);
+    const end = stop === -1 ? arr.length : stop + 1;
+    return arr.slice(start, end);
+  }
+
+  async hset(key: string, fieldValues: Record<string, string>): Promise<number> {
+    const existing = await this.get(key);
+    const hash: Record<string, string> = existing ? JSON.parse(existing) : {};
+    Object.assign(hash, fieldValues);
+    await this.set(key, JSON.stringify(hash));
+    return Object.keys(fieldValues).length;
+  }
+
+  async hget(key: string, field: string): Promise<string | null> {
+    const existing = await this.get(key);
+    if (!existing) return null;
+    const hash: Record<string, string> = JSON.parse(existing);
+    return hash[field] || null;
+  }
+
+  async hgetall(key: string): Promise<Record<string, string> | null> {
+    const existing = await this.get(key);
+    if (!existing) return null;
+    return JSON.parse(existing);
+  }
+
+  async sadd(key: string, members: string[]): Promise<number> {
+    const existing = await this.get(key);
+    const set = new Set<string>(existing ? JSON.parse(existing) : []);
+    let added = 0;
+    for (const m of members) {
+      if (!set.has(m)) {
+        set.add(m);
+        added++;
+      }
+    }
+    await this.set(key, JSON.stringify([...set]));
+    return added;
+  }
+
+  async smembers(key: string): Promise<string[]> {
+    const existing = await this.get(key);
+    return existing ? JSON.parse(existing) : [];
+  }
+
+  async sismember(key: string, member: string): Promise<number> {
+    const members = await this.smembers(key);
+    return members.includes(member) ? 1 : 0;
+  }
+
+  async zadd(key: string, { score, member }: { score: number; member: string }): Promise<number> {
+    const existing = await this.get(key);
+    const zset: Array<{ score: number; member: string }> = existing ? JSON.parse(existing) : [];
+    const idx = zset.findIndex((z) => z.member === member);
+    if (idx >= 0) {
+      zset[idx].score = score;
+      await this.set(key, JSON.stringify(zset));
+      return 0;
+    }
+    zset.push({ score, member });
+    zset.sort((a, b) => a.score - b.score);
+    await this.set(key, JSON.stringify(zset));
+    return 1;
+  }
+
+  async zrange(key: string, start: number, stop: number, options?: { withScores?: boolean }): Promise<string[] | Array<{ member: string; score: number }>> {
+    const existing = await this.get(key);
+    if (!existing) return [];
+    const zset: Array<{ score: number; member: string }> = JSON.parse(existing);
+    const end = stop === -1 ? zset.length : stop + 1;
+    const slice = zset.slice(start, end);
+    if (options?.withScores) return slice;
+    return slice.map((z) => z.member);
+  }
+
+  async zrank(key: string, member: string): Promise<number | null> {
+    const existing = await this.get(key);
+    if (!existing) return null;
+    const zset: Array<{ score: number; member: string }> = JSON.parse(existing);
+    const idx = zset.findIndex((z) => z.member === member);
+    return idx >= 0 ? idx : null;
+  }
+
+  async publish(_channel: string, _message: string): Promise<number> {
+    // No-op for in-memory - pub/sub not supported
+    return 0;
+  }
+}
+
+// Flag to track if using in-memory fallback
+let usingInMemory = false;
+
 /**
  * Get Redis client instance (singleton)
+ * Falls back to in-memory storage when Redis is not configured
  */
 export function getRedisClient(): Redis {
   if (!redisClient) {
@@ -16,9 +215,14 @@ export function getRedisClient(): Redis {
     const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
     if (!url || !token) {
-      throw new Error(
-        "Redis configuration missing. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN environment variables."
-      );
+      if (!usingInMemory) {
+        console.warn(
+          "[Redis] Using in-memory fallback. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for production."
+        );
+        usingInMemory = true;
+      }
+      // Return in-memory client cast as Redis
+      return new InMemoryRedis() as unknown as Redis;
     }
 
     redisClient = new Redis({
