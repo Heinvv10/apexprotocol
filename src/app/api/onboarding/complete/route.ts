@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { brands, organizations } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getOrganizationId } from "@/lib/auth";
+
+// Check if database is configured
+const isDatabaseConfigured = () => {
+  const url = process.env.DATABASE_URL;
+  return !!url && url !== "postgresql://placeholder";
+};
 
 const onboardingSchema = z.object({
   brandName: z.string().min(1),
@@ -17,6 +20,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const data = onboardingSchema.parse(body);
+
     const orgId = await getOrganizationId();
 
     if (!orgId) {
@@ -25,6 +29,42 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    // Mock mode when database is not configured
+    if (!isDatabaseConfigured()) {
+      const mockBrand = {
+        id: `mock-brand-${Date.now()}`,
+        organizationId: orgId,
+        name: data.brandName,
+        domain: data.brandUrl || null,
+        industry: data.industry || null,
+        monitoringEnabled: true,
+        monitoringPlatforms: data.selectedPlatforms,
+        competitors: data.competitors?.filter(c => c.trim().length > 0) || [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const updatedStatus = {
+        brandAdded: true,
+        monitoringConfigured: true,
+        auditRun: false,
+        recommendationsReviewed: false,
+        completedAt: null,
+        dismissedAt: null,
+      };
+
+      return NextResponse.json({
+        success: true,
+        brand: mockBrand,
+        onboardingStatus: updatedStatus,
+      });
+    }
+
+    // Real database mode
+    const { db } = await import("@/lib/db");
+    const { brands, organizations } = await import("@/lib/db/schema");
+    const { eq } = await import("drizzle-orm");
 
     let org = await db.query.organizations.findFirst({
       where: eq(organizations.id, orgId),
@@ -77,6 +117,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("[onboarding/complete] Error:", errorMessage);
     return NextResponse.json(
       { success: false, error: errorMessage },
       { status: 500 }

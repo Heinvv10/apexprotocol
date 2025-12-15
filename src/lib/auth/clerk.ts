@@ -345,7 +345,7 @@ export function extractOrgData(data: Record<string, unknown>): ClerkOrgData {
 }
 
 // Get organization ID for API routes
-// Returns the org ID from Clerk session, falls back to demo-org-id in development
+// Returns the org ID from Clerk session, falls back to user ID for personal workspace
 export async function getOrganizationId(): Promise<string | null> {
   // In development without Clerk, return demo org ID
   if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
@@ -360,14 +360,11 @@ export async function getOrganizationId(): Promise<string | null> {
       return orgId;
     }
 
-    // If user is authenticated but not in org context, return null
-    // The API should prompt them to select/create an organization
+    // If user is authenticated but not in org context, use userId as personal workspace ID
+    // This allows users without organizations to still use the platform
     if (userId && !orgId) {
-      // In development, fall back to demo-org-id for testing
-      if (process.env.NODE_ENV === "development") {
-        return DEV_ORG_ID;
-      }
-      return null;
+      // Use user_<userId> format for personal workspaces
+      return `user_${userId}`;
     }
 
     return null;

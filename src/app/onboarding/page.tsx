@@ -15,6 +15,13 @@ import {
 import { cn } from "@/lib/utils";
 import { useMarkBrandAdded, useMarkMonitoringConfigured } from "@/hooks/useOnboarding";
 import { useToast } from "@/components/toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Onboarding steps configuration
 const steps = [
@@ -291,8 +298,7 @@ export default function OnboardingPage() {
 
             <button
               onClick={handleNext}
-              disabled={isSubmitting}
-              disabled={!canProceed()}
+              disabled={isSubmitting || !canProceed()}
               className={cn(
                 "flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all",
                 canProceed()
@@ -409,18 +415,22 @@ function BrandStep({
         <label className="block text-sm font-medium text-foreground mb-2">
           Industry
         </label>
-        <select
-          value={industry}
-          onChange={(e) => setIndustry(e.target.value)}
-          className="w-full px-4 py-3 rounded-lg bg-background border border-border/50 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-        >
-          <option value="">Select industry</option>
-          {industries.map((ind) => (
-            <option key={ind} value={ind}>
-              {ind}
-            </option>
-          ))}
-        </select>
+        <Select value={industry} onValueChange={setIndustry}>
+          <SelectTrigger className="w-full h-12 px-4 rounded-lg bg-background border border-border/50 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+            <SelectValue placeholder="Select industry" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#0d1224] border border-border/50 shadow-xl z-50">
+            {industries.map((ind) => (
+              <SelectItem
+                key={ind}
+                value={ind}
+                className="text-foreground hover:bg-primary/20 focus:bg-primary/20 cursor-pointer"
+              >
+                {ind}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
