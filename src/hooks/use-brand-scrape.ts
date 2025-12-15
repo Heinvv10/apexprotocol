@@ -165,6 +165,19 @@ export function useBrandScrape(): UseBrandScrapeReturn {
           throw new Error(result.error || "Failed to start scraping");
         }
 
+        // Check if job was completed synchronously (no Redis mode)
+        if (result.job && (result.job.status === "completed" || result.job.status === "failed")) {
+          setState({
+            jobId: result.jobId,
+            status: result.job.status,
+            progress: result.job.progress,
+            progressMessage: result.job.progressMessage,
+            data: result.job.data || null,
+            error: result.job.error || null,
+          });
+          return;
+        }
+
         // Update state with job ID
         setState((prev) => ({
           ...prev,
@@ -174,7 +187,7 @@ export function useBrandScrape(): UseBrandScrapeReturn {
           progressMessage: "Job started, fetching website...",
         }));
 
-        // Start polling for job status
+        // Start polling for job status (async mode with Redis)
         startPolling(result.jobId);
       } catch (error) {
         console.error("[useBrandScrape] Start error:", error);

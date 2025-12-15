@@ -79,28 +79,35 @@ export async function scrapeBrandFromUrl(
   // Step 4: Extract and process logo (70-85%)
   let logoUrl: string | null = null;
 
-  // Collect logo candidates
+  // Collect logo candidates with priority scoring
   const logoCandidates: LogoCandidate[] = [];
 
-  // Add OG image as candidate
-  if (page.openGraph?.image) {
-    logoCandidates.push({
-      src: page.openGraph.image,
-      type: "og-image",
-      priority: 2,
-    });
-  }
-
-  // Add images with "logo" in filename or alt
+  // Add images with "logo" in filename or alt (highest priority for explicit logos)
   page.images?.forEach((img) => {
     const srcLower = img.src.toLowerCase();
     const altLower = (img.alt || "").toLowerCase();
 
-    if (srcLower.includes("logo") || altLower.includes("logo")) {
+    // SVG logos are best quality
+    if (srcLower.includes("logo") && srcLower.endsWith(".svg")) {
+      logoCandidates.push({
+        src: img.src,
+        type: "logo-named",
+        priority: 0, // Highest priority
+      });
+    } else if (srcLower.includes("logo") || altLower.includes("logo")) {
       logoCandidates.push({
         src: img.src,
         type: "logo-named",
         priority: 1,
+      });
+    }
+
+    // Also check for brand/header images which often contain logos
+    if (srcLower.includes("brand") || srcLower.includes("header") || srcLower.includes("nav-logo")) {
+      logoCandidates.push({
+        src: img.src,
+        type: "logo-named",
+        priority: 2,
       });
     }
   });
@@ -110,7 +117,25 @@ export async function scrapeBrandFromUrl(
     logoCandidates.push({
       src: aiAnalysis.logoUrl,
       type: "ai-suggested",
-      priority: 0,
+      priority: 1,
+    });
+  }
+
+  // Add apple-touch-icon (usually high quality)
+  if (page.appleTouchIcon) {
+    logoCandidates.push({
+      src: page.appleTouchIcon,
+      type: "apple-touch-icon",
+      priority: 3,
+    });
+  }
+
+  // Add OG image as fallback candidate (often generic, lower priority)
+  if (page.openGraph?.image) {
+    logoCandidates.push({
+      src: page.openGraph.image,
+      type: "og-image",
+      priority: 5,
     });
   }
 
@@ -130,11 +155,20 @@ export async function scrapeBrandFromUrl(
   const result: ScrapedBrandData = {
     brandName: aiAnalysis.brandName || extractFallbackName(page.title, url),
     description: aiAnalysis.description || page.metaDescription || "",
+    tagline: aiAnalysis.tagline || null,
     industry: aiAnalysis.industry || "Technology",
     primaryColor: aiAnalysis.primaryColor || "#4926FA",
+    secondaryColor: aiAnalysis.secondaryColor || null,
+    accentColor: aiAnalysis.accentColor || null,
+    colorPalette: aiAnalysis.colorPalette || [],
     logoUrl,
     keywords: aiAnalysis.keywords || [],
+    seoKeywords: aiAnalysis.seoKeywords || [],
+    geoKeywords: aiAnalysis.geoKeywords || [],
     competitors: aiAnalysis.competitors || [],
+    targetAudience: aiAnalysis.targetAudience || "",
+    valuePropositions: aiAnalysis.valuePropositions || [],
+    socialLinks: aiAnalysis.socialLinks || {},
     confidence: aiAnalysis.confidence || {
       overall: 50,
       perField: {},

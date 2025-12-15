@@ -1,9 +1,9 @@
 /**
  * Brand Analysis AI Prompt
- * Uses Claude to analyze website data and extract structured brand information
+ * Uses OpenAI to analyze website data and extract structured brand information
  */
 
-import { sendMessage, CLAUDE_MODELS } from "@/lib/ai/claude";
+import { sendMessage, GPT_MODELS } from "@/lib/ai/openai";
 
 // Industry options that match the brand form
 export const INDUSTRY_OPTIONS = [
@@ -22,9 +22,20 @@ export const INDUSTRY_OPTIONS = [
   "News & Media",
   "Legal",
   "Marketing",
+  "Advertising",
+  "Telecommunications",
+  "Internet Service Provider",
   "Consulting",
   "Manufacturing",
   "Energy",
+  "Construction",
+  "Logistics",
+  "Insurance",
+  "Hospitality",
+  "Retail",
+  "Agriculture",
+  "Aerospace",
+  "Pharmaceuticals",
   "Non-profit",
   "Government",
   "Other",
@@ -55,15 +66,24 @@ export interface BrandAnalysisInput {
 export interface BrandAnalysisResult {
   brandName: string;
   description: string;
+  tagline: string | null;
   industry: Industry;
   primaryColor: string;
+  secondaryColor: string | null;
+  accentColor: string | null;
+  colorPalette: string[];
   logoUrl: string | null;
   keywords: string[];
+  seoKeywords: string[];
+  geoKeywords: string[];
   competitors: Array<{
     name: string;
     url: string;
     reason: string;
   }>;
+  targetAudience: string;
+  valuePropositions: string[];
+  socialLinks: Record<string, string>;
   confidence: {
     overall: number;
     perField: Record<string, number>;
@@ -71,7 +91,7 @@ export interface BrandAnalysisResult {
 }
 
 // System prompt for brand analysis
-const SYSTEM_PROMPT = `You are a brand analysis expert. Your task is to analyze website data and extract structured brand information.
+const SYSTEM_PROMPT = `You are a brand analysis expert specializing in GEO (Generative Engine Optimization) and AEO (Answer Engine Optimization). Your task is to analyze website data and extract comprehensive brand information for AI visibility optimization.
 
 You will receive data scraped from a company's website including:
 - Page title and meta description
@@ -80,34 +100,66 @@ You will receive data scraped from a company's website including:
 - Body text content
 - Image URLs and alt text
 - External links
+- Inline CSS styles and colors
 
-Based on this data, you must extract:
-1. **Brand Name**: The company or brand name (not a tagline)
-2. **Description**: A 1-2 sentence description of what the company does
-3. **Industry**: One of these categories: ${INDUSTRY_OPTIONS.join(", ")}
-4. **Primary Color**: The brand's main color as a hex code (e.g., #4926FA). Look for brand colors in CSS, logo references, or infer from industry standards.
-5. **Logo URL**: If you can identify a likely logo image URL from the data, include it. Otherwise, null.
-6. **Keywords**: 5-10 SEO/GEO relevant keywords that describe what this brand offers
-7. **Competitors**: Up to 5 likely competitors based on the industry and business type. Include:
+Based on this data, you must extract COMPREHENSIVE brand information:
+
+1. **Brand Name**: The official company or brand name (not a tagline)
+
+2. **Description**: A 2-3 sentence description of what the company does, their main offerings, and unique value
+
+3. **Tagline**: The brand's tagline or slogan if visible (e.g., "Just Do It", "Think Different")
+
+4. **Industry**: One of these categories: ${INDUSTRY_OPTIONS.join(", ")}
+
+5. **Color Palette** - Extract ALL colors you can identify:
+   - **Primary Color**: Main brand color (hex code)
+   - **Secondary Color**: Supporting brand color (hex code)
+   - **Accent Color**: Highlight/CTA color (hex code)
+   - **Color Palette**: Array of 3-6 brand colors found in the design
+
+6. **Logo URL**: If you can identify a likely logo image URL, include it
+
+7. **Keywords** - Extract 3 types:
+   - **keywords**: 10-15 general keywords describing the brand and offerings
+   - **seoKeywords**: 5-8 traditional SEO keywords (search-optimized terms)
+   - **geoKeywords**: 5-8 GEO keywords (terms optimized for AI assistants like ChatGPT, Claude, Gemini)
+
+8. **Competitors**: Up to 5 competitors based on industry and market position:
    - name: Company name
-   - url: Their website URL (use well-known companies in the industry)
-   - reason: Brief explanation of why they're a competitor
+   - url: Their website URL (use real, well-known companies)
+   - reason: Why they compete (market overlap, similar offerings, target audience)
 
-8. **Confidence**: Your confidence score for the overall analysis (0-100) and per-field scores
+9. **Target Audience**: A description of who this brand serves (demographics, psychographics, needs)
+
+10. **Value Propositions**: 3-5 key value props or unique selling points
+
+11. **Social Links**: Any social media URLs found (facebook, twitter, linkedin, instagram, youtube, etc.)
+
+12. **Confidence**: Scores for overall analysis (0-100) and per-field
 
 IMPORTANT RULES:
 - Respond ONLY with valid JSON, no markdown formatting or backticks
-- Brand name should be the official company name, not a tagline or slogan
-- Description should be factual, not promotional
-- Choose the single most appropriate industry from the provided list
-- For primary color, provide a hex code that would work well as a brand accent color
-- Keywords should be relevant for AI/search engine optimization
-- Only include real, well-known competitors that users would recognize
-- Be honest about confidence - if data is limited, reflect that in scores`;
+- Be COMPREHENSIVE - extract as much relevant data as possible
+- Brand name should be the official company name, not a tagline
+- For colors, extract actual hex codes when visible, or infer from industry standards
+- GEO keywords should be conversational queries users might ask AI assistants
+- SEO keywords should be traditional search terms
+- Competitors must be REAL companies that users would recognize
+- Be honest about confidence - if data is limited, reflect that in scores
+- For fiber/telecom companies, include competitors like other ISPs, fiber providers in the same region`;
 
 // User prompt template
 function buildUserPrompt(input: BrandAnalysisInput): string {
-  return `Analyze this website data and extract brand information:
+  // Extract social media links
+  const socialLinks = input.links.filter((link) => {
+    const href = link.href.toLowerCase();
+    return href.includes("facebook.com") || href.includes("twitter.com") || href.includes("x.com") ||
+           href.includes("linkedin.com") || href.includes("instagram.com") || href.includes("youtube.com") ||
+           href.includes("tiktok.com") || href.includes("pinterest.com");
+  });
+
+  return `Analyze this website data and extract COMPREHENSIVE brand information:
 
 URL: ${input.url}
 
@@ -124,52 +176,75 @@ OPENGRAPH DATA:
 H1 HEADINGS:
 ${input.h1Tags.length > 0 ? input.h1Tags.map((h) => `- ${h}`).join("\n") : "None found"}
 
-H2 HEADINGS (first 10):
-${input.h2Tags.length > 0 ? input.h2Tags.slice(0, 10).map((h) => `- ${h}`).join("\n") : "None found"}
+H2 HEADINGS (first 15):
+${input.h2Tags.length > 0 ? input.h2Tags.slice(0, 15).map((h) => `- ${h}`).join("\n") : "None found"}
 
-BODY TEXT (excerpt):
-${input.bodyText.slice(0, 2000) || "Not available"}
+BODY TEXT (comprehensive excerpt):
+${input.bodyText.slice(0, 4000) || "Not available"}
 
 IMAGES (with logo potential):
 ${input.images.filter((img) => {
   const src = img.src.toLowerCase();
   const alt = img.alt.toLowerCase();
-  return src.includes("logo") || alt.includes("logo") || src.includes("brand");
-}).slice(0, 5).map((img) => `- ${img.src} (alt: "${img.alt}")`).join("\n") || "No logo candidates found"}
+  return src.includes("logo") || alt.includes("logo") || src.includes("brand") || src.includes("icon");
+}).slice(0, 8).map((img) => `- ${img.src} (alt: "${img.alt}")`).join("\n") || "No logo candidates found"}
+
+ALL IMAGES (for color analysis):
+${input.images.slice(0, 15).map((img) => `- ${img.alt || img.src.split("/").pop()}`).join("\n") || "None found"}
+
+SOCIAL MEDIA LINKS:
+${socialLinks.length > 0 ? socialLinks.map((link) => `- ${link.href}`).join("\n") : "None found"}
 
 EXTERNAL LINKS (potential competitors/partners):
-${input.links.slice(0, 10).map((link) => `- ${link.text}: ${link.href}`).join("\n") || "None found"}
+${input.links.filter(l => !socialLinks.includes(l)).slice(0, 15).map((link) => `- ${link.text}: ${link.href}`).join("\n") || "None found"}
 
 SCHEMA TYPES:
 ${input.schemaTypes.length > 0 ? input.schemaTypes.join(", ") : "None found"}
 
-Respond with a JSON object matching this structure:
+Respond with a JSON object matching this EXACT structure:
 {
   "brandName": "string",
-  "description": "string",
-  "industry": "string (from allowed list)",
+  "description": "string (2-3 sentences)",
+  "tagline": "string or null",
+  "industry": "string (from: ${INDUSTRY_OPTIONS.join(", ")})",
   "primaryColor": "#XXXXXX",
+  "secondaryColor": "#XXXXXX or null",
+  "accentColor": "#XXXXXX or null",
+  "colorPalette": ["#hex1", "#hex2", ...],
   "logoUrl": "string or null",
-  "keywords": ["keyword1", "keyword2", ...],
+  "keywords": ["10-15 general keywords"],
+  "seoKeywords": ["5-8 SEO keywords"],
+  "geoKeywords": ["5-8 GEO/AI keywords"],
   "competitors": [
-    { "name": "string", "url": "string", "reason": "string" }
+    { "name": "string", "url": "https://...", "reason": "string" }
   ],
+  "targetAudience": "string describing who this brand serves",
+  "valuePropositions": ["value prop 1", "value prop 2", ...],
+  "socialLinks": {
+    "facebook": "url or null",
+    "twitter": "url or null",
+    "linkedin": "url or null",
+    "instagram": "url or null",
+    "youtube": "url or null"
+  },
   "confidence": {
     "overall": number (0-100),
     "perField": {
       "brandName": number,
       "description": number,
+      "tagline": number,
       "industry": number,
-      "primaryColor": number,
+      "colors": number,
       "keywords": number,
-      "competitors": number
+      "competitors": number,
+      "targetAudience": number
     }
   }
 }`;
 }
 
 /**
- * Analyze brand information from website data using Claude AI
+ * Analyze brand information from website data using OpenAI
  */
 export async function analyzeBrandFromWebsite(
   input: BrandAnalysisInput
@@ -177,15 +252,16 @@ export async function analyzeBrandFromWebsite(
   const userPrompt = buildUserPrompt(input);
 
   try {
-    const response = await sendMessage(userPrompt, {
-      model: CLAUDE_MODELS.SONNET_3_5,
-      maxTokens: 2000,
-      temperature: 0.3, // Lower temperature for more consistent output
-      system: SYSTEM_PROMPT,
-    });
+    // Use OpenAI's sendMessage with system prompt and user message
+    const response = await sendMessage(
+      SYSTEM_PROMPT,
+      userPrompt,
+      GPT_MODELS.GPT4O,
+      3000 // max tokens
+    );
 
     // Parse JSON response
-    const parsed = parseAIResponse(response);
+    const parsed = parseAIResponse(response.content);
 
     // Validate and normalize the response
     return normalizeAnalysisResult(parsed);
@@ -241,19 +317,41 @@ function normalizeAnalysisResult(
   }
 
   // Validate color is a hex code
-  let primaryColor = parsed.primaryColor as string;
-  if (!primaryColor || !/^#[0-9A-Fa-f]{6}$/.test(primaryColor)) {
-    primaryColor = "#4926FA"; // Default to Apex purple
-  }
+  const validateColor = (color: unknown): string | null => {
+    if (typeof color !== "string") return null;
+    if (/^#[0-9A-Fa-f]{6}$/.test(color)) return color;
+    if (/^#[0-9A-Fa-f]{3}$/.test(color)) {
+      // Expand 3-digit hex to 6-digit
+      return `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`;
+    }
+    return null;
+  };
 
-  // Validate keywords is an array
-  let keywords = parsed.keywords as string[];
-  if (!Array.isArray(keywords)) {
-    keywords = [];
+  const primaryColor = validateColor(parsed.primaryColor) || "#4926FA";
+  const secondaryColor = validateColor(parsed.secondaryColor);
+  const accentColor = validateColor(parsed.accentColor);
+
+  // Validate color palette
+  let colorPalette = parsed.colorPalette as string[];
+  if (!Array.isArray(colorPalette)) {
+    colorPalette = [];
   }
-  keywords = keywords.filter(
-    (k) => typeof k === "string" && k.length > 0
-  ).slice(0, 10);
+  colorPalette = colorPalette
+    .map(c => validateColor(c))
+    .filter((c): c is string => c !== null)
+    .slice(0, 6);
+
+  // Validate keywords arrays
+  const validateKeywords = (kw: unknown, max: number): string[] => {
+    if (!Array.isArray(kw)) return [];
+    return kw
+      .filter((k) => typeof k === "string" && k.length > 0)
+      .slice(0, max);
+  };
+
+  const keywords = validateKeywords(parsed.keywords, 15);
+  const seoKeywords = validateKeywords(parsed.seoKeywords, 8);
+  const geoKeywords = validateKeywords(parsed.geoKeywords, 8);
 
   // Validate competitors
   let competitors = parsed.competitors as Array<{
@@ -279,6 +377,24 @@ function normalizeAnalysisResult(
       reason: c.reason || "Industry competitor",
     }));
 
+  // Validate value propositions
+  let valuePropositions = parsed.valuePropositions as string[];
+  if (!Array.isArray(valuePropositions)) {
+    valuePropositions = [];
+  }
+  valuePropositions = valuePropositions
+    .filter((v) => typeof v === "string" && v.length > 0)
+    .slice(0, 5);
+
+  // Validate social links
+  const socialLinks = parsed.socialLinks as Record<string, string> || {};
+  const normalizedSocialLinks: Record<string, string> = {};
+  for (const [platform, url] of Object.entries(socialLinks)) {
+    if (typeof url === "string" && url.startsWith("http")) {
+      normalizedSocialLinks[platform] = url;
+    }
+  }
+
   // Validate confidence scores
   const confidence = parsed.confidence as {
     overall: number;
@@ -292,11 +408,20 @@ function normalizeAnalysisResult(
   return {
     brandName: (parsed.brandName as string) || "",
     description: (parsed.description as string) || "",
+    tagline: (parsed.tagline as string) || null,
     industry: industry as Industry,
     primaryColor,
+    secondaryColor,
+    accentColor,
+    colorPalette,
     logoUrl: (parsed.logoUrl as string) || null,
     keywords,
+    seoKeywords,
+    geoKeywords,
     competitors,
+    targetAudience: (parsed.targetAudience as string) || "",
+    valuePropositions,
+    socialLinks: normalizedSocialLinks,
     confidence: normalizedConfidence,
   };
 }
@@ -323,20 +448,31 @@ function createFallbackResult(input: BrandAnalysisInput): BrandAnalysisResult {
   return {
     brandName,
     description: input.metaDescription || input.ogData.description || "",
+    tagline: null,
     industry: "Technology",
     primaryColor: "#4926FA",
+    secondaryColor: null,
+    accentColor: null,
+    colorPalette: [],
     logoUrl: null,
     keywords: [],
+    seoKeywords: [],
+    geoKeywords: [],
     competitors: [],
+    targetAudience: "",
+    valuePropositions: [],
+    socialLinks: {},
     confidence: {
       overall: 20,
       perField: {
         brandName: 30,
         description: 40,
+        tagline: 0,
         industry: 10,
-        primaryColor: 10,
+        colors: 10,
         keywords: 0,
         competitors: 0,
+        targetAudience: 0,
       },
     },
   };

@@ -21,15 +21,24 @@ export type ScrapeJobStatus = "pending" | "processing" | "completed" | "failed";
 export interface ScrapedBrandData {
   brandName: string;
   description: string;
+  tagline: string | null;
   industry: string;
   primaryColor: string;
+  secondaryColor: string | null;
+  accentColor: string | null;
+  colorPalette: string[];
   logoUrl: string | null;
   keywords: string[];
+  seoKeywords: string[];
+  geoKeywords: string[];
   competitors: Array<{
     name: string;
     url: string;
     reason: string;
   }>;
+  targetAudience: string;
+  valuePropositions: string[];
+  socialLinks: Record<string, string>;
   confidence: {
     overall: number;
     perField: Record<string, number>;
@@ -59,6 +68,11 @@ export interface ScrapeJob {
 
 // Redis key for scrape jobs
 const SCRAPE_JOB_KEY = (jobId: string) => `brand:scrape:${jobId}`;
+
+// Check if real Redis is configured
+const hasRedis = () => {
+  return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+};
 
 /**
  * POST /api/brands/scrape
@@ -105,6 +119,48 @@ export async function POST(request: NextRequest) {
       userId,
       orgId: orgId ?? undefined,
     };
+
+    // If no Redis configured, run synchronously and return result directly
+    // This avoids polling issues with in-memory storage in serverless environments
+    if (!hasRedis()) {
+      try {
+        const { scrapeBrandFromUrl } = await import("@/lib/services/brand-scraper");
+        const result = await scrapeBrandFromUrl(normalizedUrl);
+
+        return NextResponse.json({
+          success: true,
+          jobId,
+          message: "Scraping completed",
+          // Return completed job directly for immediate use
+          job: {
+            id: jobId,
+            url: normalizedUrl,
+            status: "completed" as const,
+            progress: 100,
+            progressMessage: "Analysis complete!",
+            data: result,
+            createdAt: job.createdAt,
+            completedAt: new Date().toISOString(),
+          },
+        });
+      } catch (error) {
+        return NextResponse.json({
+          success: false,
+          jobId,
+          message: "Scraping failed",
+          job: {
+            id: jobId,
+            url: normalizedUrl,
+            status: "failed" as const,
+            progress: 0,
+            progressMessage: "Analysis failed",
+            error: error instanceof Error ? error.message : "Unknown error",
+            createdAt: job.createdAt,
+            completedAt: new Date().toISOString(),
+          },
+        });
+      }
+    }
 
     // Store job in Redis (expires in 1 hour)
     await cacheSet(SCRAPE_JOB_KEY(jobId), job, 3600);

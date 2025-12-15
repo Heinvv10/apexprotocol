@@ -408,7 +408,7 @@ function PreviewStep({
         </p>
       </div>
 
-      <div className="space-y-3 p-4 rounded-lg bg-muted/10 border border-muted/20">
+      <div className="space-y-3 p-4 rounded-lg bg-muted/10 border border-muted/20 max-h-[60vh] overflow-y-auto">
         {/* Logo and Name */}
         <div className="flex items-center gap-3">
           {data.logoUrl ? (
@@ -427,31 +427,73 @@ function PreviewStep({
           )}
           <div className="flex-1 min-w-0">
             <p className="font-medium text-white truncate">{data.brandName}</p>
+            {data.tagline && (
+              <p className="text-xs text-primary italic">"{data.tagline}"</p>
+            )}
             <p className="text-sm text-muted-foreground">{data.industry}</p>
           </div>
-          <div
-            className="w-6 h-6 rounded-full border-2 border-white/20"
-            style={{ backgroundColor: data.primaryColor }}
-            title={`Brand color: ${data.primaryColor}`}
-          />
+          {/* Color Palette */}
+          <div className="flex gap-1">
+            <div
+              className="w-6 h-6 rounded-full border-2 border-white/20"
+              style={{ backgroundColor: data.primaryColor }}
+              title={`Primary: ${data.primaryColor}`}
+            />
+            {data.secondaryColor && (
+              <div
+                className="w-5 h-5 rounded-full border border-white/10"
+                style={{ backgroundColor: data.secondaryColor }}
+                title={`Secondary: ${data.secondaryColor}`}
+              />
+            )}
+            {data.accentColor && (
+              <div
+                className="w-4 h-4 rounded-full border border-white/10"
+                style={{ backgroundColor: data.accentColor }}
+                title={`Accent: ${data.accentColor}`}
+              />
+            )}
+          </div>
         </div>
 
         {/* Description */}
         {data.description && (
           <div>
             <p className="text-xs text-muted-foreground mb-1">Description</p>
-            <p className="text-sm text-zinc-300 line-clamp-2">
+            <p className="text-sm text-zinc-300 line-clamp-3">
               {data.description}
             </p>
           </div>
         )}
 
-        {/* Keywords */}
+        {/* Target Audience */}
+        {data.targetAudience && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Target Audience</p>
+            <p className="text-sm text-zinc-300 line-clamp-2">
+              {data.targetAudience}
+            </p>
+          </div>
+        )}
+
+        {/* Value Propositions */}
+        {data.valuePropositions && data.valuePropositions.length > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Value Propositions</p>
+            <ul className="text-sm text-zinc-300 list-disc list-inside space-y-0.5">
+              {data.valuePropositions.slice(0, 3).map((prop, i) => (
+                <li key={i} className="truncate">{prop}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Keywords - General */}
         {data.keywords.length > 0 && (
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Keywords</p>
+            <p className="text-xs text-muted-foreground mb-1">Keywords ({data.keywords.length})</p>
             <div className="flex flex-wrap gap-1">
-              {data.keywords.slice(0, 5).map((keyword) => (
+              {data.keywords.slice(0, 8).map((keyword) => (
                 <span
                   key={keyword}
                   className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary"
@@ -459,11 +501,45 @@ function PreviewStep({
                   {keyword}
                 </span>
               ))}
-              {data.keywords.length > 5 && (
+              {data.keywords.length > 8 && (
                 <span className="text-xs px-2 py-0.5 text-muted-foreground">
-                  +{data.keywords.length - 5} more
+                  +{data.keywords.length - 8} more
                 </span>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* SEO Keywords */}
+        {data.seoKeywords && data.seoKeywords.length > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">SEO Keywords</p>
+            <div className="flex flex-wrap gap-1">
+              {data.seoKeywords.slice(0, 5).map((keyword) => (
+                <span
+                  key={keyword}
+                  className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400"
+                >
+                  {keyword}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* GEO Keywords */}
+        {data.geoKeywords && data.geoKeywords.length > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">GEO Keywords (AI Optimization)</p>
+            <div className="flex flex-wrap gap-1">
+              {data.geoKeywords.slice(0, 5).map((keyword) => (
+                <span
+                  key={keyword}
+                  className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400"
+                >
+                  {keyword}
+                </span>
+              ))}
             </div>
           </div>
         )}
@@ -472,22 +548,53 @@ function PreviewStep({
         {data.competitors.length > 0 && (
           <div>
             <p className="text-xs text-muted-foreground mb-1">
-              Suggested Competitors
+              Competitors ({data.competitors.length})
             </p>
-            <div className="flex flex-wrap gap-1">
-              {data.competitors.slice(0, 3).map((competitor) => (
-                <span
+            <div className="space-y-1">
+              {data.competitors.slice(0, 4).map((competitor) => (
+                <div
                   key={competitor.name}
-                  className="text-xs px-2 py-0.5 rounded-full bg-muted/30 text-zinc-300"
+                  className="text-xs p-2 rounded bg-muted/20"
                 >
-                  {competitor.name}
+                  <span className="font-medium text-zinc-300">{competitor.name}</span>
+                  <span className="text-muted-foreground ml-2">- {competitor.reason}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Color Palette */}
+        {data.colorPalette && data.colorPalette.length > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Color Palette</p>
+            <div className="flex gap-2">
+              {data.colorPalette.map((color, i) => (
+                <div key={i} className="flex flex-col items-center">
+                  <div
+                    className="w-8 h-8 rounded-lg border border-white/20"
+                    style={{ backgroundColor: color }}
+                  />
+                  <span className="text-[10px] text-muted-foreground mt-0.5">{color}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Social Links */}
+        {data.socialLinks && Object.keys(data.socialLinks).length > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Social Links</p>
+            <div className="flex flex-wrap gap-1">
+              {Object.entries(data.socialLinks).map(([platform]) => (
+                <span
+                  key={platform}
+                  className="text-xs px-2 py-0.5 rounded-full bg-muted/30 text-zinc-300 capitalize"
+                >
+                  {platform}
                 </span>
               ))}
-              {data.competitors.length > 3 && (
-                <span className="text-xs px-2 py-0.5 text-muted-foreground">
-                  +{data.competitors.length - 3} more
-                </span>
-              )}
             </div>
           </div>
         )}

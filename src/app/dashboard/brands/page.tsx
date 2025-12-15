@@ -48,20 +48,39 @@ const AI_PLATFORMS = [
   { id: "copilot", name: "Copilot", color: "#0078D4" },
 ];
 
-// Industries list
+// Industries list - matches INDUSTRY_OPTIONS in brand-analysis.ts
 const INDUSTRIES = [
   "Technology",
   "E-commerce",
-  "Healthcare",
   "Finance",
+  "Healthcare",
   "Education",
   "Real Estate",
   "Travel",
   "Food & Beverage",
+  "Fashion",
+  "Automotive",
   "Entertainment",
+  "Sports",
+  "News & Media",
+  "Legal",
+  "Marketing",
+  "Advertising",
+  "Telecommunications",
+  "Internet Service Provider",
   "Consulting",
   "Manufacturing",
+  "Energy",
+  "Construction",
+  "Logistics",
+  "Insurance",
+  "Hospitality",
   "Retail",
+  "Agriculture",
+  "Aerospace",
+  "Pharmaceuticals",
+  "Non-profit",
+  "Government",
   "Other",
 ];
 
@@ -635,8 +654,8 @@ export default function BrandsPage() {
           <div className="absolute inset-0 bg-black/50" onClick={closeModal} />
           <div className={cn(
             "relative glass-modal p-6 mx-4 max-h-[90vh] overflow-y-auto",
-            // Smaller modal for wizard step, larger for form
-            !editingBrand && wizardMode === "wizard" ? "max-w-md w-full" : "max-w-2xl w-full"
+            // Larger modal for wizard (preview has lots of content), even larger for form
+            !editingBrand && wizardMode === "wizard" ? "max-w-xl w-full" : "max-w-2xl w-full"
           )}>
             {/* Show wizard for new brands */}
             {!editingBrand && wizardMode === "wizard" ? (

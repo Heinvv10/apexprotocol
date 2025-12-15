@@ -32,14 +32,19 @@ export async function extractBestLogo(
     return null;
   }
 
-  // Sort by priority (lower is better)
-  const sorted = [...candidates].sort((a, b) => a.priority - b.priority);
+  // Score and sort candidates by quality
+  const scoredCandidates = candidates.map((candidate) => {
+    const absoluteUrl = resolveUrl(candidate.src, baseUrl);
+    const score = calculateLogoScore(candidate, absoluteUrl);
+    return { candidate, absoluteUrl, score };
+  });
+
+  // Sort by score (higher is better)
+  const sorted = scoredCandidates.sort((a, b) => b.score - a.score);
 
   // Try each candidate until we find a valid one
-  for (const candidate of sorted) {
+  for (const { candidate, absoluteUrl } of sorted) {
     try {
-      const absoluteUrl = resolveUrl(candidate.src, baseUrl);
-
       // Validate the URL is accessible
       const isValid = await validateImageUrl(absoluteUrl);
       if (isValid) {
@@ -52,6 +57,72 @@ export async function extractBestLogo(
   }
 
   return null;
+}
+
+/**
+ * Calculate quality score for a logo candidate
+ * Higher score = better quality logo
+ */
+function calculateLogoScore(candidate: LogoCandidate, url: string): number {
+  let score = 50;
+  const urlLower = url.toLowerCase();
+
+  // SVG is best (vector, infinite scalability)
+  if (urlLower.endsWith(".svg") || urlLower.includes(".svg?")) {
+    score += 50;
+  }
+
+  // PNG with transparency support
+  if (urlLower.endsWith(".png") || urlLower.includes(".png?")) {
+    score += 20;
+  }
+
+  // Explicit "logo" in URL is strong signal
+  if (urlLower.includes("logo")) {
+    score += 30;
+  }
+
+  // High-res variants
+  if (urlLower.includes("2x") || urlLower.includes("@2x") || urlLower.includes("-large") || urlLower.includes("_large")) {
+    score += 25;
+  }
+
+  // Large icon sizes
+  if (urlLower.includes("512") || urlLower.includes("192") || urlLower.includes("180")) {
+    score += 20;
+  }
+
+  // Apple touch icon is usually good quality
+  if (candidate.type === "apple-touch-icon") {
+    score += 15;
+  }
+
+  // Explicitly named logo files are reliable
+  if (candidate.type === "logo-named") {
+    score += 25;
+  }
+
+  // OG images are often generic social cards, not logos
+  if (candidate.type === "og-image") {
+    score -= 10;
+  }
+
+  // Penalize very small icons
+  if (urlLower.includes("16x16") || urlLower.includes("32x32") || urlLower.includes("favicon")) {
+    score -= 30;
+  }
+
+  // Penalize ico format (usually low quality)
+  if (urlLower.endsWith(".ico")) {
+    score -= 20;
+  }
+
+  // Boost for brand-related paths
+  if (urlLower.includes("brand") || urlLower.includes("header") || urlLower.includes("nav")) {
+    score += 10;
+  }
+
+  return score;
 }
 
 /**
