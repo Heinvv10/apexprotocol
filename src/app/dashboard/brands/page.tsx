@@ -894,31 +894,38 @@ export default function BrandsPage() {
                 </div>
 
                 {formData.monitoringEnabled && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                    {AI_PLATFORMS.map((platform) => (
-                      <button
-                        key={platform.id}
-                        type="button"
-                        onClick={() => togglePlatform(platform.id)}
-                        className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium",
-                          "transition-all duration-150 ease-out",
-                          "hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0",
-                          formData.monitoringPlatforms.includes(platform.id)
-                            ? "border-2 border-primary bg-primary/20 text-white shadow-lg shadow-primary/30 ring-1 ring-primary/50"
-                            : "border border-border/50 bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:border-border"
-                        )}
-                      >
-                        <div
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {AI_PLATFORMS.map((platform) => {
+                      const isSelected = formData.monitoringPlatforms.includes(platform.id);
+                      return (
+                        <button
+                          key={platform.id}
+                          type="button"
+                          onClick={() => togglePlatform(platform.id)}
                           className={cn(
-                            "w-3 h-3 rounded-full shrink-0 transition-opacity",
-                            formData.monitoringPlatforms.includes(platform.id) ? "opacity-100" : "opacity-50"
+                            "flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium",
+                            "transition-all duration-150 ease-out",
+                            "hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0",
+                            isSelected
+                              ? "bg-primary text-white border-2 border-primary shadow-lg shadow-primary/40"
+                              : "bg-zinc-800/50 text-zinc-400 border border-zinc-700 hover:bg-zinc-700/50 hover:text-zinc-300"
                           )}
-                          style={{ backgroundColor: platform.color }}
-                        />
-                        {platform.name}
-                      </button>
-                    ))}
+                        >
+                          <div
+                            className={cn(
+                              "w-2.5 h-2.5 rounded-full shrink-0",
+                              isSelected ? "ring-2 ring-white/30" : ""
+                            )}
+                            style={{
+                              backgroundColor: isSelected ? platform.color : undefined,
+                              border: isSelected ? 'none' : `2px solid ${platform.color}`,
+                              opacity: isSelected ? 1 : 0.5
+                            }}
+                          />
+                          {platform.name}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
