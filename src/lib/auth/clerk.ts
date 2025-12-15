@@ -23,19 +23,85 @@ export interface AuthSession {
 
 // Get current session data
 export async function getSession(): Promise<AuthSession | null> {
-  const { userId, orgId, orgRole, orgSlug } = await auth();
-
-  if (!userId) {
-    return null;
+  // In development without Clerk, return mock session
+  if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
+    return {
+      userId: DEV_USER_ID,
+      orgId: DEV_ORG_ID,
+      orgRole: "org:admin",
+      orgSlug: "demo-org",
+    };
   }
 
-  return {
-    userId,
-    orgId,
-    orgRole,
-    orgSlug,
-  };
+  try {
+    const { userId, orgId, orgRole, orgSlug } = await auth();
+
+    if (!userId) {
+      return null;
+    }
+
+    return {
+      userId,
+      orgId,
+      orgRole,
+      orgSlug,
+    };
+  } catch {
+    if (process.env.NODE_ENV === "development") {
+      return {
+        userId: DEV_USER_ID,
+        orgId: DEV_ORG_ID,
+        orgRole: "org:admin",
+        orgSlug: "demo-org",
+      };
+    }
+    return null;
+  }
 }
+
+// Mock user for development
+const DEV_USER: ClerkUser = {
+  id: DEV_USER_ID,
+  firstName: "Dev",
+  lastName: "User",
+  fullName: "Dev User",
+  username: "devuser",
+  primaryEmailAddress: {
+    emailAddress: "dev@example.com",
+    id: "email_dev",
+    linkedTo: [],
+    verification: { status: "verified", strategy: "email_code" },
+  },
+  emailAddresses: [],
+  phoneNumbers: [],
+  web3Wallets: [],
+  externalAccounts: [],
+  samlAccounts: [],
+  organizationMemberships: [],
+  passkeys: [],
+  primaryEmailAddressId: "email_dev",
+  primaryPhoneNumberId: null,
+  primaryWeb3WalletId: null,
+  imageUrl: "",
+  hasImage: false,
+  twoFactorEnabled: false,
+  passwordEnabled: false,
+  totpEnabled: false,
+  backupCodeEnabled: false,
+  publicMetadata: {},
+  privateMetadata: {},
+  unsafeMetadata: {},
+  lastSignInAt: null,
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+  createOrganizationEnabled: true,
+  createOrganizationsLimit: null,
+  deleteSelfEnabled: true,
+  legalAcceptedAt: null,
+  banned: false,
+  locked: false,
+  lockoutExpiresInSeconds: null,
+} as unknown as ClerkUser;
 
 // Get current user with organization context
 export async function getCurrentUserWithOrg(): Promise<{
@@ -43,29 +109,61 @@ export async function getCurrentUserWithOrg(): Promise<{
   orgId: string | null | undefined;
   orgRole: string | null | undefined;
 } | null> {
-  const user = await currentUser();
-  const { orgId, orgRole } = await auth();
-
-  if (!user) {
-    return null;
+  // In development without Clerk, return mock user
+  if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
+    return {
+      user: DEV_USER,
+      orgId: DEV_ORG_ID,
+      orgRole: "org:admin",
+    };
   }
 
-  return {
-    user,
-    orgId,
-    orgRole,
-  };
+  try {
+    const user = await currentUser();
+    const { orgId, orgRole } = await auth();
+
+    if (!user) {
+      return null;
+    }
+
+    return {
+      user,
+      orgId,
+      orgRole,
+    };
+  } catch {
+    if (process.env.NODE_ENV === "development") {
+      return {
+        user: DEV_USER,
+        orgId: DEV_ORG_ID,
+        orgRole: "org:admin",
+      };
+    }
+    return null;
+  }
 }
 
 // Check if user has specific organization role
 export async function hasOrgRole(allowedRoles: string[]): Promise<boolean> {
-  const { orgRole } = await auth();
-
-  if (!orgRole) {
-    return false;
+  // In development without Clerk, return true for admin
+  if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
+    return allowedRoles.includes("org:admin");
   }
 
-  return allowedRoles.includes(orgRole);
+  try {
+    const { orgRole } = await auth();
+
+    if (!orgRole) {
+      return false;
+    }
+
+    return allowedRoles.includes(orgRole);
+  } catch {
+    if (process.env.NODE_ENV === "development") {
+      return allowedRoles.includes("org:admin");
+    }
+    return false;
+  }
 }
 
 // Check if user is admin (org:admin role)
@@ -80,26 +178,61 @@ export async function isOrgMember(): Promise<boolean> {
 
 // Get user's organizations
 export async function getUserOrganizations(userId: string) {
-  const client = await clerkClient();
+  // In development without Clerk, return mock organization
+  if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
+    return [{
+      orgId: DEV_ORG_ID,
+      orgName: "Demo Organization",
+      orgSlug: "demo-org",
+      role: "org:admin",
+      createdAt: Date.now(),
+    }];
+  }
 
-  const memberships = await client.users.getOrganizationMembershipList({
-    userId,
-  });
+  try {
+    const client = await clerkClient();
 
-  return memberships.data.map((membership) => ({
-    orgId: membership.organization.id,
-    orgName: membership.organization.name,
-    orgSlug: membership.organization.slug,
-    role: membership.role,
-    createdAt: membership.createdAt,
-  }));
+    const memberships = await client.users.getOrganizationMembershipList({
+      userId,
+    });
+
+    return memberships.data.map((membership) => ({
+      orgId: membership.organization.id,
+      orgName: membership.organization.name,
+      orgSlug: membership.organization.slug,
+      role: membership.role,
+      createdAt: membership.createdAt,
+    }));
+  } catch {
+    if (process.env.NODE_ENV === "development") {
+      return [{
+        orgId: DEV_ORG_ID,
+        orgName: "Demo Organization",
+        orgSlug: "demo-org",
+        role: "org:admin",
+        createdAt: Date.now(),
+      }];
+    }
+    return [];
+  }
 }
 
 // Get organization details
 export async function getOrganization(orgId: string) {
-  const client = await clerkClient();
+  // In development without Clerk, return mock organization
+  if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
+    return {
+      id: DEV_ORG_ID,
+      name: "Demo Organization",
+      slug: "demo-org",
+      imageUrl: null,
+      createdAt: Date.now(),
+      membersCount: 1,
+    };
+  }
 
   try {
+    const client = await clerkClient();
     const org = await client.organizations.getOrganization({ organizationId: orgId });
 
     return {
@@ -111,27 +244,65 @@ export async function getOrganization(orgId: string) {
       membersCount: org.membersCount,
     };
   } catch {
+    if (process.env.NODE_ENV === "development") {
+      return {
+        id: DEV_ORG_ID,
+        name: "Demo Organization",
+        slug: "demo-org",
+        imageUrl: null,
+        createdAt: Date.now(),
+        membersCount: 1,
+      };
+    }
     return null;
   }
 }
 
 // Get organization members
 export async function getOrganizationMembers(orgId: string) {
-  const client = await clerkClient();
+  // In development without Clerk, return mock member
+  if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
+    return [{
+      userId: DEV_USER_ID,
+      firstName: "Dev",
+      lastName: "User",
+      email: "dev@example.com",
+      imageUrl: null,
+      role: "org:admin",
+      createdAt: Date.now(),
+    }];
+  }
 
-  const members = await client.organizations.getOrganizationMembershipList({
-    organizationId: orgId,
-  });
+  try {
+    const client = await clerkClient();
 
-  return members.data.map((member) => ({
-    userId: member.publicUserData?.userId,
-    firstName: member.publicUserData?.firstName,
-    lastName: member.publicUserData?.lastName,
-    email: member.publicUserData?.identifier,
-    imageUrl: member.publicUserData?.imageUrl,
-    role: member.role,
-    createdAt: member.createdAt,
-  }));
+    const members = await client.organizations.getOrganizationMembershipList({
+      organizationId: orgId,
+    });
+
+    return members.data.map((member) => ({
+      userId: member.publicUserData?.userId,
+      firstName: member.publicUserData?.firstName,
+      lastName: member.publicUserData?.lastName,
+      email: member.publicUserData?.identifier,
+      imageUrl: member.publicUserData?.imageUrl,
+      role: member.role,
+      createdAt: member.createdAt,
+    }));
+  } catch {
+    if (process.env.NODE_ENV === "development") {
+      return [{
+        userId: DEV_USER_ID,
+        firstName: "Dev",
+        lastName: "User",
+        email: "dev@example.com",
+        imageUrl: null,
+        role: "org:admin",
+        createdAt: Date.now(),
+      }];
+    }
+    return [];
+  }
 }
 
 // Sync helpers for webhook processing
@@ -230,21 +401,34 @@ export async function getUserId(): Promise<string | null> {
 
 // Require authentication - throws if not authenticated
 export async function requireAuth(): Promise<{ userId: string; orgId: string }> {
-  const { userId, orgId } = await auth();
-
-  if (!userId) {
-    throw new Error("Authentication required");
+  // In development without Clerk, return dev credentials
+  if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
+    return { userId: DEV_USER_ID, orgId: DEV_ORG_ID };
   }
 
-  // Get org ID with fallback for development
-  let organizationId = orgId;
-  if (!organizationId && process.env.NODE_ENV === "development") {
-    organizationId = "demo-org-id";
-  }
+  try {
+    const { userId, orgId } = await auth();
 
-  if (!organizationId) {
-    throw new Error("Organization context required");
-  }
+    if (!userId) {
+      throw new Error("Authentication required");
+    }
 
-  return { userId, orgId: organizationId };
+    // Get org ID with fallback for development
+    let organizationId = orgId;
+    if (!organizationId && process.env.NODE_ENV === "development") {
+      organizationId = DEV_ORG_ID;
+    }
+
+    if (!organizationId) {
+      throw new Error("Organization context required");
+    }
+
+    return { userId, orgId: organizationId };
+  } catch (error) {
+    // In development, return dev credentials on auth failure
+    if (process.env.NODE_ENV === "development") {
+      return { userId: DEV_USER_ID, orgId: DEV_ORG_ID };
+    }
+    throw error;
+  }
 }
