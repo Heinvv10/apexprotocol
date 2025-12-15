@@ -35,7 +35,8 @@
       "mcp__playwright__browser_run_code",
       "Bash(npx tsc:*)",
       "mcp__playwright__browser_file_upload",
-      "mcp__playwright__browser_hover"
+      "mcp__playwright__browser_hover",
+      "Bash(npm ls:*)"
     ]
   }
 }
