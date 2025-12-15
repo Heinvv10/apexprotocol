@@ -16,7 +16,16 @@
       "Bash(npx vitest:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(taskkill //F //PID 25596)"
+      "Bash(taskkill //F //PID 25596)",
+      "Bash(git push:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "Bash(npx clerk:*)",
+      "Bash(clerk --version:*)",
+      "Bash(npm install:*)",
+      "Bash(npm search:*)",
+      "Bash(taskkill:*)",
+      "mcp__playwright__browser_click"
     ]
   }
 }

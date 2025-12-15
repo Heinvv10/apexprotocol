@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Bell, Search, User } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useClerk, useUser } from "@clerk/nextjs";
+import { Bell, Search, User, LogOut, CreditCard, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,11 +24,23 @@ interface HeaderProps {
 
 export function Header({ title = "Dashboard" }: HeaderProps) {
   const [mounted, setMounted] = React.useState(false);
+  const router = useRouter();
+  const { signOut, openUserProfile } = useClerk();
+  const { user } = useUser();
 
   // Prevent hydration mismatch for dropdowns
   React.useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/sign-in");
+  };
+
+  const handleProfile = () => {
+    openUserProfile();
+  };
 
   return (
     <header className="sticky top-0 z-40 flex items-center justify-between h-16 px-6 header-gradient">
@@ -80,13 +94,27 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 glass-tooltip">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>
+                {user?.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : "My Account"}
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Billing</DropdownMenuItem>
-              <DropdownMenuItem>Team</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleProfile} className="cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/dashboard/settings/billing")} className="cursor-pointer">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Billing
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/dashboard/settings/team")} className="cursor-pointer">
+                <Users className="mr-2 h-4 w-4" />
+                Team
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-error">Sign out</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSignOut} className="text-error cursor-pointer">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
