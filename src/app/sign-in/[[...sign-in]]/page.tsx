@@ -1,6 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 // Dynamically import SignIn to avoid build-time errors when Clerk is not configured
 const SignIn = dynamic(
@@ -16,20 +18,25 @@ const SignIn = dynamic(
 );
 
 export default function SignInPage() {
+  const router = useRouter();
   const hasClerk = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
     process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "pk_test_placeholder";
+
+  // Auto-redirect to dashboard in dev mode without Clerk
+  useEffect(() => {
+    if (!hasClerk) {
+      router.replace("/dashboard");
+    }
+  }, [hasClerk, router]);
 
   if (!hasClerk) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="card-secondary p-8 max-w-md text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Sign In</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Dev Mode</h1>
           <p className="text-muted-foreground mb-4">
-            Authentication is not configured. Please set up Clerk credentials.
+            Redirecting to dashboard...
           </p>
-          <a href="/dashboard" className="text-primary hover:underline">
-            Continue to Dashboard (Dev Mode)
-          </a>
         </div>
       </div>
     );

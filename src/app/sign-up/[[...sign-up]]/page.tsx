@@ -1,20 +1,42 @@
-import { SignUp } from "@clerk/nextjs";
+"use client";
 
-const CLERK_CONFIGURED = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "pk_test_placeholder";
+import dynamic from "next/dynamic";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+// Dynamically import SignUp to avoid build-time errors when Clerk is not configured
+const SignUp = dynamic(
+  () => import("@clerk/nextjs").then((mod) => mod.SignUp),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    ),
+  }
+);
 
 export default function SignUpPage() {
-  if (!CLERK_CONFIGURED) {
+  const router = useRouter();
+  const hasClerk = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "pk_test_placeholder";
+
+  // Auto-redirect to dashboard in dev mode without Clerk
+  useEffect(() => {
+    if (!hasClerk) {
+      router.replace("/dashboard");
+    }
+  }, [hasClerk, router]);
+
+  if (!hasClerk) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="card-secondary p-8 max-w-md text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Sign Up</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Dev Mode</h1>
           <p className="text-muted-foreground mb-4">
-            Authentication is not configured. Please set up Clerk credentials.
+            Redirecting to dashboard...
           </p>
-          <a href="/dashboard" className="text-primary hover:underline">
-            Continue to Dashboard (Dev Mode)
-          </a>
         </div>
       </div>
     );
