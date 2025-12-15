@@ -25,24 +25,24 @@ This is the **Apex** project - a white-label GEO/AEO (Generative Engine Optimiza
 
 **READ THIS BEFORE IMPLEMENTING ANY UI COMPONENT**
 
-The design system is defined in `app/globals.css` and documented in `docs/DRIBBBLE_DESIGN_ANALYSIS.md`. You MUST follow these patterns for every UI component.
+The design system is defined in `src/app/globals.css` and documented in `docs/UI_DESIGN_SYSTEM.md` and `docs/UI_UX_DESIGN_STRATEGY.md`. Reference images are in `docs/images UI/`. You MUST follow these patterns for every UI component.
 
-### Color System (12-Color Semantic System)
-- **Background**: `#02030F` (deep black-blue, NOT pure black)
-- **Cards**: `#0E1558` (dark navy) via `hsl(var(--card))`
-- **Primary**: `#4926FA` (Apex purple) via `hsl(var(--primary))`
-- **Success**: `#17CA29` (green) via `hsl(var(--success))`
-- **Warning**: `#FFB020` (yellow) via `hsl(var(--warning))`
-- **Error**: `#D4292A` (red) via `hsl(var(--error))`
-- **Accent Blue**: `#273ADB` via `hsl(var(--accent-blue))`
-- **Accent Pink**: `#D82F71` via `hsl(var(--accent-pink))`
+### Color System (Based on Reference Images in `docs/images UI/`)
+- **Background**: `#02030A` (deep space navy, NOT pure black)
+- **Cards**: `#0F1225` (dark navy) via `hsl(var(--card))`
+- **Primary**: `#00E5CC` (Apex cyan/teal) via `hsl(var(--primary))` - Main accent for metrics, CTAs
+- **Secondary Purple**: `#8B5CF6` via `hsl(var(--accent-purple))` - Chart gradients, secondary accents
+- **Success**: `#22C55E` (green) via `hsl(var(--success))`
+- **Warning**: `#F59E0B` (amber) via `hsl(var(--warning))`
+- **Error**: `#EF4444` (red) via `hsl(var(--error))`
+- **Accent Pink**: `#EC4899` via `hsl(var(--accent-pink))`
 
 ### 3-Tier Card Hierarchy (MANDATORY)
 You MUST use these CSS classes for cards - NOT basic shadcn Card component:
 
-1. **`.card-primary`** - For primary metrics (GEO Score, main KPIs)
-   - 2px primary border with purple glow shadow
-   - Use for: GEO Score gauge, account summary, main dashboard metrics
+1. **`.card-primary`** - For primary metrics (AI Visibility Pulse, main KPIs)
+   - Subtle cyan border with soft glow shadow
+   - Use for: AI Visibility gauge, Trust Score, main dashboard metrics
 
 2. **`.card-secondary`** - For secondary content (recommendations, charts)
    - 1px muted border with subtle shadow
@@ -96,10 +96,11 @@ You MUST use these CSS classes for cards - NOT basic shadcn Card component:
 ```
 
 ### Design Reference Files (READ THESE)
-- `docs/DRIBBBLE_DESIGN_ANALYSIS.md` - 7 cohesive patterns from Dribbble research
-- `docs/VISUAL_DESIGN_RESEARCH.md` - Linear-style premium aesthetic
+- `docs/images UI/Dash idea.png` - **Primary dashboard reference** (source of truth for colors)
+- `docs/UI_DESIGN_SYSTEM.md` - Comprehensive design system documentation
+- `docs/UI_UX_DESIGN_STRATEGY.md` - Color palette and typography specs
 - `docs/UI_WIREFRAMES.md` - ASCII wireframes showing expected layouts
-- `app/globals.css` - CSS variables and utility classes
+- `src/app/globals.css` - CSS variables and utility classes
 
 ---
 
