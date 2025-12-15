@@ -3014,3 +3014,156 @@
   opacity: 0.9;
   transform: translateY(-1px);
 }
+
+/* ============================================
+   CLERK AUTHENTICATION COMPONENTS
+   Custom styling to match Apex design system
+   ============================================ */
+
+/* Clerk Card Container */
+.cl-card {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Clerk Form Buttons - Primary (Submit) */
+.cl-formButtonPrimary {
+  background: linear-gradient(135deg, #00E5CC 0%, #0EA5E9 100%) !important;
+  color: #0A0D14 !important;
+  font-weight: 600 !important;
+  border-radius: 0.5rem !important;
+  height: 2.75rem !important;
+  transition: all 150ms ease-in-out !important;
+  box-shadow: 0 4px 14px rgba(0, 229, 204, 0.25) !important;
+}
+
+.cl-formButtonPrimary:hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(0, 229, 204, 0.35) !important;
+}
+
+/* Clerk Form Inputs */
+.cl-formFieldInput {
+  background: rgba(15, 23, 42, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-radius: 0.5rem !important;
+  height: 2.75rem !important;
+  transition: all 150ms ease-in-out !important;
+}
+
+.cl-formFieldInput::placeholder {
+  color: rgba(148, 163, 184, 0.7) !important;
+}
+
+.cl-formFieldInput:focus {
+  border-color: #00E5CC !important;
+  box-shadow: 0 0 0 2px rgba(0, 229, 204, 0.15) !important;
+  outline: none !important;
+}
+
+/* Clerk Form Labels */
+.cl-formFieldLabel {
+  color: #E2E8F0 !important;
+  font-weight: 500 !important;
+  font-size: 0.875rem !important;
+}
+
+/* Clerk Header */
+.cl-headerTitle {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.cl-headerSubtitle {
+  color: #94A3B8 !important;
+}
+
+/* Clerk Links */
+.cl-footerActionLink,
+.cl-formResendCodeLink,
+.cl-identityPreviewEditButton {
+  color: #00E5CC !important;
+  font-weight: 500 !important;
+}
+
+.cl-footerActionLink:hover,
+.cl-formResendCodeLink:hover,
+.cl-identityPreviewEditButton:hover {
+  color: #00FFE0 !important;
+}
+
+/* Clerk Footer Action Text */
+.cl-footerActionText {
+  color: #94A3B8 !important;
+}
+
+/* Clerk Social Buttons */
+.cl-socialButtonsBlockButton {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #E2E8F0 !important;
+  transition: all 150ms ease-in-out !important;
+}
+
+.cl-socialButtonsBlockButton:hover {
+  background: rgba(30, 41, 59, 0.8) !important;
+  border-color: rgba(0, 229, 204, 0.3) !important;
+}
+
+/* Clerk Divider */
+.cl-dividerLine {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.cl-dividerText {
+  color: #64748B !important;
+}
+
+/* Clerk Alert/Error */
+.cl-alert {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  color: #F87171 !important;
+  border-radius: 0.5rem !important;
+}
+
+/* Clerk Internal Card (remove default styling) */
+.cl-internal-card,
+.cl-internal-rootBox {
+  background: transparent !important;
+}
+
+/* Clerk Footer (Secured by Clerk) - Style to match */
+.cl-footer {
+  opacity: 0.6;
+}
+
+.cl-footerPages {
+  color: #64748B !important;
+}
+
+/* Password show/hide button */
+.cl-formFieldInputShowPasswordButton {
+  color: #64748B !important;
+}
+
+.cl-formFieldInputShowPasswordButton:hover {
+  color: #94A3B8 !important;
+}
+
+/* Clerk Success Text */
+.cl-formFieldSuccessText {
+  color: #4ADE80 !important;
+}
+
+/* Clerk Error Text */
+.cl-formFieldErrorText {
+  color: #F87171 !important;
+}
+
+/* Optional field indicator */
+.cl-formFieldHintText {
+  color: #64748B !important;
+}
