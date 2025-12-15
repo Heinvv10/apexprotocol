@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 // AI Platforms for monitoring
 const AI_PLATFORMS = [
@@ -882,17 +883,12 @@ export default function BrandsPage() {
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-medium text-muted-foreground">AI Platform Monitoring</h3>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
+                    <Switch
                       checked={formData.monitoringEnabled}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, monitoringEnabled: e.target.checked }))
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, monitoringEnabled: checked }))
                       }
-                      className="sr-only peer"
                     />
-                    <div className="relative w-9 h-5 bg-muted rounded-full peer peer-checked:bg-primary transition-colors">
-                      <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4" />
-                    </div>
                     <span className="text-sm">Enable Monitoring</span>
                   </label>
                 </div>
@@ -905,14 +901,16 @@ export default function BrandsPage() {
                         type="button"
                         onClick={() => togglePlatform(platform.id)}
                         className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-sm",
+                          "flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium",
+                          "transition-all duration-150 ease-out",
+                          "hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0",
                           formData.monitoringPlatforms.includes(platform.id)
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border bg-muted/30 text-muted-foreground hover:bg-muted/50"
+                            ? "border-primary bg-primary/10 text-primary shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/25"
+                            : "border-border bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:shadow-md"
                         )}
                       >
                         <div
-                          className="w-3 h-3 rounded-full"
+                          className="w-3 h-3 rounded-full shrink-0"
                           style={{ backgroundColor: platform.color }}
                         />
                         {platform.name}
