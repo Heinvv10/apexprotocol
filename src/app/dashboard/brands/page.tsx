@@ -901,16 +901,19 @@ export default function BrandsPage() {
                         type="button"
                         onClick={() => togglePlatform(platform.id)}
                         className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium",
+                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium",
                           "transition-all duration-150 ease-out",
                           "hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0",
                           formData.monitoringPlatforms.includes(platform.id)
-                            ? "border-primary bg-primary/10 text-primary shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/25"
-                            : "border-border bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:shadow-md"
+                            ? "border-2 border-primary bg-primary/20 text-white shadow-lg shadow-primary/30 ring-1 ring-primary/50"
+                            : "border border-border/50 bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:border-border"
                         )}
                       >
                         <div
-                          className="w-3 h-3 rounded-full shrink-0"
+                          className={cn(
+                            "w-3 h-3 rounded-full shrink-0 transition-opacity",
+                            formData.monitoringPlatforms.includes(platform.id) ? "opacity-100" : "opacity-50"
+                          )}
                           style={{ backgroundColor: platform.color }}
                         />
                         {platform.name}
