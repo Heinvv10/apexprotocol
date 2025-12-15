@@ -1,0 +1,420 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import {
+  Lightbulb,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  BarChart3,
+  Zap,
+  Target,
+  Calendar,
+  Settings,
+  ArrowRight,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+// Types (exported for API integration)
+export type Priority = "critical" | "high" | "medium" | "low";
+export type RecommendationType = "schema" | "content" | "technical" | "ai-visibility";
+export type Status = "pending" | "in_progress" | "completed" | "dismissed";
+
+export interface CalendarRecommendation {
+  id: string;
+  title: string;
+  priority: Priority;
+  type: RecommendationType;
+  status: Status;
+  dueDate: Date;
+}
+
+// Empty state component
+function CalendarEmptyState() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center max-w-md space-y-6">
+        <div className="relative mx-auto w-20 h-20">
+          <div
+            className="absolute inset-0 rounded-full opacity-20"
+            style={{
+              background: "radial-gradient(circle, rgba(0, 229, 204, 0.4) 0%, transparent 70%)",
+              filter: "blur(20px)",
+              animation: "pulse-glow 3s ease-in-out infinite",
+            }}
+          />
+          <div className="relative w-20 h-20 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center">
+            <Calendar className="w-10 h-10 text-primary" />
+          </div>
+        </div>
+
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30">
+          <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+          <span className="text-sm text-primary font-medium">Calendar View</span>
+        </div>
+
+        <div className="space-y-2">
+          <h3 className="text-xl font-bold text-foreground">No Scheduled Recommendations</h3>
+          <p className="text-muted-foreground text-sm">
+            Run a site audit to generate AI-powered recommendations with due dates for improving your GEO score.
+          </p>
+        </div>
+
+        <Link
+          href="/dashboard/audit"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all"
+        >
+          <Settings className="w-4 h-4" />
+          Run Site Audit
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// Helper to get days in month
+function getDaysInMonth(year: number, month: number): number {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+// Helper to get the starting day of the month (0 = Sunday)
+function getFirstDayOfMonth(year: number, month: number): number {
+  return new Date(year, month, 1).getDay();
+}
+
+// Priority colors
+const priorityColors: Record<Priority, string> = {
+  critical: "bg-red-500",
+  high: "bg-orange-500",
+  medium: "bg-amber-500",
+  low: "bg-green-500",
+};
+
+// Type icons
+const typeConfig: Record<RecommendationType, { icon: React.ElementType }> = {
+  schema: { icon: Sparkles },
+  content: { icon: BarChart3 },
+  technical: { icon: Zap },
+  "ai-visibility": { icon: Target },
+};
+
+// Month names
+const monthNames = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+// Day names
+const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+// Calendar Day Component
+function CalendarDay({
+  day,
+  isCurrentMonth,
+  isToday,
+  recommendations,
+}: {
+  day: number;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  recommendations: CalendarRecommendation[];
+}) {
+  return (
+    <div
+      className={cn(
+        "min-h-[100px] p-2 border-r border-b border-[#27272A]",
+        !isCurrentMonth && "bg-[#0A0A0B]",
+        isToday && "bg-primary/5"
+      )}
+    >
+      <div
+        className={cn(
+          "text-sm font-medium mb-1",
+          !isCurrentMonth && "text-muted-foreground/50",
+          isToday && "text-primary"
+        )}
+      >
+        {day}
+        {isToday && (
+          <span className="ml-1 text-[10px] text-primary">(Today)</span>
+        )}
+      </div>
+      <div className="space-y-1">
+        {recommendations.slice(0, 3).map((rec) => {
+          const TypeIcon = typeConfig[rec.type].icon;
+          return (
+            <div
+              key={rec.id}
+              className={cn(
+                "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] truncate",
+                "bg-[#18181B] border border-[#27272A] hover:border-[#3F3F46] cursor-pointer",
+                rec.status === "completed" && "opacity-50 line-through",
+                rec.status === "dismissed" && "opacity-30"
+              )}
+            >
+              <div
+                className={cn(
+                  "w-1.5 h-1.5 rounded-full shrink-0",
+                  priorityColors[rec.priority]
+                )}
+              />
+              <TypeIcon className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+              <span className="truncate">{rec.title}</span>
+            </div>
+          );
+        })}
+        {recommendations.length > 3 && (
+          <div className="text-[10px] text-muted-foreground pl-1">
+            +{recommendations.length - 3} more
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function CalendarPage() {
+  const today = new Date();
+  const [currentMonth, setCurrentMonth] = React.useState(today.getMonth());
+  const [currentYear, setCurrentYear] = React.useState(today.getFullYear());
+
+  // TODO: Fetch recommendations from API endpoint
+  // const { data: recommendations } = useQuery(['calendarRecommendations'], fetchCalendarRecommendations);
+  const [recommendations] = React.useState<CalendarRecommendation[]>([]); // Empty array - no mock data
+
+  const hasData = recommendations.length > 0;
+
+  // Navigate months
+  const goToPreviousMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
+
+  const goToNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
+
+  const goToToday = () => {
+    setCurrentMonth(today.getMonth());
+    setCurrentYear(today.getFullYear());
+  };
+
+  // Build calendar grid
+  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+  const firstDayOfMonth = getFirstDayOfMonth(currentYear, currentMonth);
+  const daysInPrevMonth = getDaysInMonth(currentYear, currentMonth - 1);
+
+  // Get recommendations for a specific day
+  const getRecommendationsForDay = (year: number, month: number, day: number) => {
+    return recommendations.filter((rec) => {
+      const d = rec.dueDate;
+      return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
+    });
+  };
+
+  // Build calendar days array
+  const calendarDays: {
+    day: number;
+    month: number;
+    year: number;
+    isCurrentMonth: boolean;
+  }[] = [];
+
+  // Previous month days
+  for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+    const day = daysInPrevMonth - i;
+    const month = currentMonth === 0 ? 11 : currentMonth - 1;
+    const year = currentMonth === 0 ? currentYear - 1 : currentYear;
+    calendarDays.push({ day, month, year, isCurrentMonth: false });
+  }
+
+  // Current month days
+  for (let day = 1; day <= daysInMonth; day++) {
+    calendarDays.push({
+      day,
+      month: currentMonth,
+      year: currentYear,
+      isCurrentMonth: true,
+    });
+  }
+
+  // Next month days (fill to complete 6 rows = 42 cells)
+  const remainingDays = 42 - calendarDays.length;
+  for (let day = 1; day <= remainingDays; day++) {
+    const month = currentMonth === 11 ? 0 : currentMonth + 1;
+    const year = currentMonth === 11 ? currentYear + 1 : currentYear;
+    calendarDays.push({ day, month, year, isCurrentMonth: false });
+  }
+
+  // Stats
+  const stats = {
+    thisMonth: recommendations.filter(
+      (r) => r.dueDate.getMonth() === currentMonth && r.dueDate.getFullYear() === currentYear
+    ).length,
+    pending: recommendations.filter((r) => r.status === "pending").length,
+    overdue: recommendations.filter(
+      (r) => r.status === "pending" && r.dueDate < today
+    ).length,
+  };
+
+  // Show empty state if no data
+  if (!hasData) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/recommendations">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to List
+              </Button>
+            </Link>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                <Lightbulb className="h-6 w-6 text-primary" />
+                Calendar View
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                View recommendations by due date
+              </p>
+            </div>
+          </div>
+        </div>
+        <CalendarEmptyState />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/recommendations">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to List
+            </Button>
+          </Link>
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Lightbulb className="h-6 w-6 text-primary" />
+              Calendar View
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              View recommendations by due date
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Bar */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="card-tertiary">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">This Month</div>
+          <div className="text-2xl font-bold mt-1">{stats.thisMonth}</div>
+        </div>
+        <div className="card-tertiary">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">Pending</div>
+          <div className="text-2xl font-bold text-warning mt-1">{stats.pending}</div>
+        </div>
+        <div className="card-tertiary">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">Overdue</div>
+          <div className="text-2xl font-bold text-error mt-1">{stats.overdue}</div>
+        </div>
+      </div>
+
+      {/* Calendar */}
+      <div className="card-secondary overflow-hidden">
+        {/* Calendar Header */}
+        <div className="flex items-center justify-between p-4 border-b border-[#27272A]">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={goToPreviousMonth}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <h3 className="text-lg font-semibold min-w-[180px] text-center">
+              {monthNames[currentMonth]} {currentYear}
+            </h3>
+            <Button variant="ghost" size="icon" onClick={goToNextMonth}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <Button variant="outline" size="sm" onClick={goToToday}>
+            Today
+          </Button>
+        </div>
+
+        {/* Day Names Header */}
+        <div className="grid grid-cols-7 border-b border-[#27272A]">
+          {dayNames.map((day) => (
+            <div
+              key={day}
+              className="p-2 text-xs font-medium text-muted-foreground text-center border-r border-[#27272A] last:border-r-0"
+            >
+              {day}
+            </div>
+          ))}
+        </div>
+
+        {/* Calendar Grid */}
+        <div className="grid grid-cols-7">
+          {calendarDays.map((calDay, index) => {
+            const isToday =
+              calDay.day === today.getDate() &&
+              calDay.month === today.getMonth() &&
+              calDay.year === today.getFullYear();
+            const recommendations = getRecommendationsForDay(
+              calDay.year,
+              calDay.month,
+              calDay.day
+            );
+
+            return (
+              <CalendarDay
+                key={index}
+                day={calDay.day}
+                isCurrentMonth={calDay.isCurrentMonth}
+                isToday={isToday}
+                recommendations={recommendations}
+              />
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center justify-center gap-6 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-red-500" />
+          <span>Critical</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-orange-500" />
+          <span>High</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-amber-500" />
+          <span>Medium</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-green-500" />
+          <span>Low</span>
+        </div>
+      </div>
+    </div>
+  );
+}

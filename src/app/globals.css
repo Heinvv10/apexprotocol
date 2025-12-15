@@ -1,0 +1,2970 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================
+   APEX DESIGN SYSTEM
+   Based on DRIBBBLE_DESIGN_ANALYSIS.md
+   12-Color Semantic System + 3-Tier Card Hierarchy
+   ============================================ */
+
+@theme inline {
+  /* Core Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+
+  /* Semantic Colors */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+
+  /* Card System */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  /* Form Elements */
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Status Colors */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+
+  /* Accent Colors */
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-pink: var(--accent-pink);
+
+  /* Chart Colors */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Border Radius */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* ============================================
+   ROOT VARIABLES - DARK THEME (DEFAULT)
+   APEX v3.0 Design System - Based on Reference Images
+   Source: docs/UI_DESIGN_SYSTEM.md
+   Deep space aesthetic with cyan/purple accents
+   ============================================ */
+:root {
+  /* Border Radius */
+  --radius: 0.75rem;
+
+  /* ============================================
+     APEX v3.0 DESIGN SYSTEM
+     Reference: docs/images UI/ (source of truth)
+     ============================================ */
+
+  /* Background Layers - Deep space aesthetic (from reference images) */
+  --bg-deep: 230 67% 2%;        /* #02030A - Page background */
+  --bg-base: 228 50% 4%;        /* #060812 - Main content area */
+  --bg-elevated: 228 40% 7%;    /* #0A0D1A - Elevated surfaces */
+  --bg-card: 232 35% 10%;       /* #0F1225 - Card backgrounds */
+  --bg-card-hover: 232 30% 14%; /* #151935 - Card hover state */
+  --bg-input: 230 35% 8%;       /* #0D1020 - Input backgrounds */
+
+  /* 1. Background */
+  --background: 230 67% 2%;
+
+  /* 2. Cards */
+  --card: 232 35% 10%;
+  --card-foreground: 0 0% 100%;
+
+  /* 3. Primary - Apex Cyan #00E5CC (from Dash idea.png 68% metric) */
+  --primary: 170 100% 45%;
+  --primary-bright: 170 100% 50%;  /* #00FFE0 - hover */
+  --primary-muted: 170 70% 38%;    /* #00B8A3 - subdued */
+  --primary-foreground: 230 67% 2%;
+
+  /* 4. Success - Green #22C55E */
+  --success: 142 71% 45%;
+  --success-muted: 142 71% 45% / 0.15;
+
+  /* 5. Warning - Amber #F59E0B */
+  --warning: 38 92% 50%;
+  --warning-muted: 38 92% 50% / 0.15;
+
+  /* 6. Error/Destructive - Red #EF4444 */
+  --error: 0 84% 60%;
+  --error-muted: 0 84% 60% / 0.15;
+  --destructive: 0 84% 60%;
+
+  /* 7. Accent Blue #3B82F6 (informational) */
+  --accent-blue: 217 91% 60%;
+  --info: 217 91% 60%;
+  --info-muted: 217 91% 60% / 0.15;
+
+  /* 8. Accent Purple #8B5CF6 (secondary accent) */
+  --accent-purple: 262 83% 66%;
+  --accent-purple-light: 262 83% 74%;  /* #A78BFA */
+  --accent-purple-dark: 262 83% 46%;   /* #6D28D9 */
+  --accent-pink: 330 81% 56%;          /* #EC4899 */
+
+  /* 9-11. Muted - Subtle grays */
+  --muted: 240 20% 15%;
+  --muted-foreground: 215 16% 58%;  /* #94A3B8 slate-400 */
+
+  /* 12. Foreground - White */
+  --foreground: 0 0% 100%;
+
+  /* Text Colors (from design system) */
+  --text-primary: 0 0% 100%;
+  --text-secondary: 215 16% 58%;    /* #94A3B8 slate-400 */
+  --text-muted: 215 16% 47%;        /* #64748B slate-500 */
+  --text-accent: 170 100% 45%;      /* cyan */
+  --text-link: 213 94% 68%;         /* #60A5FA */
+
+  /* Secondary */
+  --secondary: 235 35% 18%;
+  --secondary-foreground: 0 0% 100%;
+
+  /* Accent */
+  --accent: 232 40% 15%;
+  --accent-foreground: 0 0% 100%;
+
+  /* Popover */
+  --popover: 232 35% 8%;
+  --popover-foreground: 0 0% 100%;
+
+  /* Border/Input (from card styles in reference images) */
+  --border: 0 0% 100% / 0.08;
+  --border-subtle: 0 0% 100% / 0.05;
+  --border-strong: 0 0% 100% / 0.12;
+  --border-accent: 170 100% 45% / 0.3;
+  --border-glow: 170 100% 45% / 0.5;
+  --input: 230 35% 10%;
+  --ring: 170 100% 45%;
+
+  /* Chart Colors */
+  --chart-1: 170 100% 45%;  /* Cyan */
+  --chart-2: 262 83% 66%;   /* Purple */
+  --chart-3: 142 71% 45%;   /* Green */
+  --chart-4: 217 91% 60%;   /* Blue */
+  --chart-5: 330 81% 56%;   /* Pink */
+
+  /* Chart Gradients (for Recharts) */
+  --gradient-chart-cyan: linear-gradient(180deg, rgba(0, 229, 204, 0.3) 0%, rgba(0, 229, 204, 0) 100%);
+  --gradient-chart-purple: linear-gradient(180deg, rgba(139, 92, 246, 0.3) 0%, rgba(139, 92, 246, 0) 100%);
+
+  /* Sidebar */
+  --sidebar: 230 50% 3%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-primary: 170 100% 45%;
+  --sidebar-primary-foreground: 230 67% 2%;
+  --sidebar-accent: 235 35% 15%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 0 0% 100% / 0.05;
+  --sidebar-ring: 170 100% 45%;
+
+  /* AI Platform Colors (from Dash idea.png bottom cards) */
+  --ai-chatgpt: 160 84% 35%;     /* #10A37F - Green */
+  --ai-claude: 20 64% 59%;       /* #D97757 - Orange/terracotta */
+  --ai-gemini: 217 91% 60%;      /* #4285F4 - Blue */
+  --ai-perplexity: 187 83% 47%;  /* #20B8CD - Teal/cyan */
+  --ai-grok: 0 0% 100%;          /* #FFFFFF - White */
+  --ai-deepseek: 239 84% 67%;    /* #6366F1 - Indigo */
+
+  /* Sentiment Colors */
+  --sentiment-positive: 142 71% 45%;
+  --sentiment-neutral: 215 16% 58%;
+  --sentiment-negative: 0 84% 60%;
+
+  /* Animation Timing */
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Animation Durations */
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --duration-gauge: 800ms;
+
+  /* Spacing Scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+}
+
+/* Light Theme Override (optional) */
+.light {
+  --background: 0 0% 100%;
+  --foreground: 235 79% 3%;
+  --card: 0 0% 100%;
+  --card-foreground: 235 79% 3%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 235 79% 3%;
+  --primary: 180 100% 35%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 235 20% 95%;
+  --secondary-foreground: 235 79% 3%;
+  --muted: 235 20% 95%;
+  --muted-foreground: 235 20% 40%;
+  --accent: 235 20% 95%;
+  --accent-foreground: 235 79% 3%;
+  --border: 235 20% 90%;
+  --input: 235 20% 90%;
+  --ring: 180 100% 35%;
+  --sidebar: 235 20% 98%;
+  --sidebar-foreground: 235 79% 3%;
+  --sidebar-primary: 180 100% 35%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 235 20% 95%;
+  --sidebar-accent-foreground: 235 79% 3%;
+  --sidebar-border: 235 20% 90%;
+  --sidebar-ring: 180 100% 35%;
+}
+
+/* Dark class - Inherits from :root (no overrides needed)
+   The :root values ARE the dark theme values, matching reference images.
+   This empty class is kept for compatibility with dark mode toggles. */
+.dark {
+  /* All values inherited from :root - DO NOT OVERRIDE */
+  /* Background: Deep space #02030A (230 67% 2%) */
+  /* Primary: Cyan #00E5CC (170 100% 45%) */
+  /* Card: Dark navy #0F1225 (232 35% 10%) */
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    /* Dark theme by default */
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Typography - Inter Display for headings */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-inter), 'Inter Display', 'Inter', sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  h1 {
+    @apply text-3xl font-bold tracking-tight;
+  }
+
+  h2 {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+
+  h3 {
+    @apply text-xl font-semibold;
+  }
+
+  h4 {
+    @apply text-lg font-medium;
+  }
+}
+
+/* ============================================
+   3-TIER CARD HIERARCHY
+   Source: docs/UI_DESIGN_SYSTEM.md
+   Reference: docs/images UI/Dash idea.png
+   ============================================ */
+
+/* Tier 1: Primary Cards - Hero metrics (AI Visibility Pulse, Trust Score) */
+.card-primary {
+  @apply relative rounded-2xl p-6;
+  background: linear-gradient(135deg,
+    rgba(15, 18, 37, 0.9) 0%,
+    rgba(10, 13, 26, 0.95) 100%);
+  border: 1.5px solid rgba(0, 229, 204, 0.25);
+  box-shadow:
+    0 0 30px rgba(0, 229, 204, 0.08),
+    0 4px 24px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+/* Gradient top border accent */
+.card-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(0, 229, 204, 0.5) 50%,
+    transparent 100%);
+}
+
+/* Gradient border effect for special emphasis */
+.card-primary-gradient {
+  @apply relative rounded-2xl p-6;
+  background: linear-gradient(135deg,
+    rgba(15, 18, 37, 0.95) 0%,
+    rgba(10, 13, 26, 0.98) 100%);
+  overflow: hidden;
+}
+
+.card-primary-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(135deg,
+    rgba(0, 229, 204, 0.6) 0%,
+    rgba(14, 165, 233, 0.4) 25%,
+    rgba(139, 92, 246, 0.6) 50%,
+    rgba(168, 85, 247, 0.4) 75%,
+    rgba(139, 92, 246, 0.6) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Glow effect behind gradient cards */
+.card-primary-gradient::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(0, 229, 204, 0.15) 0%,
+    rgba(139, 92, 246, 0.15) 50%,
+    rgba(168, 85, 247, 0.1) 100%);
+  filter: blur(20px);
+  z-index: -1;
+}
+
+/* Tier 2: Secondary Cards - Charts, recommendations, data sections */
+.card-secondary {
+  @apply relative rounded-xl p-5;
+  background: rgba(15, 18, 37, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  transition: all var(--duration-fast) var(--ease-default);
+}
+
+.card-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Tier 3: Tertiary Cards - List items, AI platform cards, compact content */
+.card-tertiary {
+  @apply relative rounded-xl p-4;
+  background: rgba(15, 18, 37, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all var(--duration-fast) var(--ease-default);
+}
+
+.card-tertiary:hover {
+  background: rgba(15, 18, 37, 0.4);
+  border-color: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   GLASSMORPHISM - ONLY FOR MODALS/OVERLAYS
+   Pattern 3 from DRIBBBLE_DESIGN_ANALYSIS.md
+   ============================================ */
+
+/* Glass Modal - For modal overlays */
+.glass-modal {
+  background: hsl(var(--background) / 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid hsl(var(--border) / 0.3);
+  box-shadow: 0 25px 50px -12px hsl(var(--background) / 0.5);
+}
+
+/* Glass Card - For floating cards only */
+.glass-card {
+  background: hsl(var(--card) / 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border) / 0.2);
+}
+
+/* Glass Tooltip - For tooltips and popovers */
+.glass-tooltip {
+  background: hsl(var(--popover) / 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid hsl(var(--border) / 0.3);
+}
+
+/* ============================================
+   STATUS INDICATORS
+   ============================================ */
+
+/* Status Dots */
+.status-success {
+  @apply w-2 h-2 rounded-full;
+  background: hsl(var(--success));
+  box-shadow: 0 0 8px hsl(var(--success) / 0.5);
+}
+
+.status-warning {
+  @apply w-2 h-2 rounded-full;
+  background: hsl(var(--warning));
+  box-shadow: 0 0 8px hsl(var(--warning) / 0.5);
+}
+
+.status-error {
+  @apply w-2 h-2 rounded-full;
+  background: hsl(var(--error));
+  box-shadow: 0 0 8px hsl(var(--error) / 0.5);
+}
+
+/* Status Badges (from Monitor.png reference) */
+.badge-success {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ADE80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.badge-warning {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  background: rgba(245, 158, 11, 0.15);
+  color: #FBBF24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-error {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  background: rgba(239, 68, 68, 0.15);
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-primary {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  background: rgba(0, 229, 204, 0.15);
+  color: #00E5CC;
+  border: 1px solid rgba(0, 229, 204, 0.3);
+}
+
+/* Citation Status Badges (from Monitor.png) */
+.badge-primary-citation {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  background: rgba(0, 229, 204, 0.15);
+  color: #00E5CC;
+  border: 1px solid rgba(0, 229, 204, 0.3);
+}
+
+.badge-mentioned {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  background: rgba(139, 92, 246, 0.15);
+  color: #A78BFA;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.badge-omitted {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  background: rgba(239, 68, 68, 0.15);
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-featured {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60A5FA;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Sentiment Badges */
+.badge-highly-positive {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ADE80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.badge-highly-negative {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  background: rgba(239, 68, 68, 0.15);
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Impact Priority Badges (from Dash idea.png recommendations) */
+.badge-critical {
+  @apply inline-flex items-center px-2.5 py-1 rounded text-xs font-medium;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-high {
+  @apply inline-flex items-center px-2.5 py-1 rounded text-xs font-medium;
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-medium {
+  @apply inline-flex items-center px-2.5 py-1 rounded text-xs font-medium;
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-low {
+  @apply inline-flex items-center px-2.5 py-1 rounded text-xs font-medium;
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* ============================================
+   ANIMATION TIMING
+   Pattern 5 from DRIBBBLE_DESIGN_ANALYSIS.md
+   ============================================ */
+
+/* Standard transitions - 150ms */
+.transition-standard {
+  transition: all 150ms ease-in-out;
+}
+
+/* Modal animations - 250ms cubic-bezier */
+.transition-modal {
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Gauge entrance animations - 800ms */
+.transition-gauge {
+  transition: all 800ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Hover lift effect */
+.hover-lift {
+  transition: all 150ms ease-in-out;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   GRADIENT UTILITIES
+   Pattern 1 from DRIBBBLE_DESIGN_ANALYSIS.md
+   ============================================ */
+
+/* Primary gradient - Purple to Blue */
+.gradient-primary {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent-blue)) 100%);
+}
+
+/* Secondary gradient - Blue to Pink */
+.gradient-secondary {
+  background: linear-gradient(135deg, hsl(var(--accent-blue)) 0%, hsl(var(--accent-pink)) 100%);
+}
+
+/* Subtle background gradient */
+.gradient-subtle {
+  background: linear-gradient(
+    180deg,
+    hsl(var(--background)) 0%,
+    hsl(var(--muted) / 0.3) 100%
+  );
+}
+
+/* Text gradient */
+.text-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent-pink)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   GEO SCORE GAUGE
+   Special styling for the main metric
+   ============================================ */
+
+.geo-score-gauge {
+  @apply relative flex items-center justify-center;
+}
+
+.geo-score-value {
+  @apply text-5xl font-bold;
+  font-family: 'Inter Display', 'Inter', sans-serif;
+  font-feature-settings: "tnum";
+}
+
+.geo-score-label {
+  @apply text-sm font-medium text-muted-foreground uppercase tracking-wider;
+}
+
+/* Score color variants */
+.geo-score-excellent {
+  color: hsl(var(--success));
+}
+
+.geo-score-good {
+  color: hsl(var(--primary));
+}
+
+.geo-score-average {
+  color: hsl(var(--warning));
+}
+
+.geo-score-poor {
+  color: hsl(var(--error));
+}
+
+/* ============================================
+   SIDEBAR NAVIGATION
+   ============================================ */
+
+.sidebar-nav-item {
+  @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium;
+  @apply text-muted-foreground;
+  transition: all 150ms ease-in-out;
+}
+
+.sidebar-nav-item:hover {
+  @apply bg-sidebar-accent text-sidebar-accent-foreground;
+}
+
+.sidebar-nav-item.active {
+  @apply bg-primary/10 text-primary;
+}
+
+.sidebar-nav-item.active::before {
+  content: '';
+  @apply absolute left-0 w-0.5 h-6 rounded-r;
+  background: hsl(var(--primary));
+}
+
+/* ============================================
+   FORM ENHANCEMENTS
+   ============================================ */
+
+/* Focus ring style */
+.focus-ring {
+  @apply outline-none ring-2 ring-primary/20 ring-offset-2 ring-offset-background;
+}
+
+/* Input with icon */
+.input-with-icon {
+  @apply pl-10;
+}
+
+/* ============================================
+   DATA VISUALIZATION
+   ============================================ */
+
+/* Chart container */
+.chart-container {
+  @apply w-full h-full min-h-[200px];
+}
+
+/* Chart legend */
+.chart-legend {
+  @apply flex flex-wrap gap-4 text-sm;
+}
+
+.chart-legend-item {
+  @apply flex items-center gap-2;
+}
+
+.chart-legend-dot {
+  @apply w-3 h-3 rounded-full;
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.3) hsl(var(--muted) / 0.3);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Text truncation */
+.truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.truncate-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Loading skeleton */
+.skeleton {
+  @apply animate-pulse rounded;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted) / 0.5) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+}
+
+/* No select for UI elements */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ============================================
+   APEX v3.0 - AI PLATFORM ICON UTILITIES
+   ============================================ */
+
+/* AI Platform Icon Colors */
+.ai-icon-chatgpt { color: hsl(var(--ai-chatgpt)); }
+.ai-icon-claude { color: hsl(var(--ai-claude)); }
+.ai-icon-gemini { color: hsl(var(--ai-gemini)); }
+.ai-icon-perplexity { color: hsl(var(--ai-perplexity)); }
+.ai-icon-grok { color: hsl(var(--ai-grok)); }
+.ai-icon-deepseek { color: hsl(var(--ai-deepseek)); }
+
+/* AI Status Indicator */
+.ai-status {
+  @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium;
+  background: hsl(var(--bg-elevated));
+  border: 1px solid hsl(var(--border));
+}
+
+.ai-status-active {
+  color: hsl(var(--success));
+}
+
+.ai-status-active::before {
+  content: '';
+  @apply w-2 h-2 rounded-full;
+  background: hsl(var(--success));
+  box-shadow: 0 0 8px hsl(var(--success) / 0.5);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 hsl(var(--success) / 0.4); }
+  70% { box-shadow: 0 0 0 10px hsl(var(--success) / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(var(--success) / 0); }
+}
+
+/* ============================================
+   METRIC DISPLAY STYLES
+   Reference: docs/images UI/Dash idea.png
+   ============================================ */
+
+/* Hero Metric - Large percentage display (68% in reference) */
+.metric-hero {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #00E5CC 0%, #00B8A3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 40px rgba(0, 229, 204, 0.3);
+}
+
+/* Hero Score - Extra large for gauge centers */
+.metric-hero-xl {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 72px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  background: linear-gradient(135deg, #00E5CC 0%, #0EA5E9 50%, #8B5CF6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Secondary Metric - Trust Score, secondary KPIs */
+.metric-secondary {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
+}
+
+/* Large Metric (alias) */
+.metric-large {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #00E5CC 0%, #3B82F6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Medium Metric */
+.metric-medium {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Small Metric */
+.metric-small {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Change Indicators */
+.metric-change-positive {
+  font-size: 14px;
+  font-weight: 500;
+  color: #22C55E;
+}
+
+.metric-change-negative {
+  font-size: 14px;
+  font-weight: 500;
+  color: #EF4444;
+}
+
+.metric-change-neutral {
+  font-size: 14px;
+  font-weight: 500;
+  color: #94A3B8;
+}
+
+/* Gauge Container */
+.gauge-container {
+  @apply relative flex items-center justify-center;
+  min-width: 200px;
+  min-height: 200px;
+}
+
+.gauge-track {
+  stroke: hsl(var(--border-subtle));
+  fill: none;
+}
+
+.gauge-progress {
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 800ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.gauge-center {
+  @apply absolute inset-0 flex flex-col items-center justify-center;
+}
+
+/* Smart Table Styles */
+.smart-table-row {
+  @apply relative border-b border-border/50 transition-colors;
+}
+
+.smart-table-row:hover {
+  background: hsl(var(--bg-elevated));
+}
+
+.smart-table-row-expanded {
+  background: hsl(var(--bg-card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  margin: 8px 0;
+}
+
+.smart-table-detail {
+  @apply grid grid-cols-2 gap-4 p-4;
+}
+
+.smart-table-ai-output {
+  @apply p-4 rounded-lg;
+  background: hsl(var(--bg-elevated));
+  border: 1px solid hsl(var(--border-subtle));
+}
+
+.smart-table-analysis {
+  @apply p-4 rounded-lg;
+  background: hsl(var(--bg-elevated));
+  border: 1px solid hsl(var(--border-subtle));
+}
+
+/* Filter Sidebar */
+.filter-sidebar {
+  @apply flex flex-col gap-4 p-4;
+  background: hsl(var(--bg-card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+}
+
+.filter-section {
+  @apply flex flex-col gap-2;
+}
+
+.filter-section-header {
+  @apply flex items-center justify-between text-sm font-medium;
+}
+
+.filter-checkbox {
+  @apply flex items-center gap-2 text-sm text-muted-foreground;
+}
+
+.filter-checkbox input[type="checkbox"]:checked + span {
+  color: hsl(var(--foreground));
+}
+
+/* AI Engine Icons Row */
+.ai-engine-icons {
+  @apply flex items-center gap-2;
+}
+
+.ai-engine-icon {
+  @apply w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-all;
+  background: hsl(var(--bg-elevated));
+  border: 1px solid hsl(var(--border-subtle));
+}
+
+.ai-engine-icon:hover {
+  border-color: hsl(var(--primary) / 0.5);
+  box-shadow: 0 0 8px hsl(var(--primary) / 0.2);
+}
+
+.ai-engine-icon.active {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+}
+
+/* Knowledge Graph Workflow */
+.kg-workflow {
+  @apply grid grid-cols-3 gap-6;
+}
+
+.kg-column {
+  @apply flex flex-col gap-4;
+}
+
+.kg-column-header {
+  @apply text-sm font-medium text-muted-foreground uppercase tracking-wider;
+}
+
+.kg-card {
+  @apply p-4 rounded-lg;
+  background: hsl(var(--bg-card));
+  border: 1px solid hsl(var(--border));
+}
+
+/* Code Snippet Display */
+.code-block {
+  @apply p-4 rounded-lg overflow-x-auto;
+  background: #0D0D0D;
+  border: 1px solid hsl(var(--border-subtle));
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.code-block .keyword { color: #C678DD; }
+.code-block .string { color: #98C379; }
+.code-block .property { color: #E06C75; }
+.code-block .value { color: #D19A66; }
+.code-block .comment { color: #5C6370; }
+
+/* Competitive Radar */
+.radar-container {
+  @apply relative w-full aspect-square max-w-[300px] mx-auto;
+}
+
+/* Brand Perception Bubbles */
+.bubble-chart {
+  @apply relative w-full h-[300px];
+}
+
+.perception-bubble {
+  @apply absolute rounded-full flex items-center justify-center text-xs font-medium;
+  background: hsl(var(--bg-elevated));
+  border: 1px solid hsl(var(--border));
+  transition: all 200ms ease;
+}
+
+.perception-bubble:hover {
+  transform: scale(1.1);
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 12px hsl(var(--primary) / 0.3);
+}
+
+/* Neural Graph */
+.neural-graph {
+  @apply relative w-full h-[400px];
+}
+
+.neural-node {
+  @apply absolute rounded-full flex items-center justify-center;
+  background: hsl(var(--bg-card));
+  border: 2px solid hsl(var(--primary) / 0.5);
+  transition: all 200ms ease;
+}
+
+.neural-node-center {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.4);
+}
+
+.neural-node:hover {
+  transform: scale(1.1);
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 16px hsl(var(--primary) / 0.4);
+}
+
+.neural-edge {
+  stroke: hsl(var(--primary) / 0.3);
+  stroke-width: 2;
+  fill: none;
+}
+
+/* Authority Heatmap */
+.heatmap-grid {
+  @apply grid gap-2;
+}
+
+.heatmap-cell {
+  @apply px-3 py-1.5 rounded text-xs font-medium text-center;
+  transition: all 150ms ease;
+}
+
+.heatmap-cell-primary {
+  background: hsl(var(--primary) / 0.15);
+  color: hsl(var(--primary));
+}
+
+.heatmap-cell-mentioned {
+  background: hsl(var(--accent-purple) / 0.15);
+  color: hsl(var(--accent-purple));
+}
+
+.heatmap-cell-featured {
+  background: hsl(var(--accent-blue) / 0.15);
+  color: hsl(var(--accent-blue));
+}
+
+.heatmap-cell-omitted {
+  background: hsl(var(--error) / 0.1);
+  color: hsl(var(--muted-foreground));
+}
+
+/* Settings Sidebar */
+.settings-sidebar {
+  @apply flex flex-col gap-1 p-2;
+  background: hsl(var(--bg-card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  min-width: 200px;
+}
+
+.settings-nav-item {
+  @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium;
+  color: hsl(var(--muted-foreground));
+  transition: all 150ms ease;
+}
+
+.settings-nav-item:hover {
+  background: hsl(var(--bg-elevated));
+  color: hsl(var(--foreground));
+}
+
+.settings-nav-item.active {
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+}
+
+/* ============================================
+   HEADER NAVIGATION
+   Reference: docs/images UI/Dash idea.png (top bar)
+   ============================================ */
+
+.header-nav {
+  @apply flex items-center gap-1;
+}
+
+.header-nav-item {
+  @apply px-4 py-2 text-sm font-medium rounded-lg transition-all;
+  color: #94A3B8;
+}
+
+.header-nav-item:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.header-nav-item.active {
+  color: #00E5CC;
+  background: rgba(0, 229, 204, 0.1);
+}
+
+/* Header Container */
+.header-container {
+  @apply h-16 flex items-center justify-between px-6;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(2, 3, 10, 0.8);
+  backdrop-filter: blur(8px);
+}
+
+/* Logo + Module Name */
+.header-brand {
+  @apply flex items-center gap-3;
+}
+
+.header-logo {
+  @apply text-lg font-bold text-white;
+}
+
+.header-module {
+  @apply text-lg font-semibold;
+  color: #00E5CC;
+}
+
+/* AI Status Indicator */
+.ai-status-indicator {
+  @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ai-status-indicator.active {
+  color: #22C55E;
+}
+
+.ai-status-indicator.active::before {
+  content: '';
+  @apply w-2 h-2 rounded-full;
+  background: #22C55E;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+  animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+/* ============================================
+   RECOMMENDATION ITEMS
+   Reference: docs/images UI/Dash idea.png
+   ============================================ */
+
+.recommendation-item {
+  @apply flex items-start gap-3 p-3 rounded-lg;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 150ms ease;
+}
+
+.recommendation-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.recommendation-icon {
+  @apply w-6 h-6 rounded flex items-center justify-center flex-shrink-0;
+}
+
+.recommendation-icon-warning {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.recommendation-icon-info {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.recommendation-icon-success {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.recommendation-icon-error {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.recommendation-content {
+  @apply flex-1 min-w-0;
+}
+
+.recommendation-title {
+  @apply text-sm text-white mb-1;
+}
+
+.recommendation-description {
+  @apply text-xs text-slate-400;
+}
+
+/* Module Branding */
+.module-title {
+  @apply text-xl font-semibold;
+}
+
+.module-title .module-name {
+  color: hsl(var(--primary));
+}
+
+/* Sparkline Chart Container */
+.sparkline {
+  @apply h-8 w-20;
+}
+
+/* Trend Indicator */
+.trend-up {
+  color: hsl(var(--success));
+}
+
+.trend-down {
+  color: hsl(var(--error));
+}
+
+.trend-neutral {
+  color: hsl(var(--muted-foreground));
+}
+
+/* Citation Velocity Chart */
+.citation-chart {
+  @apply w-full h-[200px];
+}
+
+/* ============================================
+   AI PLATFORM CARDS
+   Reference: docs/images UI/Dash idea.png (bottom row)
+   ============================================ */
+
+/* AI Platform Card - Horizontal row style */
+.ai-platform-card {
+  @apply flex items-center gap-4 p-4 rounded-xl transition-all;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(75, 85, 99, 0.25);
+  min-width: 140px;
+}
+
+.ai-platform-card:hover {
+  border-color: rgba(139, 92, 246, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.ai-platform-icon {
+  @apply w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0;
+  transition: transform 200ms ease;
+}
+
+.ai-platform-card:hover .ai-platform-icon {
+  transform: scale(1.05);
+}
+
+.ai-platform-info {
+  @apply flex-1 min-w-0;
+}
+
+.ai-platform-name {
+  @apply text-sm font-medium text-white truncate;
+}
+
+.ai-platform-share {
+  @apply text-xs text-slate-400;
+}
+
+/* Platform-specific icon backgrounds */
+.ai-platform-icon-chatgpt {
+  background: rgba(16, 163, 127, 0.2);
+  color: #10A37F;
+}
+
+.ai-platform-icon-claude {
+  background: rgba(217, 119, 87, 0.2);
+  color: #D97757;
+}
+
+.ai-platform-icon-gemini {
+  background: rgba(66, 133, 244, 0.2);
+  color: #4285F4;
+}
+
+.ai-platform-icon-perplexity {
+  background: rgba(32, 184, 205, 0.2);
+  color: #20B8CD;
+}
+
+.ai-platform-icon-grok {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+
+.ai-platform-icon-deepseek {
+  background: rgba(99, 102, 241, 0.2);
+  color: #6366F1;
+}
+
+/* Vertical Platform Card (alternative layout) */
+.ai-platform-card-vertical {
+  @apply relative flex flex-col items-center p-5 rounded-xl;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(75, 85, 99, 0.25);
+  transition: all 200ms ease;
+}
+
+.ai-platform-card-vertical:hover {
+  border-color: rgba(139, 92, 246, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.ai-platform-card-vertical .ai-platform-icon {
+  @apply w-14 h-14 rounded-xl mb-3;
+}
+
+.ai-platform-card-vertical .ai-platform-name {
+  @apply mb-1;
+}
+
+.ai-platform-card-vertical .ai-platform-share {
+  @apply text-xs;
+}
+
+/* Decorative Elements */
+.apex-diamond {
+  @apply fixed bottom-8 right-8 w-6 h-6 opacity-30;
+  color: hsl(var(--primary));
+}
+
+/* Page Layout */
+.page-container {
+  @apply max-w-[1440px] mx-auto px-8 py-6;
+}
+
+.page-header {
+  @apply flex items-center justify-between mb-8;
+}
+
+.page-title {
+  @apply text-2xl font-semibold;
+}
+
+/* Section */
+.section {
+  @apply mb-8;
+}
+
+.section-title {
+  @apply text-lg font-medium mb-4;
+}
+
+/* Grid Layouts */
+.grid-dashboard {
+  @apply grid gap-6;
+  grid-template-columns: 1fr 1fr 2fr;
+}
+
+.grid-monitor {
+  @apply grid gap-6;
+  grid-template-columns: 280px 1fr;
+}
+
+.grid-settings {
+  @apply grid gap-6;
+  grid-template-columns: 200px 1fr;
+}
+
+@media (max-width: 1024px) {
+  .grid-dashboard {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .grid-monitor {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-settings {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .page-container {
+    @apply px-4;
+  }
+}
+
+/* ============================================
+   APEX v2.0 - REFERENCE IMAGE STYLES
+   Purple/Blue gradient aesthetic
+   ============================================ */
+
+/* Main Dashboard Background with Gradient Glow */
+.dashboard-bg {
+  @apply relative;
+  background: linear-gradient(135deg, #0a0f1a 0%, #0d1224 50%, #0a0f1a 100%);
+}
+
+.dashboard-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(
+    ellipse at top right,
+    rgba(139, 92, 246, 0.15) 0%,
+    rgba(168, 85, 247, 0.08) 30%,
+    rgba(236, 72, 153, 0.05) 50%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dashboard-bg::after {
+  content: '';
+  position: absolute;
+  bottom: 20%;
+  left: 10%;
+  width: 40%;
+  height: 40%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 229, 204, 0.08) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Hero Card - Large AI Visibility Pulse with Gradient Border */
+.hero-card {
+  @apply relative rounded-2xl p-8;
+  background: linear-gradient(
+    135deg,
+    rgba(10, 15, 30, 0.95) 0%,
+    rgba(15, 20, 40, 0.98) 100%
+  );
+  overflow: hidden;
+}
+
+/* Gradient Border Effect using pseudo-element */
+.hero-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 229, 204, 0.6) 0%,
+    rgba(14, 165, 233, 0.4) 25%,
+    rgba(139, 92, 246, 0.6) 50%,
+    rgba(168, 85, 247, 0.4) 75%,
+    rgba(139, 92, 246, 0.6) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Glow effect */
+.hero-card::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 229, 204, 0.15) 0%,
+    rgba(139, 92, 246, 0.15) 50%,
+    rgba(168, 85, 247, 0.1) 100%
+  );
+  filter: blur(20px);
+  z-index: -1;
+}
+
+/* Hero Score - Large Number Display */
+.hero-score {
+  font-family: 'Inter Display', 'Inter', sans-serif;
+  font-size: 96px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  background: linear-gradient(135deg, #00E5CC 0%, #0EA5E9 50%, #8B5CF6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-score-subtitle {
+  @apply text-lg text-muted-foreground mt-2;
+  font-weight: 500;
+}
+
+/* Side Cards - Stacked vertically */
+.side-card {
+  @apply relative rounded-xl p-5;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  backdrop-filter: blur(8px);
+}
+
+.side-card-title {
+  @apply text-sm font-medium text-muted-foreground mb-2;
+}
+
+.side-card-value {
+  @apply text-3xl font-bold;
+  font-family: 'Inter Display', 'Inter', sans-serif;
+}
+
+.side-card-subtitle {
+  @apply text-xs text-muted-foreground mt-1;
+}
+
+/* AI Platform Cards with Share % */
+.platform-card-v2 {
+  @apply relative flex flex-col items-center p-5 rounded-xl;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(75, 85, 99, 0.25);
+  transition: all 200ms ease;
+}
+
+.platform-card-v2:hover {
+  border-color: rgba(139, 92, 246, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.platform-icon-wrapper {
+  @apply w-14 h-14 rounded-xl flex items-center justify-center mb-3;
+  transition: all 200ms ease;
+}
+
+.platform-card-v2:hover .platform-icon-wrapper {
+  transform: scale(1.05);
+}
+
+.platform-name {
+  @apply text-sm font-medium text-foreground mb-1;
+}
+
+.platform-share {
+  @apply text-xs text-muted-foreground;
+}
+
+/* Recommendation Items - Reference Style */
+.recommendation-item-v2 {
+  @apply flex items-center gap-4 p-4 rounded-lg;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(75, 85, 99, 0.2);
+  transition: all 150ms ease;
+}
+
+.recommendation-item-v2:hover {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(75, 85, 99, 0.4);
+}
+
+.recommendation-badge {
+  @apply px-2.5 py-1 rounded text-xs font-medium;
+}
+
+.recommendation-badge-critical {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.recommendation-badge-high {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.recommendation-badge-medium {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.recommendation-badge-low {
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* Decorative Star/Sparkle - Large like reference */
+.decorative-star {
+  @apply absolute pointer-events-none;
+  color: rgba(139, 92, 246, 0.5);
+  text-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
+}
+
+.decorative-star::before {
+  content: '✦';
+  font-size: 48px;
+}
+
+/* Smaller decorative stars */
+.decorative-star-sm::before {
+  font-size: 20px;
+}
+
+.decorative-star-lg::before {
+  font-size: 72px;
+}
+
+/* Area Chart Gradient Fill */
+.chart-gradient-cyan-purple {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 229, 204, 0.3) 0%,
+    rgba(139, 92, 246, 0.1) 50%,
+    transparent 100%
+  );
+}
+
+/* Flow Line Animation */
+@keyframes flowLine {
+  0% { stroke-dashoffset: 1000; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.flow-line {
+  stroke-dasharray: 1000;
+  animation: flowLine 3s ease-out forwards;
+}
+
+/* Glow Pulse Animation */
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.glow-pulse {
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+/* Trust Score Circle */
+.trust-score-circle {
+  @apply relative w-24 h-24 rounded-full flex items-center justify-center;
+  background: conic-gradient(
+    from 180deg,
+    hsl(var(--primary)) 0deg,
+    hsl(var(--accent-purple)) 270deg,
+    rgba(75, 85, 99, 0.3) 270deg,
+    rgba(75, 85, 99, 0.3) 360deg
+  );
+}
+
+.trust-score-circle::before {
+  content: '';
+  @apply absolute inset-1 rounded-full;
+  background: rgba(15, 23, 42, 1);
+}
+
+.trust-score-inner {
+  @apply relative z-10 text-center;
+}
+
+/* Velocity Sparkline */
+.velocity-sparkline {
+  @apply h-16 w-full;
+  background: linear-gradient(
+    180deg,
+    rgba(139, 92, 246, 0.2) 0%,
+    transparent 100%
+  );
+}
+
+/* ============================================
+   MONITOR PAGE - Reference Design Match
+   ============================================ */
+
+/* Monitor Expanded Panel - Two Column Layout */
+.monitor-expanded-panel {
+  background: linear-gradient(
+    135deg,
+    rgba(10, 20, 40, 0.95) 0%,
+    rgba(15, 25, 50, 0.98) 100%
+  );
+}
+
+/* AI Output Panel - Left Column */
+.monitor-ai-output-panel {
+  @apply p-4 rounded-xl;
+  background: rgba(20, 30, 50, 0.7);
+  border: 1px solid rgba(0, 229, 204, 0.2);
+}
+
+.monitor-ai-output-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 229, 204, 0.5) 0%,
+    rgba(139, 92, 246, 0.5) 100%
+  );
+  border-radius: 2px 2px 0 0;
+}
+
+/* Apex Analysis Panel - Right Column */
+.monitor-analysis-panel {
+  @apply p-4 rounded-xl relative;
+  background: rgba(20, 30, 50, 0.7);
+  border: 1px solid rgba(23, 202, 41, 0.3);
+}
+
+/* Sentiment Gauge Ring */
+.monitor-sentiment-gauge {
+  @apply flex-shrink-0;
+}
+
+.monitor-sentiment-gauge svg {
+  filter: drop-shadow(0 0 8px rgba(23, 202, 41, 0.3));
+}
+
+/* Citation Status Badges - Reference Style */
+.monitor-badge-primary-citation {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium;
+  background: rgba(0, 229, 204, 0.15);
+  color: #00E5CC;
+  border: 1px solid rgba(0, 229, 204, 0.3);
+}
+
+.monitor-badge-mentioned {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium;
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.monitor-badge-omitted {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium;
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* Leading Engine Indicator */
+.monitor-leading-engine {
+  @apply inline-flex items-center gap-1 text-xs text-muted-foreground;
+}
+
+.monitor-leading-engine::before {
+  content: '';
+  @apply w-2 h-2 rounded-full bg-success;
+  animation: pulse 2s infinite;
+}
+
+/* Smart Table Enhanced - V2 Reference Design */
+.smart-table-header-v2 {
+  @apply border-b;
+  border-color: hsl(var(--border-subtle));
+  background: rgba(15, 25, 45, 0.5);
+}
+
+.monitor-row-card {
+  @apply rounded-xl overflow-hidden;
+  background: linear-gradient(
+    135deg,
+    rgba(20, 35, 60, 0.8) 0%,
+    rgba(15, 30, 55, 0.9) 100%
+  );
+  border: 1px solid rgba(75, 85, 99, 0.2);
+}
+
+.monitor-row {
+  @apply rounded-xl;
+}
+
+.monitor-row:hover {
+  background: rgba(30, 45, 70, 0.6);
+}
+
+.monitor-row-expanded {
+  background: rgba(25, 40, 65, 0.4);
+  border-bottom: 1px solid rgba(75, 85, 99, 0.2);
+}
+
+.monitor-expanded-content {
+  background: linear-gradient(
+    180deg,
+    rgba(15, 25, 45, 0.95) 0%,
+    rgba(20, 35, 55, 0.98) 100%
+  );
+}
+
+/* AI Output Panel - Cyan left border like reference */
+.monitor-ai-output {
+  @apply p-4 rounded-xl relative;
+  background: rgba(20, 35, 55, 0.7);
+  border-left: 3px solid #00E5CC;
+  border-top: 1px solid rgba(0, 229, 204, 0.2);
+  border-right: 1px solid rgba(0, 229, 204, 0.1);
+  border-bottom: 1px solid rgba(0, 229, 204, 0.1);
+}
+
+/* Apex Analysis Panel - Green accent */
+.monitor-apex-analysis {
+  @apply p-4 rounded-xl relative;
+  background: rgba(20, 35, 55, 0.7);
+  border: 1px solid rgba(23, 202, 41, 0.2);
+}
+
+/* ============================================
+   LANDING PAGE STYLES
+   Reference: docs/images UI/Landing Page.png
+   ============================================ */
+
+/* Landing Page Container */
+.landing-container {
+  @apply min-h-screen;
+  background: linear-gradient(180deg, #02030A 0%, #060812 50%, #02030A 100%);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Ambient Gradient Effects */
+.landing-ambient {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.landing-ambient-top-right {
+  top: 0;
+  right: 0;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(
+    ellipse at top right,
+    rgba(139, 92, 246, 0.15) 0%,
+    rgba(168, 85, 247, 0.08) 30%,
+    transparent 60%
+  );
+}
+
+.landing-ambient-bottom-left {
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  height: 50%;
+  background: radial-gradient(
+    ellipse at bottom left,
+    rgba(0, 229, 204, 0.1) 0%,
+    transparent 60%
+  );
+}
+
+/* Landing Header */
+.landing-header {
+  @apply h-16 flex items-center justify-between px-6 lg:px-8;
+  background: rgba(2, 3, 10, 0.8);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.landing-nav-link {
+  @apply text-sm font-medium text-slate-400 hover:text-white transition-colors;
+}
+
+.landing-nav-link.active {
+  color: #00E5CC;
+}
+
+/* Hero Section */
+.landing-hero {
+  @apply py-20 lg:py-32 px-6 lg:px-8;
+  position: relative;
+  z-index: 1;
+}
+
+.landing-hero-content {
+  @apply max-w-3xl;
+}
+
+.landing-hero-title {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: clamp(40px, 6vw, 64px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: #FFFFFF;
+}
+
+.landing-hero-title .highlight {
+  background: linear-gradient(135deg, #00E5CC 0%, #8B5CF6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.landing-hero-subtitle {
+  @apply text-lg lg:text-xl text-slate-400 mt-6 max-w-2xl;
+  line-height: 1.6;
+}
+
+/* CTA Buttons */
+.btn-primary {
+  @apply inline-flex items-center justify-center px-6 py-3 rounded-lg text-sm font-semibold;
+  background: linear-gradient(135deg, #00E5CC 0%, #00B8A3 100%);
+  color: #02030A;
+  transition: all 200ms ease;
+  box-shadow: 0 4px 20px rgba(0, 229, 204, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 229, 204, 0.4);
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center px-6 py-3 rounded-lg text-sm font-semibold;
+  background: rgba(255, 255, 255, 0.05);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 200ms ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Feature Cards */
+.feature-card {
+  @apply relative p-6 rounded-xl;
+  background: rgba(15, 18, 37, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 200ms ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.feature-card-icon {
+  @apply w-12 h-12 rounded-xl flex items-center justify-center mb-4;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(0, 229, 204, 0.2) 100%);
+}
+
+.feature-card-title {
+  @apply text-lg font-semibold text-white mb-2;
+}
+
+.feature-card-description {
+  @apply text-sm text-slate-400;
+  line-height: 1.6;
+}
+
+/* Value Proposition Section */
+.values-section {
+  @apply py-16 lg:py-24;
+  position: relative;
+  z-index: 1;
+}
+
+.values-section-title {
+  @apply text-center text-2xl lg:text-3xl font-semibold text-white mb-12;
+}
+
+.value-card {
+  @apply text-center p-6;
+}
+
+.value-card-icon {
+  @apply w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.value-card-title {
+  @apply text-lg font-semibold text-white mb-2;
+}
+
+.value-card-description {
+  @apply text-sm text-slate-400;
+}
+
+/* Pricing Section */
+.pricing-section {
+  @apply py-16 lg:py-24 px-6 lg:px-8;
+  position: relative;
+  z-index: 1;
+}
+
+.pricing-toggle {
+  @apply flex items-center justify-center gap-4 mb-12;
+}
+
+.pricing-toggle-label {
+  @apply text-sm text-slate-400;
+}
+
+.pricing-toggle-label.active {
+  color: #FFFFFF;
+}
+
+/* Pricing Cards */
+.pricing-card {
+  @apply relative p-6 rounded-xl;
+  background: rgba(15, 18, 37, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 200ms ease;
+}
+
+.pricing-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.pricing-card.recommended {
+  border-color: rgba(0, 229, 204, 0.4);
+  box-shadow: 0 0 40px rgba(0, 229, 204, 0.1);
+}
+
+.pricing-card.recommended::before {
+  content: 'Recommended';
+  @apply absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-semibold rounded-full;
+  background: linear-gradient(135deg, #00E5CC 0%, #00B8A3 100%);
+  color: #02030A;
+}
+
+.pricing-tier-name {
+  @apply text-lg font-semibold text-white mb-2;
+}
+
+.pricing-amount {
+  @apply text-4xl font-bold text-white mb-1;
+}
+
+.pricing-period {
+  @apply text-sm text-slate-400 mb-6;
+}
+
+.pricing-features {
+  @apply space-y-3 mb-6;
+}
+
+.pricing-feature {
+  @apply flex items-center gap-2 text-sm text-slate-300;
+}
+
+.pricing-feature-icon {
+  @apply w-4 h-4 text-cyan-400;
+}
+
+/* FAQ Section */
+.faq-section {
+  @apply py-16 px-6 lg:px-8;
+  position: relative;
+  z-index: 1;
+}
+
+.faq-item {
+  @apply border-b border-white/5;
+}
+
+.faq-question {
+  @apply w-full flex items-center justify-between py-4 text-left text-white font-medium;
+}
+
+.faq-question:hover {
+  color: #00E5CC;
+}
+
+.faq-answer {
+  @apply text-sm text-slate-400 pb-4;
+  line-height: 1.6;
+}
+
+/* Landing Footer */
+.landing-footer {
+  @apply py-12 px-6 lg:px-8;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+  z-index: 1;
+}
+
+.landing-footer-content {
+  @apply flex flex-col lg:flex-row items-center justify-between gap-6;
+}
+
+.landing-footer-links {
+  @apply flex items-center gap-6;
+}
+
+.landing-footer-link {
+  @apply text-sm text-slate-400 hover:text-white transition-colors;
+}
+
+.landing-footer-socials {
+  @apply flex items-center gap-4;
+}
+
+.landing-social-icon {
+  @apply w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-colors;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================
+   3D ILLUSTRATION PLACEHOLDER
+   Reference: docs/images UI/Landing Page.png cube
+   ============================================ */
+
+.hero-illustration {
+  @apply relative w-full max-w-lg aspect-square;
+}
+
+.hero-cube {
+  @apply absolute inset-0 flex items-center justify-center;
+  perspective: 1000px;
+}
+
+/* Decorative Elements */
+.decorative-diamond {
+  @apply fixed pointer-events-none;
+  color: rgba(0, 229, 204, 0.3);
+}
+
+.decorative-diamond-sm {
+  font-size: 24px;
+}
+
+.decorative-diamond-lg {
+  font-size: 48px;
+}
+
+/* ============================================
+   SETTINGS PAGE STYLES
+   Reference: docs/images UI/Settings.png
+   ============================================ */
+
+.settings-layout {
+  @apply grid gap-6;
+  grid-template-columns: 240px 1fr;
+}
+
+@media (max-width: 768px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.settings-content {
+  @apply space-y-6;
+}
+
+.settings-card {
+  @apply p-6 rounded-xl;
+  background: rgba(15, 18, 37, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.settings-card-title {
+  @apply text-lg font-semibold text-white mb-4;
+}
+
+.settings-form-group {
+  @apply space-y-4;
+}
+
+.settings-label {
+  @apply block text-sm font-medium text-slate-300 mb-1.5;
+}
+
+.settings-input {
+  @apply w-full px-4 py-2.5 rounded-lg text-sm text-white;
+  background: rgba(13, 16, 32, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 150ms ease;
+}
+
+.settings-input:focus {
+  border-color: rgba(0, 229, 204, 0.5);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 229, 204, 0.1);
+}
+
+.settings-input::placeholder {
+  color: #64748B;
+}
+
+/* Team Member Cards */
+.team-member-card {
+  @apply flex items-center gap-4 p-4 rounded-xl;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.team-member-avatar {
+  @apply w-12 h-12 rounded-full;
+  background: linear-gradient(135deg, #8B5CF6 0%, #00E5CC 100%);
+}
+
+.team-member-name {
+  @apply text-sm font-medium text-white;
+}
+
+.team-member-role {
+  @apply text-xs text-slate-400;
+}
+
+/* Brand Logo Upload */
+.brand-logo-upload {
+  @apply w-24 h-24 rounded-xl flex items-center justify-center cursor-pointer;
+  background: rgba(13, 16, 32, 0.8);
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  transition: all 150ms ease;
+}
+
+.brand-logo-upload:hover {
+  border-color: rgba(0, 229, 204, 0.3);
+  background: rgba(0, 229, 204, 0.05);
+}
+
+/* Danger Zone */
+.settings-danger-zone {
+  @apply mt-8 p-4 rounded-xl;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.settings-danger-title {
+  @apply text-sm font-medium text-red-400 mb-2;
+}
+
+.settings-danger-description {
+  @apply text-xs text-slate-400 mb-3;
+}
+
+.btn-danger {
+  @apply px-4 py-2 rounded-lg text-sm font-medium;
+  background: rgba(239, 68, 68, 0.15);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  transition: all 150ms ease;
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+/* ============================================
+   ENGINE ROOM STYLES
+   Reference: docs/images UI/Engin room.png
+   ============================================ */
+
+/* Engine Tabs */
+.engine-tabs {
+  @apply flex items-center gap-2 mb-6 overflow-x-auto;
+}
+
+.engine-tab {
+  @apply px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap;
+  color: #94A3B8;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 150ms ease;
+}
+
+.engine-tab:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #FFFFFF;
+}
+
+.engine-tab.active {
+  background: rgba(0, 229, 204, 0.1);
+  color: #00E5CC;
+  border-color: rgba(0, 229, 204, 0.3);
+}
+
+/* Engine Header */
+.engine-header {
+  @apply mb-6;
+}
+
+.engine-title {
+  @apply text-xl font-semibold text-white;
+}
+
+.engine-subtitle {
+  @apply text-sm text-slate-400 mt-1;
+}
+
+/* Brand Perception Bubbles */
+.perception-container {
+  @apply relative h-64 flex items-center justify-center;
+}
+
+.perception-bubble-container {
+  @apply relative w-full h-full;
+}
+
+.perception-bubble {
+  @apply absolute px-4 py-2 rounded-full text-sm font-medium;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: #A78BFA;
+  white-space: nowrap;
+  transition: all 200ms ease;
+}
+
+.perception-bubble:hover {
+  transform: scale(1.1);
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+.perception-bubble.primary {
+  background: rgba(0, 229, 204, 0.1);
+  border-color: rgba(0, 229, 204, 0.3);
+  color: #00E5CC;
+}
+
+/* ============================================
+   FEEDBACK PAGE STYLES
+   Reference: docs/images UI/Knowledge graph.png
+   ============================================ */
+
+/* 3-Column Workflow */
+.feedback-workflow {
+  @apply grid grid-cols-1 lg:grid-cols-3 gap-6;
+}
+
+.feedback-column {
+  @apply space-y-4;
+}
+
+.feedback-column-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.feedback-column-title {
+  @apply text-lg font-semibold text-white;
+}
+
+.feedback-column-count {
+  @apply px-2 py-0.5 rounded-full text-xs font-medium;
+  background: rgba(255, 255, 255, 0.05);
+  color: #94A3B8;
+}
+
+/* Hallucination Card */
+.hallucination-card {
+  @apply p-4 rounded-xl;
+  background: rgba(15, 18, 37, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hallucination-platform {
+  @apply flex items-center gap-2 mb-3;
+}
+
+.hallucination-title {
+  @apply text-sm font-medium text-white mb-1;
+}
+
+.hallucination-description {
+  @apply text-xs text-slate-400 mb-3;
+}
+
+.hallucination-progress {
+  @apply h-1.5 rounded-full overflow-hidden;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.hallucination-progress-bar {
+  @apply h-full rounded-full;
+  background: linear-gradient(90deg, #00E5CC 0%, #8B5CF6 100%);
+}
+
+.hallucination-timeline {
+  @apply text-xs text-slate-500 mt-2;
+}
+
+/* Fix Deployed Card */
+.fix-card {
+  @apply p-4 rounded-xl;
+  background: rgba(15, 18, 37, 0.4);
+  border: 1px solid rgba(0, 229, 204, 0.2);
+}
+
+.fix-card-deployed {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+/* Verified Card */
+.verified-card {
+  @apply p-4 rounded-xl;
+  background: linear-gradient(135deg,
+    rgba(139, 92, 246, 0.1) 0%,
+    rgba(0, 229, 204, 0.1) 100%);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.verified-badge {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium;
+  background: rgba(34, 197, 94, 0.15);
+  color: #22C55E;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+/* ============================================
+   UTILITY ANIMATIONS
+   ============================================ */
+
+/* Fade In Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Scale In Animation */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out forwards;
+}
+
+/* Slide Up Animation */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out forwards;
+}
+
+/* Stagger Children Animation */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+
+/* Number Animation */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-number {
+  animation: countUp 0.6s ease-out forwards;
+}
+
+/* Gradient Shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* ============================================
+   MONITOR PAGE V2 - Reference Design Match
+   Reference: docs/images UI/Monitor.png
+   ============================================ */
+
+/* Filter Sidebar - Deep space aesthetic */
+.monitor-filter-sidebar {
+  @apply p-5 rounded-2xl;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 20, 40, 0.95) 0%,
+    rgba(10, 15, 35, 0.98) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: calc(100vh - 180px);
+}
+
+/* Filter Group */
+.filter-group {
+  @apply pb-4 border-b;
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.filter-group:last-child {
+  border-bottom: none;
+}
+
+/* Filter Option */
+.filter-option {
+  transition: background 150ms ease;
+}
+
+.filter-option:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* AI Engine Filter Icons */
+.ai-engine-filter-icon {
+  @apply w-9 h-9 rounded-lg flex items-center justify-center transition-all;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #64748B;
+}
+
+.ai-engine-filter-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #94A3B8;
+}
+
+.ai-engine-filter-icon.active {
+  background: rgba(0, 229, 204, 0.15);
+  border-color: rgba(0, 229, 204, 0.3);
+  color: #00E5CC;
+}
+
+/* Add New Tracking Scenario Button */
+.monitor-add-scenario-btn {
+  @apply w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition-all;
+  background: rgba(0, 229, 204, 0.1);
+  border: 1px dashed rgba(0, 229, 204, 0.3);
+  color: #00E5CC;
+}
+
+.monitor-add-scenario-btn:hover {
+  background: rgba(0, 229, 204, 0.15);
+  border-color: rgba(0, 229, 204, 0.5);
+}
+
+/* Monitor Content Card */
+.monitor-content-card {
+  @apply p-6 rounded-2xl;
+  background: linear-gradient(
+    135deg,
+    rgba(15, 20, 40, 0.95) 0%,
+    rgba(10, 18, 38, 0.98) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: calc(100vh - 180px);
+}
+
+/* Smart Table Badge */
+.smart-table-badge {
+  @apply inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94A3B8;
+}
+
+/* Decorative Star */
+.decorative-star {
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* AI Status Indicator */
+.ai-status-indicator {
+  @apply flex items-center gap-2;
+}
+
+.ai-status-dot {
+  @apply w-2 h-2 rounded-full;
+  background: #64748B;
+}
+
+.ai-status-dot.active {
+  background: #00E5CC;
+  box-shadow: 0 0 8px rgba(0, 229, 204, 0.5);
+  animation: pulse 2s infinite;
+}
+
+/* Apex Logo Icon */
+.apex-logo-icon {
+  @apply flex items-center justify-center;
+}
+
+/* ============================================
+   FEEDBACK PAGE V2 - Reference Design Match
+   Reference: docs/images UI/Knowledge graph.png
+   ============================================ */
+
+/* Feedback Column Card */
+.feedback-column-card {
+  @apply p-5 rounded-2xl;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 20, 40, 0.95) 0%,
+    rgba(10, 15, 35, 0.98) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 400px;
+}
+
+/* ============================================
+   ENGINE ROOM PAGE V2 - Reference Design Match
+   Reference: docs/images UI/Engin room.png
+   ============================================ */
+
+/* Engine Platform Tabs */
+.engine-platform-tab {
+  @apply flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid transparent;
+  color: #94A3B8;
+}
+
+.engine-platform-tab:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #CBD5E1;
+}
+
+.engine-platform-tab.active {
+  background: rgba(15, 20, 40, 0.95);
+  border: 1px solid;
+  color: #FFFFFF;
+}
+
+/* Engine Sidebar Card */
+.engine-sidebar-card {
+  @apply p-4 rounded-2xl;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 20, 40, 0.95) 0%,
+    rgba(10, 15, 35, 0.98) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Engine Filter Group */
+.filter-group-engine {
+  @apply pb-3;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.filter-group-engine:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* Engine Metric Badge */
+.engine-metric-badge {
+  @apply flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #64748B;
+}
+
+.engine-metric-badge:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.engine-metric-badge.active {
+  background: rgba(0, 229, 204, 0.08);
+  border-color: rgba(0, 229, 204, 0.2);
+  color: #00E5CC;
+}
+
+/* Engine Content Card */
+.engine-content-card {
+  @apply p-6 rounded-2xl;
+  background: linear-gradient(
+    135deg,
+    rgba(15, 20, 40, 0.95) 0%,
+    rgba(10, 18, 38, 0.98) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Engine Radar Section */
+.engine-radar-section {
+  @apply p-4 rounded-xl;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Engine Perception Bubble */
+.engine-perception-bubble {
+  @apply absolute rounded-full flex items-center justify-center text-center font-medium transition-all;
+  background: rgba(100, 116, 139, 0.15);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  color: #94A3B8;
+  transform: translate(-50%, -50%);
+}
+
+.engine-perception-bubble:hover {
+  background: rgba(0, 229, 204, 0.15);
+  border-color: rgba(0, 229, 204, 0.3);
+  color: #00E5CC;
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+/* ============================================
+   SETTINGS PAGE V2 - Reference Design Match
+   Reference: docs/images UI/Settings.png
+   ============================================ */
+
+/* Settings Sidebar Card */
+.settings-sidebar-card {
+  @apply p-5 rounded-2xl;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 20, 40, 0.95) 0%,
+    rgba(10, 15, 35, 0.98) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Settings Nav Item */
+.settings-nav-item {
+  @apply w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all;
+  color: #64748B;
+}
+
+.settings-nav-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: #94A3B8;
+}
+
+.settings-nav-item.active {
+  background: rgba(0, 229, 204, 0.1);
+  color: #00E5CC;
+}
+
+/* Settings Content Card */
+.settings-content-card {
+  @apply p-8 rounded-2xl;
+  background: linear-gradient(
+    135deg,
+    rgba(15, 20, 40, 0.95) 0%,
+    rgba(10, 18, 38, 0.98) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Settings Edit Button */
+.settings-edit-btn {
+  @apply px-4 py-2 rounded-lg text-sm font-medium transition-all;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94A3B8;
+}
+
+.settings-edit-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #CBD5E1;
+}
+
+/* Settings Input */
+.settings-input {
+  @apply w-full px-4 py-3 rounded-xl text-sm;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #64748B;
+}
+
+/* Settings Dropdown */
+.settings-dropdown {
+  @apply flex items-center gap-2 px-4 py-2 rounded-lg text-sm;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94A3B8;
+}
+
+/* Settings Delete Button */
+.settings-delete-btn {
+  @apply flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #64748B;
+}
+
+.settings-delete-btn:hover {
+  background: rgba(220, 38, 38, 0.1);
+  border-color: rgba(220, 38, 38, 0.3);
+  color: #EF4444;
+}
+
+/* Settings Feature Card */
+.settings-feature-card {
+  @apply p-5 rounded-xl;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Settings Preview Image */
+.settings-preview-image {
+  @apply mt-4;
+}
+
+/* Settings Locale Button */
+.settings-locale-btn {
+  @apply px-4 py-2 rounded-lg text-sm font-medium transition-all;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #64748B;
+}
+
+.settings-locale-btn.active {
+  background: rgba(0, 229, 204, 0.1);
+  border-color: rgba(0, 229, 204, 0.3);
+  color: #00E5CC;
+}
+
+/* Settings Promo Card */
+.settings-promo-card {
+  @apply p-4 rounded-xl;
+  background: rgba(139, 92, 246, 0.05);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+}
+
+/* Settings Toggle Row */
+.settings-toggle-row {
+  @apply flex items-center justify-between cursor-pointer;
+}
+
+/* Settings Toggle */
+.settings-toggle {
+  @apply relative w-10 h-5 rounded-full transition-all;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.settings-toggle.active {
+  background: rgba(0, 229, 204, 0.3);
+}
+
+.settings-toggle-knob {
+  @apply absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-all;
+  background: #64748B;
+}
+
+.settings-toggle.active .settings-toggle-knob {
+  background: #00E5CC;
+  transform: translateX(20px);
+}
+
+/* Settings Save Button */
+.settings-save-btn {
+  @apply px-6 py-3 rounded-xl text-sm font-semibold transition-all;
+  background: linear-gradient(135deg, #00E5CC 0%, #0EA5E9 100%);
+  color: #0A0D14;
+}
+
+.settings-save-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}

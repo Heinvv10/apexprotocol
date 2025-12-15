@@ -1,0 +1,2120 @@
+[
+  {
+    "id": "F001",
+    "name": "Project Scaffolding",
+    "description": "Initialize Next.js 14 project with TypeScript, Tailwind CSS, App Router structure",
+    "test_description": "Project runs with npm run dev and shows welcome page at localhost:3000",
+    "passes": false,
+    "priority": 1,
+    "category": "setup",
+    "phase": "setup"
+  },
+  {
+    "id": "F002",
+    "name": "Shadcn/ui Setup",
+    "description": "Install and configure shadcn/ui with dark theme as default",
+    "test_description": "Button, Card, Input, Dialog components render correctly",
+    "passes": false,
+    "priority": 2,
+    "category": "setup",
+    "phase": "setup"
+  },
+  {
+    "id": "F003",
+    "name": "Environment Configuration",
+    "description": "Create .env.example with all required variables for white-label config",
+    "test_description": ".env.example exists with NEXT_PUBLIC_BRAND_NAME, database URLs, API keys",
+    "passes": false,
+    "priority": 3,
+    "category": "setup",
+    "phase": "setup"
+  },
+  {
+    "id": "F004",
+    "name": "White-label Theme System",
+    "description": "CSS variables system that reads brand colors from env vars",
+    "test_description": "Changing NEXT_PUBLIC_PRIMARY_COLOR changes the UI accent color",
+    "passes": false,
+    "priority": 4,
+    "category": "theming",
+    "phase": "setup"
+  },
+  {
+    "id": "F004.5",
+    "name": "Design System Foundation - Cohesive Premium Design with Enhanced Color System",
+    "description": "ENHANCED 12-COLOR SEMANTIC SYSTEM (DRIBBBLE ANALYSIS): DARK THEME (PRIMARY) - Deep black-blue base (#02030F not pure black, from Cloutzen), dark navy cards (#0E1558), elevated surfaces (#18181B), subtle borders (#27272A). PRIMARY COLORS - Apex purple (#4926FA unchanged), success green (#17CA29 unchanged, #0E7A1A dark variant). ACCENT COLORS (NEW) - Bright blue (#273ADB from Cloutzen), accent pink (#D82F71 from SaaS Financial Dashboard). ALERT COLORS - Warning yellow (#FFB020), error red (#D4292A). MUTED COLORS (for charts) - Purple-gray (#5E648E), blue-gray (#6D8BAE), neutral gray (#A09DA2). LIGHT THEME - Off-white background (#FAFAFA not pure white), light gray secondary (#EEEEEE). 3-TIER CARD HIERARCHY: Primary cards (GEO Score) = 2px primary border + shadow glow, Secondary cards (Recs) = 1px muted border + subtle shadow, Tertiary cards (lists) = transparent bg + minimal border. GLASSMORPHISM: Modal overlay (rgba(2,3,15,0.8) + blur(20px)), Card glass (rgba(14,21,88,0.6) + blur(12px)), Tooltip (rgba(14,21,88,0.95) + blur(8px)). TYPOGRAPHY - Inter Display (600-700) for headings, Inter (400-500) for body. ANIMATIONS - 150ms standard transitions, 250ms modals, 800ms gauge entrance. CHART COLORS - Primary (#273ADB), secondary (#4926FA), tertiary (#17CA29), categorical array [#2E6DC7, #7586CF, #5E648E, #6D8BAE]. WHITE-LABEL ARCHITECTURE: CSS custom properties from env vars, brand preset system (config/brand-presets.ts), ThemeProvider component, Tailwind var() usage. CRITICAL PRINCIPLE: 'Change colors, keep structure' - maximum 3-4 accent colors, no rainbow UI, consistent card hierarchy prevents piecemeal appearance.",
+    "test_description": "Design system shows: 1) Dark-first architecture with #02030F deep background, 2) Enhanced 12-color semantic system (primary purple, success green, accent blue, accent pink, warning, error, 3 muted grays), 3) 3-tier card hierarchy (primary/secondary/tertiary with distinct styling), 4) Glassmorphism on modals/overlays only (not main cards), 5) Unified chart color system (4 categorical colors), 6) Inter font family with proper weights, 7) Standardized animations (150ms/250ms/800ms), 8) Maximum 3-4 accent colors per view (no rainbow), 9) Restrained color palette maintains cohesion, 10) CSS variables support white-label switching, 11) Can change NEXT_PUBLIC_BRAND_PRESET to switch brands. Premium cohesive appearance - every component feels like same design system.",
+    "passes": false,
+    "priority": 4.5,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/DRIBBBLE_DESIGN_ANALYSIS.md (NEW - 7 cohesive patterns), docs/VISUAL_DESIGN_RESEARCH.md (Dribbble Research), docs/BRAND_VALUES_AND_POSITIONING.md (White-Label Architecture), docs/WHITE_LABEL_ARCHITECTURE.md (Technical implementation)",
+    "dribbble_inspiration": [
+      "Wallet Dashboard (white mode) - #FAFAFB off-white, #484FB5 blue-purple",
+      "SaaS Financial Dashboard (dark) - #040405 near-black, #D82F71 pink accent",
+      "Marketing Automation Platform - #2E6DC7 blue, #6D8BAE blue-gray",
+      "Cloutzen AI Landing - #02030F deep black-blue, #273ADB bright blue"
+    ],
+    "cohesive_patterns": [
+      "Dark-first architecture (distinctive)",
+      "Restrained 3-4 accent colors (no rainbow)",
+      "Glassmorphism for elevation (modals only)",
+      "3-tier card hierarchy (prevents piecemeal)",
+      "Unified chart colors (integrated feel)",
+      "Subtle 150ms animations (enterprise)",
+      "Typography hierarchy (Inter family)"
+    ],
+    "white_label_requirements": {
+      "env_variables": [
+        "NEXT_PUBLIC_BRAND_NAME",
+        "NEXT_PUBLIC_BRAND_PRESET",
+        "NEXT_PUBLIC_PRIMARY_COLOR",
+        "NEXT_PUBLIC_SECONDARY_COLOR",
+        "NEXT_PUBLIC_SUCCESS_COLOR",
+        "NEXT_PUBLIC_WARNING_COLOR",
+        "NEXT_PUBLIC_ERROR_COLOR",
+        "NEXT_PUBLIC_BACKGROUND_LIGHT",
+        "NEXT_PUBLIC_BACKGROUND_DARK",
+        "NEXT_PUBLIC_FONT_HEADING",
+        "NEXT_PUBLIC_FONT_BODY",
+        "NEXT_PUBLIC_BORDER_RADIUS",
+        "NEXT_PUBLIC_SPACING_SCALE",
+        "NEXT_PUBLIC_BRAND_LOGO_URL",
+        "NEXT_PUBLIC_BRAND_FAVICON_URL"
+      ],
+      "files_to_create": [
+        "config/brand-presets.ts",
+        "app/providers/theme-provider.tsx",
+        "components/brand/dynamic-logo.tsx",
+        "public/brands/apex/logo.svg",
+        "public/brands/apex/logo-dark.svg"
+      ],
+      "tailwind_config_updates": "All colors must use var(--primary), var(--secondary), etc. All fonts must use var(--font-heading), var(--font-body). Border radius from var(--border-radius). Spacing from calc(var(--spacing-scale) * N).",
+      "brand_presets": [
+        "apex",
+        "enterprise"
+      ],
+      "immutable_elements": [
+        "Verification badge system",
+        "Trust signal components",
+        "Impact Index calculations",
+        "Methodology transparency modals"
+      ],
+      "customizable_elements": [
+        "Logo",
+        "Brand name",
+        "Color palette",
+        "Typography",
+        "Copywriting",
+        "Illustrations"
+      ]
+    },
+    "ai_skill": {
+      "validation_rules": [
+        "Implement 12-color semantic system with exact hex values: primary (#4926FA), success (#17CA29), accent-blue (#273ADB), accent-pink (#D82F71), warning (#FFB020), error (#D4292A), background-dark (#02030F), card-dark (#0E1558), and 3 muted grays",
+        "Enforce 3-tier card hierarchy with specific styling: Primary (2px border + shadow glow), Secondary (1px border + subtle shadow), Tertiary (transparent + minimal border)",
+        "Apply glassmorphism ONLY to modals/overlays (rgba blur effects), NEVER to main content cards",
+        "Use Inter font family exclusively: Inter Display (600-700 weight) for headings, Inter (400-500 weight) for body text",
+        "Implement standardized animation timing: 150ms for standard transitions, 250ms for modals, 800ms for gauge entrance animations",
+        "Limit to maximum 3-4 accent colors per view to prevent 'rainbow UI' anti-pattern",
+        "All colors must be defined as CSS custom properties (--color-primary, --color-success, etc.) sourced from environment variables",
+        "Support white-label brand switching via NEXT_PUBLIC_BRAND_PRESET environment variable",
+        "Use Tailwind var() syntax for all color references: bg-[var(--color-primary)]",
+        "TypeScript strict mode - zero 'any' types, export all interfaces for theme types"
+      ],
+      "code_examples": [
+        {
+          "title": "Global CSS Variables (app/globals.css)",
+          "language": "css",
+          "code": "/* Dark theme (default) */\n:root {\n  /* Primary colors */\n  --color-primary: #4926FA;\n  --color-success: #17CA29;\n  --color-success-dark: #0E7A1A;\n\n  /* Accent colors */\n  --color-accent-blue: #273ADB;\n  --color-accent-pink: #D82F71;\n\n  /* Alert colors */\n  --color-warning: #FFB020;\n  --color-error: #D4292A;\n\n  /* Dark theme backgrounds */\n  --color-bg-dark: #02030F;\n  --color-card-dark: #0E1558;\n  --color-surface-dark: #18181B;\n  --color-border-dark: #27272A;\n\n  /* Muted colors (for charts) */\n  --color-muted-purple: #5E648E;\n  --color-muted-blue: #6D8BAE;\n  --color-muted-gray: #A09DA2;\n\n  /* Light theme */\n  --color-bg-light: #FAFAFA;\n  --color-card-light: #EEEEEE;\n\n  /* Typography */\n  --font-heading: 'Inter Display', sans-serif;\n  --font-body: 'Inter', sans-serif;\n\n  /* Animations */\n  --transition-fast: 150ms;\n  --transition-modal: 250ms;\n  --transition-gauge: 800ms;\n}",
+          "explanation": "Defines the complete 12-color semantic system as CSS custom properties. These variables can be overridden based on NEXT_PUBLIC_BRAND_PRESET for white-label support. All components must reference these variables instead of hardcoded colors."
+        },
+        {
+          "title": "3-Tier Card Hierarchy Components (components/ui/cards.tsx)",
+          "language": "tsx",
+          "code": "import { cn } from '@/lib/utils'\n\ninterface CardProps {\n  children: React.ReactNode\n  className?: string\n}\n\nexport function PrimaryCard({ children, className }: CardProps) {\n  return (\n    <div\n      className={cn(\n        'rounded-lg p-6',\n        'border-2 border-[var(--color-primary)]',\n        'shadow-lg shadow-[var(--color-primary)]/20',\n        'bg-[var(--color-card-dark)]',\n        className\n      )}\n    >\n      {children}\n    </div>\n  )\n}\n\nexport function SecondaryCard({ children, className }: CardProps) {\n  return (\n    <div\n      className={cn(\n        'rounded-lg p-4',\n        'border border-[var(--color-muted-gray)]/30',\n        'shadow-md',\n        'bg-[var(--color-card-dark)]',\n        className\n      )}\n    >\n      {children}\n    </div>\n  )\n}\n\nexport function TertiaryCard({ children, className }: CardProps) {\n  return (\n    <div\n      className={cn(\n        'rounded-lg p-3',\n        'border border-transparent',\n        'bg-[var(--color-card-dark)]/50',\n        className\n      )}\n    >\n      {children}\n    </div>\n  )\n}",
+          "explanation": "Implements the 3-tier card hierarchy with distinct visual hierarchy: Primary cards for critical content (GEO Score), Secondary for important content (Recommendations), Tertiary for lists. Each tier has specific border width, shadow, and opacity to create visual depth without clutter."
+        },
+        {
+          "title": "Glassmorphism for Modals Only (components/ui/modal-overlay.tsx)",
+          "language": "tsx",
+          "code": "'use client'\n\nimport { cn } from '@/lib/utils'\nimport { motion, AnimatePresence } from 'framer-motion'\n\ninterface ModalOverlayProps {\n  isOpen: boolean\n  onClose: () => void\n  children: React.ReactNode\n}\n\nexport function ModalOverlay({ isOpen, onClose, children }: ModalOverlayProps) {\n  return (\n    <AnimatePresence>\n      {isOpen && (\n        <>\n          {/* Glassmorphism overlay */}\n          <motion.div\n            initial={{ opacity: 0 }}\n            animate={{ opacity: 1 }}\n            exit={{ opacity: 0 }}\n            transition={{ duration: 0.25 }}\n            className={cn(\n              'fixed inset-0 z-50',\n              'bg-[rgba(2,3,15,0.8)]',\n              'backdrop-blur-[20px]'\n            )}\n            onClick={onClose}\n          />\n\n          {/* Modal content */}\n          <motion.div\n            initial={{ opacity: 0, scale: 0.95 }}\n            animate={{ opacity: 1, scale: 1 }}\n            exit={{ opacity: 0, scale: 0.95 }}\n            transition={{ duration: 0.25 }}\n            className={cn(\n              'fixed left-1/2 top-1/2 z-50',\n              'w-full max-w-lg -translate-x-1/2 -translate-y-1/2',\n              'rounded-lg p-6',\n              'bg-[rgba(14,21,88,0.6)]',\n              'backdrop-blur-[12px]',\n              'border border-[var(--color-border-dark)]'\n            )}\n          >\n            {children}\n          </motion.div>\n        </>\n      )}\n    </AnimatePresence>\n  )\n}",
+          "explanation": "Demonstrates proper glassmorphism usage: ONLY for modal overlays and floating elements. Uses rgba with backdrop-blur to create depth. Main content cards NEVER use glassmorphism - they use solid backgrounds for readability. Animation duration matches 250ms modal standard."
+        },
+        {
+          "title": "Brand Preset System (config/brand-presets.ts)",
+          "language": "ts",
+          "code": "export interface BrandPreset {\n  name: string\n  colors: {\n    primary: string\n    success: string\n    warning: string\n    error: string\n    accentBlue: string\n    accentPink: string\n    bgDark: string\n    bgLight: string\n  }\n  fonts: {\n    heading: string\n    body: string\n  }\n  logo: {\n    light: string\n    dark: string\n  }\n}\n\nexport const brandPresets: Record<string, BrandPreset> = {\n  apex: {\n    name: 'Apex',\n    colors: {\n      primary: '#4926FA',\n      success: '#17CA29',\n      warning: '#FFB020',\n      error: '#D4292A',\n      accentBlue: '#273ADB',\n      accentPink: '#D82F71',\n      bgDark: '#02030F',\n      bgLight: '#FAFAFA',\n    },\n    fonts: {\n      heading: 'Inter Display',\n      body: 'Inter',\n    },\n    logo: {\n      light: '/brands/apex/logo.svg',\n      dark: '/brands/apex/logo-dark.svg',\n    },\n  },\n  enterprise: {\n    name: 'Enterprise',\n    colors: {\n      primary: '#1E3A8A',\n      success: '#059669',\n      warning: '#D97706',\n      error: '#DC2626',\n      accentBlue: '#3B82F6',\n      accentPink: '#EC4899',\n      bgDark: '#111827',\n      bgLight: '#F9FAFB',\n    },\n    fonts: {\n      heading: 'Inter Display',\n      body: 'Inter',\n    },\n    logo: {\n      light: '/brands/enterprise/logo.svg',\n      dark: '/brands/enterprise/logo-dark.svg',\n    },\n  },\n}\n\nexport function getPreset(presetName: string): BrandPreset {\n  return brandPresets[presetName] || brandPresets.apex\n}",
+          "explanation": "White-label brand preset system that allows switching entire brand identities via NEXT_PUBLIC_BRAND_PRESET. Each preset defines complete color palette, fonts, and logos. The design structure (card hierarchy, animations, layout) remains constant - only colors/branding changes. This ensures consistency while allowing customization."
+        }
+      ],
+      "common_pitfalls": [
+        "\u00c3\u0192\u00c2\u00a2\u00c3\u00af\u00c2\u00bf\u00c2\u00bd\u00c3\u2026\u00e2\u20ac\u2122 Using pure black (#000000) for dark backgrounds - MUST use deep black-blue (#02030F) for premium feel",
+        "\u00c3\u0192\u00c2\u00a2\u00c3\u00af\u00c2\u00bf\u00c2\u00bd\u00c3\u2026\u00e2\u20ac\u2122 Applying glassmorphism to main content cards - Glassmorphism is ONLY for modals/overlays/tooltips",
+        "\u00c3\u0192\u00c2\u00a2\u00c3\u00af\u00c2\u00bf\u00c2\u00bd\u00c3\u2026\u00e2\u20ac\u2122 Using more than 3-4 accent colors per view - Creates 'rainbow UI' and destroys cohesion",
+        "\u00c3\u0192\u00c2\u00a2\u00c3\u00af\u00c2\u00bf\u00c2\u00bd\u00c3\u2026\u00e2\u20ac\u2122 Hardcoding color values instead of CSS variables - Breaks white-label functionality",
+        "\u00c3\u0192\u00c2\u00a2\u00c3\u00af\u00c2\u00bf\u00c2\u00bd\u00c3\u2026\u00e2\u20ac\u2122 Making all cards look identical - MUST implement 3-tier hierarchy (primary/secondary/tertiary)",
+        "\u00c3\u0192\u00c2\u00a2\u00c3\u00af\u00c2\u00bf\u00c2\u00bd\u00c3\u2026\u00e2\u20ac\u2122 Using wrong font weights - Inter Display must be 600-700 for headings, Inter 400-500 for body",
+        "\u00c3\u0192\u00c2\u00a2\u00c3\u00af\u00c2\u00bf\u00c2\u00bd\u00c3\u2026\u00e2\u20ac\u2122 Inconsistent animation timing - MUST use 150ms/250ms/800ms standards, not random durations",
+        "\u00c3\u0192\u00c2\u00a2\u00c3\u00af\u00c2\u00bf\u00c2\u00bd\u00c3\u2026\u00e2\u20ac\u2122 Creating new colors on-the-fly - Stick to the 12-color semantic system exclusively",
+        "\u00c3\u0192\u00c2\u00a2\u00c3\u00af\u00c2\u00bf\u00c2\u00bd\u00c3\u2026\u00e2\u20ac\u2122 Using inline styles or CSS modules - MUST use Tailwind utility classes with var() syntax",
+        "\u00c3\u0192\u00c2\u00a2\u00c3\u00af\u00c2\u00bf\u00c2\u00bd\u00c3\u2026\u00e2\u20ac\u2122 Forgetting TypeScript types for theme configuration - All brand preset interfaces must be exported"
+      ],
+      "implementation_guidance": [
+        "Start with globals.css: Define all 12 CSS custom properties first, ensure they can be overridden by brand presets loaded from environment variables",
+        "Implement card hierarchy early: Create PrimaryCard, SecondaryCard, TertiaryCard components first - all other components will compose these",
+        "Test white-label switching: Create at least 2 brand presets (Apex + Enterprise) and verify NEXT_PUBLIC_BRAND_PRESET environment variable correctly updates all colors",
+        "Use design tokens consistently: Never hardcode colors - always reference CSS variables via Tailwind's var() syntax to maintain white-label flexibility",
+        "Limit accent color usage: Each view should use maximum 3-4 colors (primary + 2-3 accents). Use muted grays for secondary information. This creates cohesive, premium appearance instead of 'rainbow UI'",
+        "Validate glassmorphism usage: Grep for 'backdrop-blur' in codebase - should ONLY appear in modal/overlay/tooltip components, NEVER in main content cards",
+        "Typography hierarchy enforcement: Use Inter Display (600-700) exclusively for headings (h1-h6), Inter (400-500) for all body text, links, and labels. Never mix font families."
+      ]
+    }
+  },
+  {
+    "id": "F005",
+    "name": "Dashboard Shell UI - Linear-Style Premium Layout",
+    "description": "Main dashboard layout with Linear-inspired design: HEADER - Height 56px, bg #18181B, brand logo left, global search (Ctrl+K hint), notification bell, user avatar with dropdown. SIDEBAR - Width 240px (56px collapsed), bg slightly darker than content (#0F0F10), Lucide icons 20px, active item has primary color left border + subtle bg highlight, smooth collapse animation. CONTENT AREA - bg #0A0A0B, max-width container, consistent 24px padding. No rainbow colors - neutral grays with single accent color.",
+    "test_description": "Dashboard shell shows: 1) Dark header with proper elevation, 2) Sidebar with icon-only collapse mode, 3) Active nav item has blue left border highlight, 4) Smooth 150ms sidebar collapse animation, 5) Consistent 20px Lucide icons, 6) Neutral color palette (no bright colors except accent). Matches Linear/Vercel aesthetic.",
+    "passes": false,
+    "priority": 5,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/VISUAL_DESIGN_RESEARCH.md - Layout Structure, docs/UI_WIREFRAMES.md"
+  },
+  {
+    "id": "F006",
+    "name": "Sidebar Navigation UI - Premium Design",
+    "description": "Collapsible sidebar matching wireframes: Dashboard, Recs (with count badge), Score, Integrations, Settings. Shows recommendation counts by priority (High/Med/Low). Quick Action button at bottom. DRIBBBLE PATTERN: Outcrowd-style pill-shaped active state highlighting instead of left border. Ronas IT-style vertical nav icons with tooltip labels on collapse. Fireart Studio-style subtle hover states with slight background tint.",
+    "test_description": "Sidebar shows navigation with Recs badge showing count, priority breakdown (High 3, Med 5, Low 12). Collapses on mobile with hamburger menu. Professional styling with proper active states.",
+    "passes": false,
+    "priority": 6,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/UI_WIREFRAMES.md - Sidebar Component",
+    "dribbble_inspiration": [
+      "Outcrowd Boostboard - pill-shaped active states",
+      "Ronas IT - vertical nav with tooltip labels",
+      "Fireart Studio - subtle hover states"
+    ]
+  },
+  {
+    "id": "F007",
+    "name": "Dark/Light Theme Toggle",
+    "description": "Theme switcher with system preference detection. Colors follow UI_UX_DESIGN_STRATEGY.md color system.",
+    "test_description": "Toggle switches theme and persists choice to localStorage. Dark theme uses proper dark colors, not just inverted.",
+    "passes": false,
+    "priority": 7,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/UI_UX_DESIGN_STRATEGY.md - Color System"
+  },
+  {
+    "id": "F008",
+    "name": "Dashboard Home Page UI - Premium Design",
+    "description": "Dashboard home matching wireframes: Large central GEO Score gauge with circular display (score 72, grade B+, trend +12 points). Three sub-score progress bars (Schema Quality 85, Content Completeness 68, AI Visibility 74). High Priority Recommendations section with action buttons. Recent Activity feed. Quick Stats cards. DRIBBBLE PATTERN: Conceptzilla ERP-style KPI cards with large numeric values (32px+), small muted labels, green/red trend indicators. Outcrowd-style data visualization with consistent spacing. Monkyne keyword analytics-style layout with main metric prominent, secondary metrics in row below.",
+    "test_description": "Dashboard shows: 1) Large circular GEO Score gauge with letter grade, 2) Three sub-score cards with progress bars, 3) High Priority Recs with red/amber priority badges and Implement/Schedule/View buttons, 4) Recent Activity timeline with relative timestamps, 5) Quick Stats grid. Professional enterprise appearance.",
+    "passes": false,
+    "priority": 8,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/UI_WIREFRAMES.md - Dashboard Desktop/Mobile Views",
+    "dribbble_inspiration": [
+      "Conceptzilla ERP - KPI cards with large metrics, small labels",
+      "Outcrowd Boostboard - consistent data visualization",
+      "Monkyne Analytics - main metric prominent with secondaries below"
+    ]
+  },
+  {
+    "id": "F009",
+    "name": "GEO Score Gauge Component - Premium Circular SVG",
+    "description": "Linear-inspired circular gauge: SVG circle with gradient arc stroke (primary blue gradient), score number in center (Inter Display 48px bold), letter grade below (24px muted), subtle glow/shadow on arc, smooth entrance animation (0 to score over 800ms with easeOutQuart). Trend indicator with arrow icon and delta value. Arc uses strokeLinecap round, strokeWidth 8-12px. Background track in muted gray (#27272A). DRIBBBLE PATTERN: Monkyne-style circular score display (90.2% pattern) with clean percentage in center, keyword/label below, bright green (#17CA29) for high scores, amber for medium, red for low. Green accent color for positive metrics.",
+    "test_description": "GEOScoreGauge shows: 1) SVG circular gauge with gradient blue arc, 2) Large centered score (48px Inter Display), 3) Letter grade in muted color below, 4) Smooth 800ms entrance animation, 5) Subtle shadow/glow on arc, 6) Muted gray background track. Matches premium analytics dashboard aesthetic (Stripe/Linear style).",
+    "passes": false,
+    "priority": 9,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/VISUAL_DESIGN_RESEARCH.md - GEO Score Gauge section, docs/UI_WIREFRAMES.md",
+    "dribbble_inspiration": [
+      "Monkyne Analytics - circular 90.2% gauge with centered percentage",
+      "Conceptzilla ERP - green accent (#17CA29) for positive metrics"
+    ]
+  },
+  {
+    "id": "F010",
+    "name": "Monitor - Platform Selection UI - Premium Cards",
+    "description": "Toggle cards to select AI platforms (ChatGPT, Claude, Gemini, Perplexity, Grok, DeepSeek) with each platform having its own branded color accent, icon, and connection status indicator. Cards show last scan time and mention count.",
+    "test_description": "Platform selection cards with: 1) Platform-specific brand colors and icons, 2) Toggle switch with visual feedback, 3) Connection status indicator, 4) Last scan timestamp, 5) Mention count badge. Professional enterprise appearance.",
+    "passes": false,
+    "priority": 10,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/UI_WIREFRAMES.md - Integrations page pattern"
+  },
+  {
+    "id": "F011",
+    "name": "Monitor - Brand Config Form UI",
+    "description": "Form with brand name, keywords array, competitors array",
+    "test_description": "Form validates and shows success toast (mock submit)",
+    "passes": false,
+    "priority": 11,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F012",
+    "name": "Monitor - Mentions Dashboard UI",
+    "description": "Display mention cards with platform icon, text, sentiment, timestamp (mock data). DRIBBBLE PATTERN: Conceptzilla ERP-style list rows with clean separation, muted borders (#E4E4E7). Sentiment badges use restrained colors (green #17CA29 positive, gray #8A878A neutral, red #FB1306 negative). Outcrowd-style platform icons with subtle colored backgrounds.",
+    "test_description": "Dashboard shows mentions with color-coded sentiment badges",
+    "passes": false,
+    "priority": 12,
+    "category": "ui",
+    "phase": "ui-first",
+    "dribbble_inspiration": [
+      "Conceptzilla ERP - clean list rows with muted borders",
+      "Outcrowd Boostboard - platform icons with colored backgrounds"
+    ]
+  },
+  {
+    "id": "F013",
+    "name": "Monitor - Mentions Filtering UI",
+    "description": "Filter mentions by platform, sentiment, date range. DRIBBBLE PATTERN: Outcrowd-style pill-shaped filter chips with active state highlighting. Monkyne-style horizontal filter row with clear spacing. Conceptzilla ERP-style dropdown selects with subtle borders. Filter chips use muted colors (#E4E4E7 inactive, #4926FA active).",
+    "test_description": "Selecting filter updates displayed mock mentions",
+    "passes": false,
+    "priority": 13,
+    "category": "ui",
+    "phase": "ui-first",
+    "dribbble_inspiration": [
+      "Outcrowd Boostboard - pill-shaped filter chips",
+      "Monkyne Analytics - horizontal filter row",
+      "Conceptzilla ERP - subtle dropdown selects"
+    ]
+  },
+  {
+    "id": "F013.5",
+    "name": "Monitor - Search Prompt Performance View - Premium Design",
+    "description": "Track which user search queries trigger brand mentions across AI platforms (inspired by Otterly). Shows prompt text, platforms where brand appeared, frequency, sentiment per prompt. Sortable table with search, export capability. Helps users understand which queries drive AI visibility.",
+    "test_description": "Search Prompt Performance view shows: 1) Table of search prompts with brand mention results, 2) Platform icons showing where brand appeared, 3) Frequency count and trend, 4) Sentiment indicator per prompt, 5) Search/filter by prompt text, 6) Export to CSV. Professional enterprise appearance.",
+    "passes": false,
+    "priority": 13.5,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "Otterly AI Search Monitoring - prompt performance tracking pattern"
+  },
+  {
+    "id": "F014",
+    "name": "Create - Content List UI",
+    "description": "List page showing all content with status badges (mock content)",
+    "test_description": "Page shows content cards with draft/published status",
+    "passes": false,
+    "priority": 14,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F015",
+    "name": "Create - Rich Text Editor UI",
+    "description": "TipTap editor with formatting toolbar (standalone, no AI)",
+    "test_description": "Editor supports bold, italic, headings, lists, links",
+    "passes": false,
+    "priority": 15,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F016",
+    "name": "Create - AI Suggestions UI Placeholder",
+    "description": "Inline AI suggestions panel with accept/reject buttons (mock suggestions)",
+    "test_description": "User can see mock suggestions and insert them into editor",
+    "passes": false,
+    "priority": 16,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F017",
+    "name": "Create - Content Preview Modal",
+    "description": "Preview mode showing rendered content in modal",
+    "test_description": "Preview button shows formatted content in modal",
+    "passes": false,
+    "priority": 17,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F018",
+    "name": "Audit - URL Input Form UI",
+    "description": "Form to submit URL for auditing with validation",
+    "test_description": "Form validates URL and shows loading state on submit",
+    "passes": false,
+    "priority": 18,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F019",
+    "name": "Audit - Results Dashboard UI - Premium Design",
+    "description": "Audit results matching wireframe style: Large circular GEO Score gauge at top (reuses GEOScoreGauge component), three sub-score cards (Schema Quality, Content Completeness, AI Visibility) with progress bars, issue categories with expandable lists, affected pages with fix buttons.",
+    "test_description": "Audit dashboard shows: 1) Circular GEO Score gauge with grade, 2) Three sub-score cards with progress bars matching dashboard style, 3) Issue categories (Critical/High/Medium/Low) with counts and expandable lists, 4) Page-level issues with 'Fix' action buttons. Professional enterprise appearance.",
+    "passes": false,
+    "priority": 19,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/UI_WIREFRAMES.md - Dashboard pattern, GEOScoreGauge Component"
+  },
+  {
+    "id": "F020",
+    "name": "Audit - Historical Comparison UI",
+    "description": "Compare current audit to previous audits (mock data)",
+    "test_description": "Page shows score trend chart over time with Recharts",
+    "passes": false,
+    "priority": 20,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F021",
+    "name": "Recommendations - Dashboard UI - Linear-Style Cards",
+    "description": "Linear-inspired recommendation cards: CARD - bg #18181B, 12px radius, subtle border (#27272A), hover: slight elevation increase. PRIORITY BADGE - Small pill, muted colors (critical #DC2626/10% opacity bg, high #EA580C, medium #D97706, low #65A30D). TYPE BADGE - Outlined pill with gray border. METRICS - Impact/Effort/Confidence as subtle inline text or mini progress bars, NOT bright colored pills. ACTIONS - Ghost buttons by default, primary CTA solid blue. EXPAND - Smooth accordion animation. DRIBBBLE PATTERN: Conceptzilla ERP-style clean cards with off-white (#FAF9FA) background in light mode, muted text (#8A878A), green success accents (#17CA29). Outcrowd-style pill-shaped tabs for filtering by status/priority.",
+    "test_description": "Recommendations page shows: 1) Cards with subtle dark backgrounds (#18181B), 2) Priority badges using muted semantic colors on transparent bg, 3) Metrics displayed subtly (not garish), 4) Ghost action buttons with hover states, 5) Smooth expand/collapse animation (200ms), 6) Consistent with Linear/Notion card aesthetic. No bright multicolor appearance.",
+    "passes": false,
+    "priority": 21,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/VISUAL_DESIGN_RESEARCH.md - Component Design Patterns, docs/UI_WIREFRAMES.md",
+    "dribbble_inspiration": [
+      "Conceptzilla ERP - clean cards with off-white bg, muted text, green accents",
+      "Outcrowd Boostboard - pill-shaped filter tabs"
+    ]
+  },
+  {
+    "id": "F022",
+    "name": "Recommendations - Status Updates UI",
+    "description": "Mark recommendations as pending/in-progress/completed/dismissed",
+    "test_description": "User can change status and see updated UI (local state)",
+    "passes": false,
+    "priority": 22,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F023",
+    "name": "Recommendations - Kanban Board View",
+    "description": "Kanban board for recommendations with drag-drop status changes",
+    "test_description": "Dragging card between columns updates recommendation status locally",
+    "passes": false,
+    "priority": 23,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F024",
+    "name": "Recommendations - Calendar View",
+    "description": "Calendar visualization of scheduled recommendations and deadlines",
+    "test_description": "Calendar shows recommendations by due date with mock data",
+    "passes": false,
+    "priority": 24,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F025",
+    "name": "Analytics - Mentions Over Time Chart - Premium Design",
+    "description": "Recharts line/area chart matching wireframe style: Clean minimalist design, gradient fill under line, proper axis labels, hover tooltips with detailed data, responsive sizing. Chart container with card styling matching dashboard. DRIBBBLE PATTERN: Ronas IT-style area charts with soft gradient fills (#4926FA to transparent), subtle grid lines, clean axis labels. Fireart Studio-style smooth curves with hover crosshairs. Outcrowd-style legend placement below chart.",
+    "test_description": "Chart shows: 1) Smooth line with gradient area fill, 2) Proper date axis formatting, 3) Hover tooltips with mention details, 4) Card container matching dashboard aesthetic, 5) Responsive on mobile. Professional Stripe/Linear appearance.",
+    "passes": false,
+    "priority": 25,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/UI_WIREFRAMES.md - GEO Scorecards trend chart pattern",
+    "dribbble_inspiration": [
+      "Ronas IT - area charts with soft gradient fills",
+      "Fireart Studio - smooth curves with hover crosshairs",
+      "Outcrowd Boostboard - legend placement below chart"
+    ]
+  },
+  {
+    "id": "F026",
+    "name": "Analytics - Sentiment Distribution Chart - Premium Design",
+    "description": "Recharts donut chart with center label showing total, color-coded segments (green positive, grey neutral, red negative), hover tooltips, legend below. DRIBBBLE PATTERN: Outcrowd Boostboard-style donut charts with large centered metric, segment labels around outside, vibrant but restrained palette (#4926FA purple-blue, #17CA29 green, #FB1306 red). Thick donut stroke with rounded ends.",
+    "test_description": "Donut chart shows: 1) Center label with total mentions, 2) Color segments (green/grey/red), 3) Interactive hover states, 4) Legend with percentages, 5) Animation on load. Matches circular gauge style.",
+    "passes": false,
+    "priority": 26,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/UI_WIREFRAMES.md - Circular gauge aesthetic",
+    "dribbble_inspiration": [
+      "Outcrowd Boostboard - donut chart with centered metric",
+      "Anik Deb - glassmorphism progress circles"
+    ]
+  },
+  {
+    "id": "F027",
+    "name": "Analytics - Platform Breakdown Chart - Premium Design",
+    "description": "Horizontal bar chart with platform-specific brand colors (ChatGPT green, Claude coral, Gemini blue, etc.), platform icons, percentage labels, sorted by mention count.",
+    "test_description": "Bar chart shows: 1) Platform-specific brand colors, 2) Platform icons next to labels, 3) Percentage and count on each bar, 4) Sorted by volume descending, 5) Hover interactions. Professional styling.",
+    "passes": false,
+    "priority": 27,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/UI_WIREFRAMES.md - Dashboard card styling"
+  },
+  {
+    "id": "F027.5",
+    "name": "Analytics - Platform Citation Analysis - Premium Design",
+    "description": "Track which AI platforms cite your brand most frequently and in what context (inspired by Otterly link-citation analysis). Shows citation URLs, context snippets, citation frequency trends per platform. Identifies which content gets cited most. Helps optimize content for AI citation.",
+    "test_description": "Citation Analysis view shows: 1) Table of cited URLs with platform breakdown, 2) Context snippets showing how brand is mentioned, 3) Citation frequency trend chart, 4) Top-cited content ranking, 5) Platform comparison (which AI cites you most). Professional enterprise appearance.",
+    "passes": false,
+    "priority": 27.5,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "Otterly - link-citation analysis pattern"
+  },
+  {
+    "id": "F028",
+    "name": "Analytics - GEO Score Trend Chart - Premium Design",
+    "description": "Line chart matching wireframe trend display: Score over 3-month period with month labels, trend line showing improvement, annotations for significant events (recommendations completed), target line if set.",
+    "test_description": "Trend chart shows: 1) Score line over time, 2) Month axis labels, 3) Improvement annotations, 4) Optional target line, 5) Matches GEO Scorecards wireframe. Professional appearance.",
+    "passes": false,
+    "priority": 28,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/UI_WIREFRAMES.md - GEO Scorecards TREND section"
+  },
+  {
+    "id": "F029",
+    "name": "Analytics - Impact Verification UI - Premium Design",
+    "description": "Before/after comparison matching Recommendation Detail wireframe: Side-by-side progress bars showing BEFORE and AFTER states, percentage improvement with arrow indicators, predicted vs actual comparison.",
+    "test_description": "Impact UI shows: 1) BEFORE/AFTER side-by-side layout, 2) Progress bars with values (e.g., AI Mentions: 0/20 \u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a0\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2 11/20), 3) Improvement percentage with green indicator, 4) Schema Score comparison. Matches wireframe EXPECTED IMPACT section.",
+    "passes": true,
+    "priority": 29,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/UI_WIREFRAMES.md - Recommendation Detail EXPECTED IMPACT section"
+  },
+  {
+    "id": "F030",
+    "name": "Settings - Organization Profile UI",
+    "description": "Form to update org name, logo, contact info (mock save)",
+    "test_description": "User can edit org settings and see mock success toast",
+    "passes": true,
+    "priority": 30,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F031",
+    "name": "Settings - Branding Customization UI",
+    "description": "Color pickers for primary/secondary colors, logo upload",
+    "test_description": "Changing colors updates theme in real-time preview",
+    "passes": true,
+    "priority": 31,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F032",
+    "name": "Settings - Team Members UI",
+    "description": "List and invite team members with role assignment (mock data)",
+    "test_description": "Can see mock team list and invite modal with role selector",
+    "passes": true,
+    "priority": 32,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F033",
+    "name": "Settings - API Keys UI",
+    "description": "Manage API keys display with masked values (mock data)",
+    "test_description": "Shows mock API keys with copy/revoke buttons",
+    "passes": false,
+    "priority": 33,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F034",
+    "name": "Settings - Integration Connections UI",
+    "description": "Connect/disconnect cards for Jira, Slack, Google Analytics",
+    "test_description": "Shows connection status cards with connect buttons",
+    "passes": false,
+    "priority": 34,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F035",
+    "name": "Error Handling - Global Error Boundary",
+    "description": "React error boundary with user-friendly error page",
+    "test_description": "Component errors show recovery UI instead of crash",
+    "passes": false,
+    "priority": 35,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F036",
+    "name": "Loading States - Skeleton Loaders - Premium Design",
+    "description": "Skeleton loaders matching component shapes: Circular gauge skeleton for GEO Score, horizontal bars for progress indicators, card skeletons for recommendations. Subtle pulse animation, proper sizing matching actual components.",
+    "test_description": "Skeleton loaders show: 1) Circular skeleton for GEO gauge, 2) Bar skeletons for sub-scores, 3) Card skeletons for recommendations/activity, 4) Pulse animation, 5) Match exact component dimensions. Professional appearance.",
+    "passes": false,
+    "priority": 36,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/UI_WIREFRAMES.md - Component Specifications (match each component shape)"
+  },
+  {
+    "id": "F037",
+    "name": "Toast Notifications System",
+    "description": "Success/error toasts for all user actions",
+    "test_description": "Actions trigger appropriate toast notifications",
+    "passes": false,
+    "priority": 37,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F038",
+    "name": "Mobile Responsive Layout - Bottom Navigation",
+    "description": "Mobile layout matching UI_WIREFRAMES.md: Bottom navigation bar with 5 icons (Home, Recs, Score, Settings, User). Hamburger menu for sidebar. Touch-optimized 44px minimum touch targets. Swipe gestures for recommendations (left=dismiss, right=complete). Bottom sheet for action menus. Collapsible cards.",
+    "test_description": "At 375px width: 1) Bottom nav bar with 5 icons is visible and fixed, 2) Sidebar hidden behind hamburger, 3) Cards are touch-friendly, 4) Swipe gestures work on recommendation cards, 5) Bottom sheets appear for menus instead of dropdowns.",
+    "passes": false,
+    "priority": 38,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/UI_WIREFRAMES.md - Mobile Views, Swipe Gestures, Bottom Sheet"
+  },
+  {
+    "id": "F039",
+    "name": "Onboarding Flow UI",
+    "description": "First-run wizard for brand setup and platform selection (mock flow)",
+    "test_description": "New user sees onboarding steps with navigation",
+    "passes": false,
+    "priority": 39,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F040",
+    "name": "Onboarding Checklist UI",
+    "description": "Progressive onboarding checklist tracking setup completion",
+    "test_description": "Checklist shows completion status and guides next steps",
+    "passes": false,
+    "priority": 40,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F041",
+    "name": "Help & Documentation Modal",
+    "description": "In-app help docs and tooltips",
+    "test_description": "Help button opens documentation modal",
+    "passes": false,
+    "priority": 41,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F042",
+    "name": "Command Palette - Glassmorphism Linear Style",
+    "description": "Linear-inspired command palette: MODAL - Centered, max-width 640px, glassmorphism effect (backdrop-blur-xl, bg rgba(24,24,27,0.8), border 1px rgba(255,255,255,0.1)). INPUT - Large 18px font, no border, placeholder 'Type a command or search...'. RESULTS - Grouped by category with subtle headers, hover highlight (#27272A), keyboard selection indicator. SHORTCUTS - Right-aligned muted kbd elements. Animation - Fade in 150ms, scale from 0.95. ESC to close. Natural language query support (e.g., 'Show mentions from last week').",
+    "test_description": "Command palette shows: 1) Glassmorphism modal with backdrop blur, 2) Large search input with clean styling, 3) Grouped results with category headers, 4) Keyboard navigation (up/down/enter), 5) Smooth fade+scale entrance animation, 6) Muted keyboard shortcut hints. Matches Linear command palette exactly.",
+    "passes": false,
+    "priority": 42,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/VISUAL_DESIGN_RESEARCH.md - Glassmorphism section, Linear command palette"
+  },
+  {
+    "id": "F043",
+    "name": "In-App Notifications Bell",
+    "description": "Notification bell with unread count and dropdown list (mock data)",
+    "test_description": "Bell shows unread count, dropdown shows mock notifications",
+    "passes": false,
+    "priority": 43,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F044",
+    "name": "Data Export UI - CSV/PDF Buttons",
+    "description": "Export buttons for mentions, audits, recommendations",
+    "test_description": "Export buttons show in toolbar with format options",
+    "passes": false,
+    "priority": 44,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F045",
+    "name": "Competitor Comparison UI",
+    "description": "Compare brand mentions vs competitors side-by-side (mock data)",
+    "test_description": "Dashboard shows side-by-side competitor metrics",
+    "passes": false,
+    "priority": 45,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F046",
+    "name": "Billing - Subscription Plans UI",
+    "description": "Pricing page with Free, Pro, Enterprise tiers",
+    "test_description": "Shows plan comparison with feature list and pricing",
+    "passes": false,
+    "priority": 46,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F047",
+    "name": "Billing - Usage Dashboard UI",
+    "description": "Track AI tokens, scans, seats usage display (mock data)",
+    "test_description": "Usage dashboard shows current period usage with charts",
+    "passes": false,
+    "priority": 47,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F048",
+    "name": "Job Dashboard UI (Admin)",
+    "description": "Admin view of queued/running/failed jobs (mock data)",
+    "test_description": "Dashboard shows job status cards with retry buttons",
+    "passes": false,
+    "priority": 48,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F049",
+    "name": "Multi-language UI Support",
+    "description": "Interface translations for Zulu, Xhosa, Afrikaans, Swahili, Yoruba",
+    "test_description": "Language selector changes all UI text to selected language",
+    "passes": false,
+    "priority": 49,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F050",
+    "name": "Gamification - Levels & Achievements UI",
+    "description": "Levels, XP, achievements, and streaks display",
+    "test_description": "Profile shows XP bar, level, and achievement badges",
+    "passes": false,
+    "priority": 50,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F051",
+    "name": "Loadshedding Mode Toggle",
+    "description": "Toggle for South African loadshedding-aware mode",
+    "test_description": "Toggle enables reduced data mode with notification",
+    "passes": false,
+    "priority": 51,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F052",
+    "name": "Low-bandwidth Mode Toggle",
+    "description": "Optimized experience toggle for slow/expensive data",
+    "test_description": "Toggle enables compressed assets indicator",
+    "passes": false,
+    "priority": 52,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F053",
+    "name": "PWA Configuration",
+    "description": "next-pwa setup with manifest and service worker",
+    "test_description": "App can be installed on mobile, shows install prompt",
+    "passes": false,
+    "priority": 53,
+    "category": "ui",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F054",
+    "name": "Auth Pages UI - Sign In/Sign Up - Premium Design",
+    "description": "Auth pages matching brand theme with premium design: Centered card layout, brand logo at top, clean form fields with proper validation states, social login options if configured, subtle background gradient or pattern. Professional enterprise appearance.",
+    "test_description": "Auth pages show: 1) Centered card with brand logo, 2) Clean form fields with validation, 3) Primary action button matching brand color, 4) Link to alternative auth action, 5) Professional background treatment. Enterprise appearance.",
+    "passes": false,
+    "priority": 54,
+    "category": "ui",
+    "phase": "ui-first",
+    "design_reference": "docs/UI_UX_DESIGN_STRATEGY.md - Color System, Brand Integration"
+  },
+  {
+    "id": "F055",
+    "name": "Zustand Store - UI State",
+    "description": "Sidebar collapsed state, theme, preferences in Zustand",
+    "test_description": "UI state persists across page navigations",
+    "passes": false,
+    "priority": 55,
+    "category": "frontend",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F056",
+    "name": "Form Validation - Zod Schemas",
+    "description": "Reusable Zod schemas for all forms",
+    "test_description": "Invalid form data shows validation errors",
+    "passes": false,
+    "priority": 56,
+    "category": "frontend",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F057",
+    "name": "React Hook Form Integration",
+    "description": "Forms use RHF with Zod resolver",
+    "test_description": "Form handles submission with loading state",
+    "passes": false,
+    "priority": 57,
+    "category": "frontend",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F058",
+    "name": "Mock Data Service",
+    "description": "Centralized mock data generators for all entities",
+    "test_description": "Import mock mentions, audits, recommendations for UI development",
+    "passes": false,
+    "priority": 58,
+    "category": "frontend",
+    "phase": "ui-first"
+  },
+  {
+    "id": "F059",
+    "name": "Drizzle ORM Setup",
+    "description": "Configure Drizzle with Neon PostgreSQL connection",
+    "test_description": "db:push command works and connects to database",
+    "passes": false,
+    "priority": 59,
+    "category": "backend",
+    "phase": "backend"
+  },
+  {
+    "id": "F060",
+    "name": "Organizations Schema",
+    "description": "Create organizations table with id, name, slug, clerk_org_id, branding settings",
+    "test_description": "Can insert and query organizations via Drizzle",
+    "passes": false,
+    "priority": 60,
+    "category": "backend",
+    "phase": "backend"
+  },
+  {
+    "id": "F061",
+    "name": "Users Schema",
+    "description": "Create users table linked to organizations with roles",
+    "test_description": "Can insert user with organization_id and role",
+    "passes": false,
+    "priority": 61,
+    "category": "backend",
+    "phase": "backend"
+  },
+  {
+    "id": "F062",
+    "name": "Brand Mentions Schema",
+    "description": "Create brand_mentions table with platform, content, sentiment, timestamp",
+    "test_description": "Can store and query brand mentions with filters",
+    "passes": false,
+    "priority": 62,
+    "category": "backend",
+    "phase": "backend"
+  },
+  {
+    "id": "F063",
+    "name": "Content Schema",
+    "description": "Create content table for AI-generated content with drafts and versions",
+    "test_description": "Can create, update, and version content entries",
+    "passes": false,
+    "priority": 63,
+    "category": "backend",
+    "phase": "backend"
+  },
+  {
+    "id": "F064",
+    "name": "Audits Schema",
+    "description": "Create audits table with site URL, scores, issues JSON",
+    "test_description": "Can store audit results with nested issue data",
+    "passes": false,
+    "priority": 64,
+    "category": "backend",
+    "phase": "backend"
+  },
+  {
+    "id": "F065",
+    "name": "Recommendations Schema",
+    "description": "Create recommendations table with priority, impact, effort, status",
+    "test_description": "Can CRUD recommendations linked to audits",
+    "passes": false,
+    "priority": 65,
+    "category": "backend",
+    "phase": "backend"
+  },
+  {
+    "id": "F066",
+    "name": "API Keys Schema",
+    "description": "Store encrypted API keys per org (Anthropic, OpenAI, integrations)",
+    "test_description": "Can store and retrieve encrypted API keys",
+    "passes": false,
+    "priority": 66,
+    "category": "backend",
+    "phase": "backend"
+  },
+  {
+    "id": "F067",
+    "name": "Row-Level Security Setup",
+    "description": "Implement RLS policies for multi-tenant data isolation",
+    "test_description": "Queries automatically filter by organization_id",
+    "passes": false,
+    "priority": 67,
+    "category": "backend",
+    "phase": "backend"
+  },
+  {
+    "id": "F068",
+    "name": "Redis Cache Setup",
+    "description": "Configure Upstash Redis for caching and rate limiting",
+    "test_description": "Can set and get values from Redis",
+    "passes": false,
+    "priority": 68,
+    "category": "backend",
+    "phase": "backend"
+  },
+  {
+    "id": "F069",
+    "name": "Clerk Authentication",
+    "description": "Integrate Clerk with organization support and middleware",
+    "test_description": "Sign up creates user and org, middleware protects routes",
+    "passes": false,
+    "priority": 69,
+    "category": "auth",
+    "phase": "backend"
+  },
+  {
+    "id": "F070",
+    "name": "Auth Webhook Handler",
+    "description": "Webhook to sync Clerk users/orgs to database",
+    "test_description": "Creating user in Clerk creates record in users table",
+    "passes": false,
+    "priority": 70,
+    "category": "auth",
+    "phase": "backend"
+  },
+  {
+    "id": "F071",
+    "name": "Protected Routes Middleware",
+    "description": "Dashboard layout with auth check, redirects unauthenticated",
+    "test_description": "Visiting /dashboard without auth redirects to /sign-in",
+    "passes": false,
+    "priority": 71,
+    "category": "auth",
+    "phase": "backend"
+  },
+  {
+    "id": "F072",
+    "name": "Monitor - Platform Config API",
+    "description": "API to save which AI platforms to monitor per organization",
+    "test_description": "POST /api/monitor/platforms saves platform selection",
+    "passes": false,
+    "priority": 72,
+    "category": "api",
+    "phase": "backend"
+  },
+  {
+    "id": "F073",
+    "name": "Monitor - Brand Config API",
+    "description": "API to save brand name, keywords, competitors for monitoring",
+    "test_description": "POST /api/monitor/brand saves config to database",
+    "passes": false,
+    "priority": 73,
+    "category": "api",
+    "phase": "backend"
+  },
+  {
+    "id": "F074",
+    "name": "Monitor - Mentions API",
+    "description": "GET /api/monitor/mentions with pagination and filters",
+    "test_description": "API returns paginated mentions filtered by platform/date",
+    "passes": false,
+    "priority": 74,
+    "category": "api",
+    "phase": "backend"
+  },
+  {
+    "id": "F075",
+    "name": "Create - Content CRUD API",
+    "description": "CRUD API for content with drafts and published states",
+    "test_description": "Can create, read, update, delete content via API",
+    "passes": false,
+    "priority": 75,
+    "category": "api",
+    "phase": "backend"
+  },
+  {
+    "id": "F076",
+    "name": "Recommendations - API",
+    "description": "GET /api/recommendations with filters for status, priority",
+    "test_description": "API returns filtered, paginated recommendations",
+    "passes": false,
+    "priority": 76,
+    "category": "api",
+    "phase": "backend"
+  },
+  {
+    "id": "F077",
+    "name": "Recommendations - Status Update API",
+    "description": "PATCH /api/recommendations/:id/status to update status",
+    "test_description": "API updates recommendation status in database",
+    "passes": false,
+    "priority": 77,
+    "category": "api",
+    "phase": "backend"
+  },
+  {
+    "id": "F078",
+    "name": "Settings - Organization API",
+    "description": "GET/PUT /api/settings/organization for org profile",
+    "test_description": "Can retrieve and update organization settings",
+    "passes": false,
+    "priority": 78,
+    "category": "api",
+    "phase": "backend"
+  },
+  {
+    "id": "F079",
+    "name": "Settings - Team Members API",
+    "description": "CRUD API for team member management",
+    "test_description": "Can invite, list, update role, remove team members",
+    "passes": false,
+    "priority": 79,
+    "category": "api",
+    "phase": "backend"
+  },
+  {
+    "id": "F080",
+    "name": "Settings - API Keys CRUD API",
+    "description": "API for creating and revoking API keys",
+    "test_description": "Can create, list, and revoke API keys",
+    "passes": false,
+    "priority": 80,
+    "category": "api",
+    "phase": "backend"
+  },
+  {
+    "id": "F081",
+    "name": "API Key Encryption",
+    "description": "AES-256 encryption for API keys at rest",
+    "test_description": "Keys encrypted before storage, decrypted on use",
+    "passes": false,
+    "priority": 81,
+    "category": "backend",
+    "phase": "backend"
+  },
+  {
+    "id": "F082",
+    "name": "AI Service - Claude Client Setup",
+    "description": "Create Anthropic Claude SDK client with API key from env",
+    "test_description": "Claude client initializes and can make test API call",
+    "passes": false,
+    "priority": 82,
+    "category": "ai",
+    "phase": "backend"
+  },
+  {
+    "id": "F083",
+    "name": "AI Service - OpenAI Client Setup",
+    "description": "Create OpenAI SDK client for GPT-4 and embeddings",
+    "test_description": "OpenAI client initializes and can make test API call",
+    "passes": false,
+    "priority": 83,
+    "category": "ai",
+    "phase": "backend"
+  },
+  {
+    "id": "F084",
+    "name": "AI Service - Embeddings Generator",
+    "description": "OpenAI text-embedding-3-small integration for vector search",
+    "test_description": "Can generate embeddings for input text",
+    "passes": false,
+    "priority": 84,
+    "category": "ai",
+    "phase": "backend"
+  },
+  {
+    "id": "F085",
+    "name": "AI Service - Pinecone Vector DB Setup",
+    "description": "Configure Pinecone client for semantic search storage",
+    "test_description": "Can upsert and query vectors in Pinecone index",
+    "passes": false,
+    "priority": 85,
+    "category": "ai",
+    "phase": "backend"
+  },
+  {
+    "id": "F086",
+    "name": "AI Service - LLM Router",
+    "description": "Abstraction layer to switch between Claude/OpenAI based on config",
+    "test_description": "Router uses Claude by default, falls back to OpenAI",
+    "passes": false,
+    "priority": 86,
+    "category": "ai",
+    "phase": "backend"
+  },
+  {
+    "id": "F087",
+    "name": "AI Service - Rate Limiting",
+    "description": "Redis-based rate limiting for AI API calls per org",
+    "test_description": "Requests blocked after hitting rate limit",
+    "passes": false,
+    "priority": 87,
+    "category": "ai",
+    "phase": "backend"
+  },
+  {
+    "id": "F088",
+    "name": "AI Service - Token Usage Tracking",
+    "description": "Track token usage per org for billing/quotas",
+    "test_description": "Token counts stored in DB after each API call",
+    "passes": false,
+    "priority": 88,
+    "category": "ai",
+    "phase": "backend"
+  },
+  {
+    "id": "F089",
+    "name": "AI Service - Prompt Templates",
+    "description": "Reusable prompt templates for sentiment, suggestions, analysis",
+    "test_description": "Templates render with variables substituted",
+    "passes": false,
+    "priority": 89,
+    "category": "ai",
+    "phase": "backend"
+  },
+  {
+    "id": "F090",
+    "name": "AI Service - Streaming Responses",
+    "description": "SSE streaming for long AI responses in UI",
+    "test_description": "AI response streams token-by-token to frontend",
+    "passes": false,
+    "priority": 90,
+    "category": "ai",
+    "phase": "backend"
+  },
+  {
+    "id": "F091",
+    "name": "Monitor - Sentiment Analysis API",
+    "description": "Claude API integration to analyze mention sentiment",
+    "test_description": "API returns sentiment score for given text",
+    "passes": false,
+    "priority": 91,
+    "category": "ai",
+    "phase": "backend"
+  },
+  {
+    "id": "F092",
+    "name": "Create - AI Suggestions API",
+    "description": "Claude API endpoint for content suggestions based on context",
+    "test_description": "POST /api/create/suggest returns AI-generated suggestions",
+    "passes": false,
+    "priority": 92,
+    "category": "ai",
+    "phase": "backend"
+  },
+  {
+    "id": "F093",
+    "name": "Browserless.io Integration",
+    "description": "Cloud-based headless browser for production scraping",
+    "test_description": "Scraper uses Browserless API in production mode",
+    "passes": false,
+    "priority": 93,
+    "category": "scraping",
+    "phase": "backend"
+  },
+  {
+    "id": "F094",
+    "name": "Monitor - ChatGPT Scraper",
+    "description": "Playwright scraper to query ChatGPT and detect brand mentions",
+    "test_description": "Scraper returns responses containing brand keywords",
+    "passes": false,
+    "priority": 94,
+    "category": "scraping",
+    "phase": "backend"
+  },
+  {
+    "id": "F095",
+    "name": "Monitor - Claude Scraper",
+    "description": "Playwright scraper to query Claude API for brand mentions",
+    "test_description": "Scraper returns Claude responses about brand",
+    "passes": false,
+    "priority": 95,
+    "category": "scraping",
+    "phase": "backend"
+  },
+  {
+    "id": "F096",
+    "name": "Monitor - Perplexity Scraper",
+    "description": "Scraper for Perplexity AI search results",
+    "test_description": "Scraper returns Perplexity search results with brand mentions",
+    "passes": false,
+    "priority": 96,
+    "category": "scraping",
+    "phase": "backend"
+  },
+  {
+    "id": "F097",
+    "name": "Monitor - Gemini Scraper",
+    "description": "Scraper for Google Gemini AI responses",
+    "test_description": "Scraper returns Gemini responses about brand",
+    "passes": false,
+    "priority": 97,
+    "category": "scraping",
+    "phase": "backend"
+  },
+  {
+    "id": "F098",
+    "name": "Monitor - Grok Scraper",
+    "description": "Scraper for X/Twitter Grok AI responses",
+    "test_description": "Scraper returns Grok responses about brand",
+    "passes": false,
+    "priority": 98,
+    "category": "scraping",
+    "phase": "backend"
+  },
+  {
+    "id": "F099",
+    "name": "Monitor - DeepSeek Scraper",
+    "description": "Scraper for DeepSeek AI responses",
+    "test_description": "Scraper returns DeepSeek responses about brand",
+    "passes": false,
+    "priority": 99,
+    "category": "scraping",
+    "phase": "backend"
+  },
+  {
+    "id": "F100",
+    "name": "BullMQ Queue Setup",
+    "description": "Configure BullMQ with Redis for background jobs",
+    "test_description": "Jobs can be queued and processed by workers",
+    "passes": false,
+    "priority": 100,
+    "category": "backend",
+    "phase": "backend"
+  },
+  {
+    "id": "F101",
+    "name": "Monitor - Background Job Worker",
+    "description": "BullMQ worker to run platform queries on schedule",
+    "test_description": "Job runs and stores new mentions in database",
+    "passes": false,
+    "priority": 101,
+    "category": "backend",
+    "phase": "backend"
+  },
+  {
+    "id": "F102",
+    "name": "Job Scheduler - Cron Jobs",
+    "description": "Schedule recurring jobs (daily scans, weekly reports)",
+    "test_description": "Cron job triggers at scheduled time",
+    "passes": false,
+    "priority": 102,
+    "category": "backend",
+    "phase": "backend"
+  },
+  {
+    "id": "F103",
+    "name": "Audit - Site Crawler API",
+    "description": "Playwright crawler that analyzes site structure and content",
+    "test_description": "POST /api/audit starts crawl and returns job ID",
+    "passes": false,
+    "priority": 103,
+    "category": "audit",
+    "phase": "backend"
+  },
+  {
+    "id": "F104",
+    "name": "Audit - AI Readability Analyzer",
+    "description": "Algorithm scoring content for AI understanding (structure, schema, clarity)",
+    "test_description": "Analyzer returns score 0-100 with breakdown",
+    "passes": false,
+    "priority": 104,
+    "category": "audit",
+    "phase": "backend"
+  },
+  {
+    "id": "F105",
+    "name": "Audit - Issue Detection",
+    "description": "Detect missing schema, poor headings, thin content, etc.",
+    "test_description": "Audit returns categorized issues with severity",
+    "passes": false,
+    "priority": 105,
+    "category": "audit",
+    "phase": "backend"
+  },
+  {
+    "id": "F106",
+    "name": "Recommendations - Engine Core",
+    "description": "Algorithm combining monitor + audit data to generate recommendations",
+    "test_description": "Engine produces prioritized recommendations from data",
+    "passes": false,
+    "priority": 106,
+    "category": "recommendations",
+    "phase": "backend"
+  },
+  {
+    "id": "F107",
+    "name": "Recommendations - Priority Scoring",
+    "description": "Score recommendations by impact (40%), effort (30%), urgency (20%), confidence (10%)",
+    "test_description": "Recommendations sorted by calculated priority score",
+    "passes": false,
+    "priority": 107,
+    "category": "recommendations",
+    "phase": "backend"
+  },
+  {
+    "id": "F108",
+    "name": "Entity Extraction NLP",
+    "description": "NLP-based entity extraction for Content Gap Analysis comparing brand presence across AI models",
+    "test_description": "Extracts entities from AI responses and compares coverage across platforms",
+    "passes": false,
+    "priority": 108,
+    "category": "recommendations",
+    "phase": "backend"
+  },
+  {
+    "id": "F109",
+    "name": "Schema Code Snippet Generator",
+    "description": "Auto-generate schema.org JSON-LD code snippets for missing structured data",
+    "test_description": "Generates valid JSON-LD for Organization, LocalBusiness, FAQ, HowTo, Product schemas",
+    "passes": false,
+    "priority": 109,
+    "category": "recommendations",
+    "phase": "backend"
+  },
+  {
+    "id": "F110",
+    "name": "Voice Search Readability Scoring",
+    "description": "Flesch-Kincaid readability analysis for voice search optimization",
+    "test_description": "Calculates readability score and provides voice-friendly rewrite suggestions",
+    "passes": false,
+    "priority": 110,
+    "category": "recommendations",
+    "phase": "backend"
+  },
+  {
+    "id": "F111",
+    "name": "Q&A Format Converter",
+    "description": "Convert content to Q&A format for featured snippet optimization",
+    "test_description": "Transforms paragraph content into question-answer pairs",
+    "passes": false,
+    "priority": 111,
+    "category": "recommendations",
+    "phase": "backend"
+  },
+  {
+    "id": "F112",
+    "name": "Recommendation Templates System",
+    "description": "Database-driven recommendation templates with customizable action items",
+    "test_description": "Templates render with brand-specific variables and action steps",
+    "passes": false,
+    "priority": 112,
+    "category": "recommendations",
+    "phase": "backend"
+  },
+  {
+    "id": "F113",
+    "name": "Recommendation Feedback System",
+    "description": "User feedback and rating on recommendations for ML improvement",
+    "test_description": "Users can rate recommendations helpful/not-helpful with comments",
+    "passes": false,
+    "priority": 113,
+    "category": "recommendations",
+    "phase": "backend"
+  },
+  {
+    "id": "F114",
+    "name": "ML-based Priority Adjustment",
+    "description": "Machine learning model to optimize recommendation priority based on historical outcomes",
+    "test_description": "Priority scores improve based on completed recommendation success rates",
+    "passes": false,
+    "priority": 114,
+    "category": "recommendations",
+    "phase": "backend"
+  },
+  {
+    "id": "F115",
+    "name": "Auto-scheduling Recommendations",
+    "description": "Automatic task scheduling based on effort estimates and team capacity",
+    "test_description": "Recommendations auto-schedule to optimal time slots",
+    "passes": false,
+    "priority": 115,
+    "category": "recommendations",
+    "phase": "backend"
+  },
+  {
+    "id": "F116",
+    "name": "Content Inventory Tracking",
+    "description": "Track all content assets with AI visibility scores and optimization status",
+    "test_description": "Content inventory shows all pages with GEO health scores",
+    "passes": false,
+    "priority": 116,
+    "category": "audit",
+    "phase": "backend"
+  },
+  {
+    "id": "F117",
+    "name": "Jira OAuth Integration",
+    "description": "OAuth2 flow to connect Jira workspace",
+    "test_description": "User can authorize Jira and see connected status",
+    "passes": false,
+    "priority": 117,
+    "category": "integrations",
+    "phase": "backend"
+  },
+  {
+    "id": "F118",
+    "name": "Jira Create Issue API",
+    "description": "Create Jira issues from recommendations",
+    "test_description": "API creates issue in connected Jira project",
+    "passes": false,
+    "priority": 118,
+    "category": "integrations",
+    "phase": "backend"
+  },
+  {
+    "id": "F119",
+    "name": "Jira Bi-directional Sync",
+    "description": "Webhook-based sync to update recommendation status when Jira ticket changes",
+    "test_description": "Completing Jira ticket marks recommendation as completed",
+    "passes": false,
+    "priority": 119,
+    "category": "integrations",
+    "phase": "backend"
+  },
+  {
+    "id": "F120",
+    "name": "Slack OAuth Integration",
+    "description": "OAuth2 flow to connect Slack workspace",
+    "test_description": "User can authorize Slack and select channel",
+    "passes": false,
+    "priority": 120,
+    "category": "integrations",
+    "phase": "backend"
+  },
+  {
+    "id": "F121",
+    "name": "Slack Send Message API",
+    "description": "Post messages to Slack channel",
+    "test_description": "API sends formatted message to Slack",
+    "passes": false,
+    "priority": 121,
+    "category": "integrations",
+    "phase": "backend"
+  },
+  {
+    "id": "F122",
+    "name": "Google Analytics Connection",
+    "description": "OAuth to connect GA4 property",
+    "test_description": "User can authorize GA and see connected property",
+    "passes": false,
+    "priority": 122,
+    "category": "integrations",
+    "phase": "backend"
+  },
+  {
+    "id": "F123",
+    "name": "Google Search Console Connection",
+    "description": "OAuth to connect GSC property",
+    "test_description": "User can authorize GSC and see connected site",
+    "passes": false,
+    "priority": 123,
+    "category": "integrations",
+    "phase": "backend"
+  },
+  {
+    "id": "F124",
+    "name": "Trello Integration",
+    "description": "OAuth and card creation for Trello",
+    "test_description": "Can create Trello card from recommendation",
+    "passes": false,
+    "priority": 124,
+    "category": "integrations",
+    "phase": "backend"
+  },
+  {
+    "id": "F125",
+    "name": "Linear Integration",
+    "description": "OAuth and issue creation for Linear",
+    "test_description": "Can create Linear issue from recommendation",
+    "passes": false,
+    "priority": 125,
+    "category": "integrations",
+    "phase": "backend"
+  },
+  {
+    "id": "F126",
+    "name": "Asana Integration",
+    "description": "OAuth and task creation for Asana project management",
+    "test_description": "Can create Asana task from recommendation",
+    "passes": false,
+    "priority": 126,
+    "category": "integrations",
+    "phase": "backend"
+  },
+  {
+    "id": "F127",
+    "name": "Webhook System - Outgoing",
+    "description": "Send webhooks on events (new mention, audit complete)",
+    "test_description": "Webhook fires to configured URL on event",
+    "passes": false,
+    "priority": 127,
+    "category": "integrations",
+    "phase": "backend"
+  },
+  {
+    "id": "F128",
+    "name": "Email Notifications Setup",
+    "description": "Resend/SendGrid integration for transactional emails",
+    "test_description": "Can send test email via configured provider",
+    "passes": false,
+    "priority": 128,
+    "category": "notifications",
+    "phase": "backend"
+  },
+  {
+    "id": "F129",
+    "name": "Email - Weekly Report",
+    "description": "Weekly summary email with key metrics",
+    "test_description": "Scheduled job sends weekly report email",
+    "passes": false,
+    "priority": 129,
+    "category": "notifications",
+    "phase": "backend"
+  },
+  {
+    "id": "F130",
+    "name": "Email - Alert Notifications",
+    "description": "Email alerts for negative mentions, audit drops",
+    "test_description": "Negative mention triggers alert email",
+    "passes": false,
+    "priority": 130,
+    "category": "notifications",
+    "phase": "backend"
+  },
+  {
+    "id": "F130.5",
+    "name": "Crisis Alert System - Threshold-Based Detection",
+    "description": "Automated crisis detection inspired by Brand24: Configurable thresholds for sentiment drops (e.g., >20% negative in 24hrs), mention spikes, or score drops. Triggers immediate multi-channel alerts (email, Slack, WhatsApp, in-app). Crisis dashboard showing timeline of events, severity indicator, and suggested response actions.",
+    "test_description": "Crisis Alert system shows: 1) Settings page to configure thresholds (sentiment %, mention spike %, score drop), 2) Multi-channel alert triggers when threshold exceeded, 3) Crisis dashboard with event timeline, 4) Severity indicator (Warning/Critical/Emergency), 5) Suggested response actions. Prevents crises from spreading undetected.",
+    "passes": false,
+    "priority": 130.5,
+    "category": "notifications",
+    "phase": "backend",
+    "design_reference": "Brand24 - real-time crisis alerts and detection pattern"
+  },
+  {
+    "id": "F131",
+    "name": "WhatsApp Notifications",
+    "description": "WhatsApp Business API for alert notifications and weekly reports",
+    "test_description": "Alert triggers WhatsApp message to configured number",
+    "passes": false,
+    "priority": 131,
+    "category": "notifications",
+    "phase": "backend"
+  },
+  {
+    "id": "F132",
+    "name": "Billing - Stripe Integration",
+    "description": "Stripe subscription management setup",
+    "test_description": "Can create checkout session for subscription",
+    "passes": false,
+    "priority": 132,
+    "category": "billing",
+    "phase": "backend"
+  },
+  {
+    "id": "F133",
+    "name": "Billing - Subscription Plans Backend",
+    "description": "Free, Pro, Enterprise tiers with feature gates",
+    "test_description": "Plan limits enforced (e.g., platform count)",
+    "passes": false,
+    "priority": 133,
+    "category": "billing",
+    "phase": "backend"
+  },
+  {
+    "id": "F134",
+    "name": "Billing - Usage Metering Backend",
+    "description": "Track AI tokens, scans, seats for billing",
+    "test_description": "Usage data stored and retrievable via API",
+    "passes": false,
+    "priority": 134,
+    "category": "billing",
+    "phase": "backend"
+  },
+  {
+    "id": "F135",
+    "name": "Billing - Customer Portal",
+    "description": "Stripe customer portal for plan changes",
+    "test_description": "User can access portal to upgrade/cancel",
+    "passes": false,
+    "priority": 135,
+    "category": "billing",
+    "phase": "backend"
+  },
+  {
+    "id": "F136",
+    "name": "Local Payment Methods",
+    "description": "SnapScan, EFT, and Ozow payment integration for African markets",
+    "test_description": "User can pay subscription via SnapScan or EFT",
+    "passes": false,
+    "priority": 136,
+    "category": "billing",
+    "phase": "backend"
+  },
+  {
+    "id": "F137",
+    "name": "GraphQL API",
+    "description": "GraphQL endpoint with queries, mutations, and subscriptions",
+    "test_description": "GraphQL playground works at /api/graphql with full schema",
+    "passes": false,
+    "priority": 137,
+    "category": "api",
+    "phase": "backend"
+  },
+  {
+    "id": "F138",
+    "name": "WebSocket Real-time Updates",
+    "description": "WebSocket connections for live recommendation and mention updates",
+    "test_description": "New recommendations push to connected clients in real-time",
+    "passes": false,
+    "priority": 138,
+    "category": "api",
+    "phase": "backend"
+  },
+  {
+    "id": "F139",
+    "name": "Public API - REST Endpoints",
+    "description": "External API with API key auth for integrations",
+    "test_description": "External client can fetch data with API key",
+    "passes": false,
+    "priority": 139,
+    "category": "api",
+    "phase": "backend"
+  },
+  {
+    "id": "F140",
+    "name": "Public API - Rate Limiting",
+    "description": "Rate limit external API by key tier",
+    "test_description": "API returns 429 after rate limit exceeded",
+    "passes": false,
+    "priority": 140,
+    "category": "api",
+    "phase": "backend"
+  },
+  {
+    "id": "F141",
+    "name": "Public API - Documentation",
+    "description": "OpenAPI spec and docs page for API",
+    "test_description": "/api/docs shows Swagger UI with endpoints",
+    "passes": false,
+    "priority": 141,
+    "category": "api",
+    "phase": "backend"
+  },
+  {
+    "id": "F142",
+    "name": "Security Headers",
+    "description": "CSP, HSTS, X-Frame-Options headers",
+    "test_description": "Security headers present in responses",
+    "passes": false,
+    "priority": 142,
+    "category": "security",
+    "phase": "backend"
+  },
+  {
+    "id": "F143",
+    "name": "Input Sanitization",
+    "description": "Sanitize all user inputs to prevent XSS",
+    "test_description": "Script tags in input don't execute",
+    "passes": false,
+    "priority": 143,
+    "category": "security",
+    "phase": "backend"
+  },
+  {
+    "id": "F144",
+    "name": "SQL Injection Prevention",
+    "description": "Parameterized queries via Drizzle ORM",
+    "test_description": "Malicious SQL in input doesn't execute",
+    "passes": false,
+    "priority": 144,
+    "category": "security",
+    "phase": "backend"
+  },
+  {
+    "id": "F145",
+    "name": "POPIA/GDPR Compliance Checker",
+    "description": "Automated compliance checking for data privacy requirements",
+    "test_description": "Flags non-compliant data handling and provides remediation steps",
+    "passes": false,
+    "priority": 145,
+    "category": "security",
+    "phase": "backend"
+  },
+  {
+    "id": "F146",
+    "name": "API Key Rotation",
+    "description": "Support rotating API keys without downtime",
+    "test_description": "Can update key while old key still works briefly",
+    "passes": false,
+    "priority": 146,
+    "category": "backend",
+    "phase": "backend"
+  },
+  {
+    "id": "F147",
+    "name": "Sentry Error Tracking",
+    "description": "Sentry SDK for error reporting and monitoring",
+    "test_description": "Errors logged to Sentry with context",
+    "passes": false,
+    "priority": 147,
+    "category": "monitoring",
+    "phase": "backend"
+  },
+  {
+    "id": "F148",
+    "name": "Health Check Endpoint",
+    "description": "GET /api/health returns service status",
+    "test_description": "Endpoint returns DB, Redis, API status",
+    "passes": false,
+    "priority": 148,
+    "category": "monitoring",
+    "phase": "backend"
+  },
+  {
+    "id": "F149",
+    "name": "Data Export - CSV Generator",
+    "description": "Export mentions, audits, recommendations as CSV",
+    "test_description": "API generates and returns CSV file",
+    "passes": false,
+    "priority": 149,
+    "category": "features",
+    "phase": "backend"
+  },
+  {
+    "id": "F150",
+    "name": "Data Export - PDF Report Generator",
+    "description": "Generate PDF reports for sharing",
+    "test_description": "Generate Report creates downloadable PDF",
+    "passes": false,
+    "priority": 150,
+    "category": "features",
+    "phase": "backend"
+  },
+  {
+    "id": "F151",
+    "name": "Gamification - Backend Logic",
+    "description": "XP calculation, level progression, achievement tracking",
+    "test_description": "Completing actions awards correct XP and unlocks achievements",
+    "passes": false,
+    "priority": 151,
+    "category": "features",
+    "phase": "backend"
+  },
+  {
+    "id": "F152",
+    "name": "TanStack Query - Data Fetching",
+    "description": "Configure React Query for server state management",
+    "test_description": "Queries cache data and refetch on focus",
+    "passes": false,
+    "priority": 152,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F153",
+    "name": "TanStack Query - Mutations",
+    "description": "Optimistic updates for create/update/delete operations",
+    "test_description": "UI updates immediately, rolls back on error",
+    "passes": false,
+    "priority": 153,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F154",
+    "name": "Zustand Store - Auth State",
+    "description": "Global auth state with user and org info from Clerk",
+    "test_description": "Components can access current user from store",
+    "passes": false,
+    "priority": 154,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F155",
+    "name": "Wire: Dashboard Home to API",
+    "description": "Connect Dashboard Home to real metrics APIs",
+    "test_description": "Dashboard shows real mention count, audit score, recommendations",
+    "passes": false,
+    "priority": 155,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F156",
+    "name": "Wire: Monitor Platform Config",
+    "description": "Connect platform selection UI to POST /api/monitor/platforms",
+    "test_description": "Platform selection persists to database",
+    "passes": false,
+    "priority": 156,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F157",
+    "name": "Wire: Monitor Brand Config",
+    "description": "Connect brand config form to POST /api/monitor/brand",
+    "test_description": "Brand config saves to database via API",
+    "passes": false,
+    "priority": 157,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F158",
+    "name": "Wire: Mentions Dashboard",
+    "description": "Connect mentions dashboard to GET /api/monitor/mentions",
+    "test_description": "Mentions display real data from API",
+    "passes": false,
+    "priority": 158,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F159",
+    "name": "Wire: Content List",
+    "description": "Connect content list to Content CRUD API",
+    "test_description": "Content list shows real content from database",
+    "passes": false,
+    "priority": 159,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F160",
+    "name": "Wire: Content Editor Save",
+    "description": "Connect content editor save to Content API",
+    "test_description": "Saving content persists to database",
+    "passes": false,
+    "priority": 160,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F161",
+    "name": "Wire: AI Suggestions",
+    "description": "Connect AI suggestions panel to /api/create/suggest",
+    "test_description": "AI suggestions come from real Claude API",
+    "passes": false,
+    "priority": 161,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F162",
+    "name": "Wire: Audit URL Submit",
+    "description": "Connect audit form to POST /api/audit",
+    "test_description": "Submitting URL triggers real crawl job",
+    "passes": false,
+    "priority": 162,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F163",
+    "name": "Wire: Audit Results",
+    "description": "Connect audit results dashboard to audit API",
+    "test_description": "Audit results show real crawl data",
+    "passes": false,
+    "priority": 163,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F164",
+    "name": "Wire: Recommendations Dashboard",
+    "description": "Connect recommendations UI to GET /api/recommendations",
+    "test_description": "Recommendations show real data from database",
+    "passes": false,
+    "priority": 164,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F165",
+    "name": "Wire: Recommendation Status Updates",
+    "description": "Connect status buttons to PATCH API",
+    "test_description": "Status changes persist to database",
+    "passes": false,
+    "priority": 165,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F166",
+    "name": "Wire: Kanban Board",
+    "description": "Connect Kanban drag-drop to status update API",
+    "test_description": "Dragging cards updates status in database",
+    "passes": false,
+    "priority": 166,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F167",
+    "name": "Wire: Analytics Charts",
+    "description": "Connect all analytics charts to real data APIs",
+    "test_description": "Charts render with real mention/audit data",
+    "passes": false,
+    "priority": 167,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F168",
+    "name": "Wire: Settings Organization",
+    "description": "Connect org settings form to Settings API",
+    "test_description": "Org settings save to database",
+    "passes": false,
+    "priority": 168,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F169",
+    "name": "Wire: Settings Team Members",
+    "description": "Connect team members UI to Team API",
+    "test_description": "Team member changes persist to database",
+    "passes": false,
+    "priority": 169,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F170",
+    "name": "Wire: Settings API Keys",
+    "description": "Connect API keys UI to API Keys CRUD API",
+    "test_description": "API keys create/revoke works with database",
+    "passes": false,
+    "priority": 170,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F171",
+    "name": "Wire: Integration Connections",
+    "description": "Connect integration cards to OAuth flows",
+    "test_description": "Clicking connect initiates real OAuth",
+    "passes": false,
+    "priority": 171,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F172",
+    "name": "Wire: Jira Export",
+    "description": "Connect Jira export button to Jira API",
+    "test_description": "Export to Jira creates real ticket",
+    "passes": false,
+    "priority": 172,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F173",
+    "name": "Wire: Slack Notification",
+    "description": "Connect Slack send button to Slack API",
+    "test_description": "Send to Slack posts real message",
+    "passes": false,
+    "priority": 173,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F174",
+    "name": "Wire: In-App Notifications",
+    "description": "Connect notification bell to notifications API",
+    "test_description": "Bell shows real unread notifications",
+    "passes": false,
+    "priority": 174,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F175",
+    "name": "Wire: Billing Plans",
+    "description": "Connect billing UI to Stripe checkout",
+    "test_description": "Clicking subscribe creates real Stripe session",
+    "passes": false,
+    "priority": 175,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F176",
+    "name": "Wire: Usage Dashboard",
+    "description": "Connect usage dashboard to usage metering API",
+    "test_description": "Usage shows real token/scan counts",
+    "passes": false,
+    "priority": 176,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F177",
+    "name": "Wire: CSV Export",
+    "description": "Connect export buttons to CSV generator API",
+    "test_description": "Export downloads real data as CSV",
+    "passes": false,
+    "priority": 177,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F178",
+    "name": "Wire: PDF Export",
+    "description": "Connect report buttons to PDF generator API",
+    "test_description": "Generate report creates real PDF",
+    "passes": false,
+    "priority": 178,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F179",
+    "name": "Wire: Gamification",
+    "description": "Connect gamification UI to XP/achievements API",
+    "test_description": "Profile shows real XP and achievements",
+    "passes": false,
+    "priority": 179,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F180",
+    "name": "Wire: Job Dashboard",
+    "description": "Connect job dashboard to BullMQ status API",
+    "test_description": "Job dashboard shows real queue status",
+    "passes": false,
+    "priority": 180,
+    "category": "wiring",
+    "phase": "wiring"
+  },
+  {
+    "id": "F181",
+    "name": "E2E Tests - Auth Flow",
+    "description": "Playwright tests for signup, login, logout",
+    "test_description": "Auth E2E tests pass in CI",
+    "passes": false,
+    "priority": 181,
+    "category": "testing",
+    "phase": "deployment"
+  },
+  {
+    "id": "F182",
+    "name": "E2E Tests - Monitor Module",
+    "description": "Playwright tests for platform config and mentions",
+    "test_description": "Monitor E2E tests pass in CI",
+    "passes": false,
+    "priority": 182,
+    "category": "testing",
+    "phase": "deployment"
+  },
+  {
+    "id": "F183",
+    "name": "E2E Tests - Create Module",
+    "description": "Playwright tests for content editor",
+    "test_description": "Create E2E tests pass in CI",
+    "passes": false,
+    "priority": 183,
+    "category": "testing",
+    "phase": "deployment"
+  },
+  {
+    "id": "F184",
+    "name": "Unit Tests - API Routes",
+    "description": "Vitest tests for all API endpoints",
+    "test_description": "API unit tests achieve >90% coverage",
+    "passes": false,
+    "priority": 184,
+    "category": "testing",
+    "phase": "deployment"
+  },
+  {
+    "id": "F185",
+    "name": "Unit Tests - AI Services",
+    "description": "Vitest tests for AI service layer with mocks",
+    "test_description": "AI service tests pass with mocked APIs",
+    "passes": false,
+    "priority": 185,
+    "category": "testing",
+    "phase": "deployment"
+  },
+  {
+    "id": "F186",
+    "name": "VPS Docker Deployment",
+    "description": "Deploy frontend and backend to VPS (72.61.197.178) using Docker containers",
+    "test_description": "Application accessible at VPS IP address, containers running healthy",
+    "passes": false,
+    "priority": 186,
+    "category": "deployment",
+    "phase": "deployment"
+  },
+  {
+    "id": "F187",
+    "name": "Docker Compose Setup",
+    "description": "Multi-container setup with frontend, backend, Redis, and PostgreSQL",
+    "test_description": "docker-compose up starts all services with proper networking",
+    "passes": false,
+    "priority": 187,
+    "category": "deployment",
+    "phase": "deployment"
+  },
+  {
+    "id": "F188",
+    "name": "Nginx Reverse Proxy",
+    "description": "Nginx configuration for SSL termination and routing",
+    "test_description": "HTTPS works, routes correctly to frontend and API containers",
+    "passes": false,
+    "priority": 188,
+    "category": "deployment",
+    "phase": "deployment"
+  },
+  {
+    "id": "F189",
+    "name": "CI/CD Pipeline",
+    "description": "GitHub Actions for lint, test, build, and VPS deployment",
+    "test_description": "PR triggers CI, merge to main deploys to VPS via SSH",
+    "passes": false,
+    "priority": 189,
+    "category": "deployment",
+    "phase": "deployment"
+  },
+  {
+    "id": "F190",
+    "name": "Database Migrations CI",
+    "description": "Automated migrations on deploy to VPS",
+    "test_description": "Deploy runs pending Drizzle migrations automatically",
+    "passes": false,
+    "priority": 190,
+    "category": "deployment",
+    "phase": "deployment"
+  }
+]

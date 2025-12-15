@@ -1,0 +1,123 @@
+import {
+  pgTable,
+  text,
+  timestamp,
+  jsonb,
+  integer,
+  pgEnum,
+} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { createId } from "@paralleldrive/cuid2";
+import { brands } from "./brands";
+import { users } from "./users";
+
+// Audit status enum
+export const auditStatusEnum = pgEnum("audit_status", [
+  "pending",
+  "in_progress",
+  "completed",
+  "failed",
+]);
+
+// Audits table
+export const audits = pgTable("audits", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  brandId: text("brand_id")
+    .notNull()
+    .references(() => brands.id, { onDelete: "cascade" }),
+  triggeredById: text("triggered_by_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+
+  // Audit target
+  url: text("url").notNull(),
+  status: auditStatusEnum("status").default("pending").notNull(),
+
+  // Scores
+  overallScore: integer("overall_score"), // 0-100
+  categoryScores: jsonb("category_scores").$type<CategoryScore[]>().default([]),
+
+  // Issues found
+  issues: jsonb("issues").$type<AuditIssue[]>().default([]),
+  issueCount: integer("issue_count").default(0),
+  criticalCount: integer("critical_count").default(0),
+  highCount: integer("high_count").default(0),
+  mediumCount: integer("medium_count").default(0),
+  lowCount: integer("low_count").default(0),
+
+  // Recommendations generated from audit
+  recommendations: jsonb("recommendations").$type<string[]>().default([]),
+
+  // Audit metadata
+  metadata: jsonb("metadata").$type<AuditMetadata>().default({}),
+
+  // Error handling
+  errorMessage: text("error_message"),
+
+  // Timestamps
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Category score type
+export interface CategoryScore {
+  category: string;
+  score: number;
+  maxScore: number;
+  issues: number;
+}
+
+// Audit issue type
+export interface AuditIssue {
+  id: string;
+  category: string;
+  severity: "critical" | "high" | "medium" | "low";
+  title: string;
+  description: string;
+  element?: string;
+  recommendation: string;
+  impact: string;
+}
+
+// Audit metadata type
+export interface AuditMetadata {
+  userAgent?: string;
+  viewport?: { width: number; height: number };
+  timing?: {
+    totalDuration: number;
+    fetchTime?: number;
+    analysisTime?: number;
+  };
+  pageInfo?: {
+    title?: string;
+    metaDescription?: string;
+    h1Count?: number;
+    wordCount?: number;
+  };
+  // Audit request options
+  depth?: string;
+  options?: Record<string, boolean>;
+  priority?: string;
+  // Analysis results
+  pagesAnalyzed?: number;
+  grade?: string;
+}
+
+// Relations
+export const auditsRelations = relations(audits, ({ one }) => ({
+  brand: one(brands, {
+    fields: [audits.brandId],
+    references: [brands.id],
+  }),
+  triggeredBy: one(users, {
+    fields: [audits.triggeredById],
+    references: [users.id],
+  }),
+}));
+
+// Type exports
+export type Audit = typeof audits.$inferSelect;
+export type NewAudit = typeof audits.$inferInsert;

@@ -1,0 +1,826 @@
+<project_specification>
+  <project_name>Apex</project_name>
+  <codename>Apex</codename>
+  <white_label>true</white_label>
+  <brand_config_note>All branding (name, logo, colors, domain) configurable via environment variables and database. No hardcoded brand references anywhere in codebase.</brand_config_note>
+
+  <overview>
+    Apex is a white-label Generative Engine Optimization (GEO) / Answer Engine Optimization (AEO) platform that helps brands capture visibility across AI-powered search engines like ChatGPT, Claude, Gemini, Perplexity, Grok, and DeepSeek.
+
+    The platform provides:
+    1. MONITOR - Track brand mentions across 7+ AI platforms in real-time
+    2. CREATE - Generate AI-optimized content using brand voice and data
+    3. AUDIT - Comprehensive technical site analysis for AI visibility
+    4. SMART RECOMMENDATIONS ENGINE - Auto-generated, prioritized actionable recommendations (Core differentiator)
+
+    Target Market: South African businesses initially, expanding to African markets
+    Key Differentiator: Dashboard-first UI with Smart Recommendations Engine (not chat-based)
+    Pricing Strategy: PPP-adjusted pricing (30-50% below US competitors)
+  </overview>
+
+  <technology_stack>
+    <frontend>
+      <framework>Next.js 14+ with App Router</framework>
+      <language>TypeScript (strict mode, zero 'any' types)</language>
+      <styling>Tailwind CSS + Shadcn/ui components</styling>
+      <state_management>Zustand for client state, React Query (TanStack Query) for server state</state_management>
+      <charts>Recharts for data visualization</charts>
+      <forms>React Hook Form + Zod validation</forms>
+      <pwa>next-pwa for offline capabilities</pwa>
+    </frontend>
+    <backend>
+      <framework>Next.js API Routes (App Router)</framework>
+      <database>PostgreSQL via Neon (serverless)</database>
+      <orm>Drizzle ORM</orm>
+      <cache>Redis (Upstash)</cache>
+      <queue>BullMQ for background job processing</queue>
+      <vector_db>Pinecone for semantic search and embeddings</vector_db>
+    </backend>
+    <ai_services>
+      <llm_primary>Anthropic Claude API (claude-3-opus, claude-3-sonnet)</llm_primary>
+      <llm_secondary>OpenAI GPT-4 API</llm_secondary>
+      <embeddings>OpenAI text-embedding-3-small</embeddings>
+    </ai_services>
+    <scraping>
+      <browser>Playwright for AI platform querying and web scraping</browser>
+      <headless>Browserless.io for cloud-based scraping</headless>
+    </scraping>
+    <authentication>
+      <provider>Clerk (multi-tenant, organization support)</provider>
+      <features>SSO, MFA, role-based access control (RBAC)</features>
+    </authentication>
+    <integrations>
+      <project_management>Jira, Trello, Asana, Linear</project_management>
+      <communication>Slack, Microsoft Teams, WhatsApp Business API</communication>
+      <analytics>Google Analytics 4, Google Search Console</analytics>
+    </integrations>
+    <deployment>
+      <platform>Vercel (Edge Functions, ISR, SSR)</platform>
+      <cdn>Vercel Edge Network</cdn>
+      <monitoring>Sentry for error tracking, Vercel Analytics</monitoring>
+    </deployment>
+  </technology_stack>
+
+  <white_label_architecture>
+    <branding_config>
+      <env_variables>
+        - NEXT_PUBLIC_BRAND_NAME: Platform name (default: "Apex")
+        - NEXT_PUBLIC_BRAND_LOGO_URL: Logo URL
+        - NEXT_PUBLIC_BRAND_FAVICON: Favicon URL
+        - NEXT_PUBLIC_PRIMARY_COLOR: Primary brand color (hex)
+        - NEXT_PUBLIC_SECONDARY_COLOR: Secondary brand color (hex)
+        - NEXT_PUBLIC_SUPPORT_EMAIL: Support email address
+        - NEXT_PUBLIC_DOMAIN: Platform domain
+      </env_variables>
+      <database_config>
+        - Tenant settings table for per-organization branding
+        - Custom themes stored in database
+        - Logo and asset uploads to S3/Cloudflare R2
+      </database_config>
+      <theming_system>
+        - CSS variables for all colors
+        - Tailwind theme configuration from env/database
+        - Runtime theme switching support
+        - Dark/light mode per tenant
+      </theming_system>
+    </branding_config>
+    <multi_tenancy>
+      <tenant_isolation>Row-level security (RLS) in PostgreSQL</tenant_isolation>
+      <subdomain_support>*.apex-platform.com or custom domains</subdomain_support>
+      <data_separation>Complete data isolation per organization</data_separation>
+    </multi_tenancy>
+  </white_label_architecture>
+
+  <database_schema>
+    <core_tables>
+      <table name="organizations">
+        - id: UUID (primary key)
+        - name: VARCHAR(255)
+        - slug: VARCHAR(100) UNIQUE
+        - clerk_org_id: VARCHAR(100)
+        - subscription_tier: ENUM('free', 'starter', 'professional', 'enterprise')
+        - settings: JSONB (branding, preferences)
+        - created_at: TIMESTAMP
+        - updated_at: TIMESTAMP
+      </table>
+      <table name="users">
+        - id: UUID (primary key)
+        - clerk_user_id: VARCHAR(100)
+        - organization_id: UUID (FK)
+        - email: VARCHAR(255)
+        - role: ENUM('owner', 'admin', 'member', 'viewer')
+        - preferences: JSONB
+        - created_at: TIMESTAMP
+      </table>
+      <table name="domains">
+        - id: UUID (primary key)
+        - organization_id: UUID (FK)
+        - domain: VARCHAR(255)
+        - verified: BOOLEAN
+        - geo_score: INTEGER (0-100)
+        - last_scanned_at: TIMESTAMP
+        - scan_frequency: ENUM('daily', 'weekly', 'monthly')
+      </table>
+      <table name="recommendations">
+        - id: UUID (primary key)
+        - domain_id: UUID (FK)
+        - type: ENUM('content_gap', 'schema_audit', 'language', 'voice_search', 'technical')
+        - priority: ENUM('critical', 'high', 'medium', 'low')
+        - priority_score: INTEGER (0-100)
+        - title: VARCHAR(500)
+        - description: TEXT
+        - problem: TEXT
+        - solution: TEXT
+        - impact_estimate: VARCHAR(100)
+        - effort_estimate: VARCHAR(100)
+        - confidence_score: INTEGER (0-100)
+        - evidence: JSONB
+        - status: ENUM('pending', 'in_progress', 'completed', 'dismissed')
+        - assigned_to: UUID (FK users)
+        - scheduled_for: DATE
+        - completed_at: TIMESTAMP
+        - created_at: TIMESTAMP
+      </table>
+      <table name="geo_scores">
+        - id: UUID (primary key)
+        - domain_id: UUID (FK)
+        - overall_score: INTEGER (0-100)
+        - technical_score: INTEGER (0-100)
+        - content_score: INTEGER (0-100)
+        - aeo_score: INTEGER (0-100)
+        - scan_date: DATE
+        - breakdown: JSONB
+      </table>
+      <table name="ai_visibility_tests">
+        - id: UUID (primary key)
+        - domain_id: UUID (FK)
+        - query: TEXT
+        - ai_platform: ENUM('chatgpt', 'claude', 'gemini', 'perplexity', 'grok', 'deepseek', 'copilot')
+        - brand_mentioned: BOOLEAN
+        - position: INTEGER (null if not mentioned)
+        - response_text: TEXT
+        - competitors_mentioned: JSONB
+        - tested_at: TIMESTAMP
+      </table>
+      <table name="schema_audits">
+        - id: UUID (primary key)
+        - domain_id: UUID (FK)
+        - page_url: VARCHAR(2000)
+        - schema_types_found: VARCHAR[]
+        - schema_types_missing: VARCHAR[]
+        - validation_errors: JSONB
+        - score: INTEGER (0-100)
+        - scanned_at: TIMESTAMP
+      </table>
+      <table name="content_gaps">
+        - id: UUID (primary key)
+        - domain_id: UUID (FK)
+        - topic: VARCHAR(500)
+        - search_volume: INTEGER
+        - competitor_coverage: JSONB
+        - opportunity_score: INTEGER (0-100)
+        - suggested_content_type: VARCHAR(100)
+        - languages_needed: VARCHAR[]
+        - created_at: TIMESTAMP
+      </table>
+      <table name="activity_log">
+        - id: UUID (primary key)
+        - organization_id: UUID (FK)
+        - user_id: UUID (FK)
+        - action: VARCHAR(100)
+        - entity_type: VARCHAR(50)
+        - entity_id: UUID
+        - metadata: JSONB
+        - created_at: TIMESTAMP
+      </table>
+    </core_tables>
+  </database_schema>
+
+  <core_features>
+    <feature name="Smart Recommendations Engine" priority="critical">
+      <description>
+        Auto-generated, prioritized recommendations based on continuous analysis.
+        This is the CORE DIFFERENTIATOR - not chat-based like competitors.
+      </description>
+      <sub_features>
+        - Content Gap Analyzer: Identifies missing content topics where competitors rank
+        - Schema Auditor: Validates and recommends schema.org improvements
+        - Multi-Language Planner: Prioritizes language translations (focus: African languages)
+        - Voice Search Optimizer: Optimizes content for voice/conversational queries
+        - Priority Calculator: Scores recommendations by impact, effort, and confidence
+      </sub_features>
+      <priority_algorithm>
+        Priority Score = (Impact * 0.4) + (Confidence * 0.3) + (Effort_Inverse * 0.2) + (Recency * 0.1)
+        - Impact: 0-100 based on predicted visibility improvement
+        - Confidence: 0-100 based on data quality and sample size
+        - Effort_Inverse: 100 - (effort_hours * 5), capped at 0-100
+        - Recency: Higher score for newly identified opportunities
+      </priority_algorithm>
+      <components>
+        - RecommendationCard: Expandable card with problem/solution/impact
+        - RecommendationList: Filterable, sortable list with board/calendar views
+        - RecommendationDetail: Full page with implementation guide
+        - QuickActions: One-click export to Jira/Trello/Asana/Slack
+      </components>
+    </feature>
+
+    <feature name="GEO Score Dashboard" priority="critical">
+      <description>
+        Central dashboard showing overall GEO score and breakdowns.
+        Dashboard-first UI paradigm (NOT chat-based).
+      </description>
+      <scoring_system>
+        Overall GEO Score = (Technical * 0.30) + (Content * 0.35) + (AEO * 0.35)
+
+        Technical Score (30%):
+        - Schema implementation quality (40%)
+        - Site structure and crawlability (30%)
+        - Page speed and Core Web Vitals (20%)
+        - Mobile responsiveness (10%)
+
+        Content Score (35%):
+        - Entity coverage (30%)
+        - Language completeness (25%)
+        - FAQ and voice-optimized content (25%)
+        - Content depth and freshness (20%)
+
+        AEO Score (35%):
+        - AI platform mention frequency (40%)
+        - Citation quality and positioning (30%)
+        - Featured snippet appearances (20%)
+        - Share of voice vs competitors (10%)
+      </scoring_system>
+      <components>
+        - GEOScoreGauge: Circular gauge with letter grade (A+, B, C+, etc.)
+        - ScoreTrendChart: Line chart showing score over time
+        - ScoreBreakdown: Three sub-score cards with progress bars
+        - CompetitiveBenchmark: Anonymized ranking in industry
+      </components>
+    </feature>
+
+    <feature name="AI Visibility Monitor" priority="high">
+      <description>
+        Real-time tracking of brand mentions across AI platforms.
+      </description>
+      <platforms_supported>
+        - ChatGPT (OpenAI) - GPT-4, GPT-4 Turbo
+        - Claude (Anthropic) - Claude 3 Opus, Sonnet
+        - Gemini (Google) - Gemini Pro, Ultra
+        - Perplexity AI
+        - Grok (xAI)
+        - DeepSeek
+        - Microsoft Copilot
+      </platforms_supported>
+      <features>
+        - Automated query testing (configurable prompts)
+        - Brand mention detection and positioning
+        - Competitor mention tracking
+        - Historical trend analysis
+        - Real-time alerts on visibility changes
+      </features>
+    </feature>
+
+    <feature name="Technical Site Audit" priority="high">
+      <description>
+        Comprehensive technical analysis for AI visibility optimization.
+      </description>
+      <audit_components>
+        - Schema.org validation (FAQPage, HowTo, Product, Organization, etc.)
+        - Structured data testing against Google Rich Results Test
+        - Content structure analysis (headings, lists, tables)
+        - Entity extraction and knowledge graph alignment
+        - Page speed and Core Web Vitals
+        - Mobile-friendliness
+        - Internal linking analysis
+      </audit_components>
+    </feature>
+
+    <feature name="Content Generator" priority="medium">
+      <description>
+        AI-powered content creation optimized for GEO.
+      </description>
+      <content_types>
+        - FAQ pages with schema markup
+        - How-to guides with step-by-step schema
+        - Product descriptions
+        - Blog posts optimized for AI extraction
+        - Voice-optimized Q&A content
+      </content_types>
+      <languages_supported>
+        Priority for African markets:
+        - English (default)
+        - Afrikaans
+        - Zulu (isiZulu)
+        - Xhosa (isiXhosa)
+        - Swahili
+        - Tswana
+        - Sesotho
+        - Portuguese (for Mozambique/Angola)
+        - French (for Central/West Africa)
+      </languages_supported>
+    </feature>
+
+    <feature name="Integration Hub" priority="medium">
+      <description>
+        Connect with project management and communication tools.
+      </description>
+      <integrations>
+        - Jira: Create issues from recommendations
+        - Trello: Add cards to boards
+        - Asana: Create tasks in projects
+        - Linear: Create issues
+        - Slack: Send notifications and recommendations
+        - Microsoft Teams: Send notifications
+        - WhatsApp Business API: Mobile notifications (Africa focus)
+        - Google Analytics 4: Connect for traffic data
+        - Google Search Console: Import search data
+      </integrations>
+    </feature>
+
+    <feature name="Gamification System" priority="low">
+      <description>
+        Engagement features to drive recommendation completion.
+      </description>
+      <elements>
+        - Achievement badges (First Recommendation, Schema Master, etc.)
+        - Completion streaks (daily/weekly)
+        - Level progression (GEO Beginner -> Expert)
+        - Leaderboard (optional, anonymized)
+        - Progress milestones
+      </elements>
+    </feature>
+  </core_features>
+
+  <african_market_focus>
+    <mobile_first_design>
+      - Touch-optimized UI (44px minimum touch targets)
+      - Reduced data usage mode (lazy loading, image compression)
+      - Offline-capable PWA with cached dashboards
+      - Bottom navigation bar for mobile
+      - Swipe gestures for common actions
+    </mobile_first_design>
+    <loadshedding_awareness>
+      - Auto-save drafts every 30 seconds
+      - Offline mode with local storage sync
+      - Progressive loading (critical content first)
+      - Low-bandwidth image mode
+      - Queue actions for later sync
+    </loadshedding_awareness>
+    <whatsapp_integration>
+      - WhatsApp Business API notifications
+      - Daily/weekly score summaries via WhatsApp
+      - Quick action links in messages
+      - Voice note support for feedback
+    </whatsapp_integration>
+    <ppp_pricing>
+      - South Africa: ~R500/month starter (vs $50 USD competitors)
+      - Nigeria: ~15,000 NGN/month
+      - Kenya: ~5,000 KES/month
+      - Currency auto-detection by region
+      - Local payment methods (PayFast, Flutterwave, M-Pesa)
+    </ppp_pricing>
+  </african_market_focus>
+
+  <ui_design_system>
+    <color_system>
+      <primary>Electric Blue (#2563eb) - Trust, technology, reliability</primary>
+      <secondary>Vibrant Purple (#7c3aed) - Innovation, AI, creativity</secondary>
+      <accent>Success Green (#10b981) - Growth, achievement</accent>
+      <warning>Amber (#f59e0b) - Attention, caution</warning>
+      <error>Red (#ef4444) - Critical, urgent</error>
+      <neutral>Slate gray scale for backgrounds and text</neutral>
+    </color_system>
+    <typography>
+      <font_primary>Inter (system fallback: -apple-system, sans-serif)</font_primary>
+      <scale>
+        - H1: 2.25rem (36px) - Page titles
+        - H2: 1.875rem (30px) - Section headers
+        - H3: 1.5rem (24px) - Card titles
+        - Body: 1rem (16px) - Default text
+        - Small: 0.875rem (14px) - Labels, metadata
+        - Tiny: 0.75rem (12px) - Timestamps
+      </scale>
+    </typography>
+    <spacing>
+      Based on 4px grid: 4, 8, 12, 16, 24, 32, 48, 64, 96
+    </spacing>
+    <components_shadcn>
+      Using Shadcn/ui components:
+      - Button, Card, Dialog, Dropdown, Input, Label
+      - Progress, Skeleton, Tabs, Toast, Tooltip
+      - Custom: GEOScoreGauge, RecommendationCard, ActivityFeed
+    </components_shadcn>
+  </ui_design_system>
+
+  <implementation_steps>
+    <step number="1">
+      <title>Project Foundation and White-Label Architecture</title>
+      <tasks>
+        - Initialize Next.js 14+ project with App Router
+        - Configure TypeScript strict mode
+        - Set up Tailwind CSS with custom theme from env variables
+        - Install and configure Shadcn/ui components
+        - Set up Clerk authentication with organization support
+        - Configure Drizzle ORM with Neon PostgreSQL
+        - Create database schema and migrations
+        - Implement white-label theming system (CSS variables from env/DB)
+        - Set up environment configuration for branding
+      </tasks>
+      <success_criteria>
+        - [ ] Next.js app running with TypeScript
+        - [ ] Authentication working with Clerk
+        - [ ] Database connected and migrations applied
+        - [ ] Theme changes based on NEXT_PUBLIC_BRAND_NAME
+        - [ ] No hardcoded brand references in codebase
+      </success_criteria>
+    </step>
+
+    <step number="2">
+      <title>Core Dashboard and GEO Score System</title>
+      <tasks>
+        - Build main dashboard layout (sidebar + main content)
+        - Implement GEOScoreGauge component with animations
+        - Create score breakdown cards (Technical, Content, AEO)
+        - Build trend chart component with Recharts
+        - Implement responsive design (mobile-first)
+        - Add skeleton loading states
+        - Create mock data for development
+      </tasks>
+      <success_criteria>
+        - [ ] Dashboard displays overall GEO score
+        - [ ] Three sub-scores visible with progress bars
+        - [ ] Trend chart shows historical data
+        - [ ] Mobile responsive (works on 320px width)
+        - [ ] Loading skeletons show during data fetch
+      </success_criteria>
+    </step>
+
+    <step number="3">
+      <title>Smart Recommendations Engine - Core</title>
+      <tasks>
+        - Create Recommendation database model and API routes
+        - Build RecommendationCard component (collapsible)
+        - Implement RecommendationList with filters (type, priority, status)
+        - Add board view (Kanban style)
+        - Create RecommendationDetail page
+        - Implement priority calculation algorithm
+        - Build recommendation status management (pending/in_progress/completed/dismissed)
+        - Add swipe gestures for mobile (complete/dismiss)
+      </tasks>
+      <success_criteria>
+        - [ ] Recommendations display in list and board views
+        - [ ] Filters work for type, priority, status
+        - [ ] Priority score calculated and displayed
+        - [ ] Status can be changed with UI feedback
+        - [ ] Mobile swipe gestures functional
+      </success_criteria>
+    </step>
+
+    <step number="4">
+      <title>AI Visibility Monitor</title>
+      <tasks>
+        - Set up Playwright for AI platform querying
+        - Create background job system with BullMQ
+        - Implement ChatGPT query testing
+        - Implement Claude query testing
+        - Implement Perplexity query testing
+        - Add Gemini, Grok, DeepSeek support
+        - Build visibility results dashboard
+        - Create competitor mention tracking
+        - Implement alerting system for visibility changes
+      </tasks>
+      <success_criteria>
+        - [ ] Can query at least 3 AI platforms automatically
+        - [ ] Brand mention detection working
+        - [ ] Results stored in database
+        - [ ] Dashboard shows visibility metrics
+        - [ ] Alerts trigger on significant changes
+      </success_criteria>
+    </step>
+
+    <step number="5">
+      <title>Technical Site Audit System</title>
+      <tasks>
+        - Build web crawler for site analysis
+        - Implement schema.org detection and validation
+        - Create structured data extraction
+        - Add Core Web Vitals integration
+        - Build audit results dashboard
+        - Generate schema recommendations
+        - Create downloadable audit reports (PDF)
+      </tasks>
+      <success_criteria>
+        - [ ] Can crawl a domain and extract pages
+        - [ ] Schema detection identifies all types
+        - [ ] Validation errors clearly displayed
+        - [ ] Recommendations generated from audit
+        - [ ] PDF report downloadable
+      </success_criteria>
+    </step>
+
+    <step number="6">
+      <title>Recommendation Engine - Analysis Components</title>
+      <tasks>
+        - Build Content Gap Analyzer (compare vs competitors)
+        - Implement Multi-Language Planner (African language prioritization)
+        - Create Voice Search Optimizer
+        - Build Schema Audit integration into recommendations
+        - Implement evidence collection and display
+        - Create impact estimation algorithm
+        - Add confidence scoring based on data quality
+      </tasks>
+      <success_criteria>
+        - [ ] Content gaps identified with competitor data
+        - [ ] Language recommendations prioritized correctly
+        - [ ] Voice search opportunities detected
+        - [ ] Each recommendation has evidence
+        - [ ] Impact and confidence scores calculated
+      </success_criteria>
+    </step>
+
+    <step number="7">
+      <title>Integration Hub</title>
+      <tasks>
+        - Build Jira integration (OAuth, create issues)
+        - Build Trello integration (OAuth, create cards)
+        - Build Asana integration (OAuth, create tasks)
+        - Implement Slack notifications
+        - Add WhatsApp Business API integration
+        - Create Google Analytics 4 connection
+        - Implement Google Search Console import
+        - Build integration management UI
+      </tasks>
+      <success_criteria>
+        - [ ] Can export recommendations to Jira
+        - [ ] Can export recommendations to Trello
+        - [ ] Slack notifications working
+        - [ ] WhatsApp notifications sending
+        - [ ] GA4 data importing
+      </success_criteria>
+    </step>
+
+    <step number="8">
+      <title>Content Generator</title>
+      <tasks>
+        - Build AI content generation pipeline (Claude/GPT-4)
+        - Implement FAQ content generator with schema output
+        - Create How-To guide generator
+        - Add multi-language support (African languages)
+        - Build content preview and editing UI
+        - Implement brand voice customization
+        - Add content scheduling and publishing
+      </tasks>
+      <success_criteria>
+        - [ ] Can generate FAQ content with valid schema
+        - [ ] Can generate How-To guides
+        - [ ] Multi-language output working
+        - [ ] Preview shows formatted content
+        - [ ] Content can be scheduled
+      </success_criteria>
+    </step>
+
+    <step number="9">
+      <title>PWA and Offline Support</title>
+      <tasks>
+        - Configure next-pwa
+        - Implement service worker for caching
+        - Add offline dashboard view
+        - Build action queue for offline operations
+        - Implement auto-sync when online
+        - Add install prompt for mobile
+        - Optimize for low-bandwidth
+      </tasks>
+      <success_criteria>
+        - [ ] App installable as PWA
+        - [ ] Dashboard viewable offline
+        - [ ] Actions queue when offline
+        - [ ] Auto-sync when connection restored
+        - [ ] Works on 2G connection
+      </success_criteria>
+    </step>
+
+    <step number="10">
+      <title>Gamification and User Engagement</title>
+      <tasks>
+        - Implement achievement badge system
+        - Create completion streaks tracking
+        - Build level progression system
+        - Add optional leaderboard
+        - Implement progress milestones
+        - Create onboarding flow with guided tour
+        - Add celebration animations for achievements
+      </tasks>
+      <success_criteria>
+        - [ ] Badges awarded for achievements
+        - [ ] Streak counter visible on dashboard
+        - [ ] Level displayed in profile
+        - [ ] Leaderboard toggleable
+        - [ ] Onboarding guides new users
+      </success_criteria>
+    </step>
+
+    <step number="11">
+      <title>Multi-Tenancy and White-Label Deployment</title>
+      <tasks>
+        - Implement row-level security in PostgreSQL
+        - Build tenant settings management UI
+        - Create custom domain support
+        - Implement per-tenant branding
+        - Build admin panel for white-label management
+        - Create tenant onboarding flow
+        - Test complete data isolation
+      </tasks>
+      <success_criteria>
+        - [ ] Data isolated per organization
+        - [ ] Custom domains working
+        - [ ] Branding customizable per tenant
+        - [ ] Admin can manage tenants
+        - [ ] No data leakage between tenants
+      </success_criteria>
+    </step>
+
+    <step number="12">
+      <title>Testing, Performance, and Launch Preparation</title>
+      <tasks>
+        - Write unit tests (>90% coverage)
+        - Create integration tests for API routes
+        - Build E2E tests with Playwright
+        - Performance optimization (Core Web Vitals)
+        - Security audit and penetration testing
+        - Load testing (100+ concurrent users)
+        - Documentation (API docs, user guides)
+        - Set up monitoring (Sentry, Vercel Analytics)
+        - Prepare launch checklist
+      </tasks>
+      <success_criteria>
+        - [ ] Test coverage >90%
+        - [ ] All E2E tests passing
+        - [ ] Lighthouse score >90 on all pages
+        - [ ] Security audit passed
+        - [ ] Load test successful
+        - [ ] Documentation complete
+        - [ ] Monitoring active
+      </success_criteria>
+    </step>
+  </implementation_steps>
+
+  <success_criteria>
+    <functional>
+      - All 4 core features working (Monitor, Create, Audit, Recommendations)
+      - AI visibility tracking for 5+ platforms
+      - Recommendations engine generating actionable insights
+      - Integrations working (Jira, Trello, Slack minimum)
+      - Multi-language content generation
+      - PWA offline mode functional
+    </functional>
+    <performance>
+      - Page load time < 1.5s (First Contentful Paint)
+      - API response time < 200ms (p95)
+      - Lighthouse score > 90
+      - Works on 2G/3G connections
+      - Bundle size < 500kB per route
+    </performance>
+    <quality>
+      - Zero TypeScript errors
+      - Zero ESLint warnings
+      - Test coverage > 90%
+      - Accessibility WCAG 2.1 AA compliant
+      - Mobile responsive (320px - 1920px)
+    </quality>
+    <white_label>
+      - No hardcoded brand names in codebase
+      - Branding configurable via env/database
+      - Custom domains supported
+      - Per-tenant theming working
+      - Complete data isolation verified
+    </white_label>
+    <security>
+      - Authentication/authorization working
+      - RBAC implemented
+      - Data encryption at rest and in transit
+      - OWASP Top 10 vulnerabilities addressed
+      - Rate limiting implemented
+    </security>
+  </success_criteria>
+
+  <competitive_positioning>
+    <vs_searchable>
+      Apex differentiates from Searchable by:
+      1. Dashboard-first UI (not chat-based)
+      2. Smart Recommendations Engine with auto-prioritization
+      3. African market focus (languages, mobile-first, loadshedding-aware)
+      4. PPP-adjusted pricing (30-50% cheaper)
+      5. WhatsApp integration for notifications
+      6. White-label architecture for resellers
+    </vs_searchable>
+    <vs_profound>
+      Apex differentiates from Profound by:
+      1. SMB-focused (not enterprise-only)
+      2. Significantly lower pricing
+      3. African market specialization
+      4. Faster time-to-value with recommendations
+      5. Self-serve model (no sales calls needed)
+    </vs_profound>
+    <target_customers>
+      Primary: South African SMBs and digital agencies
+      Secondary: African e-commerce brands
+      Tertiary: Global businesses targeting African markets
+    </target_customers>
+  </competitive_positioning>
+
+  <api_structure>
+    <routes>
+      /api/auth/* - Clerk authentication webhooks
+      /api/organizations/* - Organization management
+      /api/domains/* - Domain management and scanning
+      /api/recommendations/* - CRUD for recommendations
+      /api/geo-score/* - Score calculation and history
+      /api/visibility/* - AI visibility testing
+      /api/audit/* - Site audit operations
+      /api/content/* - Content generation
+      /api/integrations/* - Third-party integrations
+      /api/webhooks/* - Incoming webhooks
+      /api/admin/* - Admin operations (protected)
+    </routes>
+  </api_structure>
+
+  <file_structure>
+    apex/
+    ├── src/
+    │   ├── app/
+    │   │   ├── (auth)/
+    │   │   │   ├── sign-in/
+    │   │   │   └── sign-up/
+    │   │   ├── (dashboard)/
+    │   │   │   ├── page.tsx (main dashboard)
+    │   │   │   ├── recommendations/
+    │   │   │   ├── score/
+    │   │   │   ├── audit/
+    │   │   │   ├── content/
+    │   │   │   ├── settings/
+    │   │   │   └── integrations/
+    │   │   ├── api/
+    │   │   │   ├── auth/
+    │   │   │   ├── organizations/
+    │   │   │   ├── domains/
+    │   │   │   ├── recommendations/
+    │   │   │   ├── geo-score/
+    │   │   │   ├── visibility/
+    │   │   │   ├── audit/
+    │   │   │   └── content/
+    │   │   ├── layout.tsx
+    │   │   └── globals.css
+    │   ├── components/
+    │   │   ├── ui/ (shadcn components)
+    │   │   ├── dashboard/
+    │   │   ├── recommendations/
+    │   │   ├── score/
+    │   │   ├── audit/
+    │   │   └── shared/
+    │   ├── lib/
+    │   │   ├── db/ (Drizzle schema, queries)
+    │   │   ├── ai/ (LLM integrations)
+    │   │   ├── scraping/ (Playwright utils)
+    │   │   ├── recommendations/ (engine logic)
+    │   │   ├── integrations/ (Jira, Trello, etc.)
+    │   │   └── utils/
+    │   ├── hooks/
+    │   ├── stores/ (Zustand stores)
+    │   └── types/
+    ├── drizzle/ (migrations)
+    ├── public/
+    ├── tests/
+    │   ├── unit/
+    │   ├── integration/
+    │   └── e2e/
+    ├── .env.example
+    ├── .env.local
+    ├── drizzle.config.ts
+    ├── next.config.js
+    ├── tailwind.config.ts
+    └── tsconfig.json
+  </file_structure>
+
+  <notes>
+    <critical>
+      - NO references to "Searchable" anywhere in the codebase
+      - All brand mentions must use environment variables
+      - White-label must be first-class, not an afterthought
+      - Mobile-first design is mandatory (African market)
+      - Offline capability required (loadshedding)
+    </critical>
+    <naming_convention>
+      - Project codename: "Apex" (configurable)
+      - Internal references: Use generic terms like "platform", "app"
+      - Database: No brand names in table/column names
+      - Environment: NEXT_PUBLIC_BRAND_NAME for display
+    </naming_convention>
+    <future_considerations>
+      - API for third-party developers
+      - Mobile native apps (React Native)
+      - AI agent for conversational queries (future, not MVP)
+      - Marketplace for templates and integrations
+      - Partner/reseller program
+    </future_considerations>
+  </notes>
+</project_specification>

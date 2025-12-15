@@ -1,0 +1,240 @@
+/**
+ * Monitor Background Job Worker (F101)
+ * Processes monitoring jobs to scan AI platforms for brand mentions
+ */
+
+import { monitorQueue, type Job } from "../index";
+import { createScraperManager } from "../../scraping";
+import { db } from "../../db";
+import { brandMentions, monitoringJobs, brands } from "../../db/schema";
+import { eq } from "drizzle-orm";
+import { createId } from "@paralleldrive/cuid2";
+
+// Worker configuration
+const WORKER_CONFIG = {
+  pollInterval: 5000, // 5 seconds
+  maxJobsPerRun: 10,
+  platforms: ["chatgpt", "claude", "perplexity", "gemini", "grok", "deepseek"] as const,
+};
+
+// Job result type
+interface MonitorJobResult {
+  success: boolean;
+  mentionsFound: number;
+  platformsScanned: string[];
+  errors: string[];
+  duration: number;
+}
+
+/**
+ * Process a single monitoring job
+ */
+export async function processMonitorJob(job: Job): Promise<MonitorJobResult> {
+  const startTime = Date.now();
+  const result: MonitorJobResult = {
+    success: false,
+    mentionsFound: 0,
+    platformsScanned: [],
+    errors: [],
+    duration: 0,
+  };
+
+  try {
+    const { brandId, platforms, queries } = job.payload as {
+      brandId: string;
+      platforms?: string[];
+      queries?: string[];
+    };
+
+    // Get brand data
+    const brand = await db.query.brands.findFirst({
+      where: eq(brands.id, brandId),
+    });
+
+    if (!brand) {
+      throw new Error(`Brand not found: ${brandId}`);
+    }
+
+    // Update monitoring job status
+    await db
+      .update(monitoringJobs)
+      .set({ status: "processing", startedAt: new Date() })
+      .where(eq(monitoringJobs.brandId, brandId));
+
+    // Determine which platforms to scan
+    const targetPlatforms = platforms?.length
+      ? platforms.filter((p) =>
+          WORKER_CONFIG.platforms.includes(p as (typeof WORKER_CONFIG.platforms)[number])
+        )
+      : [...WORKER_CONFIG.platforms];
+
+    // Get or generate queries
+    const searchQueries = queries?.length
+      ? queries
+      : generateQueries(brand.name, brand.industry ?? undefined);
+
+    // Create scraper manager
+    const scraperManager = createScraperManager();
+
+    // Scan each platform
+    for (const platform of targetPlatforms) {
+      try {
+        result.platformsScanned.push(platform);
+
+        const scrapeResult = await scraperManager.scrapePlatform(
+          platform,
+          brand.name,
+          searchQueries
+        );
+
+        if (scrapeResult.success && scrapeResult.mentions.length > 0) {
+          // Store mentions in database
+          for (const mention of scrapeResult.mentions) {
+            // Map sentiment - convert "mixed" to "neutral" as DB only supports positive/neutral/negative
+            const dbSentiment = mention.sentiment === "mixed"
+              ? "neutral"
+              : (mention.sentiment ?? "neutral") as "positive" | "neutral" | "negative";
+
+            await db.insert(brandMentions).values({
+              id: createId(),
+              brandId,
+              platform: mention.platform as "chatgpt" | "claude" | "gemini" | "perplexity" | "grok" | "deepseek" | "copilot",
+              query: mention.query,
+              response: mention.response,
+              sentiment: dbSentiment,
+              position: null, // Can be calculated separately
+              citationUrl: null,
+              metadata: mention.metadata as Record<string, unknown>,
+            });
+            result.mentionsFound++;
+          }
+        }
+
+        if (scrapeResult.error) {
+          result.errors.push(`${platform}: ${scrapeResult.error}`);
+        }
+      } catch (platformError) {
+        result.errors.push(
+          `${platform}: ${platformError instanceof Error ? platformError.message : String(platformError)}`
+        );
+      }
+    }
+
+    // Update monitoring job status
+    await db
+      .update(monitoringJobs)
+      .set({
+        status: "completed",
+        completedAt: new Date(),
+        mentionsFound: result.mentionsFound,
+        error: result.errors.length > 0 ? result.errors.join("; ") : null,
+      })
+      .where(eq(monitoringJobs.brandId, brandId));
+
+    result.success = true;
+  } catch (error) {
+    result.errors.push(error instanceof Error ? error.message : String(error));
+  }
+
+  result.duration = Date.now() - startTime;
+  return result;
+}
+
+/**
+ * Generate search queries for a brand
+ */
+function generateQueries(brandName: string, industry?: string): string[] {
+  const baseQueries = [
+    `What is ${brandName}?`,
+    `Tell me about ${brandName}`,
+    `${brandName} review`,
+    `Is ${brandName} good?`,
+    `${brandName} alternatives`,
+    `Best ${brandName} features`,
+    `${brandName} pricing`,
+  ];
+
+  if (industry) {
+    baseQueries.push(
+      `Best ${industry} companies`,
+      `Top ${industry} solutions`,
+      `${industry} recommendations`,
+      `Compare ${industry} providers`
+    );
+  }
+
+  return baseQueries;
+}
+
+/**
+ * Run the monitor worker (processes pending jobs)
+ * This is called by cron endpoint
+ */
+export async function runMonitorWorker(): Promise<{
+  processed: number;
+  succeeded: number;
+  failed: number;
+  results: Array<{ jobId: string; result: MonitorJobResult }>;
+}> {
+  const stats = {
+    processed: 0,
+    succeeded: 0,
+    failed: 0,
+    results: [] as Array<{ jobId: string; result: MonitorJobResult }>,
+  };
+
+  // Clean stale jobs first
+  await monitorQueue.cleanStaleJobs();
+
+  // Process up to maxJobsPerRun jobs
+  for (let i = 0; i < WORKER_CONFIG.maxJobsPerRun; i++) {
+    const job = await monitorQueue.getNextJob();
+
+    if (!job) {
+      break; // No more jobs
+    }
+
+    stats.processed++;
+
+    try {
+      const result = await processMonitorJob(job);
+      stats.results.push({ jobId: job.id, result });
+
+      if (result.success) {
+        await monitorQueue.completeJob(job.id, result);
+        stats.succeeded++;
+      } else {
+        await monitorQueue.failJob(job.id, result.errors.join("; "));
+        stats.failed++;
+      }
+    } catch (error) {
+      await monitorQueue.failJob(
+        job.id,
+        error instanceof Error ? error.message : String(error)
+      );
+      stats.failed++;
+    }
+  }
+
+  return stats;
+}
+
+/**
+ * Get worker status
+ */
+export async function getMonitorWorkerStatus(): Promise<{
+  queueStats: Awaited<ReturnType<typeof monitorQueue.getStats>>;
+  recentJobs: Job[];
+  config: typeof WORKER_CONFIG;
+}> {
+  const [queueStats, recentJobs] = await Promise.all([
+    monitorQueue.getStats(),
+    monitorQueue.getJobs("completed", 5),
+  ]);
+
+  return {
+    queueStats,
+    recentJobs,
+    config: WORKER_CONFIG,
+  };
+}

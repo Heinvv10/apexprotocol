@@ -1,0 +1,11 @@
+export { HeroSection } from "./hero-section";
+export { ValueProps } from "./value-props";
+export { FeaturesShowcase } from "./features-showcase";
+export { DashboardPreview } from "./dashboard-preview";
+export { AIPlatforms } from "./ai-platforms";
+export { Integrations } from "./integrations";
+export { PricingSection } from "./pricing-section";
+export { FAQSection } from "./faq-section";
+export { CTAFooter } from "./cta-footer";
+export { SiteHeader } from "./site-header";
+export { SiteFooter } from "./site-footer";

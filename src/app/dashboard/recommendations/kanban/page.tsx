@@ -1,0 +1,391 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import {
+  Lightbulb,
+  ArrowLeft,
+  GripVertical,
+  Clock,
+  Check,
+  X,
+  Eye,
+  Sparkles,
+  BarChart3,
+  Zap,
+  Target,
+  Settings,
+  ArrowRight,
+  LayoutGrid,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+// Types (matching main recommendations page)
+export type Priority = "critical" | "high" | "medium" | "low";
+export type RecommendationType = "schema" | "content" | "technical" | "ai-visibility";
+export type Status = "pending" | "in_progress" | "completed" | "dismissed";
+
+export interface Recommendation {
+  id: string;
+  title: string;
+  description: string;
+  priority: Priority;
+  type: RecommendationType;
+  status: Status;
+  impact: number;
+  effort: number;
+  confidence: number;
+  affectedPages: string[];
+  suggestedAction: string;
+}
+
+// Empty state component
+function KanbanEmptyState() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center max-w-md space-y-6">
+        <div className="relative mx-auto w-20 h-20">
+          <div
+            className="absolute inset-0 rounded-full opacity-20"
+            style={{
+              background: "radial-gradient(circle, rgba(0, 229, 204, 0.4) 0%, transparent 70%)",
+              filter: "blur(20px)",
+              animation: "pulse-glow 3s ease-in-out infinite",
+            }}
+          />
+          <div className="relative w-20 h-20 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center">
+            <LayoutGrid className="w-10 h-10 text-primary" />
+          </div>
+        </div>
+
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30">
+          <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+          <span className="text-sm text-primary font-medium">Kanban Board</span>
+        </div>
+
+        <div className="space-y-2">
+          <h3 className="text-xl font-bold text-foreground">No Recommendations</h3>
+          <p className="text-muted-foreground text-sm">
+            Run a site audit to generate AI-powered recommendations for improving your GEO score.
+          </p>
+        </div>
+
+        <Link
+          href="/dashboard/audit"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all"
+        >
+          <Settings className="w-4 h-4" />
+          Run Site Audit
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// Column configuration
+const columns: { id: Status; title: string; icon: React.ElementType; color: string }[] = [
+  { id: "pending", title: "Pending", icon: Eye, color: "text-[hsl(var(--warning))]" },
+  { id: "in_progress", title: "In Progress", icon: Clock, color: "text-primary" },
+  { id: "completed", title: "Completed", icon: Check, color: "text-success" },
+  { id: "dismissed", title: "Dismissed", icon: X, color: "text-muted-foreground" },
+];
+
+// Priority badge styles
+const priorityConfig: Record<Priority, { label: string; className: string }> = {
+  critical: { label: "Critical", className: "bg-red-500/10 text-[hsl(var(--error))] border-[hsl(var(--error)/0.2)]" },
+  high: { label: "High", className: "bg-orange-500/10 text-orange-400 border-orange-500/20" },
+  medium: { label: "Medium", className: "bg-amber-500/10 text-[hsl(var(--warning))] border-[hsl(var(--warning)/0.2)]" },
+  low: { label: "Low", className: "bg-green-500/10 text-green-400 border-green-500/20" },
+};
+
+// Type icons
+const typeConfig: Record<RecommendationType, { label: string; icon: React.ElementType }> = {
+  schema: { label: "Schema", icon: Sparkles },
+  content: { label: "Content", icon: BarChart3 },
+  technical: { label: "Technical", icon: Zap },
+  "ai-visibility": { label: "AI Visibility", icon: Target },
+};
+
+// Kanban Card Component
+function KanbanCard({
+  recommendation,
+  onDragStart,
+  isDragging,
+}: {
+  recommendation: Recommendation;
+  onDragStart: (e: React.DragEvent, id: string) => void;
+  isDragging: boolean;
+}) {
+  const priority = priorityConfig[recommendation.priority];
+  const type = typeConfig[recommendation.type];
+  const TypeIcon = type.icon;
+
+  return (
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, recommendation.id)}
+      className={cn(
+        "p-3 rounded-lg border border-[#27272A] bg-[#18181B] cursor-grab active:cursor-grabbing",
+        "hover:border-[#3F3F46] transition-all duration-150",
+        isDragging && "opacity-50 ring-2 ring-primary/50"
+      )}
+    >
+      {/* Drag Handle & Title */}
+      <div className="flex items-start gap-2">
+        <GripVertical className="h-4 w-4 text-muted-foreground/50 shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <h4 className="text-sm font-medium text-foreground line-clamp-2">
+            {recommendation.title}
+          </h4>
+        </div>
+      </div>
+
+      {/* Meta */}
+      <div className="flex items-center gap-2 mt-2 pl-6">
+        {/* Priority Badge */}
+        <span
+          className={cn(
+            "px-1.5 py-0.5 text-[10px] font-medium rounded border",
+            priority.className
+          )}
+        >
+          {priority.label}
+        </span>
+        {/* Type */}
+        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <TypeIcon className="h-3 w-3" />
+          {type.label}
+        </span>
+      </div>
+
+      {/* Impact/Effort */}
+      <div className="flex items-center gap-3 mt-2 pl-6 text-[10px] text-muted-foreground">
+        <span>Impact: {recommendation.impact}/10</span>
+        <span>Effort: {recommendation.effort}/10</span>
+      </div>
+    </div>
+  );
+}
+
+// Kanban Column Component
+function KanbanColumn({
+  column,
+  recommendations,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  draggingId,
+}: {
+  column: (typeof columns)[0];
+  recommendations: Recommendation[];
+  onDragStart: (e: React.DragEvent, id: string) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, status: Status) => void;
+  draggingId: string | null;
+}) {
+  const Icon = column.icon;
+  const [isOver, setIsOver] = React.useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsOver(true);
+    onDragOver(e);
+  };
+
+  const handleDragLeave = () => {
+    setIsOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    setIsOver(false);
+    onDrop(e, column.id);
+  };
+
+  return (
+    <div
+      className={cn(
+        "flex flex-col min-h-[400px] rounded-xl border border-[#27272A] bg-[#0A0A0B]",
+        "transition-all duration-150",
+        isOver && "border-primary/50 bg-primary/5"
+      )}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Column Header */}
+      <div className="p-3 border-b border-[#27272A]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Icon className={cn("h-4 w-4", column.color)} />
+            <span className="font-medium text-sm">{column.title}</span>
+          </div>
+          <span className="px-2 py-0.5 text-xs rounded-full bg-[#18181B] text-muted-foreground">
+            {recommendations.length}
+          </span>
+        </div>
+      </div>
+
+      {/* Cards */}
+      <div className="flex-1 p-2 space-y-2 overflow-y-auto">
+        {recommendations.map((rec) => (
+          <KanbanCard
+            key={rec.id}
+            recommendation={rec}
+            onDragStart={onDragStart}
+            isDragging={draggingId === rec.id}
+          />
+        ))}
+        {recommendations.length === 0 && (
+          <div className="flex items-center justify-center h-24 text-xs text-muted-foreground/50">
+            Drop items here
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function KanbanPage() {
+  // TODO: Fetch recommendations from API endpoint
+  // const { data: recommendations } = useQuery(['recommendations'], fetchRecommendations);
+  const [recommendations, setRecommendations] = React.useState<Recommendation[]>([]); // Empty array - no mock data
+  const [draggingId, setDraggingId] = React.useState<string | null>(null);
+
+  const hasData = recommendations.length > 0;
+
+  // Group recommendations by status
+  const getRecommendationsByStatus = (status: Status) =>
+    recommendations.filter((rec) => rec.status === status);
+
+  // Drag handlers
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggingId(id);
+    e.dataTransfer.setData("text/plain", id);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e: React.DragEvent, newStatus: Status) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text/plain");
+
+    setRecommendations((prev) =>
+      prev.map((rec) =>
+        rec.id === id ? { ...rec, status: newStatus } : rec
+      )
+    );
+    setDraggingId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingId(null);
+  };
+
+  // Stats
+  const stats = {
+    total: recommendations.length,
+    pending: recommendations.filter((r) => r.status === "pending").length,
+    inProgress: recommendations.filter((r) => r.status === "in_progress").length,
+    completed: recommendations.filter((r) => r.status === "completed").length,
+  };
+
+  // Show empty state if no data
+  if (!hasData) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/recommendations">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to List
+              </Button>
+            </Link>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                <Lightbulb className="h-6 w-6 text-primary" />
+                Kanban Board
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                Drag and drop to change recommendation status
+              </p>
+            </div>
+          </div>
+        </div>
+        <KanbanEmptyState />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6" onDragEnd={handleDragEnd}>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/recommendations">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to List
+            </Button>
+          </Link>
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Lightbulb className="h-6 w-6 text-primary" />
+              Kanban Board
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              Drag and drop to change recommendation status
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Bar */}
+      <div className="grid gap-4 sm:grid-cols-4">
+        <div className="card-tertiary">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">Total</div>
+          <div className="text-2xl font-bold mt-1">{stats.total}</div>
+        </div>
+        <div className="card-tertiary">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">Pending</div>
+          <div className="text-2xl font-bold text-warning mt-1">{stats.pending}</div>
+        </div>
+        <div className="card-tertiary">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">In Progress</div>
+          <div className="text-2xl font-bold text-primary mt-1">{stats.inProgress}</div>
+        </div>
+        <div className="card-tertiary">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">Completed</div>
+          <div className="text-2xl font-bold text-success mt-1">{stats.completed}</div>
+        </div>
+      </div>
+
+      {/* Kanban Board */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        {columns.map((column) => (
+          <KanbanColumn
+            key={column.id}
+            column={column}
+            recommendations={getRecommendationsByStatus(column.id)}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            draggingId={draggingId}
+          />
+        ))}
+      </div>
+
+      {/* Instructions */}
+      <div className="text-center text-sm text-muted-foreground">
+        Drag cards between columns to update their status
+      </div>
+    </div>
+  );
+}

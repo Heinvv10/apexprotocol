@@ -1,0 +1,743 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { ChevronDown, Trash2, User, Puzzle, Bell, Users, CreditCard, Key, Loader2, Check, AlertCircle, X, Upload } from "lucide-react";
+import { ApiKeysSection, IntegrationsSection, NotificationsSection } from "@/components/settings/settings-sections";
+
+// Available languages
+const LANGUAGES = [
+  { code: "en", name: "English" },
+  { code: "es", name: "Spanish" },
+  { code: "fr", name: "French" },
+  { code: "de", name: "German" },
+  { code: "pt", name: "Portuguese" },
+  { code: "zh", name: "Chinese" },
+  { code: "ja", name: "Japanese" },
+  { code: "ko", name: "Korean" },
+];
+
+// Available timezones
+const TIMEZONES = [
+  { code: "UTC", name: "UTC (Coordinated Universal Time)" },
+  { code: "America/New_York", name: "Eastern Time (ET)" },
+  { code: "America/Chicago", name: "Central Time (CT)" },
+  { code: "America/Denver", name: "Mountain Time (MT)" },
+  { code: "America/Los_Angeles", name: "Pacific Time (PT)" },
+  { code: "Europe/London", name: "London (GMT)" },
+  { code: "Europe/Paris", name: "Paris (CET)" },
+  { code: "Asia/Tokyo", name: "Tokyo (JST)" },
+  { code: "Asia/Shanghai", name: "Shanghai (CST)" },
+  { code: "Australia/Sydney", name: "Sydney (AEST)" },
+  { code: "Africa/Johannesburg", name: "Johannesburg (SAST)" },
+];
+
+// Settings navigation items
+const settingsNav = [
+  { id: "general", label: "General", icon: User },
+  { id: "api-keys", label: "API Keys", icon: Key },
+  { id: "integrations", label: "Integrations", icon: Puzzle },
+  { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "team", label: "Team", icon: Users },
+  { id: "billing", label: "Billing & Plan", icon: CreditCard },
+];
+
+interface OrganizationSettings {
+  name: string;
+  branding: {
+    primaryColor: string;
+    accentColor: string;
+    logoUrl: string | null;
+    faviconUrl: string | null;
+    appName: string | null;
+    customDomain: string | null;
+  };
+  settings: {
+    timezone: string;
+    dateFormat: string;
+    defaultLanguage: string;
+  };
+}
+
+// Decorative star component
+function DecorativeStar() {
+  return (
+    <div className="absolute bottom-8 right-8 w-12 h-12 opacity-60 pointer-events-none">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M24 0L26.5 21.5L48 24L26.5 26.5L24 48L21.5 26.5L0 24L21.5 21.5L24 0Z"
+          fill="url(#starGradientSettings)"
+        />
+        <defs>
+          <linearGradient id="starGradientSettings" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#00E5CC" stopOpacity="0.6"/>
+            <stop offset="1" stopColor="#8B5CF6" stopOpacity="0.3"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+export default function SettingsPage() {
+  const [activeSection, setActiveSection] = React.useState("general");
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [saveStatus, setSaveStatus] = React.useState<"idle" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = React.useState("");
+
+  // Form state
+  const [brandName, setBrandName] = React.useState("");
+  const [websiteUrl, setWebsiteUrl] = React.useState("");
+  const [timezone, setTimezone] = React.useState("UTC");
+  const [language, setLanguage] = React.useState("en");
+
+  // Privacy settings state
+  const [shareUsageData, setShareUsageData] = React.useState(false);
+  const [aiModelFeedback, setAiModelFeedback] = React.useState(false);
+  const [marketingComms, setMarketingComms] = React.useState(false);
+
+  // Dropdown state
+  const [languageDropdownOpen, setLanguageDropdownOpen] = React.useState(false);
+  const [timezoneDropdownOpen, setTimezoneDropdownOpen] = React.useState(false);
+
+  // Brand modal state
+  const [brandModalOpen, setBrandModalOpen] = React.useState(false);
+  const [primaryColor, setPrimaryColor] = React.useState("#4926FA");
+  const [accentColor, setAccentColor] = React.useState("#D82F71");
+  const [appName, setAppName] = React.useState("");
+  const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = React.useState(false);
+  const logoInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Fetch organization settings on mount
+  React.useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const response = await fetch("/api/settings/organization");
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          setBrandName(data.data.name || "");
+          setWebsiteUrl(data.data.branding?.customDomain || "");
+          setTimezone(data.data.settings?.timezone || "UTC");
+          setLanguage(data.data.settings?.defaultLanguage || "en");
+          // Privacy settings
+          setShareUsageData(data.data.settings?.shareUsageData ?? false);
+          setAiModelFeedback(data.data.settings?.aiModelFeedback ?? false);
+          setMarketingComms(data.data.settings?.marketingComms ?? false);
+          // Branding
+          setPrimaryColor(data.data.branding?.primaryColor || "#4926FA");
+          setAccentColor(data.data.branding?.accentColor || "#D82F71");
+          setAppName(data.data.branding?.appName || "");
+          setLogoUrl(data.data.branding?.logoUrl || null);
+        }
+      } catch (err) {
+        // Settings not found - use defaults
+        const message = err instanceof Error ? err.message : "Failed to load settings";
+        setErrorMessage(message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchSettings();
+  }, []);
+
+  // Logo upload handler
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "logos");
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setLogoUrl(data.data.url);
+      } else {
+        setErrorMessage(data.error || "Failed to upload logo");
+      }
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "Failed to upload logo");
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  // Save settings handler
+  const handleSaveSettings = async () => {
+    setIsSaving(true);
+    setSaveStatus("idle");
+    setErrorMessage("");
+
+    try {
+      const response = await fetch("/api/settings/organization", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: brandName,
+          branding: {
+            customDomain: websiteUrl || null,
+            primaryColor,
+            accentColor,
+            appName: appName || null,
+            logoUrl: logoUrl || null,
+          },
+          settings: {
+            timezone,
+            defaultLanguage: language,
+            shareUsageData,
+            aiModelFeedback,
+            marketingComms,
+          },
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSaveStatus("success");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      } else {
+        setSaveStatus("error");
+        setErrorMessage(data.error || "Failed to save settings");
+      }
+    } catch (err) {
+      setSaveStatus("error");
+      setErrorMessage(err instanceof Error ? err.message : "Failed to save settings");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="dashboard-bg min-h-screen relative">
+      {/* Header Row */}
+      <div className="flex items-center justify-between px-8 py-4 border-b border-white/5">
+        <div className="flex items-center gap-2">
+          <div className="apex-logo-icon w-8 h-8">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradSettings)" />
+              <defs>
+                <linearGradient id="apexGradSettings" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#00E5CC"/>
+                  <stop offset="1" stopColor="#8B5CF6"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+            APEX
+          </span>
+          <span className="text-xl font-light text-white ml-1">Onboard</span>
+        </div>
+
+        {/* Navigation Tabs */}
+        <nav className="flex items-center gap-8">
+          <Link href="/dashboard" className="text-sm text-slate-400 hover:text-white transition-colors">
+            Dashboard
+          </Link>
+          <Link href="/dashboard/monitor" className="text-sm text-slate-400 hover:text-white transition-colors">
+            Monitor
+          </Link>
+          <Link href="/dashboard/feedback" className="text-sm text-slate-400 hover:text-white transition-colors">
+            Feedback
+          </Link>
+        </nav>
+
+        {/* AI Status */}
+        <div className="ai-status-indicator">
+          <span className="ai-status-dot active" />
+          <span className="text-xs text-slate-400">AI Status:</span>
+          <span className="text-xs text-cyan-400 font-medium">Active</span>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex gap-6 p-6 relative">
+        {/* Settings Sidebar */}
+        <div className="w-56 flex-shrink-0">
+          <div className="settings-sidebar-card">
+            <h2 className="text-lg font-semibold text-white mb-4">APEX Settings</h2>
+            <nav className="space-y-1">
+              {settingsNav.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeSection === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveSection(item.id)}
+                    className={`settings-nav-item ${isActive ? "active" : ""}`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 min-w-0">
+          <div className="settings-content-card">
+            {/* Render different sections based on active navigation */}
+            {activeSection === "api-keys" && <ApiKeysSection />}
+            {activeSection === "integrations" && <IntegrationsSection />}
+            {activeSection === "notifications" && <NotificationsSection />}
+
+            {/* General Settings (default) */}
+            {activeSection === "general" && (
+              <>
+                <h1 className="text-2xl font-semibold text-white mb-8">General Settings</h1>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left Column */}
+              <div className="space-y-6">
+                {/* Profile Section - TODO: Integrate with Clerk user data */}
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500/30 to-purple-500/30 flex items-center justify-center border border-white/10">
+                      <User className="w-6 h-6 text-slate-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-medium">No profile configured</h3>
+                      <p className="text-sm text-slate-400">Connect your account to view profile</p>
+                    </div>
+                  </div>
+                  <button className="settings-edit-btn">Edit Profile</button>
+                </div>
+
+                <p className="text-xs text-slate-500">
+                  Configure your profile settings and preferences below.
+                </p>
+
+                {/* Brand Name */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-white">Brand Name</label>
+                  <input
+                    type="text"
+                    value={brandName}
+                    onChange={(e) => setBrandName(e.target.value)}
+                    placeholder="Enter your brand name"
+                    className="settings-input w-full bg-transparent text-white placeholder:text-slate-400 outline-none"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                {/* Website URL */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-white">Website URL</label>
+                  <input
+                    type="url"
+                    value={websiteUrl}
+                    onChange={(e) => setWebsiteUrl(e.target.value)}
+                    placeholder="https://example.com"
+                    className="settings-input w-full bg-transparent text-white placeholder:text-slate-400 outline-none"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                {/* Localization */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-white">Localization</h3>
+
+                  <div className="space-y-3">
+                    {/* Language Dropdown */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-400">Language</span>
+                      <div className="relative">
+                        <button
+                          className="settings-dropdown"
+                          onClick={() => {
+                            setLanguageDropdownOpen(!languageDropdownOpen);
+                            setTimezoneDropdownOpen(false);
+                          }}
+                          disabled={isLoading}
+                        >
+                          <span>{LANGUAGES.find(l => l.code === language)?.name || "Select language"}</span>
+                          <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${languageDropdownOpen ? "rotate-180" : ""}`} />
+                        </button>
+                        {languageDropdownOpen && (
+                          <div className="absolute right-0 top-full mt-1 w-48 bg-slate-800 border border-white/10 rounded-lg shadow-lg z-50 py-1 max-h-60 overflow-y-auto">
+                            {LANGUAGES.map((lang) => (
+                              <button
+                                key={lang.code}
+                                className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors ${language === lang.code ? "text-cyan-400" : "text-slate-300"}`}
+                                onClick={() => {
+                                  setLanguage(lang.code);
+                                  setLanguageDropdownOpen(false);
+                                }}
+                              >
+                                {lang.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Timezone Dropdown */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-400">Timezone</span>
+                      <div className="relative">
+                        <button
+                          className="settings-dropdown"
+                          onClick={() => {
+                            setTimezoneDropdownOpen(!timezoneDropdownOpen);
+                            setLanguageDropdownOpen(false);
+                          }}
+                          disabled={isLoading}
+                        >
+                          <span>{TIMEZONES.find(t => t.code === timezone)?.name || "Select timezone"}</span>
+                          <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${timezoneDropdownOpen ? "rotate-180" : ""}`} />
+                        </button>
+                        {timezoneDropdownOpen && (
+                          <div className="absolute right-0 top-full mt-1 w-64 bg-slate-800 border border-white/10 rounded-lg shadow-lg z-50 py-1 max-h-60 overflow-y-auto">
+                            {TIMEZONES.map((tz) => (
+                              <button
+                                key={tz.code}
+                                className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors ${timezone === tz.code ? "text-cyan-400" : "text-slate-300"}`}
+                                onClick={() => {
+                                  setTimezone(tz.code);
+                                  setTimezoneDropdownOpen(false);
+                                }}
+                              >
+                                {tz.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Data & Privacy */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-white">Data & Privacy</h3>
+                  <p className="text-xs text-slate-500">
+                    Manage your data preferences and privacy settings.
+                    Deleting your account will remove all associated data.
+                  </p>
+                  <button className="settings-delete-btn">
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete Account</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column */}
+              <div className="space-y-6">
+                {/* Brand Preview Card */}
+                <div className="settings-feature-card">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-white font-medium">Brand Preview</h3>
+                      <p className="text-xs text-slate-400">How your brand appears in AI responses</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${primaryColor}33` }}>
+                      <span style={{ color: primaryColor }} className="text-xl">⟨⟩</span>
+                    </div>
+                  </div>
+                  <div className="settings-preview-image">
+                    <div
+                      className="flex items-center justify-center gap-3 h-32 rounded-lg overflow-hidden border border-white/5"
+                      style={{ background: `linear-gradient(135deg, ${primaryColor}22, ${accentColor}22)` }}
+                    >
+                      {logoUrl && (
+                        <img
+                          src={logoUrl}
+                          alt="Brand logo"
+                          className="w-12 h-12 object-contain"
+                        />
+                      )}
+                      {appName ? (
+                        <span className="text-lg font-semibold text-white">{appName}</span>
+                      ) : !logoUrl ? (
+                        <span className="text-sm text-slate-500">No brand configured</span>
+                      ) : null}
+                    </div>
+                    <button
+                      className="text-xs text-cyan-400 hover:text-cyan-300 mt-2"
+                      onClick={() => setBrandModalOpen(true)}
+                    >
+                      Configure Brand
+                    </button>
+                  </div>
+                </div>
+
+                {/* Privacy Settings */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-white flex items-center gap-2">
+                    Privacy Settings
+                  </h3>
+
+                  <div className="space-y-3">
+                    <button
+                      className="settings-toggle-row w-full"
+                      onClick={() => setShareUsageData(!shareUsageData)}
+                      disabled={isLoading}
+                    >
+                      <span className="text-xs text-slate-400 text-left">Share anonymous usage data<br/>Help improve the platform</span>
+                      <div className={`settings-toggle ${shareUsageData ? "active" : ""}`}>
+                        <div className="settings-toggle-knob" />
+                      </div>
+                    </button>
+
+                    <button
+                      className="settings-toggle-row w-full"
+                      onClick={() => setAiModelFeedback(!aiModelFeedback)}
+                      disabled={isLoading}
+                    >
+                      <span className="text-xs text-slate-400 text-left">AI model feedback<br/>Allow AI to learn from your usage</span>
+                      <div className={`settings-toggle ${aiModelFeedback ? "active" : ""}`}>
+                        <div className="settings-toggle-knob" />
+                      </div>
+                    </button>
+
+                    <button
+                      className="settings-toggle-row w-full"
+                      onClick={() => setMarketingComms(!marketingComms)}
+                      disabled={isLoading}
+                    >
+                      <span className="text-xs text-slate-400 text-left">Marketing communications<br/>Receive product updates and tips</span>
+                      <div className={`settings-toggle ${marketingComms ? "active" : ""}`}>
+                        <div className="settings-toggle-knob" />
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Save Button */}
+            <div className="flex items-center justify-end gap-4 mt-8">
+              {saveStatus === "success" && (
+                <div className="flex items-center gap-2 text-sm text-green-400">
+                  <Check className="w-4 h-4" />
+                  <span>Settings saved successfully</span>
+                </div>
+              )}
+              {saveStatus === "error" && (
+                <div className="flex items-center gap-2 text-sm text-red-400">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{errorMessage || "Failed to save"}</span>
+                </div>
+              )}
+              <button
+                className="settings-save-btn flex items-center gap-2"
+                onClick={handleSaveSettings}
+                disabled={isSaving || isLoading}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <span>Save Changes</span>
+                )}
+              </button>
+            </div>
+              </>
+            )}
+
+            {/* Placeholder for other sections */}
+            {(activeSection === "team" || activeSection === "billing") && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">{activeSection === "team" ? "Team Management" : "Billing & Plan"}</h2>
+                  <p className="text-sm text-slate-400 mt-1">
+                    This section is coming soon
+                  </p>
+                </div>
+                <div className="card-tertiary flex items-center justify-center py-12">
+                  <p className="text-slate-500">Content will be available soon</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Decorative Star */}
+        <DecorativeStar />
+      </div>
+
+      {/* Brand Configuration Modal */}
+      {brandModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-white/10 rounded-xl w-full max-w-md shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <h2 className="text-lg font-semibold text-white">Configure Brand</h2>
+              <button
+                onClick={() => setBrandModalOpen(false)}
+                className="p-1 rounded hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-4 space-y-4">
+              {/* Logo Upload */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white">Logo</label>
+                <div className="flex items-center gap-4">
+                  {/* Logo Preview */}
+                  <div
+                    className="w-20 h-20 rounded-lg border border-white/10 flex items-center justify-center overflow-hidden"
+                    style={{ background: `linear-gradient(135deg, ${primaryColor}22, ${accentColor}22)` }}
+                  >
+                    {logoUrl ? (
+                      <img
+                        src={logoUrl}
+                        alt="Brand logo"
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <Upload className="w-6 h-6 text-slate-500" />
+                    )}
+                  </div>
+                  {/* Upload Button */}
+                  <div className="flex-1 space-y-2">
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => logoInputRef.current?.click()}
+                      disabled={isUploadingLogo}
+                      className="w-full px-4 py-2 text-sm bg-white/5 border border-white/10 rounded-lg text-white hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+                    >
+                      {isUploadingLogo ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          <span>{logoUrl ? "Change Logo" : "Upload Logo"}</span>
+                        </>
+                      )}
+                    </button>
+                    {logoUrl && (
+                      <button
+                        onClick={() => setLogoUrl(null)}
+                        className="w-full px-4 py-1.5 text-xs text-red-400 hover:text-red-300 transition-colors"
+                      >
+                        Remove Logo
+                      </button>
+                    )}
+                    <p className="text-xs text-slate-500">PNG, JPG, GIF, WebP or SVG. Max 5MB.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* App Name */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white">App Name</label>
+                <input
+                  type="text"
+                  value={appName}
+                  onChange={(e) => setAppName(e.target.value)}
+                  placeholder="Your brand name"
+                  className="settings-input w-full bg-transparent text-white placeholder:text-slate-400 outline-none"
+                />
+              </div>
+
+              {/* Primary Color */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white">Primary Color</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="w-10 h-10 rounded cursor-pointer border-0 bg-transparent"
+                  />
+                  <input
+                    type="text"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="settings-input flex-1 bg-transparent text-white placeholder:text-slate-400 outline-none uppercase"
+                  />
+                </div>
+              </div>
+
+              {/* Accent Color */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white">Accent Color</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={accentColor}
+                    onChange={(e) => setAccentColor(e.target.value)}
+                    className="w-10 h-10 rounded cursor-pointer border-0 bg-transparent"
+                  />
+                  <input
+                    type="text"
+                    value={accentColor}
+                    onChange={(e) => setAccentColor(e.target.value)}
+                    className="settings-input flex-1 bg-transparent text-white placeholder:text-slate-400 outline-none uppercase"
+                  />
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white">Preview</label>
+                <div
+                  className="h-20 rounded-lg flex items-center justify-center gap-3 border border-white/10"
+                  style={{ background: `linear-gradient(135deg, ${primaryColor}44, ${accentColor}44)` }}
+                >
+                  {logoUrl && (
+                    <img
+                      src={logoUrl}
+                      alt="Logo preview"
+                      className="w-10 h-10 object-contain"
+                    />
+                  )}
+                  <span className="font-semibold text-white">{appName || "Your Brand"}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 p-4 border-t border-white/10">
+              <button
+                onClick={() => setBrandModalOpen(false)}
+                className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setBrandModalOpen(false)}
+                className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
