@@ -22,10 +22,20 @@ import {
   List,
   FileSearch,
   Settings,
+  AlertCircle,
+  Loader2,
+  RefreshCw,
+  Bot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useSelectedBrand } from "@/stores";
+import {
+  useRecommendationsByBrand,
+  useUpdateRecommendationStatus,
+  Recommendation as APIRecommendation,
+} from "@/hooks/useRecommendations";
 
 // Priority levels with muted semantic colors (Linear-style)
 type Priority = "critical" | "high" | "medium" | "low";
@@ -357,6 +367,109 @@ const priorityTabs = [
   { id: "low", label: "Low" },
 ];
 
+// Transform API recommendation to UI Recommendation format
+function apiToUIRecommendation(rec: APIRecommendation): Recommendation {
+  // Map category to type
+  const categoryToType: Record<string, RecommendationType> = {
+    technical: "technical",
+    content: "content",
+    authority: "schema", // Map authority to schema
+    ai_readiness: "ai-visibility",
+  };
+
+  // Map effort string to number
+  const effortToNumber: Record<string, number> = {
+    low: 3,
+    medium: 5,
+    high: 8,
+  };
+
+  return {
+    id: rec.id,
+    title: rec.title,
+    description: rec.description,
+    priority: rec.priority,
+    type: categoryToType[rec.category] || "technical",
+    status: rec.status,
+    impact: rec.impact,
+    effort: effortToNumber[rec.effort] || 5,
+    confidence: 85, // Default confidence since API doesn't provide it
+    affectedPages: [], // Not in API response
+    suggestedAction: rec.actionUrl || "Review and implement this recommendation",
+  };
+}
+
+// Prompt to select a brand
+function SelectBrandPrompt() {
+  return (
+    <div className="flex-1 flex items-center justify-center min-h-[500px]">
+      <div className="text-center max-w-lg space-y-6">
+        <div className="relative mx-auto w-20 h-20">
+          <div
+            className="absolute inset-0 rounded-full opacity-20"
+            style={{
+              background: "radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%)",
+              filter: "blur(20px)",
+            }}
+          />
+          <div className="relative w-20 h-20 rounded-2xl bg-accent-purple/10 border border-accent-purple/30 flex items-center justify-center">
+            <Bot className="w-10 h-10 text-accent-purple" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold text-foreground">Select a Brand to View Recommendations</h2>
+          <p className="text-muted-foreground">
+            Choose a brand from the dropdown in the header to see AI-powered recommendations.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/brands"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent-purple/10 text-accent-purple border border-accent-purple/30 font-medium hover:bg-accent-purple/20 transition-all"
+        >
+          Manage Brands
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// Loading state component
+function RecommendationsLoadingState() {
+  return (
+    <div className="flex-1 flex items-center justify-center min-h-[500px]" data-testid="recommendations-loading">
+      <div className="text-center space-y-4">
+        <Loader2 className="w-12 h-12 text-accent-purple animate-spin mx-auto" />
+        <p className="text-muted-foreground">Loading recommendations...</p>
+      </div>
+    </div>
+  );
+}
+
+// Error state component
+function RecommendationsErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  return (
+    <div className="flex-1 flex items-center justify-center min-h-[500px]">
+      <div className="text-center max-w-md space-y-4">
+        <div className="w-16 h-16 rounded-full bg-error/10 border border-error/30 flex items-center justify-center mx-auto">
+          <AlertCircle className="w-8 h-8 text-error" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold text-foreground">Failed to Load Recommendations</h3>
+          <p className="text-muted-foreground text-sm">{error.message}</p>
+        </div>
+        <button
+          onClick={onRetry}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-purple text-white font-medium hover:bg-accent-purple/90 transition-all"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Retry
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // Empty state component for when no recommendations exist
 function RecommendationsEmptyState() {
   const features = [
@@ -433,20 +546,37 @@ function RecommendationsEmptyState() {
 }
 
 export default function RecommendationsPage() {
-  // TODO: Fetch recommendations from API endpoint
-  // const { data: recommendations, isLoading } = useQuery(['recommendations'], fetchRecommendations);
-  const [recommendations, setRecommendations] = React.useState<Recommendation[]>([]); // Empty array - no mock data
+  // Get selected brand from global state
+  const selectedBrand = useSelectedBrand();
+
+  // Fetch recommendations for selected brand
+  const {
+    data: recommendationsResponse,
+    isLoading,
+    error,
+    refetch,
+  } = useRecommendationsByBrand(selectedBrand?.id || "", {
+    limit: 50,
+    sort: "priority",
+    order: "desc",
+  });
+
+  // Status update mutation
+  const updateStatusMutation = useUpdateRecommendationStatus();
+
+  // Transform API recommendations to UI format
+  const recommendations: Recommendation[] = React.useMemo(() => {
+    if (!recommendationsResponse?.recommendations) return [];
+    return recommendationsResponse.recommendations.map(apiToUIRecommendation);
+  }, [recommendationsResponse?.recommendations]);
+
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [priorityFilter, setPriorityFilter] = React.useState("all");
   const [searchQuery, setSearchQuery] = React.useState("");
 
-  // Handle status change
+  // Handle status change using mutation
   const handleStatusChange = (id: string, newStatus: Status) => {
-    setRecommendations((prev) =>
-      prev.map((rec) =>
-        rec.id === id ? { ...rec, status: newStatus } : rec
-      )
-    );
+    updateStatusMutation.mutate({ id, status: newStatus });
   };
 
   // Filter recommendations
@@ -469,10 +599,74 @@ export default function RecommendationsPage() {
     critical: recommendations.filter((r) => r.priority === "critical" && r.status === "pending").length,
   };
 
-  // Check if there's any data
+  // Determine current state
+  const noBrandSelected = !selectedBrand;
   const hasData = recommendations.length > 0;
 
-  // Show empty state when no recommendations
+  // State 1: No brand selected
+  if (noBrandSelected) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Lightbulb className="h-6 w-6 text-primary" />
+              Smart Recommendations
+            </h2>
+            <p className="text-muted-foreground mt-1">
+              AI-powered suggestions to improve your GEO score
+            </p>
+          </div>
+        </div>
+        <SelectBrandPrompt />
+      </div>
+    );
+  }
+
+  // State 2: Loading
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Lightbulb className="h-6 w-6 text-primary" />
+              Smart Recommendations
+            </h2>
+            <p className="text-muted-foreground mt-1">
+              AI-powered suggestions to improve your GEO score
+            </p>
+          </div>
+        </div>
+        <RecommendationsLoadingState />
+      </div>
+    );
+  }
+
+  // State 3: Error
+  if (error) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Lightbulb className="h-6 w-6 text-primary" />
+              Smart Recommendations
+            </h2>
+            <p className="text-muted-foreground mt-1">
+              AI-powered suggestions to improve your GEO score
+            </p>
+          </div>
+        </div>
+        <RecommendationsErrorState error={error as Error} onRetry={() => refetch()} />
+      </div>
+    );
+  }
+
+  // State 4: No data (empty state)
   if (!hasData) {
     return (
       <div className="space-y-6">
@@ -488,7 +682,6 @@ export default function RecommendationsPage() {
             </p>
           </div>
         </div>
-
         <RecommendationsEmptyState />
       </div>
     );
