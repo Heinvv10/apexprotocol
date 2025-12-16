@@ -327,18 +327,19 @@ export default function BrandsPage() {
 
   // Add competitor
   const addCompetitor = () => {
-    const competitor = competitorInput.trim();
-    if (competitor && !formData.competitors.includes(competitor)) {
-      setFormData((prev) => ({ ...prev, competitors: [...prev.competitors, competitor] }));
+    const competitorName = competitorInput.trim();
+    if (competitorName && !formData.competitors.some((c) => c.name === competitorName)) {
+      const newCompetitor = { name: competitorName, url: "", reason: "" };
+      setFormData((prev) => ({ ...prev, competitors: [...prev.competitors, newCompetitor] }));
       setCompetitorInput("");
     }
   };
 
   // Remove competitor
-  const removeCompetitor = (competitor: string) => {
+  const removeCompetitor = (competitorName: string) => {
     setFormData((prev) => ({
       ...prev,
-      competitors: prev.competitors.filter((c) => c !== competitor),
+      competitors: prev.competitors.filter((c) => c.name !== competitorName),
     }));
   };
 
@@ -969,13 +970,13 @@ export default function BrandsPage() {
                     <div className="flex flex-wrap gap-2 mt-2">
                       {formData.competitors.map((competitor) => (
                         <span
-                          key={competitor}
+                          key={competitor.name}
                           className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-muted text-foreground text-sm"
                         >
-                          {competitor}
+                          {competitor.name}
                           <button
                             type="button"
-                            onClick={() => removeCompetitor(competitor)}
+                            onClick={() => removeCompetitor(competitor.name)}
                             className="hover:text-error"
                           >
                             <X className="h-3 w-3" />
