@@ -25,7 +25,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { useBrandStore, useBrands, useSelectedBrand } from "@/stores";
 import { useOnboardingProgress } from "@/hooks/useOnboarding";
-import { useDashboardMetrics, useGEOScore } from "@/hooks/useDashboard";
+import { useDashboardMetrics, useGEOScore, useUnifiedScore } from "@/hooks/useDashboard";
+import { UnifiedScoreGauge } from "@/components/dashboard/unified-score-gauge";
+import { ScoreTrend } from "@/components/dashboard/score-trend";
 
 // Onboarding step type
 interface OnboardingStep {
@@ -593,7 +595,8 @@ function PopulatedDashboard({ brandId, brandName }: { brandId: string; brandName
     refetch,
   } = useDashboardMetrics(brandId);
 
-  const { data: geoScore, error: geoError } = useGEOScore(brandId);
+  const { data: geoScore } = useGEOScore(brandId);
+  const { data: unifiedScoreData } = useUnifiedScore(brandId);
 
   // Show loading state
   if (metricsLoading && !metrics) {
@@ -605,7 +608,9 @@ function PopulatedDashboard({ brandId, brandName }: { brandId: string; brandName
     return <DashboardErrorState error={metricsError as Error} onRetry={() => refetch()} />;
   }
 
-  // Get the GEO score value (use metrics or geoScore hook)
+  // Get the unified score data or fallback to GEO score
+  const hasUnifiedScore = !!unifiedScoreData?.score;
+  const unifiedScore = unifiedScoreData?.score;
   const currentGeoScore = geoScore?.overall ?? metrics?.geoScore?.current ?? 0;
   const geoTrend = metrics?.geoScore?.trend ?? "stable";
   const geoChange = metrics?.geoScore?.change ?? 0;
@@ -638,18 +643,33 @@ function PopulatedDashboard({ brandId, brandName }: { brandId: string; brandName
 
         {/* Main Stats Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {/* GEO Score - Featured Card */}
-          <div className="card-primary md:col-span-2 lg:col-span-1">
-            <div className="flex flex-col items-center text-center">
-              <GEOScoreGauge score={currentGeoScore} />
-              <p className="mt-4 text-sm text-muted-foreground">
-                {currentGeoScore >= 80
-                  ? "Excellent visibility"
-                  : currentGeoScore >= 60
-                  ? "Good progress"
-                  : "Room to improve"}
-              </p>
-            </div>
+          {/* Unified Score - Featured Card */}
+          <div className="card-primary md:col-span-2 lg:col-span-2">
+            <h3 className="text-sm font-medium text-muted-foreground mb-4 text-center">
+              Digital Presence Score
+            </h3>
+            {hasUnifiedScore ? (
+              <UnifiedScoreGauge
+                overall={unifiedScore?.overall ?? 0}
+                seoScore={unifiedScore?.components?.seo?.score ?? 0}
+                geoScore={unifiedScore?.components?.geo?.score ?? 0}
+                aeoScore={unifiedScore?.components?.aeo?.score ?? 0}
+                grade={unifiedScore?.grade}
+                trend={unifiedScore ? { value: unifiedScore.change, direction: unifiedScore.trend } : undefined}
+                size="md"
+              />
+            ) : (
+              <div className="flex flex-col items-center text-center">
+                <GEOScoreGauge score={currentGeoScore} />
+                <p className="mt-4 text-sm text-muted-foreground">
+                  {currentGeoScore >= 80
+                    ? "Excellent visibility"
+                    : currentGeoScore >= 60
+                    ? "Good progress"
+                    : "Room to improve"}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Mentions */}
@@ -681,6 +701,15 @@ function PopulatedDashboard({ brandId, brandName }: { brandId: string; brandName
             accentColor="#3B82F6"
           />
         </div>
+
+        {/* Score Trend Chart */}
+        {unifiedScoreData?.history && unifiedScoreData.history.length > 0 && (
+          <ScoreTrend
+            data={unifiedScoreData.history}
+            targetScore={80}
+            showComponents={true}
+          />
+        )}
 
         {/* Quick Actions */}
         <div className="space-y-4">

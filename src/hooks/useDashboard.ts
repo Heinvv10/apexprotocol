@@ -97,6 +97,48 @@ export interface GEOScoreDetails {
   }>;
 }
 
+export interface UnifiedScoreResponse {
+  score: {
+    overall: number;
+    grade: "A+" | "A" | "B" | "C" | "D" | "F";
+    trend: "up" | "down" | "stable";
+    change: number;
+    components: {
+      seo: {
+        score: number;
+        breakdown: Record<string, number>;
+        recommendations: string[];
+      };
+      geo: {
+        score: number;
+        breakdown: Record<string, number>;
+        recommendations: string[];
+      };
+      aeo: {
+        score: number;
+        breakdown: Record<string, number>;
+        recommendations: string[];
+      };
+    };
+    weights: {
+      seo: number;
+      geo: number;
+      aeo: number;
+    };
+    insights: string[];
+    priorityActions: string[];
+  };
+  history: Array<{
+    date: string;
+    label: string;
+    unified: number;
+    seo: number;
+    geo: number;
+    aeo: number;
+  }>;
+  lastUpdated: string;
+}
+
 // =============================================================================
 // API Functions
 // =============================================================================
@@ -117,6 +159,14 @@ async function fetchGEOScore(brandId: string): Promise<GEOScoreDetails> {
   const response = await fetch(`/api/analytics/geo-score?brandId=${brandId}`);
   if (!response.ok) {
     throw new Error("Failed to fetch GEO score");
+  }
+  return response.json();
+}
+
+async function fetchUnifiedScore(brandId: string): Promise<UnifiedScoreResponse> {
+  const response = await fetch(`/api/analytics/unified-score?brandId=${brandId}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch unified score");
   }
   return response.json();
 }
@@ -167,6 +217,23 @@ export function useGEOScore(
     queryKey: queryKeys.analytics.geoScore(brandId),
     queryFn: () => fetchGEOScore(brandId),
     staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: !!brandId,
+    ...options,
+  });
+}
+
+/**
+ * Hook to fetch unified score (SEO + GEO + AEO combined)
+ */
+export function useUnifiedScore(
+  brandId: string,
+  options?: Omit<UseQueryOptions<UnifiedScoreResponse>, "queryKey" | "queryFn">
+) {
+  return useQuery({
+    queryKey: ["unified-score", brandId],
+    queryFn: () => fetchUnifiedScore(brandId),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchInterval: 1000 * 60 * 10, // Refetch every 10 minutes
     enabled: !!brandId,
     ...options,
   });
