@@ -161,3 +161,59 @@ export {
   executiveReportsRelations,
   scheduledReportsRelations,
 } from "./portfolios";
+
+// Social Media (Phase 7.1)
+export {
+  socialAccounts,
+  socialMentions,
+  socialMetrics,
+  socialScores,
+  socialPlatformEnum,
+  socialSentimentEnum,
+  socialAccountTypeEnum,
+  type SocialAccount,
+  type NewSocialAccount,
+  type SocialMention,
+  type NewSocialMention,
+  type SocialMetric,
+  type NewSocialMetric,
+  type SocialScore,
+  type NewSocialScore,
+  type PlatformMetrics,
+  type TokenMetadata,
+  type SocialPlatformBreakdown,
+} from "./social";
+
+export {
+  socialAccountsRelations,
+  socialMentionsRelations,
+  socialMetricsRelations,
+  socialScoresRelations,
+} from "./social";
+
+// People/Leadership (Phase 7.2)
+export {
+  brandPeople,
+  peopleAiMentions,
+  peopleScores,
+  roleCategoryEnum,
+  discoverySourceEnum,
+  aiPlatformTypeEnum,
+  type BrandPerson,
+  type NewBrandPerson,
+  type PersonAiMention,
+  type NewPersonAiMention,
+  type PeopleScore,
+  type NewPeopleScore,
+  type PersonSocialProfiles,
+  type ThoughtLeadershipActivity,
+  type PersonExtractionMetadata,
+  type PersonAIMentionContext,
+  type PersonScoreBreakdown,
+} from "./people";
+
+export {
+  brandPeopleRelations,
+  peopleAiMentionsRelations,
+  peopleScoresRelations,
+} from "./people";
