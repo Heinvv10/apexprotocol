@@ -2116,6 +2116,106 @@
     "priority": 190,
     "category": "deployment",
     "phase": "deployment"
+  },
+  {
+    "id": "F191",
+    "name": "Phase 7.0 - Cheerio Crawling Enhancement",
+    "description": "Add Cheerio-based DOM extraction layer for team and social discovery from web pages",
+    "test_description": "createExtractor(html) returns working extraction methods, extractTeamFromHtml finds team members, extractSocialsFromHtml finds social links",
+    "passes": true,
+    "priority": 191,
+    "category": "crawling",
+    "phase": "phase-7"
+  },
+  {
+    "id": "F192",
+    "name": "Phase 7.1 - Social Media Database Schema",
+    "description": "Create social_accounts, social_mentions, social_metrics, social_scores tables",
+    "test_description": "drizzle-kit push succeeds, all tables queryable via db.select()",
+    "passes": true,
+    "priority": 192,
+    "category": "backend",
+    "phase": "phase-7"
+  },
+  {
+    "id": "F193",
+    "name": "Phase 7.2 - People/Leadership Database Schema",
+    "description": "Create brand_people, people_ai_mentions, people_scores tables with role categories",
+    "test_description": "Can insert/query people with role_category enum (c_suite, founder, board, key_employee, ambassador)",
+    "passes": true,
+    "priority": 193,
+    "category": "backend",
+    "phase": "phase-7"
+  },
+  {
+    "id": "F194",
+    "name": "Phase 7.3 - SMO Scoring Algorithm",
+    "description": "Social Media Optimization score with 5 sub-components (reach 25%, engagement 30%, sentiment 20%, growth 15%, consistency 10%)",
+    "test_description": "calculateSMOScore returns score 0-100 with breakdown, logarithmic follower scaling works correctly",
+    "passes": true,
+    "priority": 194,
+    "category": "scoring",
+    "phase": "phase-7"
+  },
+  {
+    "id": "F195",
+    "name": "Phase 7.3 - PPO Scoring Algorithm",
+    "description": "People Presence Optimization score with 4 sub-components (executive visibility 35%, thought leadership 30%, AI mentions 20%, social engagement 15%)",
+    "test_description": "calculatePPOScore returns score 0-100 with breakdown, role weighting works correctly",
+    "passes": true,
+    "priority": 195,
+    "category": "scoring",
+    "phase": "phase-7"
+  },
+  {
+    "id": "F196",
+    "name": "Phase 7.3 - Unified 5-Component Score",
+    "description": "Update unified score to 5 components: SEO 25%, GEO 25%, AEO 15%, SMO 20%, PPO 15% with legacy 3-component fallback",
+    "test_description": "calculateUnifiedScore returns full 5-component score when SMO/PPO data available, falls back to 3-component legacy mode otherwise",
+    "passes": true,
+    "priority": 196,
+    "category": "scoring",
+    "phase": "phase-7"
+  },
+  {
+    "id": "F197",
+    "name": "Phase 7.4 - Social Dashboard UI",
+    "description": "Social media dashboard with SMO gauge, connected accounts, sentiment analysis, recent mentions, recommendations",
+    "test_description": "Social page shows SMO score gauge with breakdown bars, stat cards, sentiment chart, empty states for no data",
+    "passes": true,
+    "priority": 197,
+    "category": "ui",
+    "phase": "phase-7"
+  },
+  {
+    "id": "F198",
+    "name": "Phase 7.5 - People Dashboard UI",
+    "description": "People presence dashboard with PPO gauge, key people list, AI mentions, thought leadership metrics, recommendations",
+    "test_description": "People page shows PPO score gauge with breakdown bars, person cards with role badges, AI mention cards, empty states",
+    "passes": true,
+    "priority": 198,
+    "category": "ui",
+    "phase": "phase-7"
+  },
+  {
+    "id": "F199",
+    "name": "Phase 7 - Social API Routes",
+    "description": "API routes for social summary, accounts, mentions, metrics at /api/social with type query param",
+    "test_description": "GET /api/social?brandId=X&type=summary returns SMO score and breakdown, type=accounts returns connected accounts",
+    "passes": true,
+    "priority": 199,
+    "category": "backend",
+    "phase": "phase-7"
+  },
+  {
+    "id": "F200",
+    "name": "Phase 7 - People API Routes",
+    "description": "API routes for people summary, list, AI mentions at /api/people with type query param, POST to add person",
+    "test_description": "GET /api/people?brandId=X&type=summary returns PPO score, type=list returns people array, POST creates new person",
+    "passes": true,
+    "priority": 200,
+    "category": "backend",
+    "phase": "phase-7"
   }
 ]
 
