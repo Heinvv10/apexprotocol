@@ -20,6 +20,7 @@ import {
   CornerDownLeft,
   ArrowUp,
   ArrowDown,
+  Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -66,6 +67,15 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         category: "Navigation",
         shortcut: ["G", "M"],
         action: () => router.push("/dashboard/monitor"),
+      },
+      {
+        id: "competitive",
+        title: "Go to Competitive",
+        subtitle: "Competitive intelligence",
+        icon: Target,
+        category: "Navigation",
+        shortcut: ["G", "I"],
+        action: () => router.push("/dashboard/competitive"),
       },
       {
         id: "recommendations",

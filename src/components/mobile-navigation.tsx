@@ -15,6 +15,7 @@ import {
   Monitor,
   FileText,
   Zap,
+  Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,7 @@ const bottomNavItems = [
 const sidebarMenuItems = [
   { label: "Dashboard", icon: Home, href: "/dashboard" },
   { label: "Monitor", icon: Monitor, href: "/dashboard/monitor" },
+  { label: "Competitive", icon: Target, href: "/dashboard/competitive" },
   { label: "Create", icon: FileText, href: "/dashboard/create" },
   { label: "Engine Room", icon: Zap, href: "/dashboard/engine-room" },
   { label: "Recommendations", icon: Lightbulb, href: "/dashboard/recommendations" },

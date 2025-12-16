@@ -17,6 +17,7 @@ import {
   MessageSquare,
   Cog,
   Building2,
+  Target,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -53,6 +54,11 @@ const mainNavItems: NavItem[] = [
     href: "/dashboard/monitor",
     icon: Eye,
     // TODO: Badge count should come from actual monitoring data
+  },
+  {
+    title: "Competitive",
+    href: "/dashboard/competitive",
+    icon: Target,
   },
   {
     title: "Engine Room",
