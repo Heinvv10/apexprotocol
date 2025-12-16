@@ -1,9 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { Search, Globe, Loader2, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import Link from "next/link";
+import { Search, Globe, Loader2, AlertCircle, CheckCircle2, Clock, Bot, ArrowRight, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useSelectedBrand } from "@/stores";
+import { useAuditsByBrand, useStartAudit, Audit } from "@/hooks/useAudit";
 
 // URL validation regex - validates http/https URLs
 const URL_REGEX = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$/;
@@ -16,17 +19,139 @@ export interface AuditHistoryItem {
   date: string;
 }
 
+// Transform API audit to history item format
+function auditToHistoryItem(audit: Audit): AuditHistoryItem {
+  const statusMap: Record<string, "completed" | "in_progress" | "failed"> = {
+    completed: "completed",
+    pending: "in_progress",
+    crawling: "in_progress",
+    analyzing: "in_progress",
+    failed: "failed",
+  };
+
+  return {
+    id: audit.id,
+    url: audit.url,
+    score: audit.overallScore || 0,
+    status: statusMap[audit.status] || "in_progress",
+    date: audit.completedAt
+      ? new Date(audit.completedAt).toLocaleDateString()
+      : new Date(audit.startedAt).toLocaleDateString(),
+  };
+}
+
+// Prompt to select a brand
+function SelectBrandPrompt() {
+  return (
+    <div className="flex-1 flex items-center justify-center min-h-[400px]">
+      <div className="text-center max-w-lg space-y-6">
+        <div className="relative mx-auto w-20 h-20">
+          <div
+            className="absolute inset-0 rounded-full opacity-20"
+            style={{
+              background: "radial-gradient(circle, rgba(0, 229, 204, 0.4) 0%, transparent 70%)",
+              filter: "blur(20px)",
+            }}
+          />
+          <div className="relative w-20 h-20 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center">
+            <Bot className="w-10 h-10 text-primary" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold text-foreground">Select a Brand to Run Audits</h2>
+          <p className="text-muted-foreground">
+            Choose a brand from the dropdown in the header to audit your website and see audit history.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/brands"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary/10 text-primary border border-primary/30 font-medium hover:bg-primary/20 transition-all"
+        >
+          Manage Brands
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// Loading state for audit history
+function AuditHistoryLoadingState() {
+  return (
+    <div className="space-y-2" data-testid="audit-history-loading">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="card-tertiary p-4 animate-pulse">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-4 h-4 bg-muted rounded" />
+              <div className="space-y-2">
+                <div className="h-4 w-48 bg-muted rounded" />
+                <div className="h-3 w-24 bg-muted rounded" />
+              </div>
+            </div>
+            <div className="h-8 w-12 bg-muted rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Error state for audit history
+function AuditHistoryErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  return (
+    <div className="text-center py-8">
+      <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-error/10 border border-error/30 flex items-center justify-center">
+        <AlertCircle className="h-6 w-6 text-error" />
+      </div>
+      <h4 className="text-lg font-semibold text-foreground mb-2">Failed to Load Audit History</h4>
+      <p className="text-muted-foreground text-sm mb-4">{error.message}</p>
+      <Button variant="outline" size="sm" onClick={onRetry}>
+        <RefreshCw className="w-4 h-4 mr-2" />
+        Retry
+      </Button>
+    </div>
+  );
+}
+
 export default function AuditPage() {
-  // TODO: Fetch audit history from API endpoint
-  // const { data: auditHistory } = useQuery(['audits'], fetchAuditHistory);
-  const auditHistory: AuditHistoryItem[] = []; // Empty array - no mock data
+  // Get selected brand from global state
+  const selectedBrand = useSelectedBrand();
+
+  // Fetch audits for selected brand
+  const {
+    data: auditsResponse,
+    isLoading: isLoadingHistory,
+    error: historyError,
+    refetch: refetchHistory,
+  } = useAuditsByBrand(selectedBrand?.id || "", {
+    limit: 10,
+  });
+
+  // Start audit mutation
+  const startAuditMutation = useStartAudit();
+
+  // Transform API audits to history items
+  const auditHistory: AuditHistoryItem[] = React.useMemo(() => {
+    if (!auditsResponse?.audits) return [];
+    return auditsResponse.audits.map(auditToHistoryItem);
+  }, [auditsResponse?.audits]);
 
   const [url, setUrl] = React.useState("");
-  const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [isValid, setIsValid] = React.useState<boolean | null>(null);
 
+  // Pre-fill URL with brand domain when brand changes
+  React.useEffect(() => {
+    if (selectedBrand?.domain) {
+      const brandUrl = `https://${selectedBrand.domain}`;
+      setUrl(brandUrl);
+      setIsValid(URL_REGEX.test(brandUrl));
+    }
+  }, [selectedBrand?.domain]);
+
   const hasHistory = auditHistory.length > 0;
+  const isLoading = startAuditMutation.isPending;
 
   // Validate URL on change
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,17 +184,35 @@ export default function AuditPage() {
       return;
     }
 
-    // Start loading state
-    setIsLoading(true);
+    // Require brand to be selected
+    if (!selectedBrand) {
+      setError("Please select a brand first");
+      return;
+    }
+
     setError(null);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // In real app, this would call the audit API
-    setIsLoading(false);
-    // Would redirect to audit results page
+    // Start the audit with brandId
+    startAuditMutation.mutate({
+      brandId: selectedBrand.id,
+      url,
+    });
   };
+
+  // Show select brand prompt if no brand selected
+  if (!selectedBrand) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Site Audit</h2>
+          <p className="text-muted-foreground">
+            Analyze your website for AI visibility and get actionable recommendations
+          </p>
+        </div>
+        <SelectBrandPrompt />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -135,6 +278,13 @@ export default function AuditPage() {
               {error}
             </div>
           )}
+          {/* URL validation error */}
+          {isValid === false && !error && (
+            <div className="flex items-center gap-2 text-error text-sm">
+              <AlertCircle className="h-4 w-4" />
+              Please enter a valid URL (e.g., https://example.com)
+            </div>
+          )}
 
           {/* Helper text */}
           <p className="text-xs text-muted-foreground">
@@ -181,7 +331,12 @@ export default function AuditPage() {
       {/* Recent Audits */}
       <div className="card-secondary p-6">
         <h3 className="font-semibold mb-4">Recent Audits</h3>
-        {hasHistory ? (
+        {/* Loading state */}
+        {isLoadingHistory ? (
+          <AuditHistoryLoadingState />
+        ) : /* Error state */ historyError ? (
+          <AuditHistoryErrorState error={historyError as Error} onRetry={() => refetchHistory()} />
+        ) : /* Has history */ hasHistory ? (
           <div className="space-y-2">
             {auditHistory.map((item) => (
               <div
@@ -228,6 +383,7 @@ export default function AuditPage() {
             ))}
           </div>
         ) : (
+          /* Empty state */
           <div className="text-center py-8">
             <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-muted/50 flex items-center justify-center">
               <Search className="h-6 w-6 text-muted-foreground" />

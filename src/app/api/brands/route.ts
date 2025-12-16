@@ -52,12 +52,13 @@ const createBrandSchema = z.object({
       fontFamily: z.string().optional().nullable(),
     })
     .optional(),
-  // Confidence scores
+  // Confidence scores - use passthrough to accept any format from AI
   confidence: z
     .object({
       overall: z.number().optional().default(0),
-      perField: z.record(z.number()).optional().default({}),
+      perField: z.record(z.string(), z.any()).optional().default({}),
     })
+    .passthrough()
     .optional(),
   monitoringEnabled: z.boolean().optional().default(true),
   monitoringPlatforms: z
@@ -159,6 +160,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+
+    // Log incoming data for debugging
+    console.log("[BrandCreate] Incoming confidence:", JSON.stringify(body.confidence, null, 2));
+
+    // Pre-process confidence perField to ensure numbers
+    if (body.confidence?.perField) {
+      const perField: Record<string, number> = {};
+      for (const [key, value] of Object.entries(body.confidence.perField)) {
+        const numValue = typeof value === 'number' ? value : parseFloat(String(value));
+        perField[key] = isNaN(numValue) ? 0 : numValue;
+      }
+      body.confidence.perField = perField;
+    }
+
     const validatedData = createBrandSchema.parse(body);
 
     // In development without database, return mock created brand
@@ -336,6 +351,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error("[BrandCreate] Validation error:", JSON.stringify(error.issues, null, 2));
       return NextResponse.json(
         {
           success: false,

@@ -6,7 +6,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Globe, Sparkles, Loader2, AlertCircle, Check, X, RefreshCw } from "lucide-react";
+import { Globe, Sparkles, Loader2, AlertCircle, Check, X, RefreshCw, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,24 @@ import { Progress } from "@/components/ui/progress";
 import { useBrandScrape } from "@/hooks/use-brand-scrape";
 import { cn } from "@/lib/utils";
 import type { ScrapedBrandData } from "@/app/api/brands/scrape/route";
+
+// Design system colors (consistent with brand-detail-view)
+const DESIGN = {
+  primaryCyan: "#00E5CC",
+  accentPurple: "#8B5CF6",
+  successGreen: "#22C55E",
+  warningYellow: "#F59E0B",
+  errorRed: "#EF4444",
+  infoBlue: "#3B82F6",
+  bgDeep: "#02030A",
+  bgElevated: "#0A0D1A",
+  bgCard: "#0F1225",
+  textPrimary: "#FFFFFF",
+  textSecondary: "#94A3B8",
+  textMuted: "#64748B",
+  borderDefault: "rgba(255, 255, 255, 0.08)",
+  borderAccent: "rgba(0, 229, 204, 0.3)",
+};
 
 // Wizard step type
 type WizardStep = "choose" | "url" | "loading" | "preview";
@@ -168,10 +186,18 @@ function ChooseStep({
   onManual: () => void;
 }) {
   return (
-    <div className="space-y-4">
-      <div className="text-center mb-6">
-        <h3 className="text-lg font-semibold text-white mb-2">Add New Brand</h3>
-        <p className="text-sm text-muted-foreground">
+    <div className="space-y-6">
+      <div className="text-center">
+        <div
+          className="inline-flex p-3 rounded-xl mb-4"
+          style={{ backgroundColor: `${DESIGN.primaryCyan}20` }}
+        >
+          <Sparkles className="h-8 w-8" style={{ color: DESIGN.primaryCyan }} />
+        </div>
+        <h3 className="text-xl font-semibold mb-2" style={{ color: DESIGN.textPrimary }}>
+          Add New Brand
+        </h3>
+        <p className="text-sm" style={{ color: DESIGN.textSecondary }}>
           How would you like to add your brand?
         </p>
       </div>
@@ -180,23 +206,32 @@ function ChooseStep({
         <button
           type="button"
           onClick={onAuto}
-          className={cn(
-            "flex items-start gap-4 p-4 rounded-lg border text-left transition-all",
-            "bg-primary/5 border-primary/30 hover:bg-primary/10 hover:border-primary/50",
-            "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
-          )}
+          className="flex items-start gap-4 p-4 rounded-xl text-left transition-all hover:scale-[1.02]"
+          style={{
+            backgroundColor: `${DESIGN.primaryCyan}10`,
+            border: `1px solid ${DESIGN.primaryCyan}40`,
+          }}
         >
-          <div className="p-2 rounded-lg bg-primary/20 text-primary">
-            <Sparkles className="h-5 w-5" />
+          <div
+            className="p-3 rounded-xl shrink-0"
+            style={{ backgroundColor: `${DESIGN.primaryCyan}20` }}
+          >
+            <Sparkles className="h-5 w-5" style={{ color: DESIGN.primaryCyan }} />
           </div>
-          <div className="flex-1">
-            <div className="font-medium text-white flex items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="font-medium flex items-center gap-2" style={{ color: DESIGN.textPrimary }}>
               Auto-fill from Website
-              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary">
+              <span
+                className="text-xs px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: `${DESIGN.primaryCyan}20`,
+                  color: DESIGN.primaryCyan,
+                }}
+              >
                 Recommended
               </span>
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm mt-1" style={{ color: DESIGN.textSecondary }}>
               Enter your website URL and we&apos;ll automatically extract brand
               information using AI
             </p>
@@ -206,18 +241,21 @@ function ChooseStep({
         <button
           type="button"
           onClick={onManual}
-          className={cn(
-            "flex items-start gap-4 p-4 rounded-lg border text-left transition-all",
-            "bg-muted/5 border-muted/30 hover:bg-muted/10 hover:border-muted/50",
-            "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
-          )}
+          className="flex items-start gap-4 p-4 rounded-xl text-left transition-all hover:scale-[1.02]"
+          style={{
+            backgroundColor: DESIGN.bgElevated,
+            border: `1px solid ${DESIGN.borderDefault}`,
+          }}
         >
-          <div className="p-2 rounded-lg bg-muted/20 text-muted-foreground">
-            <Globe className="h-5 w-5" />
+          <div
+            className="p-3 rounded-xl shrink-0"
+            style={{ backgroundColor: `${DESIGN.textMuted}20` }}
+          >
+            <Pencil className="h-5 w-5" style={{ color: DESIGN.textMuted }} />
           </div>
-          <div className="flex-1">
-            <div className="font-medium text-white">Add Manually</div>
-            <p className="text-sm text-muted-foreground mt-1">
+          <div className="flex-1 min-w-0">
+            <div className="font-medium" style={{ color: DESIGN.textPrimary }}>Add Manually</div>
+            <p className="text-sm mt-1" style={{ color: DESIGN.textSecondary }}>
               Fill in your brand details manually without auto-detection
             </p>
           </div>
@@ -244,47 +282,70 @@ function UrlStep({
   onBack: () => void;
 }) {
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="text-center mb-6">
-        <div className="inline-flex p-3 rounded-full bg-primary/10 text-primary mb-3">
-          <Globe className="h-6 w-6" />
+    <form onSubmit={onSubmit} className="space-y-6">
+      <div className="text-center">
+        <div
+          className="inline-flex p-3 rounded-xl mb-4"
+          style={{ backgroundColor: `${DESIGN.infoBlue}20` }}
+        >
+          <Globe className="h-8 w-8" style={{ color: DESIGN.infoBlue }} />
         </div>
-        <h3 className="text-lg font-semibold text-white mb-2">
+        <h3 className="text-xl font-semibold mb-2" style={{ color: DESIGN.textPrimary }}>
           Enter Website URL
         </h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm" style={{ color: DESIGN.textSecondary }}>
           We&apos;ll analyze your website to extract brand information
         </p>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="website-url" className="text-sm font-medium text-foreground">Website URL</Label>
+        <Label
+          htmlFor="website-url"
+          className="text-xs font-semibold uppercase tracking-wider"
+          style={{ color: DESIGN.textSecondary }}
+        >
+          Website URL
+        </Label>
         <Input
           id="website-url"
           type="text"
           placeholder="https://example.com"
           value={url}
           onChange={(e) => onUrlChange(e.target.value)}
-          className={cn(
-            "bg-zinc-900/80 border-zinc-700 text-white placeholder:text-zinc-500",
-            error && "border-destructive"
-          )}
+          className="h-12 text-base"
+          style={{
+            backgroundColor: DESIGN.bgElevated,
+            borderColor: error ? DESIGN.errorRed : DESIGN.borderDefault,
+            color: DESIGN.textPrimary,
+          }}
           autoFocus
         />
         {error && (
-          <p className="text-sm text-destructive flex items-center gap-1">
-            <AlertCircle className="h-3 w-3" />
+          <p className="text-sm flex items-center gap-1.5" style={{ color: DESIGN.errorRed }}>
+            <AlertCircle className="h-4 w-4" />
             {error}
           </p>
         )}
       </div>
 
       <div className="flex gap-3 pt-2">
-        <Button type="button" variant="outline" onClick={onBack} className="flex-1">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onBack}
+          className="flex-1 border-border/50 hover:border-border"
+        >
           Back
         </Button>
-        <Button type="submit" className="flex-1">
-          <Sparkles className="h-4 w-4 mr-2" />
+        <Button
+          type="submit"
+          className="flex-1 gap-2"
+          style={{
+            backgroundColor: DESIGN.primaryCyan,
+            color: DESIGN.bgDeep,
+          }}
+        >
+          <Sparkles className="h-4 w-4" />
           Analyze Website
         </Button>
       </div>
@@ -312,26 +373,44 @@ function LoadingStep({
 }) {
   if (error) {
     return (
-      <div className="space-y-4">
-        <div className="text-center mb-6">
-          <div className="inline-flex p-3 rounded-full bg-destructive/10 text-destructive mb-3">
-            <AlertCircle className="h-6 w-6" />
+      <div className="space-y-6">
+        <div className="text-center">
+          <div
+            className="inline-flex p-3 rounded-xl mb-4"
+            style={{ backgroundColor: `${DESIGN.errorRed}20` }}
+          >
+            <AlertCircle className="h-8 w-8" style={{ color: DESIGN.errorRed }} />
           </div>
-          <h3 className="text-lg font-semibold text-white mb-2">
+          <h3 className="text-xl font-semibold mb-2" style={{ color: DESIGN.textPrimary }}>
             Analysis Failed
           </h3>
-          <p className="text-sm text-muted-foreground">{error}</p>
+          <p className="text-sm" style={{ color: DESIGN.textSecondary }}>{error}</p>
         </div>
 
         <div className="flex gap-3">
-          <Button variant="outline" onClick={onCancel} className="flex-1">
+          <Button
+            variant="outline"
+            onClick={onCancel}
+            className="flex-1 border-border/50 hover:border-border"
+          >
             Cancel
           </Button>
-          <Button variant="outline" onClick={onManual} className="flex-1">
+          <Button
+            variant="outline"
+            onClick={onManual}
+            className="flex-1 border-border/50 hover:border-border"
+          >
             Add Manually
           </Button>
-          <Button onClick={onRetry} className="flex-1">
-            <RefreshCw className="h-4 w-4 mr-2" />
+          <Button
+            onClick={onRetry}
+            className="flex-1 gap-2"
+            style={{
+              backgroundColor: DESIGN.primaryCyan,
+              color: DESIGN.bgDeep,
+            }}
+          >
+            <RefreshCw className="h-4 w-4" />
             Try Again
           </Button>
         </div>
@@ -342,24 +421,42 @@ function LoadingStep({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <div className="inline-flex p-3 rounded-full bg-primary/10 text-primary mb-3">
-          <Loader2 className="h-6 w-6 animate-spin" />
+        <div
+          className="inline-flex p-3 rounded-xl mb-4"
+          style={{ backgroundColor: `${DESIGN.primaryCyan}20` }}
+        >
+          <Loader2 className="h-8 w-8 animate-spin" style={{ color: DESIGN.primaryCyan }} />
         </div>
-        <h3 className="text-lg font-semibold text-white mb-2">
+        <h3 className="text-xl font-semibold mb-2" style={{ color: DESIGN.textPrimary }}>
           Analyzing Website
         </h3>
-        <p className="text-sm text-muted-foreground">{message}</p>
+        <p className="text-sm" style={{ color: DESIGN.textSecondary }}>{message}</p>
       </div>
 
-      <div className="space-y-2">
-        <Progress value={progress} className="h-2" />
-        <p className="text-xs text-muted-foreground text-center">
+      <div className="space-y-3">
+        <div
+          className="h-3 rounded-full overflow-hidden"
+          style={{ backgroundColor: DESIGN.borderDefault }}
+        >
+          <div
+            className="h-full rounded-full transition-all duration-500 ease-out"
+            style={{
+              width: `${progress}%`,
+              background: `linear-gradient(90deg, ${DESIGN.primaryCyan}, ${DESIGN.accentPurple})`,
+            }}
+          />
+        </div>
+        <p className="text-xs text-center" style={{ color: DESIGN.textMuted }}>
           {progress}% complete
         </p>
       </div>
 
-      <Button variant="outline" onClick={onCancel} className="w-full">
-        <X className="h-4 w-4 mr-2" />
+      <Button
+        variant="outline"
+        onClick={onCancel}
+        className="w-full border-border/50 hover:border-border gap-2"
+      >
+        <X className="h-4 w-4" />
         Cancel
       </Button>
     </div>
@@ -386,29 +483,38 @@ function PreviewStep({
 
   const confidenceColor =
     data.confidence.overall >= 70
-      ? "text-success"
+      ? DESIGN.successGreen
       : data.confidence.overall >= 40
-      ? "text-warning"
-      : "text-destructive";
+      ? DESIGN.warningYellow
+      : DESIGN.errorRed;
 
   return (
     <div className="space-y-4">
       <div className="text-center mb-4">
-        <div className="inline-flex p-3 rounded-full bg-success/10 text-success mb-3">
-          <Check className="h-6 w-6" />
+        <div
+          className="inline-flex p-3 rounded-xl mb-4"
+          style={{ backgroundColor: `${DESIGN.successGreen}20` }}
+        >
+          <Check className="h-8 w-8" style={{ color: DESIGN.successGreen }} />
         </div>
-        <h3 className="text-lg font-semibold text-white mb-1">
+        <h3 className="text-xl font-semibold mb-2" style={{ color: DESIGN.textPrimary }}>
           Analysis Complete
         </h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm" style={{ color: DESIGN.textSecondary }}>
           Review the extracted information below
         </p>
-        <p className={cn("text-xs mt-1", confidenceColor)}>
+        <p className="text-sm font-medium mt-2" style={{ color: confidenceColor }}>
           {data.confidence.overall}% confidence
         </p>
       </div>
 
-      <div className="space-y-3 p-4 rounded-lg bg-muted/10 border border-muted/20 max-h-[60vh] overflow-y-auto">
+      <div
+        className="space-y-4 p-4 rounded-xl max-h-[50vh] overflow-y-auto"
+        style={{
+          backgroundColor: DESIGN.bgElevated,
+          border: `1px solid ${DESIGN.borderDefault}`,
+        }}
+      >
         {/* Logo and Name */}
         <div className="flex items-center gap-3">
           {data.logoUrl ? (
@@ -421,35 +527,38 @@ function PreviewStep({
               }}
             />
           ) : (
-            <div className="h-12 w-12 rounded-lg bg-muted/20 flex items-center justify-center">
-              <Globe className="h-6 w-6 text-muted-foreground" />
+            <div
+              className="h-12 w-12 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: `${DESIGN.textMuted}20` }}
+            >
+              <Globe className="h-6 w-6" style={{ color: DESIGN.textMuted }} />
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-white truncate">{data.brandName}</p>
+            <p className="font-medium truncate" style={{ color: DESIGN.textPrimary }}>{data.brandName}</p>
             {data.tagline && (
-              <p className="text-xs text-primary italic">"{data.tagline}"</p>
+              <p className="text-xs italic" style={{ color: DESIGN.primaryCyan }}>"{data.tagline}"</p>
             )}
-            <p className="text-sm text-muted-foreground">{data.industry}</p>
+            <p className="text-sm" style={{ color: DESIGN.textSecondary }}>{data.industry}</p>
           </div>
           {/* Color Palette */}
           <div className="flex gap-1">
             <div
-              className="w-6 h-6 rounded-full border-2 border-white/20"
-              style={{ backgroundColor: data.primaryColor }}
+              className="w-6 h-6 rounded-full"
+              style={{ backgroundColor: data.primaryColor, border: `2px solid ${DESIGN.borderDefault}` }}
               title={`Primary: ${data.primaryColor}`}
             />
             {data.secondaryColor && (
               <div
-                className="w-5 h-5 rounded-full border border-white/10"
-                style={{ backgroundColor: data.secondaryColor }}
+                className="w-5 h-5 rounded-full"
+                style={{ backgroundColor: data.secondaryColor, border: `1px solid ${DESIGN.borderDefault}` }}
                 title={`Secondary: ${data.secondaryColor}`}
               />
             )}
             {data.accentColor && (
               <div
-                className="w-4 h-4 rounded-full border border-white/10"
-                style={{ backgroundColor: data.accentColor }}
+                className="w-4 h-4 rounded-full"
+                style={{ backgroundColor: data.accentColor, border: `1px solid ${DESIGN.borderDefault}` }}
                 title={`Accent: ${data.accentColor}`}
               />
             )}
@@ -459,8 +568,8 @@ function PreviewStep({
         {/* Description */}
         {data.description && (
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Description</p>
-            <p className="text-sm text-zinc-300 line-clamp-3">
+            <p className="text-xs font-medium uppercase tracking-wide mb-1" style={{ color: DESIGN.textMuted }}>Description</p>
+            <p className="text-sm line-clamp-3" style={{ color: DESIGN.textSecondary }}>
               {data.description}
             </p>
           </div>
@@ -469,8 +578,8 @@ function PreviewStep({
         {/* Target Audience */}
         {data.targetAudience && (
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Target Audience</p>
-            <p className="text-sm text-zinc-300 line-clamp-2">
+            <p className="text-xs font-medium uppercase tracking-wide mb-1" style={{ color: DESIGN.textMuted }}>Target Audience</p>
+            <p className="text-sm line-clamp-2" style={{ color: DESIGN.textSecondary }}>
               {data.targetAudience}
             </p>
           </div>
@@ -479,8 +588,8 @@ function PreviewStep({
         {/* Value Propositions */}
         {data.valuePropositions && data.valuePropositions.length > 0 && (
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Value Propositions</p>
-            <ul className="text-sm text-zinc-300 list-disc list-inside space-y-0.5">
+            <p className="text-xs font-medium uppercase tracking-wide mb-1" style={{ color: DESIGN.textMuted }}>Value Propositions</p>
+            <ul className="text-sm list-disc list-inside space-y-0.5" style={{ color: DESIGN.textSecondary }}>
               {data.valuePropositions.slice(0, 3).map((prop, i) => (
                 <li key={i} className="truncate">{prop}</li>
               ))}
@@ -491,18 +600,21 @@ function PreviewStep({
         {/* Keywords - General */}
         {data.keywords.length > 0 && (
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Keywords ({data.keywords.length})</p>
+            <p className="text-xs font-medium uppercase tracking-wide mb-1" style={{ color: DESIGN.textMuted }}>
+              Keywords ({data.keywords.length})
+            </p>
             <div className="flex flex-wrap gap-1">
               {data.keywords.slice(0, 8).map((keyword) => (
                 <span
                   key={keyword}
-                  className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary"
+                  className="text-xs px-2 py-0.5 rounded-full"
+                  style={{ backgroundColor: `${DESIGN.primaryCyan}20`, color: DESIGN.primaryCyan }}
                 >
                   {keyword}
                 </span>
               ))}
               {data.keywords.length > 8 && (
-                <span className="text-xs px-2 py-0.5 text-muted-foreground">
+                <span className="text-xs px-2 py-0.5" style={{ color: DESIGN.textMuted }}>
                   +{data.keywords.length - 8} more
                 </span>
               )}
@@ -513,12 +625,13 @@ function PreviewStep({
         {/* SEO Keywords */}
         {data.seoKeywords && data.seoKeywords.length > 0 && (
           <div>
-            <p className="text-xs text-muted-foreground mb-1">SEO Keywords</p>
+            <p className="text-xs font-medium uppercase tracking-wide mb-1" style={{ color: DESIGN.textMuted }}>SEO Keywords</p>
             <div className="flex flex-wrap gap-1">
               {data.seoKeywords.slice(0, 5).map((keyword) => (
                 <span
                   key={keyword}
-                  className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400"
+                  className="text-xs px-2 py-0.5 rounded-full"
+                  style={{ backgroundColor: `${DESIGN.infoBlue}20`, color: DESIGN.infoBlue }}
                 >
                   {keyword}
                 </span>
@@ -530,12 +643,13 @@ function PreviewStep({
         {/* GEO Keywords */}
         {data.geoKeywords && data.geoKeywords.length > 0 && (
           <div>
-            <p className="text-xs text-muted-foreground mb-1">GEO Keywords (AI Optimization)</p>
+            <p className="text-xs font-medium uppercase tracking-wide mb-1" style={{ color: DESIGN.textMuted }}>GEO Keywords (AI Optimization)</p>
             <div className="flex flex-wrap gap-1">
               {data.geoKeywords.slice(0, 5).map((keyword) => (
                 <span
                   key={keyword}
-                  className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400"
+                  className="text-xs px-2 py-0.5 rounded-full"
+                  style={{ backgroundColor: `${DESIGN.successGreen}20`, color: DESIGN.successGreen }}
                 >
                   {keyword}
                 </span>
@@ -547,17 +661,18 @@ function PreviewStep({
         {/* Competitors */}
         {data.competitors.length > 0 && (
           <div>
-            <p className="text-xs text-muted-foreground mb-1">
+            <p className="text-xs font-medium uppercase tracking-wide mb-1" style={{ color: DESIGN.textMuted }}>
               Competitors ({data.competitors.length})
             </p>
             <div className="space-y-1">
               {data.competitors.slice(0, 4).map((competitor) => (
                 <div
                   key={competitor.name}
-                  className="text-xs p-2 rounded bg-muted/20"
+                  className="text-xs p-2 rounded"
+                  style={{ backgroundColor: `${DESIGN.accentPurple}10` }}
                 >
-                  <span className="font-medium text-zinc-300">{competitor.name}</span>
-                  <span className="text-muted-foreground ml-2">- {competitor.reason}</span>
+                  <span className="font-medium" style={{ color: DESIGN.textSecondary }}>{competitor.name}</span>
+                  <span className="ml-2" style={{ color: DESIGN.textMuted }}>- {competitor.reason}</span>
                 </div>
               ))}
             </div>
@@ -567,15 +682,15 @@ function PreviewStep({
         {/* Color Palette */}
         {data.colorPalette && data.colorPalette.length > 0 && (
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Color Palette</p>
+            <p className="text-xs font-medium uppercase tracking-wide mb-1" style={{ color: DESIGN.textMuted }}>Color Palette</p>
             <div className="flex gap-2">
               {data.colorPalette.map((color, i) => (
                 <div key={i} className="flex flex-col items-center">
                   <div
-                    className="w-8 h-8 rounded-lg border border-white/20"
-                    style={{ backgroundColor: color }}
+                    className="w-8 h-8 rounded-lg"
+                    style={{ backgroundColor: color, border: `1px solid ${DESIGN.borderDefault}` }}
                   />
-                  <span className="text-[10px] text-muted-foreground mt-0.5">{color}</span>
+                  <span className="text-[10px] mt-0.5" style={{ color: DESIGN.textMuted }}>{color}</span>
                 </div>
               ))}
             </div>
@@ -585,12 +700,13 @@ function PreviewStep({
         {/* Social Links */}
         {data.socialLinks && Object.keys(data.socialLinks).length > 0 && (
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Social Links</p>
+            <p className="text-xs font-medium uppercase tracking-wide mb-1" style={{ color: DESIGN.textMuted }}>Social Links</p>
             <div className="flex flex-wrap gap-1">
               {Object.entries(data.socialLinks).map(([platform]) => (
                 <span
                   key={platform}
-                  className="text-xs px-2 py-0.5 rounded-full bg-muted/30 text-zinc-300 capitalize"
+                  className="text-xs px-2 py-0.5 rounded-full capitalize"
+                  style={{ backgroundColor: `${DESIGN.textMuted}20`, color: DESIGN.textSecondary }}
                 >
                   {platform}
                 </span>
@@ -601,14 +717,30 @@ function PreviewStep({
       </div>
 
       <div className="flex gap-3">
-        <Button variant="outline" onClick={onCancel} className="flex-1">
+        <Button
+          variant="outline"
+          onClick={onCancel}
+          className="flex-1"
+          style={{ borderColor: DESIGN.borderDefault }}
+        >
           Cancel
         </Button>
-        <Button variant="outline" onClick={onRetry}>
+        <Button
+          variant="outline"
+          onClick={onRetry}
+          style={{ borderColor: DESIGN.borderDefault }}
+        >
           <RefreshCw className="h-4 w-4" />
         </Button>
-        <Button onClick={onUse} className="flex-1">
-          <Check className="h-4 w-4 mr-2" />
+        <Button
+          onClick={onUse}
+          className="flex-1 gap-2"
+          style={{
+            backgroundColor: DESIGN.primaryCyan,
+            color: DESIGN.bgDeep,
+          }}
+        >
+          <Check className="h-4 w-4" />
           Use This Data
         </Button>
       </div>

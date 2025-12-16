@@ -10,10 +10,15 @@ const updateBrandSchema = z.object({
   name: z.string().min(1).optional(),
   domain: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
+  tagline: z.string().optional().nullable(),
   industry: z.string().optional().nullable(),
   logoUrl: z.string().optional().nullable(),
   keywords: z.array(z.string()).optional(),
-  competitors: z.array(z.string()).optional(),
+  seoKeywords: z.array(z.string()).optional(),
+  geoKeywords: z.array(z.string()).optional(),
+  competitors: z.any().optional(),
+  valuePropositions: z.array(z.string()).optional(),
+  socialLinks: z.record(z.string()).optional().nullable(),
   voice: z
     .object({
       tone: z.enum(["professional", "friendly", "authoritative", "casual", "formal"]).optional(),
@@ -27,9 +32,12 @@ const updateBrandSchema = z.object({
     .object({
       primaryColor: z.string().optional().nullable(),
       secondaryColor: z.string().optional().nullable(),
+      accentColor: z.string().optional().nullable(),
+      colorPalette: z.array(z.string()).optional(),
       fontFamily: z.string().optional().nullable(),
     })
     .optional(),
+  confidence: z.any().optional().nullable(),
   monitoringEnabled: z.boolean().optional(),
   monitoringPlatforms: z.array(z.string()).optional(),
   isActive: z.boolean().optional(),
@@ -130,6 +138,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (validatedData.description !== undefined) {
       updateData.description = validatedData.description;
     }
+    if (validatedData.tagline !== undefined) {
+      updateData.tagline = validatedData.tagline;
+    }
     if (validatedData.industry !== undefined) {
       updateData.industry = validatedData.industry;
     }
@@ -139,8 +150,20 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (validatedData.keywords !== undefined) {
       updateData.keywords = validatedData.keywords;
     }
+    if (validatedData.seoKeywords !== undefined) {
+      updateData.seoKeywords = validatedData.seoKeywords;
+    }
+    if (validatedData.geoKeywords !== undefined) {
+      updateData.geoKeywords = validatedData.geoKeywords;
+    }
     if (validatedData.competitors !== undefined) {
       updateData.competitors = validatedData.competitors;
+    }
+    if (validatedData.valuePropositions !== undefined) {
+      updateData.valuePropositions = validatedData.valuePropositions;
+    }
+    if (validatedData.socialLinks !== undefined) {
+      updateData.socialLinks = validatedData.socialLinks;
     }
     if (validatedData.voice !== undefined) {
       updateData.voice = {
@@ -159,10 +182,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         ...(existingBrand[0].visual || {
           primaryColor: null,
           secondaryColor: null,
+          accentColor: null,
+          colorPalette: [],
           fontFamily: null,
         }),
         ...validatedData.visual,
       };
+    }
+    if (validatedData.confidence !== undefined) {
+      updateData.confidence = validatedData.confidence;
     }
     if (validatedData.monitoringEnabled !== undefined) {
       updateData.monitoringEnabled = validatedData.monitoringEnabled;

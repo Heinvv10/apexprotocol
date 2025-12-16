@@ -29,6 +29,7 @@ export interface ScrapedBrandData {
   colorPalette: string[];
   logoUrl: string | null;
   keywords: string[];
+  scrapedUrl?: string; // The URL that was scraped
   seoKeywords: string[];
   geoKeywords: string[];
   competitors: Array<{

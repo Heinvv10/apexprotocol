@@ -153,6 +153,7 @@ export async function scrapeBrandFromUrl(
 
   // Step 5: Assemble final result (85-95%)
   const result: ScrapedBrandData = {
+    scrapedUrl: url, // Store the scraped URL for domain extraction
     brandName: aiAnalysis.brandName || extractFallbackName(page.title, url),
     description: aiAnalysis.description || page.metaDescription || "",
     tagline: aiAnalysis.tagline || null,

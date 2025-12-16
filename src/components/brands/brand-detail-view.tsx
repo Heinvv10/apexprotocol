@@ -164,12 +164,22 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
 
   // Render color palette
   const renderColorPalette = () => {
-    const colors = [
+    // Combine all colors and deduplicate (case-insensitive)
+    const allColors = [
       brand.visual?.primaryColor,
       brand.visual?.secondaryColor,
       brand.visual?.accentColor,
       ...(brand.visual?.colorPalette || []),
     ].filter(Boolean) as string[];
+
+    // Deduplicate by lowercase comparison, keep original case
+    const seen = new Set<string>();
+    const colors = allColors.filter(color => {
+      const lower = color.toLowerCase();
+      if (seen.has(lower)) return false;
+      seen.add(lower);
+      return true;
+    });
 
     if (colors.length === 0) return null;
 
@@ -291,11 +301,11 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
         style={{ backgroundColor: `${DESIGN.bgDeep}E6` }}
         onClick={onClose}
       />
-      {/* Modal - solid card background per design docs */}
+      {/* Modal - translucent glass effect */}
       <div
-        className="relative max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col rounded-2xl"
+        className="relative max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col rounded-2xl backdrop-blur-xl"
         style={{
-          backgroundColor: DESIGN.cardBg,
+          backgroundColor: `${DESIGN.bgCard}80`, // 50% opacity for glass effect
           border: `1px solid ${DESIGN.primaryCyan}33`,
           boxShadow: `0 0 40px ${DESIGN.primaryCyan}15, 0 25px 50px -12px rgba(0, 0, 0, 0.5)`,
         }}
