@@ -18,6 +18,7 @@ import {
   Cog,
   Building2,
   Target,
+  FolderKanban,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -48,6 +49,11 @@ const mainNavItems: NavItem[] = [
     title: "Brands",
     href: "/dashboard/brands",
     icon: Building2,
+  },
+  {
+    title: "Portfolios",
+    href: "/dashboard/portfolios",
+    icon: FolderKanban,
   },
   {
     title: "Monitor",

@@ -16,6 +16,7 @@ import {
   FileText,
   Zap,
   Target,
+  FolderKanban,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,7 @@ const bottomNavItems = [
 // Sidebar menu items for mobile
 const sidebarMenuItems = [
   { label: "Dashboard", icon: Home, href: "/dashboard" },
+  { label: "Portfolios", icon: FolderKanban, href: "/dashboard/portfolios" },
   { label: "Monitor", icon: Monitor, href: "/dashboard/monitor" },
   { label: "Competitive", icon: Target, href: "/dashboard/competitive" },
   { label: "Create", icon: FileText, href: "/dashboard/create" },

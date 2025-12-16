@@ -21,6 +21,7 @@ import {
   ArrowUp,
   ArrowDown,
   Target,
+  FolderKanban,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -76,6 +77,15 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         category: "Navigation",
         shortcut: ["G", "I"],
         action: () => router.push("/dashboard/competitive"),
+      },
+      {
+        id: "portfolios",
+        title: "Go to Portfolios",
+        subtitle: "Multi-brand management",
+        icon: FolderKanban,
+        category: "Navigation",
+        shortcut: ["G", "P"],
+        action: () => router.push("/dashboard/portfolios"),
       },
       {
         id: "recommendations",

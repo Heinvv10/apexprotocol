@@ -45,7 +45,12 @@
       "mcp__playwright__browser_close",
       "WebSearch",
       "Bash(npm test:*)",
-      "Bash(npm run type-check:*)"
+      "Bash(npm run type-check:*)",
+      "Bash(curl:*)",
+      "Bash(cd:*)",
+      "Bash(find:*)",
+      "Bash(dir:*)",
+      "Bash(npm run db:generate:*)"
     ]
   }
 }
