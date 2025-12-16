@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Search, Filter, FileText, ChevronDown, Sparkles, PenTool, Wand2, LayoutTemplate, Bot, ArrowRight, Loader2, AlertCircle, RefreshCw, MessageSquare, Users } from "lucide-react";
+import { Plus, Search, Filter, FileText, ChevronDown, Sparkles, PenTool, Wand2, LayoutTemplate, Bot, ArrowRight, Loader2, AlertCircle, RefreshCw, MessageSquare, Users, FileCheck } from "lucide-react";
 import Link from "next/link";
 import { ContentCard, ContentItem, ContentStatus, ContentType } from "@/components/create";
 import { Button } from "@/components/ui/button";
@@ -167,9 +167,10 @@ function BrandVoicePanel({ brand }: { brand: { voice?: { tone?: string; targetAu
 // Empty state component for when no content exists
 function CreateEmptyState() {
   const contentTypes = [
-    { icon: FileText, title: "Articles", description: "Long-form content optimized for AI citation" },
-    { icon: LayoutTemplate, title: "Landing Pages", description: "Conversion-focused pages with structured data" },
-    { icon: Wand2, title: "FAQs", description: "Question-answer format for AI comprehension" },
+    { icon: FileCheck, title: "Content Briefs", description: "AI-optimized briefs with headers, questions, entities", href: "/dashboard/create/brief" },
+    { icon: FileText, title: "Articles", description: "Long-form content optimized for AI citation", href: "/dashboard/create/new" },
+    { icon: LayoutTemplate, title: "Landing Pages", description: "Conversion-focused pages with structured data", href: "/dashboard/create/new" },
+    { icon: Wand2, title: "FAQs", description: "Question-answer format for AI comprehension", href: "/dashboard/create/new" },
   ];
 
   return (
@@ -209,9 +210,10 @@ function CreateEmptyState() {
         {/* Content type preview */}
         <div className="grid gap-3">
           {contentTypes.map((type) => (
-            <div
+            <Link
               key={type.title}
-              className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10 text-left"
+              href={type.href}
+              className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10 text-left hover:bg-white/10 hover:border-primary/30 transition-all"
             >
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <type.icon className="w-5 h-5 text-primary" />
@@ -220,7 +222,8 @@ function CreateEmptyState() {
                 <div className="text-sm font-medium text-foreground">{type.title}</div>
                 <div className="text-xs text-muted-foreground">{type.description}</div>
               </div>
-            </div>
+              <ArrowRight className="w-4 h-4 text-muted-foreground" />
+            </Link>
           ))}
         </div>
 
@@ -405,12 +408,20 @@ export default function CreatePage() {
             Generate and manage AI-optimized content
           </p>
         </div>
-        <Link href="/dashboard/create/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Content
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard/create/brief">
+            <Button variant="outline">
+              <FileCheck className="mr-2 h-4 w-4" />
+              Generate Brief
+            </Button>
+          </Link>
+          <Link href="/dashboard/create/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              New Content
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Brand Voice Panel */}
