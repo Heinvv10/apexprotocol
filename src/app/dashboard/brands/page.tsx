@@ -14,6 +14,13 @@ import {
   X,
   Upload,
   AlertTriangle,
+  Sparkles,
+  Target,
+  Users,
+  MessageSquare,
+  TrendingUp,
+  Palette,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBrandStore, useBrands, useBrandMeta, type Brand } from "@/stores";
@@ -36,18 +43,55 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { ScrapeWizard } from "@/components/brands/scrape-wizard";
 import { BrandDetailView } from "@/components/brands/brand-detail-view";
+import { useToast } from "@/components/toast";
 import type { ScrapedBrandData } from "@/app/api/brands/scrape/route";
 
-// AI Platforms for monitoring
+// AI Platforms for monitoring (colors from UI_DESIGN_SYSTEM.md)
 const AI_PLATFORMS = [
   { id: "chatgpt", name: "ChatGPT", color: "#10A37F" },
-  { id: "claude", name: "Claude", color: "#D97706" },
+  { id: "claude", name: "Claude", color: "#D97757" },
   { id: "gemini", name: "Gemini", color: "#4285F4" },
-  { id: "perplexity", name: "Perplexity", color: "#1FB8CD" },
-  { id: "grok", name: "Grok", color: "#1DA1F2" },
+  { id: "perplexity", name: "Perplexity", color: "#20B8CD" },
+  { id: "grok", name: "Grok", color: "#FFFFFF" },
   { id: "deepseek", name: "DeepSeek", color: "#6366F1" },
   { id: "copilot", name: "Copilot", color: "#0078D4" },
 ];
+
+// Design system colors (from UI_DESIGN_SYSTEM.md - consistent with brand-detail-view)
+const DESIGN = {
+  // Primary brand colors
+  primaryCyan: "#00E5CC",
+  cyanBright: "#00FFE0",
+  cyanMuted: "#00B8A3",
+  accentPurple: "#8B5CF6",
+  purpleLight: "#A78BFA",
+  accentPink: "#EC4899",
+  accentBlue: "#3B82F6",
+  // Semantic colors
+  successGreen: "#22C55E",
+  warningYellow: "#F59E0B",
+  errorRed: "#EF4444",
+  infoBlue: "#3B82F6",
+  // Backgrounds
+  bgDeep: "#02030A",
+  bgBase: "#060812",
+  bgElevated: "#0A0D1A",
+  bgCard: "#0F1225",
+  bgCardHover: "#151935",
+  bgInput: "#0D1020",
+  // Text colors
+  textPrimary: "#FFFFFF",
+  textSecondary: "#94A3B8",
+  textMuted: "#64748B",
+  textAccent: "#00E5CC",
+  textLink: "#60A5FA",
+  // Borders
+  borderSubtle: "rgba(255, 255, 255, 0.05)",
+  borderDefault: "rgba(255, 255, 255, 0.08)",
+  borderStrong: "rgba(255, 255, 255, 0.12)",
+  borderAccent: "rgba(0, 229, 204, 0.3)",
+  borderGlow: "rgba(0, 229, 204, 0.5)",
+};
 
 // Industries list - matches INDUSTRY_OPTIONS in brand-analysis.ts
 const INDUSTRIES = [
@@ -99,12 +143,14 @@ export default function BrandsPage() {
   const brands = useBrands();
   const meta = useBrandMeta();
   const { refreshBrands, addBrand, updateBrand, removeBrand, isLoading } = useBrandStore();
+  const toast = useToast();
 
   // UI state
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [editingBrand, setEditingBrand] = React.useState<Brand | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isRescanning, setIsRescanning] = React.useState(false);
   const [deleteConfirm, setDeleteConfirm] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [wizardMode, setWizardMode] = React.useState<"wizard" | "form">("wizard");
@@ -195,10 +241,11 @@ export default function BrandsPage() {
 
   // Handle scraped data from wizard
   const handleScrapedData = (data: ScrapedBrandData) => {
-    // Extract domain from raw data if available
+    // Extract domain from scraped URL or raw data
     let domain = "";
     try {
-      const urlStr = data.rawData?.ogData?.url;
+      // First try the scrapedUrl field (most reliable)
+      const urlStr = data.scrapedUrl || data.rawData?.ogData?.url;
       if (urlStr) {
         domain = new URL(urlStr).hostname.replace(/^www\./, "");
       }
@@ -429,6 +476,83 @@ export default function BrandsPage() {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Rescan brand website to update information
+  const handleRescan = async () => {
+    if (!editingBrand?.domain) {
+      setError("No domain available to rescan");
+      return;
+    }
+
+    setIsRescanning(true);
+    setError(null);
+
+    try {
+      // Normalize URL
+      let url = editingBrand.domain;
+      if (!url.startsWith("http://") && !url.startsWith("https://")) {
+        url = `https://${url}`;
+      }
+
+      const response = await fetch("/api/brands/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to start rescan");
+      }
+
+      // Handle synchronous response (no Redis) or completed async job
+      if (data.job?.status === "completed" && data.job?.data) {
+        const scrapedData = data.job.data as ScrapedBrandData;
+
+        // Update form with scraped data, preserving existing values for unchanged fields
+        setFormData((prev) => ({
+          ...prev,
+          name: scrapedData.brandName || prev.name,
+          description: scrapedData.description || prev.description,
+          tagline: scrapedData.tagline || prev.tagline,
+          industry: scrapedData.industry || prev.industry,
+          logoUrl: scrapedData.logoUrl || prev.logoUrl,
+          primaryColor: scrapedData.primaryColor || prev.primaryColor,
+          secondaryColor: scrapedData.secondaryColor || prev.secondaryColor,
+          accentColor: scrapedData.accentColor || prev.accentColor,
+          colorPalette: scrapedData.colorPalette || prev.colorPalette,
+          targetAudience: scrapedData.targetAudience || prev.targetAudience,
+          valuePropositions: scrapedData.valuePropositions || prev.valuePropositions,
+          seoKeywords: scrapedData.seoKeywords || prev.seoKeywords,
+          geoKeywords: scrapedData.geoKeywords || prev.geoKeywords,
+          competitors: scrapedData.competitors || prev.competitors,
+          socialLinks: scrapedData.socialLinks || prev.socialLinks,
+          confidence: scrapedData.confidence || prev.confidence,
+        }));
+
+        // Show success toast
+        toast.success(
+          "Website rescanned successfully",
+          "Brand information has been updated. Review the changes and click Save to apply them."
+        );
+      } else if (data.job?.status === "failed") {
+        throw new Error(data.job.error || "Rescan failed");
+      } else {
+        // Async job started - would need polling, but for now just show info
+        toast.info(
+          "Rescan started",
+          "The website is being analyzed. Refresh the page to see updates."
+        );
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to rescan brand";
+      setError(errorMessage);
+      toast.error("Rescan failed", errorMessage);
+    } finally {
+      setIsRescanning(false);
     }
   };
 
@@ -690,30 +814,73 @@ export default function BrandsPage() {
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setDeleteConfirm(null)} />
-          <div className="relative glass-modal p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-full bg-error/10">
-                <AlertTriangle className="h-5 w-5 text-error" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 backdrop-blur-sm"
+            style={{ backgroundColor: `${DESIGN.bgDeep}E6` }}
+            onClick={() => setDeleteConfirm(null)}
+          />
+          {/* Modal - translucent glass effect */}
+          <div
+            className="relative max-w-md w-full rounded-2xl overflow-hidden backdrop-blur-xl"
+            style={{
+              backgroundColor: `${DESIGN.bgCard}80`, // 50% opacity for glass effect
+              border: `1px solid ${DESIGN.errorRed}33`,
+              boxShadow: `0 0 40px ${DESIGN.errorRed}15, 0 25px 50px -12px rgba(0, 0, 0, 0.5)`,
+            }}
+          >
+            {/* Header */}
+            <div
+              className="p-6"
+              style={{
+                borderBottom: `1px solid ${DESIGN.borderDefault}`,
+                background: `linear-gradient(180deg, ${DESIGN.bgElevated} 0%, ${DESIGN.bgCard} 100%)`,
+              }}
+            >
+              <div className="flex items-center gap-4">
+                <div
+                  className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: `${DESIGN.errorRed}20` }}
+                >
+                  <AlertTriangle className="h-6 w-6" style={{ color: DESIGN.errorRed }} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold" style={{ color: DESIGN.textPrimary }}>
+                    Delete Brand
+                  </h3>
+                  <p className="text-xs" style={{ color: DESIGN.textMuted }}>
+                    This action cannot be undone
+                  </p>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold">Delete Brand</h3>
             </div>
-            <p className="text-sm text-muted-foreground mb-6">
-              Are you sure you want to delete this brand? This will remove all monitoring data
-              and cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => handleDelete(deleteConfirm)}
-                className="bg-error hover:bg-error/90"
-              >
-                Delete Brand
-              </Button>
+            {/* Content - transparent to maintain glass effect */}
+            <div className="p-6">
+              <p className="text-sm leading-relaxed mb-6" style={{ color: DESIGN.textSecondary }}>
+                Are you sure you want to delete this brand? This will permanently remove all
+                monitoring data, analytics history, and configurations associated with this brand.
+              </p>
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteConfirm(null)}
+                  className="border-border/50 hover:border-border"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => handleDelete(deleteConfirm)}
+                  className="gap-2"
+                  style={{
+                    backgroundColor: DESIGN.errorRed,
+                    color: DESIGN.textPrimary,
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Brand
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -721,21 +888,33 @@ export default function BrandsPage() {
 
       {/* Create/Edit Brand Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={closeModal} />
-          <div className={cn(
-            "relative glass-modal p-6 mx-4 max-h-[90vh] overflow-y-auto",
-            // Larger modal for wizard (preview has lots of content), even larger for form
-            !editingBrand && wizardMode === "wizard" ? "max-w-xl w-full" : "max-w-2xl w-full"
-          )}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 backdrop-blur-sm"
+            style={{ backgroundColor: `${DESIGN.bgDeep}E6` }}
+            onClick={closeModal}
+          />
+          {/* Modal - translucent glass effect matching brand-detail-view */}
+          <div
+            className={cn(
+              "relative rounded-2xl overflow-hidden flex flex-col max-h-[90vh] backdrop-blur-xl",
+              !editingBrand && wizardMode === "wizard" ? "max-w-xl w-full" : "max-w-3xl w-full"
+            )}
+            style={{
+              backgroundColor: `${DESIGN.bgCard}80`, // 50% opacity for glass effect
+              border: `1px solid ${DESIGN.primaryCyan}33`,
+              boxShadow: `0 0 40px ${DESIGN.primaryCyan}15, 0 25px 50px -12px rgba(0, 0, 0, 0.5)`,
+            }}
+          >
             {/* Show wizard for new brands */}
             {!editingBrand && wizardMode === "wizard" ? (
-              <>
+              <div className="p-6">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={closeModal}
-                  className="absolute top-4 right-4"
+                  className="absolute top-4 right-4 hover:bg-white/10"
                 >
                   <X className="h-5 w-5" />
                 </Button>
@@ -744,31 +923,85 @@ export default function BrandsPage() {
                   onManual={handleManualMode}
                   onCancel={closeModal}
                 />
-              </>
+              </div>
             ) : (
               <>
                 {/* Modal Header */}
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold">
-                    {editingBrand ? "Edit Brand" : "Create New Brand"}
-                  </h2>
-                  <Button variant="ghost" size="icon" onClick={closeModal}>
+                <div
+                  className="p-6 flex items-center justify-between gap-4 shrink-0"
+                  style={{
+                    borderBottom: `1px solid ${DESIGN.borderDefault}`,
+                    background: `linear-gradient(180deg, ${DESIGN.bgElevated} 0%, ${DESIGN.bgCard} 100%)`,
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    {/* Brand Logo/Avatar - show brand identity when editing */}
+                    <div
+                      className="flex items-center justify-center h-14 w-14 rounded-xl text-lg font-bold shrink-0 overflow-hidden"
+                      style={{
+                        backgroundColor: editingBrand?.visual?.primaryColor || `${DESIGN.primaryCyan}20`,
+                        color: editingBrand ? DESIGN.bgDeep : DESIGN.primaryCyan,
+                        border: editingBrand ? `2px solid ${DESIGN.borderAccent}` : 'none',
+                      }}
+                    >
+                      {editingBrand?.logoUrl ? (
+                        <img
+                          src={editingBrand.logoUrl}
+                          alt={editingBrand.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : editingBrand ? (
+                        editingBrand.name?.substring(0, 2).toUpperCase() || "BR"
+                      ) : (
+                        <Sparkles className="h-6 w-6" style={{ color: DESIGN.primaryCyan }} />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="text-xl font-semibold truncate" style={{ color: DESIGN.textPrimary }}>
+                        {editingBrand ? editingBrand.name : "Create New Brand"}
+                      </h2>
+                      <p className="text-xs" style={{ color: DESIGN.textMuted }}>
+                        {editingBrand ? "Edit brand settings and monitoring" : "Configure your brand for AI visibility tracking"}
+                      </p>
+                      {editingBrand?.domain && (
+                        <p className="text-xs mt-0.5" style={{ color: DESIGN.primaryCyan }}>
+                          {editingBrand.domain}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={closeModal} className="hover:bg-white/10">
                     <X className="h-5 w-5" />
                   </Button>
                 </div>
 
-                {/* Error Message */}
-                {error && (
-                  <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm">
-                    {error}
-                  </div>
-                )}
+                {/* Scrollable Content - transparent to maintain glass effect */}
+                <div className="flex-1 overflow-y-auto p-6">
+                  {/* Error Message */}
+                  {error && (
+                    <div
+                      className="mb-6 p-4 rounded-xl flex items-center gap-3"
+                      style={{
+                        backgroundColor: `${DESIGN.errorRed}15`,
+                        border: `1px solid ${DESIGN.errorRed}40`,
+                      }}
+                    >
+                      <AlertTriangle className="h-5 w-5 shrink-0" style={{ color: DESIGN.errorRed }} />
+                      <p className="text-sm" style={{ color: DESIGN.errorRed }}>{error}</p>
+                    </div>
+                  )}
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Basic Info */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium text-muted-foreground">Basic Information</h3>
+                  {/* Form */}
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Basic Info */}
+                    <div className="space-y-4">
+                      <h3
+                        className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2"
+                        style={{ color: DESIGN.textSecondary }}
+                      >
+                        <Building2 className="h-4 w-4" style={{ color: DESIGN.primaryCyan }} />
+                        Basic Information
+                      </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Brand Name */}
@@ -913,9 +1146,18 @@ export default function BrandsPage() {
                 </div>
               </div>
 
-              {/* SEO/GEO Settings */}
-              <div className="space-y-4 pt-4 border-t border-border">
-                <h3 className="text-sm font-medium text-muted-foreground">SEO/GEO Settings</h3>
+                    {/* SEO/GEO Settings */}
+                    <div
+                      className="space-y-4 pt-6 mt-6"
+                      style={{ borderTop: `1px solid ${DESIGN.borderDefault}` }}
+                    >
+                      <h3
+                        className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2"
+                        style={{ color: DESIGN.textSecondary }}
+                      >
+                        <Target className="h-4 w-4" style={{ color: DESIGN.successGreen }} />
+                        SEO/GEO Settings
+                      </h3>
 
                 {/* Keywords */}
                 <div className="space-y-2">
@@ -988,9 +1230,18 @@ export default function BrandsPage() {
                 </div>
               </div>
 
-              {/* Brand Voice */}
-              <div className="space-y-4 pt-4 border-t border-border">
-                <h3 className="text-sm font-medium text-muted-foreground">Brand Voice (for AI Content)</h3>
+                    {/* Brand Voice */}
+                    <div
+                      className="space-y-4 pt-6 mt-6"
+                      style={{ borderTop: `1px solid ${DESIGN.borderDefault}` }}
+                    >
+                      <h3
+                        className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2"
+                        style={{ color: DESIGN.textSecondary }}
+                      >
+                        <MessageSquare className="h-4 w-4" style={{ color: DESIGN.accentPurple }} />
+                        Brand Voice (for AI Content)
+                      </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Voice Tone */}
@@ -1032,10 +1283,19 @@ export default function BrandsPage() {
                 </div>
               </div>
 
-              {/* Monitoring Settings */}
-              <div className="space-y-4 pt-4 border-t border-border">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-muted-foreground">AI Platform Monitoring</h3>
+                    {/* Monitoring Settings */}
+                    <div
+                      className="space-y-4 pt-6 mt-6"
+                      style={{ borderTop: `1px solid ${DESIGN.borderDefault}` }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <h3
+                          className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2"
+                          style={{ color: DESIGN.textSecondary }}
+                        >
+                          <TrendingUp className="h-4 w-4" style={{ color: DESIGN.warningYellow }} />
+                          AI Platform Monitoring
+                        </h3>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <Switch
                       checked={formData.monitoringEnabled}
@@ -1047,62 +1307,106 @@ export default function BrandsPage() {
                   </label>
                 </div>
 
-                {formData.monitoringEnabled && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {AI_PLATFORMS.map((platform) => {
-                      const isSelected = formData.monitoringPlatforms.includes(platform.id);
-                      return (
-                        <button
-                          key={platform.id}
-                          type="button"
-                          onClick={() => togglePlatform(platform.id)}
-                          className={cn(
-                            "flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium",
-                            "transition-all duration-150 ease-out",
-                            "hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0",
-                            isSelected
-                              ? "bg-primary text-white border-2 border-primary shadow-lg shadow-primary/40"
-                              : "bg-zinc-800/50 text-zinc-400 border border-zinc-700 hover:bg-zinc-700/50 hover:text-zinc-300"
-                          )}
-                        >
-                          <div
-                            className={cn(
-                              "w-2.5 h-2.5 rounded-full shrink-0",
-                              isSelected ? "ring-2 ring-white/30" : ""
-                            )}
-                            style={{
-                              backgroundColor: isSelected ? platform.color : undefined,
-                              border: isSelected ? 'none' : `2px solid ${platform.color}`,
-                              opacity: isSelected ? 1 : 0.5
-                            }}
-                          />
-                          {platform.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                      {formData.monitoringEnabled && (
+                        <div className="flex flex-wrap gap-2 mt-4">
+                          {AI_PLATFORMS.map((platform) => {
+                            const isSelected = formData.monitoringPlatforms.includes(platform.id);
+                            return (
+                              <button
+                                key={platform.id}
+                                type="button"
+                                onClick={() => togglePlatform(platform.id)}
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 hover:scale-105"
+                                style={{
+                                  backgroundColor: isSelected ? `${platform.color}25` : DESIGN.bgElevated,
+                                  color: isSelected ? platform.color : DESIGN.textMuted,
+                                  border: `1px solid ${isSelected ? `${platform.color}40` : DESIGN.borderDefault}`,
+                                }}
+                              >
+                                <span
+                                  className="w-2.5 h-2.5 rounded-full"
+                                  style={{
+                                    backgroundColor: isSelected ? platform.color : 'transparent',
+                                    border: isSelected ? 'none' : `2px solid ${platform.color}`,
+                                    opacity: isSelected ? 1 : 0.4,
+                                  }}
+                                />
+                                {platform.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
               </div>
 
-              {/* Form Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-border">
-                <Button type="button" variant="outline" onClick={closeModal}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting || !formData.name}>
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      {editingBrand ? "Saving..." : "Creating..."}
-                    </>
-                  ) : editingBrand ? (
-                    "Save Changes"
-                  ) : (
-                    "Create Brand"
-                  )}
-                </Button>
-              </div>
-            </form>
+                    {/* Form Actions */}
+                    <div
+                      className="flex justify-end gap-3 pt-6 mt-6"
+                      style={{ borderTop: `1px solid ${DESIGN.borderDefault}` }}
+                    >
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={closeModal}
+                        className="border-border/50 hover:border-border"
+                      >
+                        Cancel
+                      </Button>
+                      {/* Rescan button - only show when editing an existing brand with a domain */}
+                      {editingBrand && editingBrand.domain && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleRescan}
+                          disabled={isRescanning || isSubmitting}
+                          className="gap-2"
+                          style={{
+                            borderColor: `${DESIGN.accentPurple}50`,
+                            color: DESIGN.accentPurple,
+                          }}
+                        >
+                          {isRescanning ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Rescanning...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="h-4 w-4" />
+                              Rescan Website
+                            </>
+                          )}
+                        </Button>
+                      )}
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting || isRescanning || !formData.name}
+                        className="gap-2"
+                        style={{
+                          backgroundColor: DESIGN.primaryCyan,
+                          color: DESIGN.bgDeep,
+                        }}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            {editingBrand ? "Saving..." : "Creating..."}
+                          </>
+                        ) : editingBrand ? (
+                          <>
+                            <Pencil className="h-4 w-4" />
+                            Save Changes
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4" />
+                            Create Brand
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </div>
               </>
             )}
           </div>
