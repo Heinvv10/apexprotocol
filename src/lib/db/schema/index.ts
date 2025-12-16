@@ -103,3 +103,33 @@ export { recommendationsRelations } from "./recommendations";
 export { apiKeysRelations } from "./api-keys";
 export { aiUsageRelations } from "./ai-usage";
 export { monitoringJobsRelations, scheduledJobsRelations } from "./jobs";
+
+export {
+  serpFeatures,
+  competitorMentions,
+  shareOfVoice,
+  competitiveGaps,
+  competitiveAlerts,
+  serpFeatureTypeEnum,
+  featureOwnerEnum,
+  type SerpFeature,
+  type NewSerpFeature,
+  type SerpFeatureMetadata,
+  type CompetitorMentionRecord,
+  type NewCompetitorMentionRecord,
+  type ShareOfVoiceRecord,
+  type NewShareOfVoiceRecord,
+  type CompetitorSOV,
+  type CompetitiveGap,
+  type NewCompetitiveGap,
+  type CompetitiveAlert,
+  type NewCompetitiveAlert,
+} from "./competitive";
+
+export {
+  serpFeaturesRelations,
+  competitorMentionsRelations,
+  shareOfVoiceRelations,
+  competitiveGapsRelations,
+  competitiveAlertsRelations,
+} from "./competitive";
