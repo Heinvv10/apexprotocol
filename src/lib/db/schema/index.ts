@@ -133,3 +133,31 @@ export {
   competitiveGapsRelations,
   competitiveAlertsRelations,
 } from "./competitive";
+
+// Portfolio & Enterprise Features
+export {
+  portfolios,
+  portfolioBrands,
+  executiveReports,
+  scheduledReports,
+  reportFrequencyEnum,
+  reportStatusEnum,
+  type Portfolio,
+  type NewPortfolio,
+  type PortfolioSettings,
+  type PortfolioMetrics,
+  type PortfolioBrand,
+  type NewPortfolioBrand,
+  type ExecutiveReport,
+  type NewExecutiveReport,
+  type ReportContent,
+  type ScheduledReport,
+  type NewScheduledReport,
+} from "./portfolios";
+
+export {
+  portfoliosRelations,
+  portfolioBrandsRelations,
+  executiveReportsRelations,
+  scheduledReportsRelations,
+} from "./portfolios";

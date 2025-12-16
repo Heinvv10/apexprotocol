@@ -63,6 +63,8 @@ async function productionMiddleware(request: NextRequest) {
     "/api/audits(.*)",
     "/api/recommendations(.*)",
     "/api/monitoring(.*)",
+    "/api/portfolios(.*)",
+    "/api/reports(.*)",
   ]);
 
   const isAdminRoute = createRouteMatcher([
