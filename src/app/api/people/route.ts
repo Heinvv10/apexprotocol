@@ -208,24 +208,20 @@ async function getPeopleSummary(brandId: string) {
   if (!latestScore[0] && people.length > 0) {
     const input: PPOScoreInput = {
       totalPeopleTracked: totalPeople,
-      executiveCount,
-      founderCount,
+      executiveCount: executiveCount + founderCount, // Combined executive + founder count
       totalAiMentions,
       totalSocialFollowers,
       avgThoughtLeadershipScore: avgThoughtLeadership,
-      avgPublicationsCount:
-        people.reduce((sum, p) => sum + (p.publicationsCount || 0), 0) / Math.max(totalPeople, 1),
-      avgSpeakingCount:
-        people.reduce((sum, p) => sum + (p.speakingEngagementsCount || 0), 0) / Math.max(totalPeople, 1),
       personBreakdown: people.map((p) => ({
         personId: p.id,
-        name: p.name,
+        personName: p.name,
         title: p.title || undefined,
-        role: p.roleCategory || "key_employee",
-        linkedinFollowers: p.linkedinFollowers || 0,
-        twitterFollowers: p.twitterFollowers || 0,
-        aiMentionCount: p.aiMentionCount || 0,
+        overallScore: 0, // Will be calculated by the scoring module
+        socialScore: 0, // Will be calculated by the scoring module
+        aiVisibilityScore: p.aiVisibilityScore || 0,
         thoughtLeadershipScore: p.thoughtLeadershipScore || 0,
+        totalFollowers: (p.linkedinFollowers || 0) + (p.twitterFollowers || 0),
+        aiMentionCount: p.aiMentionCount || 0,
       })),
     };
     const result = calculatePPOScore(input);
