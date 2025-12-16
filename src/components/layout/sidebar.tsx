@@ -19,6 +19,8 @@ import {
   Building2,
   Target,
   FolderKanban,
+  Share2,
+  Users,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -65,6 +67,16 @@ const mainNavItems: NavItem[] = [
     title: "Competitive",
     href: "/dashboard/competitive",
     icon: Target,
+  },
+  {
+    title: "Social",
+    href: "/dashboard/social",
+    icon: Share2,
+  },
+  {
+    title: "People",
+    href: "/dashboard/people",
+    icon: Users,
   },
   {
     title: "Engine Room",

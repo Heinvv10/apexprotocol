@@ -1,16 +1,20 @@
 /**
- * People API Routes (Phase 7.2)
+ * People API Routes (Phase 7.2 + 7.5)
  *
  * GET /api/people - List people for a brand
+ * GET /api/people?type=summary - Get PPO score and summary
+ * GET /api/people?type=list - Get people list
+ * GET /api/people?type=ai-mentions - Get AI mentions for people
  * POST /api/people - Add a new person
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { brandPeople, brands } from "@/lib/db/schema";
-import { eq, and, desc, asc, sql } from "drizzle-orm";
+import { brandPeople, peopleAiMentions, peopleScores, brands } from "@/lib/db/schema";
+import { eq, and, desc, asc, sql, gte } from "drizzle-orm";
 import { z } from "zod";
+import { calculatePPOScore, type PPOScoreInput } from "@/lib/scoring/people-score";
 
 // ============================================================================
 // Validation Schemas
@@ -18,6 +22,7 @@ import { z } from "zod";
 
 const querySchema = z.object({
   brandId: z.string().min(1, "brandId is required"),
+  type: z.enum(["summary", "list", "ai-mentions"]).optional(),
   roleCategory: z.enum([
     "c_suite", "founder", "board", "key_employee", "ambassador", "advisor", "investor"
   ]).optional(),
@@ -75,6 +80,7 @@ export async function GET(request: NextRequest) {
 
     const {
       brandId,
+      type,
       roleCategory,
       isActive,
       sortBy = "displayOrder",
@@ -96,7 +102,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Build conditions
+    // Handle different query types for dashboard
+    if (type === "summary") {
+      return await getPeopleSummary(brandId);
+    }
+
+    if (type === "list") {
+      return await getPeopleList(brandId);
+    }
+
+    if (type === "ai-mentions") {
+      return await getPeopleAiMentionsHandler(brandId);
+    }
+
+    // Default: return paginated list (original behavior)
     const conditions = [eq(brandPeople.brandId, brandId)];
 
     if (roleCategory) {
@@ -107,7 +126,6 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(brandPeople.isActive, isActive === "true"));
     }
 
-    // Get sort column
     const sortColumn = {
       name: brandPeople.name,
       title: brandPeople.title,
@@ -115,7 +133,6 @@ export async function GET(request: NextRequest) {
       createdAt: brandPeople.createdAt,
     }[sortBy];
 
-    // Query people
     const people = await db
       .select()
       .from(brandPeople)
@@ -124,7 +141,6 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // Get total count
     const [countResult] = await db
       .select({ count: sql<number>`count(*)` })
       .from(brandPeople)
@@ -146,6 +162,170 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// ============================================================================
+// Dashboard Query Handlers
+// ============================================================================
+
+async function getPeopleSummary(brandId: string) {
+  // Get all people for the brand
+  const people = await db
+    .select()
+    .from(brandPeople)
+    .where(and(eq(brandPeople.brandId, brandId), eq(brandPeople.isActive, true)));
+
+  // Get latest PPO score
+  const latestScore = await db
+    .select()
+    .from(peopleScores)
+    .where(eq(peopleScores.brandId, brandId))
+    .orderBy(desc(peopleScores.date))
+    .limit(1);
+
+  // Calculate aggregates
+  const totalPeople = people.length;
+  const totalAiMentions = people.reduce((sum, p) => sum + (p.aiMentionCount || 0), 0);
+  const totalSocialFollowers = people.reduce((sum, p) => sum + (p.totalSocialFollowers || 0), 0);
+  const avgThoughtLeadership =
+    totalPeople > 0
+      ? people.reduce((sum, p) => sum + (p.thoughtLeadershipScore || 0), 0) / totalPeople
+      : 0;
+
+  const executiveCount = people.filter((p) => p.roleCategory === "c_suite").length;
+  const founderCount = people.filter((p) => p.roleCategory === "founder").length;
+
+  // Calculate PPO score if no stored score
+  let ppoScore = latestScore[0]?.overallScore || 0;
+  let breakdown = {
+    executiveVisibility: latestScore[0]?.executiveVisibilityScore || 0,
+    thoughtLeadership: latestScore[0]?.thoughtLeadershipScore || 0,
+    aiMentions: latestScore[0]?.aiMentionScore || 0,
+    socialEngagement: latestScore[0]?.socialEngagementScore || 0,
+  };
+
+  // If no stored score, calculate it
+  if (!latestScore[0] && people.length > 0) {
+    const input: PPOScoreInput = {
+      totalPeopleTracked: totalPeople,
+      executiveCount,
+      founderCount,
+      totalAiMentions,
+      totalSocialFollowers,
+      avgThoughtLeadershipScore: avgThoughtLeadership,
+      avgPublicationsCount:
+        people.reduce((sum, p) => sum + (p.publicationsCount || 0), 0) / Math.max(totalPeople, 1),
+      avgSpeakingCount:
+        people.reduce((sum, p) => sum + (p.speakingEngagementsCount || 0), 0) / Math.max(totalPeople, 1),
+      personBreakdown: people.map((p) => ({
+        personId: p.id,
+        name: p.name,
+        title: p.title || undefined,
+        role: p.roleCategory || "key_employee",
+        linkedinFollowers: p.linkedinFollowers || 0,
+        twitterFollowers: p.twitterFollowers || 0,
+        aiMentionCount: p.aiMentionCount || 0,
+        thoughtLeadershipScore: p.thoughtLeadershipScore || 0,
+      })),
+    };
+    const result = calculatePPOScore(input);
+    ppoScore = result.score;
+    breakdown = result.breakdown;
+  }
+
+  const ppoTrend: "up" | "down" | "stable" = "stable";
+
+  return NextResponse.json({
+    brandId,
+    brandName: "",
+    summary: {
+      ppoScore,
+      ppoTrend,
+      totalPeople,
+      totalAiMentions,
+      totalSocialFollowers,
+      avgThoughtLeadership,
+      executiveCount,
+      founderCount,
+    },
+    breakdown,
+    lastUpdated: new Date().toISOString(),
+  });
+}
+
+async function getPeopleList(brandId: string) {
+  const people = await db
+    .select()
+    .from(brandPeople)
+    .where(eq(brandPeople.brandId, brandId))
+    .orderBy(desc(brandPeople.isPrimary), desc(brandPeople.aiMentionCount));
+
+  return NextResponse.json({
+    people: people.map((p) => ({
+      id: p.id,
+      name: p.name,
+      title: p.title || "",
+      roleCategory: p.roleCategory || "key_employee",
+      photoUrl: p.photoUrl,
+      bio: p.bio,
+      shortBio: p.shortBio,
+      linkedinUrl: p.linkedinUrl,
+      twitterUrl: p.twitterUrl,
+      personalWebsite: p.personalWebsite,
+      linkedinFollowers: p.linkedinFollowers || 0,
+      twitterFollowers: p.twitterFollowers || 0,
+      totalSocialFollowers: p.totalSocialFollowers || 0,
+      aiMentionCount: p.aiMentionCount || 0,
+      aiVisibilityScore: p.aiVisibilityScore || 0,
+      thoughtLeadershipScore: p.thoughtLeadershipScore || 0,
+      publicationsCount: p.publicationsCount || 0,
+      speakingEngagementsCount: p.speakingEngagementsCount || 0,
+      isVerified: p.isVerified || false,
+      isPrimary: p.isPrimary || false,
+      isActive: p.isActive,
+    })),
+    total: people.length,
+  });
+}
+
+async function getPeopleAiMentionsHandler(brandId: string) {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const mentions = await db
+    .select({
+      mention: peopleAiMentions,
+      person: brandPeople,
+    })
+    .from(peopleAiMentions)
+    .leftJoin(brandPeople, eq(peopleAiMentions.personId, brandPeople.id))
+    .where(
+      and(
+        eq(peopleAiMentions.brandId, brandId),
+        gte(peopleAiMentions.createdAt, thirtyDaysAgo)
+      )
+    )
+    .orderBy(desc(peopleAiMentions.queryTimestamp))
+    .limit(50);
+
+  return NextResponse.json({
+    mentions: mentions.map((m) => ({
+      id: m.mention.id,
+      personId: m.mention.personId,
+      personName: m.person?.name || "Unknown",
+      platform: m.mention.platform,
+      query: m.mention.query || "",
+      responseSnippet: m.mention.responseSnippet || "",
+      fullResponse: m.mention.fullResponse,
+      sentiment: m.mention.sentiment || "neutral",
+      sentimentScore: m.mention.sentimentScore,
+      mentionedWithBrand: m.mention.mentionedWithBrand || false,
+      mentionedWithCompetitor: m.mention.mentionedWithCompetitor || false,
+      competitorName: m.mention.competitorName,
+      queryTimestamp: m.mention.queryTimestamp?.toISOString() || m.mention.createdAt.toISOString(),
+    })),
+    total: mentions.length,
+  });
 }
 
 // ============================================================================
