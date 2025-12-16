@@ -50,11 +50,13 @@ vi.mock("@/stores", () => ({
 const mockUseDashboardMetrics = vi.fn();
 const mockUseGEOScore = vi.fn();
 const mockUseRecentActivity = vi.fn();
+const mockUseUnifiedScore = vi.fn();
 
 vi.mock("@/hooks/useDashboard", () => ({
   useDashboardMetrics: (brandId: string) => mockUseDashboardMetrics(brandId),
   useGEOScore: (brandId: string) => mockUseGEOScore(brandId),
   useRecentActivity: (brandId: string, limit: number) => mockUseRecentActivity(brandId, limit),
+  useUnifiedScore: (brandId: string) => mockUseUnifiedScore(brandId),
   usePlatformAnalytics: vi.fn(),
   useTrends: vi.fn(),
   useHealthStatus: vi.fn(),
@@ -214,6 +216,11 @@ describe("Dashboard Home - Brand Stats", () => {
     });
     mockUseRecentActivity.mockReturnValue({
       data: { activities: mockDashboardMetrics.recentActivity },
+      isLoading: false,
+      error: null,
+    });
+    mockUseUnifiedScore.mockReturnValue({
+      data: { overall: 72, grade: "B", trend: "up", change: 3 },
       isLoading: false,
       error: null,
     });
@@ -429,6 +436,11 @@ describe("Dashboard Home - Data Flow", () => {
     });
     mockUseRecentActivity.mockReturnValue({
       data: { activities: mockDashboardMetrics.recentActivity },
+      isLoading: false,
+      error: null,
+    });
+    mockUseUnifiedScore.mockReturnValue({
+      data: { overall: 72, grade: "B", trend: "up", change: 3 },
       isLoading: false,
       error: null,
     });

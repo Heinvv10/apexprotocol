@@ -1,12 +1,22 @@
 /**
- * Unified Digital Presence Score Calculator
- * Combines SEO + GEO + AEO into a single comprehensive score
+ * Unified Digital Presence Score Calculator (Updated Phase 7.3)
+ * Combines SEO + GEO + AEO + SMO + PPO into a single comprehensive score
  *
- * Formula: Digital Presence Score = (SEO * 0.4) + (GEO * 0.35) + (AEO * 0.25)
+ * Formula (Phase 7 Update):
+ *   Digital Presence Score = (SEO × 0.25) + (GEO × 0.25) + (AEO × 0.15) + (SMO × 0.20) + (PPO × 0.15)
+ *
+ * Components:
+ * - SEO: Search engine visibility (Google/Bing rankings)
+ * - GEO: Generative Engine Optimization (AI platform visibility)
+ * - AEO: Answer Engine Optimization (featured snippets, zero-click)
+ * - SMO: Social Media Optimization (social reach, engagement, sentiment)
+ * - PPO: People Presence Optimization (leadership visibility, thought leadership)
  */
 
 import { calculateSEOScore, SEOScoreInput, SEOScoreResult } from "./seo-score";
 import { calculateAEOScore, AEOScoreInput, AEOScoreResult } from "./aeo-score";
+import { calculateSMOScore, SMOScoreInput, SMOScoreResult } from "./social-score";
+import { calculatePPOScore, PPOScoreInput, PPOScoreResult } from "./people-score";
 
 export interface GEOScoreInput {
   totalMentions: number;
@@ -33,6 +43,8 @@ export interface UnifiedScoreInput {
   seo: SEOScoreInput;
   geo: GEOScoreInput;
   aeo: AEOScoreInput;
+  smo?: SMOScoreInput;
+  ppo?: PPOScoreInput;
 }
 
 export interface UnifiedScoreResult {
@@ -44,21 +56,38 @@ export interface UnifiedScoreResult {
     seo: SEOScoreResult;
     geo: GEOScoreResult;
     aeo: AEOScoreResult;
+    smo?: SMOScoreResult;
+    ppo?: PPOScoreResult;
   };
   weights: {
     seo: number;
     geo: number;
     aeo: number;
+    smo: number;
+    ppo: number;
   };
   insights: string[];
   priorityActions: string[];
 }
 
-// Score weights
-const WEIGHTS = {
-  seo: 0.4,
+// Score weights (Phase 7 Update)
+// When SMO/PPO are available, use 5-component formula
+// When not available (legacy), fall back to 3-component formula
+const WEIGHTS_FULL = {
+  seo: 0.25,
+  geo: 0.25,
+  aeo: 0.15,
+  smo: 0.20,
+  ppo: 0.15,
+};
+
+// Legacy weights (no social/people data)
+const WEIGHTS_LEGACY = {
+  seo: 0.40,
   geo: 0.35,
   aeo: 0.25,
+  smo: 0,
+  ppo: 0,
 };
 
 // Grade thresholds
@@ -159,22 +188,42 @@ export function calculateGEOScore(input: GEOScoreInput): GEOScoreResult {
 
 /**
  * Calculate the Unified Digital Presence Score
+ * Supports both 3-component (legacy) and 5-component (Phase 7) modes
  */
 export function calculateUnifiedScore(
   input: UnifiedScoreInput,
   previousScore?: number
 ): UnifiedScoreResult {
-  // Calculate individual scores
+  // Calculate individual scores (always calculate SEO, GEO, AEO)
   const seoResult = calculateSEOScore(input.seo);
   const geoResult = calculateGEOScore(input.geo);
   const aeoResult = calculateAEOScore(input.aeo);
 
+  // Calculate SMO and PPO if inputs are provided
+  const smoResult = input.smo ? calculateSMOScore(input.smo) : undefined;
+  const ppoResult = input.ppo ? calculatePPOScore(input.ppo) : undefined;
+
+  // Determine which weights to use
+  const hasSocialAndPeople = smoResult && ppoResult;
+  const weights = hasSocialAndPeople ? WEIGHTS_FULL : WEIGHTS_LEGACY;
+
   // Calculate weighted overall score
-  const overall = Math.round(
-    seoResult.score * WEIGHTS.seo +
-    geoResult.score * WEIGHTS.geo +
-    aeoResult.score * WEIGHTS.aeo
-  );
+  let overall: number;
+  if (hasSocialAndPeople) {
+    overall = Math.round(
+      seoResult.score * weights.seo +
+      geoResult.score * weights.geo +
+      aeoResult.score * weights.aeo +
+      smoResult.score * weights.smo +
+      ppoResult.score * weights.ppo
+    );
+  } else {
+    overall = Math.round(
+      seoResult.score * weights.seo +
+      geoResult.score * weights.geo +
+      aeoResult.score * weights.aeo
+    );
+  }
 
   // Determine grade
   let grade: UnifiedScoreResult["grade"] = "F";
@@ -194,8 +243,15 @@ export function calculateUnifiedScore(
   // Generate insights
   const insights: string[] = [];
 
-  // Identify strongest component
-  const scores = { seo: seoResult.score, geo: geoResult.score, aeo: aeoResult.score };
+  // Identify strongest and weakest components
+  const scores: Record<string, number> = {
+    seo: seoResult.score,
+    geo: geoResult.score,
+    aeo: aeoResult.score,
+  };
+  if (smoResult) scores.smo = smoResult.score;
+  if (ppoResult) scores.ppo = ppoResult.score;
+
   const strongest = Object.entries(scores).reduce((a, b) => (a[1] > b[1] ? a : b));
   const weakest = Object.entries(scores).reduce((a, b) => (a[1] < b[1] ? a : b));
 
@@ -210,11 +266,25 @@ export function calculateUnifiedScore(
     insights.push("Significant opportunity for improvement across all channels");
   }
 
+  // Additional insights for 5-component mode
+  if (hasSocialAndPeople) {
+    if (smoResult.score < 50) {
+      insights.push("Social media presence needs attention - consider increasing activity");
+    }
+    if (ppoResult.score < 50) {
+      insights.push("Leadership visibility is low - build executive profiles and thought leadership");
+    }
+  } else {
+    insights.push("Connect social accounts and add team members for complete analysis");
+  }
+
   // Compile priority actions from all components
   const priorityActions = [
-    ...seoResult.recommendations.slice(0, 2),
-    ...geoResult.recommendations.slice(0, 2),
-    ...aeoResult.recommendations.slice(0, 2),
+    ...seoResult.recommendations.slice(0, 1),
+    ...geoResult.recommendations.slice(0, 1),
+    ...aeoResult.recommendations.slice(0, 1),
+    ...(smoResult?.recommendations.slice(0, 1) || []),
+    ...(ppoResult?.recommendations.slice(0, 1) || []),
   ].slice(0, 5);
 
   return {
@@ -226,8 +296,10 @@ export function calculateUnifiedScore(
       seo: seoResult,
       geo: geoResult,
       aeo: aeoResult,
+      smo: smoResult,
+      ppo: ppoResult,
     },
-    weights: WEIGHTS,
+    weights,
     insights,
     priorityActions,
   };
