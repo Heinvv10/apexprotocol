@@ -1,12 +1,13 @@
 /**
- * Audit Analyze API (F104-F105)
+ * Audit Analyze API (F104-F105) - Enhanced with Phase 3
  * POST /api/audit/analyze - Analyze a URL directly
- * Returns readability score (0-100) with breakdown and categorized issues
+ * Returns readability score (0-100) with breakdown, categorized issues,
+ * schema validation, and Core Web Vitals
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { quickAudit } from "@/lib/audit";
+import { quickAudit, analyzeSchemas, analyzeCoreWebVitals } from "@/lib/audit";
 import { z } from "zod";
 
 // Request schema
@@ -63,7 +64,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Return analysis results
+    // Run Phase 3 enhanced analysis
+    const page = crawlResult.pages[0];
+    const schemaAnalysis = analyzeSchemas(page.schemaMarkup);
+    const coreWebVitals = analyzeCoreWebVitals(page);
+
+    // Return analysis results with Phase 3 enhancements
     return NextResponse.json({
       success: true,
       url: normalizedUrl,
@@ -98,6 +104,52 @@ export async function POST(request: NextRequest) {
           },
         },
       },
+      // Phase 3: Schema validation
+      schemaValidation: {
+        totalSchemas: schemaAnalysis.totalSchemas,
+        validSchemas: schemaAnalysis.validSchemas,
+        invalidSchemas: schemaAnalysis.invalidSchemas,
+        overallScore: schemaAnalysis.overallScore,
+        schemaTypes: schemaAnalysis.schemaTypes,
+        missingRecommendedSchemas: schemaAnalysis.missingRecommendedSchemas,
+        results: schemaAnalysis.results.map((r) => ({
+          type: r.type,
+          isValid: r.isValid,
+          score: r.score,
+          googleRichResultsEligible: r.googleRichResultsEligible,
+          aiRelevance: r.aiRelevance,
+          errors: r.errors,
+          warnings: r.warnings,
+        })),
+        recommendations: schemaAnalysis.recommendations,
+      },
+      // Phase 3: Core Web Vitals
+      coreWebVitals: {
+        lcp: {
+          value: coreWebVitals.lcp.value,
+          unit: coreWebVitals.lcp.unit,
+          rating: coreWebVitals.lcp.rating,
+          score: coreWebVitals.lcp.score,
+          description: coreWebVitals.lcp.description,
+        },
+        fid: {
+          value: coreWebVitals.fid.value,
+          unit: coreWebVitals.fid.unit,
+          rating: coreWebVitals.fid.rating,
+          score: coreWebVitals.fid.score,
+          description: coreWebVitals.fid.description,
+        },
+        cls: {
+          value: coreWebVitals.cls.value,
+          unit: coreWebVitals.cls.unit,
+          rating: coreWebVitals.cls.rating,
+          score: coreWebVitals.cls.score,
+          description: coreWebVitals.cls.description,
+        },
+        overall: coreWebVitals.overall,
+        recommendations: coreWebVitals.recommendations,
+        aiImpact: coreWebVitals.aiImpact,
+      },
       issues: {
         total: analysis.summary.totalIssues,
         critical: analysis.summary.criticalCount,
@@ -115,7 +167,11 @@ export async function POST(request: NextRequest) {
           impact: issue.impact,
         })),
       },
-      recommendations: analysis.recommendations,
+      recommendations: [
+        ...analysis.recommendations,
+        ...schemaAnalysis.recommendations.slice(0, 3),
+        ...coreWebVitals.recommendations.slice(0, 3),
+      ],
       topPriorities: analysis.summary.topPriorities,
     });
   } catch (error) {

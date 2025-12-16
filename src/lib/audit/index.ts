@@ -50,6 +50,34 @@ export {
   generateSummary,
 } from "./issue-detector";
 
+// Schema Validator (Phase 3)
+export {
+  validateSchema,
+  analyzeSchemas,
+  getSchemaDefinition,
+  getSupportedSchemaTypes,
+  isAICriticalSchema,
+} from "./schema-validator";
+export type {
+  SchemaValidationResult,
+  FieldValidation,
+  SchemaAnalysisReport,
+} from "./schema-validator";
+
+// Core Web Vitals (Phase 3)
+export {
+  analyzeCoreWebVitals,
+  analyzeMultiplePagesVitals,
+  getThresholds,
+  getMetricWeights,
+} from "./core-web-vitals";
+export type {
+  CoreWebVitalsResult,
+  MetricResult,
+  OverallResult,
+  AIPerformanceImpact,
+} from "./core-web-vitals";
+
 // Combined analysis function
 import type { CrawlResult, AnalysisResult } from "./types";
 import { analyzeMultiplePages } from "./readability-analyzer";
