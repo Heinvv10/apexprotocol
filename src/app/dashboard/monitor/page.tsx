@@ -2,8 +2,45 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Radar, Settings, ArrowRight, Bot, Sparkles } from "lucide-react";
+import { Radar, Settings, ArrowRight, Bot, Sparkles, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { FilterSidebar, SmartTable, QueryRow } from "@/components/monitor";
+import { useSelectedBrand } from "@/stores";
+import { useMentionsByBrand, Mention } from "@/hooks/useMonitor";
+
+// Transform API mention to SmartTable QueryRow format
+function mentionToQueryRow(mention: Mention): QueryRow {
+  // Map platform names to QueryRow platform type
+  const platformMap: Record<string, QueryRow["platform"]> = {
+    chatgpt: "chatgpt",
+    claude: "claude",
+    gemini: "gemini",
+    perplexity: "perplexity",
+    grok: "grok",
+    deepseek: "grok", // Map DeepSeek to grok for now (similar styling)
+    copilot: "chatgpt", // Map Copilot to chatgpt styling
+  };
+
+  // Map mention status to citation status
+  const citationMap: Record<string, QueryRow["citationStatus"]> = {
+    new: "mentioned",
+    reviewed: "mentioned",
+    actioned: "cited",
+    archived: "not_cited",
+  };
+
+  return {
+    id: mention.id,
+    query: mention.query,
+    platform: platformMap[mention.platform] || "chatgpt",
+    sentiment: mention.sentiment,
+    citationStatus: mention.mentioned ? (mention.citationUrl ? "cited" : "mentioned") : "not_cited",
+    timestamp: mention.createdAt,
+    response: mention.response,
+    url: mention.citationUrl,
+    confidence: mention.sentimentScore ? Math.round(mention.sentimentScore * 100) : undefined,
+    competitors: mention.tags,
+  };
+}
 
 // Empty filter configuration - will be populated from API/database
 const emptyFilterGroups = [
@@ -43,6 +80,77 @@ function DecorativeStar() {
           </linearGradient>
         </defs>
       </svg>
+    </div>
+  );
+}
+
+// Prompt to select a brand
+function SelectBrandPrompt() {
+  return (
+    <div className="flex-1 flex items-center justify-center min-h-[600px]">
+      <div className="text-center max-w-lg space-y-6">
+        <div className="relative mx-auto w-20 h-20">
+          <div
+            className="absolute inset-0 rounded-full opacity-20"
+            style={{
+              background: "radial-gradient(circle, rgba(0, 229, 204, 0.4) 0%, transparent 70%)",
+              filter: "blur(20px)",
+            }}
+          />
+          <div className="relative w-20 h-20 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center">
+            <Bot className="w-10 h-10 text-primary" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold text-foreground">Select a Brand to View Monitoring</h2>
+          <p className="text-muted-foreground">
+            Choose a brand from the dropdown in the header to see AI platform mentions and analysis.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/brands"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary/10 text-primary border border-primary/30 font-medium hover:bg-primary/20 transition-all"
+        >
+          Manage Brands
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// Loading state component
+function MonitorLoadingState() {
+  return (
+    <div className="flex-1 flex items-center justify-center min-h-[600px]" data-testid="monitor-loading">
+      <div className="text-center space-y-4">
+        <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
+        <p className="text-muted-foreground">Loading mentions...</p>
+      </div>
+    </div>
+  );
+}
+
+// Error state component
+function MonitorErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  return (
+    <div className="flex-1 flex items-center justify-center min-h-[600px]">
+      <div className="text-center max-w-md space-y-4">
+        <div className="w-16 h-16 rounded-full bg-error/10 border border-error/30 flex items-center justify-center mx-auto">
+          <AlertCircle className="w-8 h-8 text-error" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold text-foreground">Failed to Load Mentions</h3>
+          <p className="text-muted-foreground text-sm">{error.message}</p>
+        </div>
+        <button
+          onClick={onRetry}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Retry
+        </button>
+      </div>
     </div>
   );
 }
@@ -125,13 +233,65 @@ function MonitorEmptyState() {
 }
 
 export default function MonitorPage() {
-  // TODO: Fetch queries from API endpoint
-  // const { data: queries, isLoading } = useQuery(['queries'], fetchQueries);
-  const queries: QueryRow[] = []; // Empty array - no mock data
+  // Get selected brand from global state
+  const selectedBrand = useSelectedBrand();
 
-  // TODO: Fetch filter options from API/database
-  // const { data: filterGroups } = useQuery(['filters'], fetchFilterGroups);
-  const filterGroups = emptyFilterGroups;
+  // Fetch mentions for selected brand
+  const {
+    data: mentionsResponse,
+    isLoading,
+    error,
+    refetch,
+  } = useMentionsByBrand(selectedBrand?.id || "", {
+    limit: 50,
+    sort: "createdAt",
+    order: "desc",
+  });
+
+  // Transform mentions to QueryRow format for SmartTable
+  const queries: QueryRow[] = React.useMemo(() => {
+    if (!mentionsResponse?.mentions) return [];
+    return mentionsResponse.mentions.map(mentionToQueryRow);
+  }, [mentionsResponse?.mentions]);
+
+  // Build dynamic filter groups from mention data
+  const filterGroups = React.useMemo(() => {
+    if (!mentionsResponse?.mentions?.length) return emptyFilterGroups;
+
+    // Extract unique platforms
+    const platforms = [...new Set(mentionsResponse.mentions.map((m) => m.platform))];
+    // Extract unique sentiments
+    const sentiments = [...new Set(mentionsResponse.mentions.map((m) => m.sentiment))];
+
+    return [
+      {
+        id: "topics",
+        label: "Tracked Topics",
+        count: 0,
+        options: [],
+      },
+      {
+        id: "entity",
+        label: "Sentiment",
+        count: sentiments.length,
+        options: sentiments.map((s) => ({
+          id: s,
+          label: s.charAt(0).toUpperCase() + s.slice(1),
+          count: mentionsResponse.mentions.filter((m) => m.sentiment === s).length,
+        })),
+      },
+      {
+        id: "engines",
+        label: "AI Engines",
+        count: platforms.length,
+        options: platforms.map((p) => ({
+          id: p,
+          label: p.charAt(0).toUpperCase() + p.slice(1),
+          count: mentionsResponse.mentions.filter((m) => m.platform === p).length,
+        })),
+      },
+    ];
+  }, [mentionsResponse?.mentions]);
 
   const [selectedFilters, setSelectedFilters] = React.useState<Record<string, string[]>>({
     topics: [],
@@ -156,8 +316,22 @@ export default function MonitorPage() {
     });
   };
 
-  // Check if there's any data to show
-  const hasData = queries.length > 0;
+  // Filter queries based on selected filters
+  const filteredQueries = React.useMemo(() => {
+    if (!selectedFilters.engines.length && !selectedFilters.entity.length) {
+      return queries;
+    }
+
+    return queries.filter((q) => {
+      const matchesEngine = !selectedFilters.engines.length || selectedFilters.engines.includes(q.platform);
+      const matchesSentiment = !selectedFilters.entity.length || selectedFilters.entity.includes(q.sentiment);
+      return matchesEngine && matchesSentiment;
+    });
+  }, [queries, selectedFilters]);
+
+  // Determine current state
+  const noBrandSelected = !selectedBrand;
+  const hasData = filteredQueries.length > 0;
 
   return (
     <div className="dashboard-bg min-h-screen relative">
@@ -211,7 +385,14 @@ export default function MonitorPage() {
 
       {/* Main Content */}
       <div className="flex gap-6 p-6 relative">
-        {hasData ? (
+        {/* State 1: No brand selected */}
+        {noBrandSelected ? (
+          <SelectBrandPrompt />
+        ) : /* State 2: Loading */ isLoading ? (
+          <MonitorLoadingState />
+        ) : /* State 3: Error */ error ? (
+          <MonitorErrorState error={error as Error} onRetry={() => refetch()} />
+        ) : /* State 4: Has data */ hasData ? (
           <>
             {/* Filter Sidebar - only show when there's data */}
             <FilterSidebar
@@ -227,6 +408,10 @@ export default function MonitorPage() {
                 {/* Section Header */}
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-white">Live Query Analysis</h2>
+                  <span className="text-sm text-muted-foreground">
+                    {filteredQueries.length} mention{filteredQueries.length !== 1 ? "s" : ""}
+                    {selectedBrand && ` for ${selectedBrand.name}`}
+                  </span>
                 </div>
 
                 {/* Smart Table Badge */}
@@ -237,11 +422,12 @@ export default function MonitorPage() {
                 </div>
 
                 {/* Table */}
-                <SmartTable data={queries} />
+                <SmartTable data={filteredQueries} />
               </div>
             </div>
           </>
         ) : (
+          /* State 5: Brand selected but no mentions */
           <MonitorEmptyState />
         )}
 

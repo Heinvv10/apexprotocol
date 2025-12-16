@@ -1,9 +1,10 @@
 /**
  * Vitest setup file
- * Runs before all tests
+ * Runs before all tests - handles both node and jsdom environments
  */
 
 import { vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 
 // Mock environment variables for testing
 process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
@@ -15,6 +16,84 @@ process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
 process.env.PINECONE_API_KEY = "test-pinecone-key";
 process.env.PINECONE_INDEX = "test-index";
 process.env.APP_VERSION = "1.0.0-test";
+
+// DOM mocks - only apply in jsdom environment
+if (typeof window !== "undefined") {
+  // Mock window.matchMedia
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+
+  // Mock ResizeObserver
+  global.ResizeObserver = vi.fn().mockImplementation(() => ({
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+  }));
+
+  // Mock IntersectionObserver
+  global.IntersectionObserver = vi.fn().mockImplementation(() => ({
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+    root: null,
+    rootMargin: "",
+    thresholds: [],
+  }));
+
+  // Mock localStorage
+  const localStorageMock = {
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
+    key: vi.fn(),
+    length: 0,
+  };
+  Object.defineProperty(window, "localStorage", { value: localStorageMock });
+}
+
+// Mock Next.js navigation
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    prefetch: vi.fn(),
+    refresh: vi.fn(),
+  }),
+  usePathname: () => "/dashboard",
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+// Mock Clerk for frontend tests
+vi.mock("@clerk/nextjs", () => ({
+  useClerk: () => ({
+    signOut: vi.fn(),
+    openUserProfile: vi.fn(),
+  }),
+  useUser: () => ({
+    user: {
+      id: "test-user-id",
+      firstName: "Test",
+      lastName: "User",
+      emailAddresses: [{ emailAddress: "test@example.com" }],
+    },
+    isLoaded: true,
+    isSignedIn: true,
+  }),
+  ClerkProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 // Mock NextResponse for API route testing
 vi.mock("next/server", () => {
