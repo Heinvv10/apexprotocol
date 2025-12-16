@@ -4,10 +4,24 @@ import {
   timestamp,
   jsonb,
   boolean,
+  integer,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
 import { organizations } from "./organizations";
+
+// Competitor with full details
+export interface BrandCompetitor {
+  name: string;
+  url: string;
+  reason: string;
+}
+
+// AI analysis confidence scores
+export interface BrandConfidence {
+  overall: number;
+  perField: Record<string, number>;
+}
 
 // Brands table
 export const brands = pgTable("brands", {
@@ -22,12 +36,21 @@ export const brands = pgTable("brands", {
   name: text("name").notNull(),
   domain: text("domain"),
   description: text("description"),
+  tagline: text("tagline"),
   industry: text("industry"),
   logoUrl: text("logo_url"),
 
-  // SEO/GEO Keywords
+  // SEO/GEO Keywords (expanded)
   keywords: jsonb("keywords").$type<string[]>().default([]),
-  competitors: jsonb("competitors").$type<string[]>().default([]),
+  seoKeywords: jsonb("seo_keywords").$type<string[]>().default([]),
+  geoKeywords: jsonb("geo_keywords").$type<string[]>().default([]),
+
+  // Competitors with full details
+  competitors: jsonb("competitors").$type<BrandCompetitor[]>().default([]),
+
+  // Brand positioning
+  valuePropositions: jsonb("value_propositions").$type<string[]>().default([]),
+  socialLinks: jsonb("social_links").$type<Record<string, string>>().default({}),
 
   // Brand voice settings for AI content
   voice: jsonb("voice").$type<BrandVoice>().default({
@@ -38,11 +61,19 @@ export const brands = pgTable("brands", {
     avoidTopics: [],
   }),
 
-  // Visual identity settings
+  // Visual identity settings (expanded)
   visual: jsonb("visual").$type<BrandVisual>().default({
     primaryColor: null,
     secondaryColor: null,
+    accentColor: null,
+    colorPalette: [],
     fontFamily: null,
+  }),
+
+  // AI Analysis confidence
+  confidence: jsonb("confidence").$type<BrandConfidence>().default({
+    overall: 0,
+    perField: {},
   }),
 
   // Monitoring settings
@@ -68,10 +99,12 @@ export interface BrandVoice {
   avoidTopics: string[];
 }
 
-// Brand visual type
+// Brand visual type (expanded)
 export interface BrandVisual {
   primaryColor: string | null;
   secondaryColor: string | null;
+  accentColor: string | null;
+  colorPalette: string[];
   fontFamily: string | null;
 }
 

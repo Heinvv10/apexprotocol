@@ -8,15 +8,31 @@ const isDatabaseConfigured = () => {
   return !!url && url !== "postgresql://placeholder";
 };
 
+// Competitor schema
+const competitorSchema = z.object({
+  name: z.string(),
+  url: z.string(),
+  reason: z.string(),
+});
+
 // Validation schema for creating a brand
 const createBrandSchema = z.object({
   name: z.string().min(1, "Brand name is required"),
   domain: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
+  tagline: z.string().optional().nullable(),
   industry: z.string().optional().nullable(),
   logoUrl: z.string().optional().nullable(),
+  // Keywords (expanded)
   keywords: z.array(z.string()).optional().default([]),
-  competitors: z.array(z.string()).optional().default([]),
+  seoKeywords: z.array(z.string()).optional().default([]),
+  geoKeywords: z.array(z.string()).optional().default([]),
+  // Competitors with full details
+  competitors: z.array(competitorSchema).optional().default([]),
+  // Brand positioning
+  valuePropositions: z.array(z.string()).optional().default([]),
+  socialLinks: z.record(z.string()).optional().default({}),
+  // Voice settings
   voice: z
     .object({
       tone: z.enum(["professional", "friendly", "authoritative", "casual", "formal"]).optional(),
@@ -26,11 +42,21 @@ const createBrandSchema = z.object({
       avoidTopics: z.array(z.string()).optional(),
     })
     .optional(),
+  // Visual settings (expanded)
   visual: z
     .object({
       primaryColor: z.string().optional().nullable(),
       secondaryColor: z.string().optional().nullable(),
+      accentColor: z.string().optional().nullable(),
+      colorPalette: z.array(z.string()).optional().default([]),
       fontFamily: z.string().optional().nullable(),
+    })
+    .optional(),
+  // Confidence scores
+  confidence: z
+    .object({
+      overall: z.number().optional().default(0),
+      perField: z.record(z.number()).optional().default({}),
     })
     .optional(),
   monitoringEnabled: z.boolean().optional().default(true),
@@ -143,10 +169,15 @@ export async function POST(request: NextRequest) {
         name: validatedData.name,
         domain: validatedData.domain || null,
         description: validatedData.description || null,
+        tagline: validatedData.tagline || null,
         industry: validatedData.industry || null,
         logoUrl: validatedData.logoUrl || null,
         keywords: validatedData.keywords,
+        seoKeywords: validatedData.seoKeywords,
+        geoKeywords: validatedData.geoKeywords,
         competitors: validatedData.competitors,
+        valuePropositions: validatedData.valuePropositions,
+        socialLinks: validatedData.socialLinks,
         voice: {
           tone: validatedData.voice?.tone || "professional",
           personality: validatedData.voice?.personality || [],
@@ -157,10 +188,14 @@ export async function POST(request: NextRequest) {
         visual: {
           primaryColor: validatedData.visual?.primaryColor || null,
           secondaryColor: validatedData.visual?.secondaryColor || null,
+          accentColor: validatedData.visual?.accentColor || null,
+          colorPalette: validatedData.visual?.colorPalette || [],
           fontFamily: validatedData.visual?.fontFamily || null,
         },
+        confidence: validatedData.confidence || { overall: 0, perField: {} },
         monitoringEnabled: validatedData.monitoringEnabled,
         monitoringPlatforms: validatedData.monitoringPlatforms,
+        isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -189,10 +224,18 @@ export async function POST(request: NextRequest) {
 
     if (org.length === 0) {
       // Create default organization if it doesn't exist
+      // Generate unique slug from orgId (remove special chars, add timestamp suffix)
+      const baseSlug = orgId
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "-")
+        .replace(/-+/g, "-")
+        .substring(0, 40);
+      const uniqueSlug = `${baseSlug}-${Date.now().toString(36)}`;
+
       await db.insert(organizations).values({
         id: orgId,
         name: "My Organization",
-        slug: "my-organization",
+        slug: uniqueSlug,
         plan: "starter",
         brandLimit: 1,
       });
@@ -233,10 +276,15 @@ export async function POST(request: NextRequest) {
         name: validatedData.name,
         domain: validatedData.domain || null,
         description: validatedData.description || null,
+        tagline: validatedData.tagline || null,
         industry: validatedData.industry || null,
         logoUrl: validatedData.logoUrl || null,
         keywords: validatedData.keywords,
+        seoKeywords: validatedData.seoKeywords,
+        geoKeywords: validatedData.geoKeywords,
         competitors: validatedData.competitors,
+        valuePropositions: validatedData.valuePropositions,
+        socialLinks: validatedData.socialLinks,
         voice: {
           tone: validatedData.voice?.tone || "professional",
           personality: validatedData.voice?.personality || [],
@@ -247,8 +295,11 @@ export async function POST(request: NextRequest) {
         visual: {
           primaryColor: validatedData.visual?.primaryColor || null,
           secondaryColor: validatedData.visual?.secondaryColor || null,
+          accentColor: validatedData.visual?.accentColor || null,
+          colorPalette: validatedData.visual?.colorPalette || [],
           fontFamily: validatedData.visual?.fontFamily || null,
         },
+        confidence: validatedData.confidence || { overall: 0, perField: {} },
         monitoringEnabled: validatedData.monitoringEnabled,
         monitoringPlatforms: validatedData.monitoringPlatforms,
       })

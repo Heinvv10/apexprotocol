@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ScrapeWizard } from "@/components/brands/scrape-wizard";
+import { BrandDetailView } from "@/components/brands/brand-detail-view";
 import type { ScrapedBrandData } from "@/app/api/brands/scrape/route";
 
 // AI Platforms for monitoring
@@ -113,13 +114,22 @@ export default function BrandsPage() {
     name: "",
     domain: "",
     description: "",
+    tagline: "",
     industry: "",
     logoUrl: "",
     keywords: [] as string[],
-    competitors: [] as string[],
+    seoKeywords: [] as string[],
+    geoKeywords: [] as string[],
+    competitors: [] as Array<{ name: string; url: string; reason: string }>,
+    valuePropositions: [] as string[],
+    socialLinks: {} as Record<string, string>,
     voiceTone: "professional" as Brand["voice"]["tone"],
     targetAudience: "",
     primaryColor: "#4926FA",
+    secondaryColor: "",
+    accentColor: "",
+    colorPalette: [] as string[],
+    confidence: { overall: 0, perField: {} as Record<string, number> },
     monitoringEnabled: true,
     monitoringPlatforms: ["chatgpt", "claude", "gemini", "perplexity", "grok", "deepseek", "copilot"],
   });
@@ -127,6 +137,8 @@ export default function BrandsPage() {
   const [competitorInput, setCompetitorInput] = React.useState("");
   const logoInputRef = React.useRef<HTMLInputElement>(null);
   const [isUploadingLogo, setIsUploadingLogo] = React.useState(false);
+  // Detail view state
+  const [viewingBrand, setViewingBrand] = React.useState<Brand | null>(null);
 
   // Load brands on mount
   React.useEffect(() => {
@@ -156,13 +168,22 @@ export default function BrandsPage() {
       name: "",
       domain: "",
       description: "",
+      tagline: "",
       industry: "",
       logoUrl: "",
       keywords: [],
+      seoKeywords: [],
+      geoKeywords: [],
       competitors: [],
+      valuePropositions: [],
+      socialLinks: {},
       voiceTone: "professional",
       targetAudience: "",
       primaryColor: "#4926FA",
+      secondaryColor: "",
+      accentColor: "",
+      colorPalette: [],
+      confidence: { overall: 0, perField: {} },
       monitoringEnabled: true,
       monitoringPlatforms: ["chatgpt", "claude", "gemini", "perplexity", "grok", "deepseek", "copilot"],
     });
@@ -185,18 +206,27 @@ export default function BrandsPage() {
       // URL parsing failed, leave domain empty
     }
 
-    // Pre-fill form with scraped data
+    // Pre-fill form with ALL scraped data
     setFormData({
       name: data.brandName,
       domain,
       description: data.description,
+      tagline: data.tagline || "",
       industry: data.industry,
       logoUrl: data.logoUrl || "",
-      keywords: data.keywords,
-      competitors: data.competitors.map((c) => c.name),
+      keywords: data.keywords || [],
+      seoKeywords: data.seoKeywords || [],
+      geoKeywords: data.geoKeywords || [],
+      competitors: data.competitors || [],
+      valuePropositions: data.valuePropositions || [],
+      socialLinks: data.socialLinks || {},
       voiceTone: "professional",
-      targetAudience: "",
-      primaryColor: data.primaryColor,
+      targetAudience: data.targetAudience || "",
+      primaryColor: data.primaryColor || "#4926FA",
+      secondaryColor: data.secondaryColor || "",
+      accentColor: data.accentColor || "",
+      colorPalette: data.colorPalette || [],
+      confidence: data.confidence || { overall: 0, perField: {} },
       monitoringEnabled: true,
       monitoringPlatforms: ["chatgpt", "claude", "gemini", "perplexity", "grok", "deepseek", "copilot"],
     });
@@ -216,13 +246,22 @@ export default function BrandsPage() {
       name: brand.name,
       domain: brand.domain || "",
       description: brand.description || "",
+      tagline: brand.tagline || "",
       industry: brand.industry || "",
       logoUrl: brand.logoUrl || "",
       keywords: brand.keywords || [],
+      seoKeywords: brand.seoKeywords || [],
+      geoKeywords: brand.geoKeywords || [],
       competitors: brand.competitors || [],
+      valuePropositions: brand.valuePropositions || [],
+      socialLinks: brand.socialLinks || {},
       voiceTone: brand.voice?.tone || "professional",
       targetAudience: brand.voice?.targetAudience || "",
       primaryColor: brand.visual?.primaryColor || "#4926FA",
+      secondaryColor: brand.visual?.secondaryColor || "",
+      accentColor: brand.visual?.accentColor || "",
+      colorPalette: brand.visual?.colorPalette || [],
+      confidence: brand.confidence || { overall: 0, perField: {} },
       monitoringEnabled: brand.monitoringEnabled,
       monitoringPlatforms: brand.monitoringPlatforms || [],
     });
@@ -324,10 +363,15 @@ export default function BrandsPage() {
         name: formData.name,
         domain: formData.domain || null,
         description: formData.description || null,
+        tagline: formData.tagline || null,
         industry: formData.industry || null,
         logoUrl: formData.logoUrl || null,
         keywords: formData.keywords,
+        seoKeywords: formData.seoKeywords,
+        geoKeywords: formData.geoKeywords,
         competitors: formData.competitors,
+        valuePropositions: formData.valuePropositions,
+        socialLinks: formData.socialLinks,
         voice: {
           tone: formData.voiceTone,
           targetAudience: formData.targetAudience,
@@ -336,10 +380,13 @@ export default function BrandsPage() {
           avoidTopics: [],
         },
         visual: {
-          primaryColor: formData.primaryColor,
-          secondaryColor: null,
+          primaryColor: formData.primaryColor || null,
+          secondaryColor: formData.secondaryColor || null,
+          accentColor: formData.accentColor || null,
+          colorPalette: formData.colorPalette,
           fontFamily: null,
         },
+        confidence: formData.confidence,
         monitoringEnabled: formData.monitoringEnabled,
         monitoringPlatforms: formData.monitoringPlatforms,
       };
@@ -511,7 +558,8 @@ export default function BrandsPage() {
           {filteredBrands.map((brand) => (
             <div
               key={brand.id}
-              className="card-secondary p-5 hover:border-primary/30 transition-colors"
+              className="card-secondary p-5 hover:border-primary/30 transition-colors cursor-pointer group"
+              onClick={() => setViewingBrand(brand)}
             >
               {/* Brand Header */}
               <div className="flex items-start justify-between mb-4">
@@ -534,7 +582,7 @@ export default function BrandsPage() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-medium truncate">{brand.name}</h3>
+                    <h3 className="font-medium truncate group-hover:text-primary transition-colors">{brand.name}</h3>
                     {brand.domain && (
                       <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
                         <Globe className="h-3 w-3" />
@@ -547,18 +595,27 @@ export default function BrandsPage() {
                 {/* Actions */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="glass-tooltip">
-                    <DropdownMenuItem onClick={() => openEditModal(brand)} className="gap-2">
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setViewingBrand(brand); }} className="gap-2">
+                      <Search className="h-4 w-4" />
+                      View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditModal(brand); }} className="gap-2">
                       <Pencil className="h-4 w-4" />
                       Edit Brand
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => setDeleteConfirm(brand.id)}
+                      onClick={(e) => { e.stopPropagation(); setDeleteConfirm(brand.id); }}
                       className="gap-2 text-error focus:text-error"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -581,6 +638,19 @@ export default function BrandsPage() {
                       {brand.description}
                     </p>
                   )}
+                </div>
+              )}
+
+              {/* Confidence Score (if available) */}
+              {brand.confidence?.overall > 0 && (
+                <div className="mb-4 flex items-center gap-2">
+                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all"
+                      style={{ width: `${brand.confidence.overall}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground">{brand.confidence.overall}%</span>
                 </div>
               )}
 
@@ -1036,6 +1106,18 @@ export default function BrandsPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Brand Detail View Modal */}
+      {viewingBrand && (
+        <BrandDetailView
+          brand={viewingBrand}
+          onClose={() => setViewingBrand(null)}
+          onEdit={() => {
+            setViewingBrand(null);
+            openEditModal(viewingBrand);
+          }}
+        />
       )}
     </div>
   );

@@ -1,16 +1,38 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
+// Competitor with full details
+export interface BrandCompetitor {
+  name: string;
+  url: string;
+  reason: string;
+}
+
+// AI analysis confidence scores
+export interface BrandConfidence {
+  overall: number;
+  perField: Record<string, number>;
+}
+
 export interface Brand {
   id: string;
   organizationId: string;
   name: string;
   domain: string | null;
   description: string | null;
+  tagline: string | null;
   industry: string | null;
   logoUrl: string | null;
+  // Keywords (expanded)
   keywords: string[];
-  competitors: string[];
+  seoKeywords: string[];
+  geoKeywords: string[];
+  // Competitors with full details
+  competitors: BrandCompetitor[];
+  // Brand positioning
+  valuePropositions: string[];
+  socialLinks: Record<string, string>;
+  // Voice settings
   voice: {
     tone: "professional" | "friendly" | "authoritative" | "casual" | "formal";
     personality: string[];
@@ -18,11 +40,17 @@ export interface Brand {
     keyMessages: string[];
     avoidTopics: string[];
   };
+  // Visual settings (expanded)
   visual: {
     primaryColor: string | null;
     secondaryColor: string | null;
+    accentColor: string | null;
+    colorPalette: string[];
     fontFamily: string | null;
   };
+  // Confidence scores
+  confidence: BrandConfidence;
+  // Monitoring
   monitoringEnabled: boolean;
   monitoringPlatforms: string[];
   isActive: boolean;
