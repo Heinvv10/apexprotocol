@@ -109,6 +109,7 @@ export function init(config: SentryConfig): void {
   isInitialized = true;
 
   // Log initialization (in production, this would call Sentry.init)
+  console.log("[Sentry] Initialized with:", {
     environment: config.environment,
     release: config.release,
     debug: config.debug,

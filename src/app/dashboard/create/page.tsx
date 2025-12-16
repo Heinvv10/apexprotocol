@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Search, Filter, FileText, ChevronDown, Sparkles, PenTool, Wand2, LayoutTemplate } from "lucide-react";
+import { Plus, Search, Filter, FileText, ChevronDown, Sparkles, PenTool, Wand2, LayoutTemplate, Bot, ArrowRight, Loader2, AlertCircle, RefreshCw, MessageSquare, Users } from "lucide-react";
 import Link from "next/link";
 import { ContentCard, ContentItem, ContentStatus, ContentType } from "@/components/create";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,157 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useSelectedBrand } from "@/stores";
+import { useContentByBrand, useDeleteContent, useUpdateContent, Content } from "@/hooks/useContent";
+
+// Transform API Content to UI ContentItem
+function contentToItem(content: Content): ContentItem {
+  // Map API type to UI type
+  const typeMap: Record<string, ContentType> = {
+    blog: "article",
+    social: "article",
+    faq: "faq",
+    product: "product",
+    landing: "landing",
+    email: "article",
+  };
+
+  // Map API status to UI status
+  const statusMap: Record<string, ContentStatus> = {
+    draft: "draft",
+    reviewing: "draft",
+    approved: "draft",
+    published: "published",
+    archived: "archived",
+  };
+
+  return {
+    id: content.id,
+    title: content.title,
+    excerpt: content.excerpt || content.content?.substring(0, 150) + "..." || "",
+    status: statusMap[content.status] || "draft",
+    type: typeMap[content.type] || "article",
+    createdAt: new Date(content.createdAt).toLocaleDateString(),
+    updatedAt: new Date(content.updatedAt).toLocaleDateString(),
+    wordCount: content.wordCount || content.content?.split(/\s+/).length || 0,
+    aiScore: content.seoScore,
+  };
+}
+
+// Prompt to select a brand
+function SelectBrandPrompt() {
+  return (
+    <div className="flex-1 flex items-center justify-center min-h-[400px]">
+      <div className="text-center max-w-lg space-y-6">
+        <div className="relative mx-auto w-20 h-20">
+          <div
+            className="absolute inset-0 rounded-full opacity-20"
+            style={{
+              background: "radial-gradient(circle, rgba(0, 229, 204, 0.4) 0%, transparent 70%)",
+              filter: "blur(20px)",
+            }}
+          />
+          <div className="relative w-20 h-20 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center">
+            <Bot className="w-10 h-10 text-primary" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold text-foreground">Select a Brand to Create Content</h2>
+          <p className="text-muted-foreground">
+            Choose a brand from the dropdown in the header to create AI-optimized content with brand voice and keywords.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/brands"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary/10 text-primary border border-primary/30 font-medium hover:bg-primary/20 transition-all"
+        >
+          Manage Brands
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// Loading state component
+function ContentLoadingState() {
+  return (
+    <div className="space-y-4" data-testid="content-loading">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="card-secondary p-4 animate-pulse">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-muted rounded-lg" />
+            <div className="flex-1 space-y-3">
+              <div className="h-4 w-1/3 bg-muted rounded" />
+              <div className="h-3 w-2/3 bg-muted rounded" />
+              <div className="flex gap-4">
+                <div className="h-3 w-16 bg-muted rounded" />
+                <div className="h-3 w-24 bg-muted rounded" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Error state component
+function ContentErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  return (
+    <div className="text-center py-8">
+      <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-error/10 border border-error/30 flex items-center justify-center">
+        <AlertCircle className="h-6 w-6 text-error" />
+      </div>
+      <h4 className="text-lg font-semibold text-foreground mb-2">Failed to Load Content</h4>
+      <p className="text-muted-foreground text-sm mb-4">{error.message}</p>
+      <Button variant="outline" size="sm" onClick={onRetry}>
+        <RefreshCw className="w-4 h-4 mr-2" />
+        Retry
+      </Button>
+    </div>
+  );
+}
+
+// Brand voice info panel
+function BrandVoicePanel({ brand }: { brand: { voice?: { tone?: string; targetAudience?: string; personality?: string[]; keyMessages?: string[] } } }) {
+  if (!brand?.voice) return null;
+
+  const { tone, targetAudience, personality, keyMessages } = brand.voice;
+
+  return (
+    <div className="card-secondary p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <MessageSquare className="h-4 w-4 text-primary" />
+        <span className="font-semibold text-sm">Brand Voice</span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {tone && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Tone:</span>
+            <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary capitalize">{tone}</span>
+          </div>
+        )}
+        {targetAudience && (
+          <div className="flex items-center gap-2">
+            <Users className="h-3 w-3 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Audience:</span>
+            <span className="text-xs text-foreground">{targetAudience}</span>
+          </div>
+        )}
+      </div>
+      {personality && personality.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {personality.map((trait) => (
+            <span key={trait} className="text-xs px-2 py-0.5 rounded-full bg-accent-purple/10 text-accent-purple">
+              {trait}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Empty state component for when no content exists
 function CreateEmptyState() {
@@ -103,9 +254,29 @@ const typeOptions: { value: ContentType | "all"; label: string }[] = [
 ];
 
 export default function CreatePage() {
-  // TODO: Fetch content from API endpoint
-  // const { data: contentData } = useQuery(['content'], fetchContent);
-  const [content, setContent] = React.useState<ContentItem[]>([]); // Empty array - no mock data
+  // Get selected brand from global state
+  const selectedBrand = useSelectedBrand();
+
+  // Fetch content for selected brand
+  const {
+    data: contentResponse,
+    isLoading,
+    error,
+    refetch,
+  } = useContentByBrand(selectedBrand?.id || "", {
+    limit: 50,
+  });
+
+  // Mutations
+  const deleteContentMutation = useDeleteContent();
+  const updateContentMutation = useUpdateContent();
+
+  // Transform API content to UI format
+  const content: ContentItem[] = React.useMemo(() => {
+    if (!contentResponse?.content) return [];
+    return contentResponse.content.map(contentToItem);
+  }, [contentResponse?.content]);
+
   const [searchQuery, setSearchQuery] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<ContentStatus | "all">("all");
   const [typeFilter, setTypeFilter] = React.useState<ContentType | "all">("all");
@@ -114,15 +285,21 @@ export default function CreatePage() {
   const hasContent = content.length > 0;
 
   const handleDelete = (id: string) => {
-    setContent((prev) => prev.filter((item) => item.id !== id));
+    deleteContentMutation.mutate(id);
   };
 
   const handleStatusChange = (id: string, status: ContentStatus) => {
-    setContent((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, status, updatedAt: "Just now" } : item
-      )
-    );
+    // Map UI status to API status
+    const statusMap: Record<ContentStatus, string> = {
+      draft: "draft",
+      published: "published",
+      scheduled: "draft", // scheduled needs special handling
+      archived: "archived",
+    };
+    updateContentMutation.mutate({
+      id,
+      data: { status: statusMap[status] as "draft" | "published" | "archived" },
+    });
   };
 
   // Filter content
@@ -146,6 +323,58 @@ export default function CreatePage() {
   const currentStatusLabel = statusOptions.find((o) => o.value === statusFilter)?.label || "All Status";
   const currentTypeLabel = typeOptions.find((o) => o.value === typeFilter)?.label || "All Types";
 
+  // Show select brand prompt if no brand selected
+  if (!selectedBrand) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Create</h2>
+            <p className="text-muted-foreground">
+              Generate and manage AI-optimized content
+            </p>
+          </div>
+        </div>
+        <SelectBrandPrompt />
+      </div>
+    );
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Create</h2>
+            <p className="text-muted-foreground">
+              Generate and manage AI-optimized content
+            </p>
+          </div>
+        </div>
+        <ContentLoadingState />
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Create</h2>
+            <p className="text-muted-foreground">
+              Generate and manage AI-optimized content
+            </p>
+          </div>
+        </div>
+        <ContentErrorState error={error as Error} onRetry={() => refetch()} />
+      </div>
+    );
+  }
+
   // Show empty state if no content at all
   if (!hasContent) {
     return (
@@ -159,6 +388,8 @@ export default function CreatePage() {
             </p>
           </div>
         </div>
+        {/* Brand Voice Panel */}
+        <BrandVoicePanel brand={selectedBrand} />
         <CreateEmptyState />
       </div>
     );
@@ -181,6 +412,9 @@ export default function CreatePage() {
           </Button>
         </Link>
       </div>
+
+      {/* Brand Voice Panel */}
+      <BrandVoicePanel brand={selectedBrand} />
 
       {/* Summary Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
