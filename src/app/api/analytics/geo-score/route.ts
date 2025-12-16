@@ -135,11 +135,55 @@ export async function GET(request: NextRequest) {
       },
     ];
 
-    // Build history (placeholder - would need time-series data)
-    const history = Array.from({ length: 7 }, (_, i) => ({
-      date: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      score: Math.max(0, overall + Math.round((Math.random() - 0.5) * 10)),
-    }));
+    // Build history from actual mention data grouped by day
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const dailyMentions = await db
+      .select({
+        date: sql<string>`DATE(${brandMentions.timestamp})`,
+        total: count(),
+        positive: sql<number>`COUNT(CASE WHEN ${brandMentions.sentiment} = 'positive' THEN 1 END)`,
+        withCitation: sql<number>`COUNT(CASE WHEN ${brandMentions.citationUrl} IS NOT NULL THEN 1 END)`,
+      })
+      .from(brandMentions)
+      .where(eq(brandMentions.brandId, brandId))
+      .groupBy(sql`DATE(${brandMentions.timestamp})`)
+      .orderBy(sql`DATE(${brandMentions.timestamp})`);
+
+    // Calculate daily scores from real data
+    const history = dailyMentions.slice(-7).map(day => {
+      const dayTotal = Number(day.total) || 1;
+      const dayPositive = Number(day.positive) || 0;
+      const dayCited = Number(day.withCitation) || 0;
+
+      const dayContent = Math.min(Math.round((dayPositive / dayTotal) * 100), 100);
+      const dayAuthority = Math.min(Math.round((dayCited / dayTotal) * 100) + 20, 100);
+
+      const dayScore = Math.round(
+        technicalScore * 0.25 +
+        dayContent * 0.25 +
+        dayAuthority * 0.25 +
+        aiReadinessScore * 0.25
+      );
+
+      return {
+        date: day.date,
+        score: dayScore,
+      };
+    });
+
+    // Fill in missing days if less than 7 data points
+    if (history.length < 7) {
+      const existingDates = new Set(history.map(h => h.date));
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+        if (!existingDates.has(date)) {
+          history.push({ date, score: overall });
+        }
+      }
+      history.sort((a, b) => a.date.localeCompare(b.date));
+    }
 
     const geoScoreDetails = {
       overall,

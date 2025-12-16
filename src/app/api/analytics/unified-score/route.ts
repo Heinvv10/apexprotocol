@@ -132,8 +132,8 @@ export async function GET(request: NextRequest) {
       aeo: aeoInput,
     });
 
-    // Generate history data (simplified - in production, this would come from stored snapshots)
-    const history = generateScoreHistory(score, 30);
+    // Generate history from actual mention data grouped by week
+    const history = await generateScoreHistoryFromData(brandId, score, seoInput, aeoInput);
 
     const response: UnifiedScoreResponse = {
       score,
@@ -152,47 +152,80 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * Generate mock history data based on current score
- * In production, this would be actual stored historical data
+ * Generate history data from actual database records
  */
-function generateScoreHistory(
+async function generateScoreHistoryFromData(
+  brandId: string,
   currentScore: UnifiedScoreResult,
-  days: number
-): UnifiedScoreResponse["history"] {
+  seoInput: ReturnType<typeof createDefaultSEOInput>,
+  aeoInput: ReturnType<typeof createDefaultAEOInput>
+): Promise<UnifiedScoreResponse["history"]> {
   const history: UnifiedScoreResponse["history"] = [];
-  const now = new Date();
 
-  // Generate data points with slight variations
-  for (let i = days; i >= 0; i -= 5) {
-    const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+  // Get weekly mention aggregates for past 30 days
+  const weeklyMentions = await db
+    .select({
+      weekStart: sql<string>`DATE_TRUNC('week', ${brandMentions.timestamp})::date`,
+      total: count(),
+      positive: sql<number>`COUNT(CASE WHEN ${brandMentions.sentiment} = 'positive' THEN 1 END)`,
+      neutral: sql<number>`COUNT(CASE WHEN ${brandMentions.sentiment} = 'neutral' THEN 1 END)`,
+      negative: sql<number>`COUNT(CASE WHEN ${brandMentions.sentiment} = 'negative' THEN 1 END)`,
+      cited: sql<number>`COUNT(CASE WHEN ${brandMentions.citationUrl} IS NOT NULL THEN 1 END)`,
+      platforms: sql<number>`COUNT(DISTINCT ${brandMentions.platform})`,
+    })
+    .from(brandMentions)
+    .where(eq(brandMentions.brandId, brandId))
+    .groupBy(sql`DATE_TRUNC('week', ${brandMentions.timestamp})`)
+    .orderBy(sql`DATE_TRUNC('week', ${brandMentions.timestamp})`);
 
-    // Add some variation to simulate historical changes
-    const variation = Math.sin(i / 10) * 5 + (Math.random() - 0.5) * 3;
-    const unified = Math.max(
-      0,
-      Math.min(100, Math.round(currentScore.overall - variation * 0.5 - i * 0.1))
-    );
-    const seo = Math.max(
-      0,
-      Math.min(100, Math.round(currentScore.components.seo.score - variation * 0.3 - i * 0.05))
-    );
-    const geo = Math.max(
-      0,
-      Math.min(100, Math.round(currentScore.components.geo.score - variation * 0.4 - i * 0.15))
-    );
-    const aeo = Math.max(
-      0,
-      Math.min(100, Math.round(currentScore.components.aeo.score - variation * 0.2 - i * 0.08))
-    );
+  // Calculate scores for each week from real data
+  for (const week of weeklyMentions.slice(-7)) {
+    const weekGeoInput: GEOScoreInput = {
+      totalMentions: Number(week.total) || 0,
+      positiveMentions: Number(week.positive) || 0,
+      neutralMentions: Number(week.neutral) || 0,
+      negativeMentions: Number(week.negative) || 0,
+      citationCount: Number(week.cited) || 0,
+      platformCount: Number(week.platforms) || 0,
+      uniquePlatforms: [],
+    };
 
+    const weekScore = calculateUnifiedScore({
+      seo: seoInput,
+      geo: weekGeoInput,
+      aeo: aeoInput,
+    });
+
+    const date = new Date(week.weekStart);
     history.push({
       date: date.toISOString(),
       label: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      unified,
-      seo,
-      geo,
-      aeo,
+      unified: weekScore.overall,
+      seo: weekScore.components.seo.score,
+      geo: weekScore.components.geo.score,
+      aeo: weekScore.components.aeo.score,
     });
+  }
+
+  // If less than 7 data points, add current score for missing weeks
+  if (history.length < 7) {
+    const now = new Date();
+    for (let i = 6; i >= 0 && history.length < 7; i--) {
+      const date = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+      const dateStr = date.toISOString().split("T")[0];
+      const exists = history.some(h => h.date.split("T")[0] === dateStr);
+      if (!exists) {
+        history.push({
+          date: date.toISOString(),
+          label: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+          unified: currentScore.overall,
+          seo: currentScore.components.seo.score,
+          geo: currentScore.components.geo.score,
+          aeo: currentScore.components.aeo.score,
+        });
+      }
+    }
+    history.sort((a, b) => a.date.localeCompare(b.date));
   }
 
   return history;

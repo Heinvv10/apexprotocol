@@ -82,20 +82,12 @@ export async function GET(_request: NextRequest) {
       );
     }
 
-    // In development without database, return empty brands list
-    if (!isDatabaseConfigured() && process.env.NODE_ENV === "development") {
-      return NextResponse.json({
-        success: true,
-        data: {
-          brands: [],
-          meta: {
-            total: 0,
-            limit: 5,
-            plan: "growth",
-            canAddMore: true,
-          },
-        },
-      });
+    // Database is required
+    if (!isDatabaseConfigured()) {
+      return NextResponse.json(
+        { success: false, error: "Database not configured. Please set DATABASE_URL." },
+        { status: 503 }
+      );
     }
 
     // Dynamic imports for database operations
@@ -176,48 +168,12 @@ export async function POST(request: NextRequest) {
 
     const validatedData = createBrandSchema.parse(body);
 
-    // In development without database, return mock created brand
-    if (!isDatabaseConfigured() && process.env.NODE_ENV === "development") {
-      const mockBrand = {
-        id: `mock-brand-${Date.now()}`,
-        organizationId: orgId,
-        name: validatedData.name,
-        domain: validatedData.domain || null,
-        description: validatedData.description || null,
-        tagline: validatedData.tagline || null,
-        industry: validatedData.industry || null,
-        logoUrl: validatedData.logoUrl || null,
-        keywords: validatedData.keywords,
-        seoKeywords: validatedData.seoKeywords,
-        geoKeywords: validatedData.geoKeywords,
-        competitors: validatedData.competitors,
-        valuePropositions: validatedData.valuePropositions,
-        socialLinks: validatedData.socialLinks,
-        voice: {
-          tone: validatedData.voice?.tone || "professional",
-          personality: validatedData.voice?.personality || [],
-          targetAudience: validatedData.voice?.targetAudience || "",
-          keyMessages: validatedData.voice?.keyMessages || [],
-          avoidTopics: validatedData.voice?.avoidTopics || [],
-        },
-        visual: {
-          primaryColor: validatedData.visual?.primaryColor || null,
-          secondaryColor: validatedData.visual?.secondaryColor || null,
-          accentColor: validatedData.visual?.accentColor || null,
-          colorPalette: validatedData.visual?.colorPalette || [],
-          fontFamily: validatedData.visual?.fontFamily || null,
-        },
-        confidence: validatedData.confidence || { overall: 0, perField: {} },
-        monitoringEnabled: validatedData.monitoringEnabled,
-        monitoringPlatforms: validatedData.monitoringPlatforms,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      return NextResponse.json({
-        success: true,
-        data: mockBrand,
-      });
+    // Database is required
+    if (!isDatabaseConfigured()) {
+      return NextResponse.json(
+        { success: false, error: "Database not configured. Please set DATABASE_URL." },
+        { status: 503 }
+      );
     }
 
     // Dynamic imports for database operations
