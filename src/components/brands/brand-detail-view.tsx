@@ -19,16 +19,27 @@ import { cn } from "@/lib/utils";
 import type { Brand, BrandCompetitor } from "@/stores/brand-store";
 import { Button } from "@/components/ui/button";
 
-// AI Platforms for monitoring display
+// AI Platforms for monitoring display (colors from UI_UX_DESIGN_STRATEGY.md)
 const AI_PLATFORMS = [
   { id: "chatgpt", name: "ChatGPT", color: "#10A37F" },
-  { id: "claude", name: "Claude", color: "#D97706" },
+  { id: "claude", name: "Claude", color: "#CC785C" }, // Terracotta per design docs
   { id: "gemini", name: "Gemini", color: "#4285F4" },
-  { id: "perplexity", name: "Perplexity", color: "#1FB8CD" },
+  { id: "perplexity", name: "Perplexity", color: "#20B8CD" },
   { id: "grok", name: "Grok", color: "#1DA1F2" },
-  { id: "deepseek", name: "DeepSeek", color: "#6366F1" },
+  { id: "deepseek", name: "DeepSeek", color: "#FF6B35" }, // Orange per design docs
   { id: "copilot", name: "Copilot", color: "#0078D4" },
 ];
+
+// Design system colors (from UI_UX_DESIGN_STRATEGY.md)
+const DESIGN_COLORS = {
+  primaryCyan: "#00E5CC",
+  accentPurple: "#7C3AED",
+  accentPink: "#D82F71",
+  successGreen: "#22C55E",
+  warningYellow: "#F59E0B",
+  errorRed: "#EF4444",
+  infoBlue: "#3B82F6",
+};
 
 interface BrandDetailViewProps {
   brand: Brand;
@@ -47,18 +58,22 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
       .toUpperCase();
   };
 
-  // Render keyword tags
+  // Render keyword tags - using design system tag styling
   const renderKeywords = (keywords: string[], color: string, label: string) => {
     if (!keywords || keywords.length === 0) return null;
     return (
-      <div className="space-y-2">
-        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</h4>
+      <div className="space-y-3">
+        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</h4>
         <div className="flex flex-wrap gap-2">
           {keywords.map((keyword, index) => (
             <span
               key={index}
-              className="px-2 py-1 rounded-md text-xs font-medium"
-              style={{ backgroundColor: `${color}20`, color }}
+              className="px-2.5 py-1 rounded-md text-xs font-medium border"
+              style={{
+                backgroundColor: `${color}15`,
+                color,
+                borderColor: `${color}30`,
+              }}
             >
               {keyword}
             </span>
@@ -73,8 +88,8 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
     if (!competitors || competitors.length === 0) return null;
     return (
       <div className="space-y-3">
-        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-          <Users className="h-3.5 w-3.5" />
+        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+          <Users className="h-4 w-4" style={{ color: DESIGN_COLORS.errorRed }} />
           Competitors
         </h4>
         <div className="space-y-2">
@@ -122,9 +137,9 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
     if (colors.length === 0) return null;
 
     return (
-      <div className="space-y-2">
-        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-          <Palette className="h-3.5 w-3.5" />
+      <div className="space-y-3">
+        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+          <Palette className="h-4 w-4" style={{ color: DESIGN_COLORS.accentPurple }} />
           Brand Colors
         </h4>
         <div className="flex gap-2">
@@ -152,9 +167,9 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
     if (entries.length === 0) return null;
 
     return (
-      <div className="space-y-2">
-        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-          <Link2 className="h-3.5 w-3.5" />
+      <div className="space-y-3">
+        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+          <Link2 className="h-4 w-4" style={{ color: DESIGN_COLORS.infoBlue }} />
           Social Links
         </h4>
         <div className="flex flex-wrap gap-2">
@@ -175,24 +190,37 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
     );
   };
 
-  // Render confidence score
+  // Render confidence score - card-tertiary styling per design system
   const renderConfidenceScore = () => {
     const confidence = brand.confidence?.overall || 0;
     if (confidence === 0) return null;
 
     return (
-      <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
-        <Award className="h-5 w-5 text-primary shrink-0" />
+      <div className="card-tertiary flex items-center gap-3 !p-4">
+        <div
+          className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0"
+          style={{ backgroundColor: `${DESIGN_COLORS.primaryCyan}20` }}
+        >
+          <Award className="h-5 w-5" style={{ color: DESIGN_COLORS.primaryCyan }} />
+        </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-muted-foreground">AI Analysis Confidence</p>
-          <div className="flex items-center gap-2 mt-1">
-            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+          <p className="text-xs text-muted-foreground font-medium">AI Analysis Confidence</p>
+          <div className="flex items-center gap-3 mt-1.5">
+            <div className="flex-1 h-2 bg-[#1E293B] rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary transition-all"
-                style={{ width: `${confidence}%` }}
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${confidence}%`,
+                  background: `linear-gradient(90deg, ${DESIGN_COLORS.primaryCyan}, ${DESIGN_COLORS.accentPurple})`,
+                }}
               />
             </div>
-            <span className="text-sm font-medium text-primary">{confidence}%</span>
+            <span
+              className="text-sm font-semibold"
+              style={{ color: DESIGN_COLORS.primaryCyan }}
+            >
+              {confidence}%
+            </span>
           </div>
         </div>
       </div>
@@ -201,15 +229,20 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative glass-modal p-0 max-w-3xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="p-6 border-b border-border flex items-start justify-between gap-4 shrink-0">
+      {/* Overlay - using deep space navy with opacity per design system */}
+      <div
+        className="absolute inset-0 bg-[#02030A]/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      {/* Modal - using glass-modal per design docs (glassmorphism for modals only) */}
+      <div className="relative glass-modal p-0 max-w-3xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+        {/* Header - card-secondary styling for elevated section */}
+        <div className="p-6 border-b border-border/50 flex items-start justify-between gap-4 shrink-0 bg-[#0E1558]/50">
           <div className="flex items-center gap-4">
-            {/* Brand Logo/Avatar */}
+            {/* Brand Logo/Avatar - using primary cyan as fallback per design system */}
             <div
-              className="flex items-center justify-center h-16 w-16 rounded-xl text-lg font-semibold text-white shrink-0"
-              style={{ backgroundColor: brand.visual?.primaryColor || "#4926FA" }}
+              className="flex items-center justify-center h-16 w-16 rounded-xl text-lg font-semibold text-[#02030A] shrink-0 border border-primary/20"
+              style={{ backgroundColor: brand.visual?.primaryColor || DESIGN_COLORS.primaryCyan }}
             >
               {brand.logoUrl ? (
                 <img
@@ -264,27 +297,27 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
 
           {/* Description */}
           {brand.description && (
-            <div className="space-y-2">
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                <MessageSquare className="h-3.5 w-3.5" />
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" style={{ color: DESIGN_COLORS.primaryCyan }} />
                 Description
               </h4>
-              <p className="text-sm leading-relaxed">{brand.description}</p>
+              <p className="text-sm leading-relaxed text-foreground/90">{brand.description}</p>
             </div>
           )}
 
           {/* Value Propositions */}
           {brand.valuePropositions && brand.valuePropositions.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                <Lightbulb className="h-3.5 w-3.5" />
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <Lightbulb className="h-4 w-4" style={{ color: DESIGN_COLORS.warningYellow }} />
                 Value Propositions
               </h4>
-              <ul className="space-y-1.5">
+              <ul className="space-y-2">
                 {brand.valuePropositions.map((prop, index) => (
                   <li key={index} className="flex items-start gap-2 text-sm">
-                    <span className="text-primary mt-1">•</span>
-                    <span>{prop}</span>
+                    <span style={{ color: DESIGN_COLORS.primaryCyan }} className="mt-0.5">•</span>
+                    <span className="text-foreground/90">{prop}</span>
                   </li>
                 ))}
               </ul>
@@ -293,25 +326,25 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
 
           {/* Target Audience */}
           {brand.voice?.targetAudience && (
-            <div className="space-y-2">
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                <Target className="h-3.5 w-3.5" />
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <Target className="h-4 w-4" style={{ color: DESIGN_COLORS.accentPink }} />
                 Target Audience
               </h4>
-              <p className="text-sm">{brand.voice.targetAudience}</p>
+              <p className="text-sm text-foreground/90">{brand.voice.targetAudience}</p>
             </div>
           )}
 
-          {/* Keywords Section */}
+          {/* Keywords Section - Using design system colors */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* General Keywords */}
-            {renderKeywords(brand.keywords || [], "#4926FA", "Keywords")}
+            {/* General Keywords - Primary Cyan */}
+            {renderKeywords(brand.keywords || [], DESIGN_COLORS.primaryCyan, "Keywords")}
 
-            {/* SEO Keywords */}
-            {renderKeywords(brand.seoKeywords || [], "#17CA29", "SEO Keywords")}
+            {/* SEO Keywords - Success Green */}
+            {renderKeywords(brand.seoKeywords || [], DESIGN_COLORS.successGreen, "SEO Keywords")}
 
-            {/* GEO Keywords */}
-            {renderKeywords(brand.geoKeywords || [], "#FFB020", "GEO Keywords")}
+            {/* GEO Keywords - Warning Yellow */}
+            {renderKeywords(brand.geoKeywords || [], DESIGN_COLORS.warningYellow, "GEO Keywords")}
           </div>
 
           {/* Competitors */}
@@ -324,9 +357,9 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
           {renderSocialLinks()}
 
           {/* Monitoring Platforms */}
-          <div className="space-y-2">
-            <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-              <TrendingUp className="h-3.5 w-3.5" />
+          <div className="space-y-3">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" style={{ color: DESIGN_COLORS.successGreen }} />
               AI Platform Monitoring
             </h4>
             <div className="flex flex-wrap gap-2">
