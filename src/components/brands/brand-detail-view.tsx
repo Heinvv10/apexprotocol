@@ -19,27 +19,55 @@ import { cn } from "@/lib/utils";
 import type { Brand, BrandCompetitor } from "@/stores/brand-store";
 import { Button } from "@/components/ui/button";
 
-// AI Platforms for monitoring display (colors from UI_UX_DESIGN_STRATEGY.md)
+// AI Platforms for monitoring display (colors from UI_DESIGN_SYSTEM.md)
 const AI_PLATFORMS = [
   { id: "chatgpt", name: "ChatGPT", color: "#10A37F" },
-  { id: "claude", name: "Claude", color: "#CC785C" }, // Terracotta per design docs
+  { id: "claude", name: "Claude", color: "#D97757" }, // Orange/terracotta per UI_DESIGN_SYSTEM.md
   { id: "gemini", name: "Gemini", color: "#4285F4" },
   { id: "perplexity", name: "Perplexity", color: "#20B8CD" },
-  { id: "grok", name: "Grok", color: "#1DA1F2" },
-  { id: "deepseek", name: "DeepSeek", color: "#FF6B35" }, // Orange per design docs
+  { id: "grok", name: "Grok", color: "#FFFFFF" }, // White per UI_DESIGN_SYSTEM.md
+  { id: "deepseek", name: "DeepSeek", color: "#6366F1" }, // Indigo per UI_DESIGN_SYSTEM.md
   { id: "copilot", name: "Copilot", color: "#0078D4" },
 ];
 
-// Design system colors (from UI_UX_DESIGN_STRATEGY.md)
-const DESIGN_COLORS = {
+// Design system colors (from UI_DESIGN_SYSTEM.md - the authoritative source)
+const DESIGN = {
+  // Primary brand colors
   primaryCyan: "#00E5CC",
-  accentPurple: "#7C3AED",
-  accentPink: "#D82F71",
+  cyanBright: "#00FFE0",
+  cyanMuted: "#00B8A3",
+  accentPurple: "#8B5CF6",
+  purpleLight: "#A78BFA",
+  accentPink: "#EC4899",
+  accentBlue: "#3B82F6",
+  // Semantic colors
   successGreen: "#22C55E",
   warningYellow: "#F59E0B",
   errorRed: "#EF4444",
   infoBlue: "#3B82F6",
+  // Backgrounds (from UI_DESIGN_SYSTEM.md)
+  bgDeep: "#02030A",
+  bgBase: "#060812",
+  bgElevated: "#0A0D1A",
+  bgCard: "#0F1225",
+  bgCardHover: "#151935",
+  bgInput: "#0D1020",
+  // Text colors
+  textPrimary: "#FFFFFF",
+  textSecondary: "#94A3B8",
+  textMuted: "#64748B",
+  textAccent: "#00E5CC",
+  textLink: "#60A5FA",
+  // Borders (rgba-based per UI_DESIGN_SYSTEM.md)
+  borderSubtle: "rgba(255, 255, 255, 0.05)",
+  borderDefault: "rgba(255, 255, 255, 0.08)",
+  borderStrong: "rgba(255, 255, 255, 0.12)",
+  borderAccent: "rgba(0, 229, 204, 0.3)",
+  borderGlow: "rgba(0, 229, 204, 0.5)",
 };
+
+// Backwards compatibility alias
+const DESIGN_COLORS = DESIGN;
 
 interface BrandDetailViewProps {
   brand: Brand;
@@ -63,16 +91,18 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
     if (!keywords || keywords.length === 0) return null;
     return (
       <div className="space-y-3">
-        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: DESIGN.textSecondary }}>
+          {label}
+        </h4>
         <div className="flex flex-wrap gap-2">
           {keywords.map((keyword, index) => (
             <span
               key={index}
-              className="px-2.5 py-1 rounded-md text-xs font-medium border"
+              className="px-2.5 py-1.5 rounded-md text-xs font-medium"
               style={{
-                backgroundColor: `${color}15`,
-                color,
-                borderColor: `${color}30`,
+                backgroundColor: `${color}20`,
+                color: color,
+                border: `1px solid ${color}40`,
               }}
             >
               {keyword}
@@ -88,21 +118,27 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
     if (!competitors || competitors.length === 0) return null;
     return (
       <div className="space-y-3">
-        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-          <Users className="h-4 w-4" style={{ color: DESIGN_COLORS.errorRed }} />
+        <h4 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2" style={{ color: DESIGN.textSecondary }}>
+          <Users className="h-4 w-4" style={{ color: DESIGN.errorRed }} />
           Competitors
         </h4>
         <div className="space-y-2">
           {competitors.map((competitor, index) => (
             <div
               key={index}
-              className="card-tertiary p-3 rounded-lg"
+              className="p-3 rounded-lg border"
+              style={{
+                backgroundColor: DESIGN.bgElevated,
+                borderColor: DESIGN.borderDefault,
+              }}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm">{competitor.name}</p>
+                  <p className="font-medium text-sm" style={{ color: DESIGN.textPrimary }}>
+                    {competitor.name || "Unknown Competitor"}
+                  </p>
                   {competitor.reason && (
-                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                    <p className="text-xs mt-0.5 line-clamp-2" style={{ color: DESIGN.textSecondary }}>
                       {competitor.reason}
                     </p>
                   )}
@@ -112,7 +148,8 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
                     href={competitor.url.startsWith("http") ? competitor.url : `https://${competitor.url}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:text-primary/80 shrink-0"
+                    className="shrink-0 hover:opacity-80 transition-opacity"
+                    style={{ color: DESIGN.primaryCyan }}
                   >
                     <ExternalLink className="h-4 w-4" />
                   </a>
@@ -138,18 +175,21 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
 
     return (
       <div className="space-y-3">
-        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-          <Palette className="h-4 w-4" style={{ color: DESIGN_COLORS.accentPurple }} />
+        <h4 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2" style={{ color: DESIGN.textSecondary }}>
+          <Palette className="h-4 w-4" style={{ color: DESIGN.accentPurple }} />
           Brand Colors
         </h4>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           {colors.slice(0, 6).map((color, index) => (
-            <div key={index} className="flex flex-col items-center gap-1">
+            <div key={index} className="flex flex-col items-center gap-1.5">
               <div
-                className="w-10 h-10 rounded-lg border border-border shadow-sm"
-                style={{ backgroundColor: color }}
+                className="w-12 h-12 rounded-lg shadow-md"
+                style={{
+                  backgroundColor: color,
+                  border: `2px solid ${DESIGN.borderDefault}`,
+                }}
               />
-              <span className="text-[10px] text-muted-foreground font-mono">
+              <span className="text-[10px] font-mono" style={{ color: DESIGN.textMuted }}>
                 {color}
               </span>
             </div>
@@ -168,8 +208,8 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
 
     return (
       <div className="space-y-3">
-        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-          <Link2 className="h-4 w-4" style={{ color: DESIGN_COLORS.infoBlue }} />
+        <h4 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2" style={{ color: DESIGN.textSecondary }}>
+          <Link2 className="h-4 w-4" style={{ color: DESIGN.infoBlue }} />
           Social Links
         </h4>
         <div className="flex flex-wrap gap-2">
@@ -179,10 +219,15 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3 py-1.5 rounded-md bg-muted/50 hover:bg-muted text-sm flex items-center gap-2 transition-colors"
+              className="px-3 py-1.5 rounded-md text-sm flex items-center gap-2 transition-all hover:scale-105"
+              style={{
+                backgroundColor: DESIGN.bgElevated,
+                color: DESIGN.textPrimary,
+                border: `1px solid ${DESIGN.borderDefault}`,
+              }}
             >
               <span className="capitalize">{platform}</span>
-              <ExternalLink className="h-3 w-3" />
+              <ExternalLink className="h-3 w-3" style={{ color: DESIGN.primaryCyan }} />
             </a>
           ))}
         </div>
@@ -190,34 +235,45 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
     );
   };
 
-  // Render confidence score - card-tertiary styling per design system
+  // Render confidence score
   const renderConfidenceScore = () => {
     const confidence = brand.confidence?.overall || 0;
     if (confidence === 0) return null;
 
     return (
-      <div className="card-tertiary flex items-center gap-3 !p-4">
+      <div
+        className="flex items-center gap-4 p-4 rounded-xl"
+        style={{
+          backgroundColor: DESIGN.bgElevated,
+          border: `1px solid ${DESIGN.borderAccent}`,
+        }}
+      >
         <div
-          className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0"
-          style={{ backgroundColor: `${DESIGN_COLORS.primaryCyan}20` }}
+          className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0"
+          style={{ backgroundColor: `${DESIGN.primaryCyan}20` }}
         >
-          <Award className="h-5 w-5" style={{ color: DESIGN_COLORS.primaryCyan }} />
+          <Award className="h-6 w-6" style={{ color: DESIGN.primaryCyan }} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-muted-foreground font-medium">AI Analysis Confidence</p>
-          <div className="flex items-center gap-3 mt-1.5">
-            <div className="flex-1 h-2 bg-[#1E293B] rounded-full overflow-hidden">
+          <p className="text-xs font-medium mb-2" style={{ color: DESIGN.textSecondary }}>
+            AI Analysis Confidence
+          </p>
+          <div className="flex items-center gap-3">
+            <div
+              className="flex-1 h-2.5 rounded-full overflow-hidden"
+              style={{ backgroundColor: DESIGN.borderDefault }}
+            >
               <div
-                className="h-full rounded-full transition-all duration-500"
+                className="h-full rounded-full transition-all duration-700 ease-out"
                 style={{
                   width: `${confidence}%`,
-                  background: `linear-gradient(90deg, ${DESIGN_COLORS.primaryCyan}, ${DESIGN_COLORS.accentPurple})`,
+                  background: `linear-gradient(90deg, ${DESIGN.primaryCyan}, ${DESIGN.accentPurple})`,
                 }}
               />
             </div>
             <span
-              className="text-sm font-semibold"
-              style={{ color: DESIGN_COLORS.primaryCyan }}
+              className="text-base font-bold tabular-nums"
+              style={{ color: DESIGN.primaryCyan }}
             >
               {confidence}%
             </span>
@@ -228,51 +284,80 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Overlay - using deep space navy with opacity per design system */}
       <div
-        className="absolute inset-0 bg-[#02030A]/80 backdrop-blur-sm"
+        className="absolute inset-0 backdrop-blur-sm"
+        style={{ backgroundColor: `${DESIGN.bgDeep}E6` }}
         onClick={onClose}
       />
-      {/* Modal - using glass-modal per design docs (glassmorphism for modals only) */}
-      <div className="relative glass-modal p-0 max-w-3xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-        {/* Header - card-secondary styling for elevated section */}
-        <div className="p-6 border-b border-border/50 flex items-start justify-between gap-4 shrink-0 bg-[#0E1558]/50">
+      {/* Modal - solid card background per design docs */}
+      <div
+        className="relative max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col rounded-2xl"
+        style={{
+          backgroundColor: DESIGN.cardBg,
+          border: `1px solid ${DESIGN.primaryCyan}33`,
+          boxShadow: `0 0 40px ${DESIGN.primaryCyan}15, 0 25px 50px -12px rgba(0, 0, 0, 0.5)`,
+        }}
+      >
+        {/* Header */}
+        <div
+          className="p-6 flex items-start justify-between gap-4 shrink-0"
+          style={{
+            borderBottom: `1px solid ${DESIGN.borderDefault}`,
+            background: `linear-gradient(180deg, ${DESIGN.bgElevated} 0%, ${DESIGN.bgCard} 100%)`,
+          }}
+        >
           <div className="flex items-center gap-4">
-            {/* Brand Logo/Avatar - using primary cyan as fallback per design system */}
+            {/* Brand Logo/Avatar */}
             <div
-              className="flex items-center justify-center h-16 w-16 rounded-xl text-lg font-semibold text-[#02030A] shrink-0 border border-primary/20"
-              style={{ backgroundColor: brand.visual?.primaryColor || DESIGN_COLORS.primaryCyan }}
+              className="flex items-center justify-center h-16 w-16 rounded-xl text-lg font-bold shrink-0 overflow-hidden"
+              style={{
+                backgroundColor: brand.visual?.primaryColor || DESIGN.primaryCyan,
+                color: DESIGN.bgDeep,
+                border: `2px solid ${DESIGN.borderAccent}`,
+              }}
             >
               {brand.logoUrl ? (
                 <img
                   src={brand.logoUrl}
                   alt={brand.name}
-                  className="h-full w-full rounded-xl object-cover"
+                  className="h-full w-full object-cover"
                 />
               ) : (
                 getBrandInitials(brand.name)
               )}
             </div>
             <div className="min-w-0">
-              <h2 className="text-xl font-semibold truncate">{brand.name}</h2>
+              <h2 className="text-xl font-semibold truncate" style={{ color: DESIGN.textPrimary }}>
+                {brand.name}
+              </h2>
               {brand.tagline && (
-                <p className="text-sm text-muted-foreground italic">{brand.tagline}</p>
+                <p className="text-sm italic" style={{ color: DESIGN.textSecondary }}>
+                  {brand.tagline}
+                </p>
               )}
-              <div className="flex items-center gap-3 mt-1">
+              <div className="flex items-center gap-3 mt-1.5">
                 {brand.domain && (
                   <a
                     href={`https://${brand.domain}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-primary hover:underline flex items-center gap-1"
+                    className="text-xs hover:underline flex items-center gap-1 transition-colors"
+                    style={{ color: DESIGN.primaryCyan }}
                   >
                     <Globe className="h-3 w-3" />
                     {brand.domain}
                   </a>
                 )}
                 {brand.industry && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                  <span
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium"
+                    style={{
+                      backgroundColor: `${DESIGN.primaryCyan}20`,
+                      color: DESIGN.primaryCyan,
+                    }}
+                  >
                     {brand.industry}
                   </span>
                 )}
@@ -280,44 +365,56 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={onEdit} className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onEdit}
+              className="gap-2 border-border/50 hover:border-primary/50 hover:bg-primary/10"
+            >
               <Pencil className="h-4 w-4" />
               Edit
             </Button>
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="hover:bg-white/10"
+            >
               <X className="h-5 w-5" />
             </Button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6" style={{ backgroundColor: DESIGN.cardBg }}>
           {/* Confidence Score */}
           {renderConfidenceScore()}
 
           {/* Description */}
           {brand.description && (
             <div className="space-y-3">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" style={{ color: DESIGN_COLORS.primaryCyan }} />
+              <h4 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2" style={{ color: DESIGN.textSecondary }}>
+                <MessageSquare className="h-4 w-4" style={{ color: DESIGN.primaryCyan }} />
                 Description
               </h4>
-              <p className="text-sm leading-relaxed text-foreground/90">{brand.description}</p>
+              <p className="text-sm leading-relaxed" style={{ color: DESIGN.textPrimary }}>
+                {brand.description}
+              </p>
             </div>
           )}
 
           {/* Value Propositions */}
           {brand.valuePropositions && brand.valuePropositions.length > 0 && (
             <div className="space-y-3">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                <Lightbulb className="h-4 w-4" style={{ color: DESIGN_COLORS.warningYellow }} />
+              <h4 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2" style={{ color: DESIGN.textSecondary }}>
+                <Lightbulb className="h-4 w-4" style={{ color: DESIGN.warningYellow }} />
                 Value Propositions
               </h4>
               <ul className="space-y-2">
                 {brand.valuePropositions.map((prop, index) => (
-                  <li key={index} className="flex items-start gap-2 text-sm">
-                    <span style={{ color: DESIGN_COLORS.primaryCyan }} className="mt-0.5">•</span>
-                    <span className="text-foreground/90">{prop}</span>
+                  <li key={index} className="flex items-start gap-2.5 text-sm">
+                    <span style={{ color: DESIGN.primaryCyan }} className="mt-0.5 text-base">•</span>
+                    <span style={{ color: DESIGN.textPrimary }}>{prop}</span>
                   </li>
                 ))}
               </ul>
@@ -327,11 +424,11 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
           {/* Target Audience */}
           {brand.voice?.targetAudience && (
             <div className="space-y-3">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                <Target className="h-4 w-4" style={{ color: DESIGN_COLORS.accentPink }} />
+              <h4 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2" style={{ color: DESIGN.textSecondary }}>
+                <Target className="h-4 w-4" style={{ color: DESIGN.accentPink }} />
                 Target Audience
               </h4>
-              <p className="text-sm text-foreground/90">{brand.voice.targetAudience}</p>
+              <p className="text-sm" style={{ color: DESIGN.textPrimary }}>{brand.voice.targetAudience}</p>
             </div>
           )}
 
@@ -358,8 +455,8 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
 
           {/* Monitoring Platforms */}
           <div className="space-y-3">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" style={{ color: DESIGN_COLORS.successGreen }} />
+            <h4 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2" style={{ color: DESIGN.textSecondary }}>
+              <TrendingUp className="h-4 w-4" style={{ color: DESIGN.successGreen }} />
               AI Platform Monitoring
             </h4>
             <div className="flex flex-wrap gap-2">
@@ -368,14 +465,15 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
                 return (
                   <span
                     key={platformId}
-                    className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium"
+                    className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium"
                     style={{
-                      backgroundColor: `${platform?.color}20`,
+                      backgroundColor: `${platform?.color}25`,
                       color: platform?.color,
+                      border: `1px solid ${platform?.color}40`,
                     }}
                   >
                     <span
-                      className="w-2 h-2 rounded-full mr-1.5"
+                      className="w-2 h-2 rounded-full mr-2"
                       style={{ backgroundColor: platform?.color }}
                     />
                     {platform?.name || platformId}
@@ -383,11 +481,11 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
                 );
               })}
               {(!brand.monitoringPlatforms || brand.monitoringPlatforms.length === 0) && (
-                <span className="text-sm text-muted-foreground">No platforms configured</span>
+                <span className="text-sm" style={{ color: DESIGN.textMuted }}>No platforms configured</span>
               )}
             </div>
             {brand.monitoringEnabled === false && (
-              <p className="text-xs text-muted-foreground mt-1">Monitoring is currently disabled</p>
+              <p className="text-xs mt-1" style={{ color: DESIGN.textMuted }}>Monitoring is currently disabled</p>
             )}
           </div>
         </div>
