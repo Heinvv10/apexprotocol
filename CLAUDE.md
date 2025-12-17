@@ -25,82 +25,35 @@ This is the **Apex** project - a white-label GEO/AEO (Generative Engine Optimiza
 
 **READ THIS BEFORE IMPLEMENTING ANY UI COMPONENT**
 
-The design system is defined in `src/app/globals.css` and documented in `docs/UI_DESIGN_SYSTEM.md` and `docs/UI_UX_DESIGN_STRATEGY.md`. Reference images are in `docs/images UI/`. You MUST follow these patterns for every UI component.
+### Single Source of Truth
+**`docs/APEX_DESIGN_SYSTEM.md`** - The authoritative design reference (v4.0)
 
-### Color System (Based on Reference Images in `docs/images UI/`)
-- **Background**: `#02030A` (deep space navy, NOT pure black)
-- **Cards**: `#0F1225` (dark navy) via `hsl(var(--card))`
-- **Primary**: `#00E5CC` (Apex cyan/teal) via `hsl(var(--primary))` - Main accent for metrics, CTAs
-- **Secondary Purple**: `#8B5CF6` via `hsl(var(--accent-purple))` - Chart gradients, secondary accents
-- **Success**: `#22C55E` (green) via `hsl(var(--success))`
-- **Warning**: `#F59E0B` (amber) via `hsl(var(--warning))`
-- **Error**: `#EF4444` (red) via `hsl(var(--error))`
-- **Accent Pink**: `#EC4899` via `hsl(var(--accent-pink))`
+All other UI docs have been archived to `docs/archive/`.
+
+### Quick Reference - Colors
+- **Background**: `#0a0f1a` (deep space navy)
+- **Cards**: `#141930` (dark navy)
+- **Primary**: `#00E5CC` (Apex cyan)
+- **Purple**: `#8B5CF6` (secondary accent)
+- **Success/Warning/Error**: `#22C55E` / `#F59E0B` / `#EF4444`
 
 ### 3-Tier Card Hierarchy (MANDATORY)
-You MUST use these CSS classes for cards - NOT basic shadcn Card component:
-
-1. **`.card-primary`** - For primary metrics (AI Visibility Pulse, main KPIs)
-   - Subtle cyan border with soft glow shadow
-   - Use for: AI Visibility gauge, Trust Score, main dashboard metrics
-
-2. **`.card-secondary`** - For secondary content (recommendations, charts)
-   - 1px muted border with subtle shadow
-   - Use for: Recommendation cards, chart containers, data tables
-
-3. **`.card-tertiary`** - For list items and compact content
-   - Transparent background with minimal border
-   - Use for: Activity items, list rows, small stat cards
-
-### Glassmorphism (ONLY for modals/overlays)
-- `.glass-modal` - Modal overlays with blur
-- `.glass-card` - Floating cards only
-- `.glass-tooltip` - Tooltips and popovers
-- **DO NOT** use glassmorphism on main dashboard cards
-
-### Typography
-- Headings: `font-family: 'Inter Display', Inter, sans-serif` with weight 600-700
-- Body: `font-family: 'Inter', sans-serif` with weight 400-500
-
-### Animation Timing
-- Standard transitions: `150ms ease-in-out`
-- Modal animations: `250ms cubic-bezier(0.4, 0, 0.2, 1)`
-- Gauge animations: `800ms easeOutQuart`
-
-### ANTI-PATTERNS TO AVOID
-❌ Do NOT use basic `<Card>` component without hierarchy class
-❌ Do NOT use pure black `#000000` backgrounds
-❌ Do NOT use more than 3-4 accent colors per view (no rainbow UI)
-❌ Do NOT use glassmorphism on main content cards
-❌ Do NOT use bouncy/elastic animations (too playful for enterprise)
-
-### CORRECT IMPLEMENTATION EXAMPLE
 ```tsx
-// ✅ CORRECT - Using design system classes
-<div className="card-primary">
-  <GEOScoreGauge score={72} />
-</div>
-
-<div className="card-secondary">
-  <RecommendationCard title="Add FAQ Schema" />
-</div>
-
-<div className="card-tertiary">
-  <ActivityItem timestamp="2h ago" />
-</div>
-
-// ❌ WRONG - Basic Card without hierarchy
-<Card className="border-primary/20">
-  <GEOScoreGauge score={72} />
-</Card>
+<div className="card-primary">   {/* Main KPIs, GEO Score */}
+<div className="card-secondary"> {/* Charts, recommendations */}
+<div className="card-tertiary">  {/* List items, activity */}
 ```
 
-### Design Reference Files (READ THESE)
-- `docs/images UI/Dash idea.png` - **Primary dashboard reference** (source of truth for colors)
-- `docs/UI_DESIGN_SYSTEM.md` - Comprehensive design system documentation
-- `docs/UI_UX_DESIGN_STRATEGY.md` - Color palette and typography specs
-- `docs/UI_WIREFRAMES.md` - ASCII wireframes showing expected layouts
-- `src/app/globals.css` - CSS variables and utility classes
+### Key Rules
+- Use `.card-primary/.secondary/.tertiary` - NOT basic `<Card>`
+- Glassmorphism for modals only - NOT main content
+- Max 3-4 accent colors per view
+- No pure black `#000000` backgrounds
+
+### Reference Files
+- `docs/APEX_DESIGN_SYSTEM.md` - **Single source of truth**
+- `docs/images UI/Dash idea.png` - Visual reference
+- `src/app/globals.css` - CSS implementation
 
 ---
 
