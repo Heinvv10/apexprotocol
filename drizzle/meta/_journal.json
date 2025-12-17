@@ -22,6 +22,13 @@
       "when": 1765977351821,
       "tag": "0002_reflective_garia",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1765987454099,
+      "tag": "0003_marvelous_rumiko_fujikawa",
+      "breakpoints": true
     }
   ]
 }
