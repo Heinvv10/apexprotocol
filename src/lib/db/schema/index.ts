@@ -77,6 +77,14 @@ export {
 } from "./api-keys";
 
 export {
+  apiIntegrations,
+  integrationCategoryEnum,
+  integrationStatusEnum,
+  type ApiIntegration,
+  type NewApiIntegration,
+} from "./api-integrations";
+
+export {
   aiUsage,
   type AIUsage,
   type NewAIUsage,
