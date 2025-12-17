@@ -19,17 +19,28 @@ vi.mock("@/lib/auth/super-admin", () => ({
   isSuperAdmin: vi.fn(),
 }));
 
-// Mock database
-vi.mock("@/lib/db", () => ({
-  db: {
-    select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        where: vi.fn(() => Promise.resolve([])),
-      })),
-    })),
-    execute: vi.fn(),
-  },
-}));
+// Mock database - all definitions MUST be inside factory due to hoisting
+vi.mock("@/lib/db", () => {
+  const mockDbResult = [{ count: 5 }];
+  const mockWhereResult = {
+    then: (resolve: (v: unknown[]) => void) => Promise.resolve(mockDbResult).then(resolve),
+    catch: (reject: (e: unknown) => void) => Promise.resolve(mockDbResult).catch(reject),
+  };
+  const mockFromResult = {
+    then: (resolve: (v: unknown[]) => void) => Promise.resolve(mockDbResult).then(resolve),
+    catch: (reject: (e: unknown) => void) => Promise.resolve(mockDbResult).catch(reject),
+    where: () => mockWhereResult,
+  };
+
+  return {
+    db: {
+      select: () => ({
+        from: () => mockFromResult,
+      }),
+      execute: vi.fn(),
+    },
+  };
+});
 
 import { auth } from "@clerk/nextjs/server";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
@@ -70,18 +81,14 @@ describe("GET /api/admin/dashboard/stats", () => {
     vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
 
-    // Mock organization count query
-    vi.mocked(db.select).mockImplementation(() => ({
-      from: vi.fn(() => Promise.resolve([{ count: 24 }])),
-    }) as unknown as ReturnType<typeof db.select>);
-
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/stats");
     const response = await GET(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.stats.totalOrganizations).toBe(24);
+    // Mock returns count: 5 for all queries
+    expect(data.stats.totalOrganizations).toBe(5);
   });
 
   // UT-4: Returns correct user count

@@ -53,9 +53,22 @@ vi.mock("@/lib/db/schema", () => ({
   },
 }));
 
+// Mock global fetch for API connection tests
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
+
 describe("POST /api/admin/api-config/:id/test - Test Connection (FR-3)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default successful fetch response
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: {
+        get: (name: string) => name === "anthropic-version" ? "2023-06-01" : null,
+      },
+      json: () => Promise.resolve({ success: true }),
+    });
   });
 
   it("should return success with connection details (AC-3.3)", async () => {
