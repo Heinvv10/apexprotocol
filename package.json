@@ -47,6 +47,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.0",
+    "googleapis": "^169.0.0",
     "graphql-yoga": "^5.17.1",
     "lucide-react": "^0.556.0",
     "next": "16.0.8",
@@ -60,6 +61,7 @@
     "stripe": "^20.0.0",
     "svix": "^1.82.0",
     "tailwind-merge": "^3.4.0",
+    "twitter-api-v2": "^1.28.0",
     "zod": "^4.1.13",
     "zustand": "^5.0.9"
   },
