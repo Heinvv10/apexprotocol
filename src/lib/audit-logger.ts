@@ -40,12 +40,8 @@ export interface CreateAuditLogParams {
     after?: Record<string, any>;
   };
 
-  // Additional metadata
-  metadata?: {
-    sessionId?: string;
-    requestId?: string;
-    duration?: number;
-  };
+  // Additional metadata (flexible structure for filters, pagination, etc.)
+  metadata?: Record<string, any>;
 
   // Status
   status?: "success" | "failure" | "warning";

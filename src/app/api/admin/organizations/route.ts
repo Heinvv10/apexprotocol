@@ -5,13 +5,19 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { organizations, users } from "@/lib/db/schema";
 import { eq, sql, ilike, or, desc } from "drizzle-orm";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
+import { createAuditLog } from "@/lib/audit-logger";
 
 export async function GET(request: NextRequest) {
+  // Declare actor variables at function scope for audit logging
+  let actorId: string | null = null;
+  let actorName: string | null = null;
+  let actorEmail: string | null = null;
+
   try {
     // In dev mode, allow access if DEV_SUPER_ADMIN is set
     const devSuperAdmin = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
@@ -26,6 +32,18 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      actorId = userId;
+
+      // Get actor details from Clerk
+      try {
+        const clerk = await clerkClient();
+        const user = await clerk.users.getUser(userId);
+        actorName = user.fullName || user.firstName || null;
+        actorEmail = user.emailAddresses[0]?.emailAddress || null;
+      } catch (error) {
+        // Continue without actor details if Clerk fails
+      }
+
       // Check super-admin status
       const superAdmin = await isSuperAdmin();
       if (!superAdmin) {
@@ -34,6 +52,11 @@ export async function GET(request: NextRequest) {
           { status: 403 }
         );
       }
+    } else {
+      // Dev mode actor details
+      actorId = "dev-super-admin";
+      actorName = "Dev Super Admin";
+      actorEmail = "dev@localhost";
     }
 
     const { searchParams } = new URL(request.url);
@@ -105,6 +128,32 @@ export async function GET(request: NextRequest) {
 
     const [{ count: total }] = await totalQuery;
 
+    // Create success audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "list_organizations",
+        actionType: "access",
+        description: `Super-admin listed organizations (page ${page}, ${orgs.length} results)`,
+        metadata: {
+          filters: {
+            search,
+            plan,
+            status,
+          },
+          pagination: {
+            page,
+            limit,
+            total,
+          },
+        },
+        status: "success",
+      },
+      request
+    );
+
     return NextResponse.json({
       success: true,
       organizations: orgs,
@@ -117,6 +166,23 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Admin organizations API error:", error);
+
+    // Create failure audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "list_organizations",
+        actionType: "access",
+        description: "Failed to list organizations",
+        status: "failure",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        errorStack: error instanceof Error ? error.stack : null,
+      },
+      request
+    );
+
     return NextResponse.json(
       {
         error: "Failed to fetch organizations",
@@ -128,6 +194,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  // Declare actor variables at function scope for audit logging
+  let actorId: string | null = null;
+  let actorName: string | null = null;
+  let actorEmail: string | null = null;
+
   try {
     // In dev mode, allow access if DEV_SUPER_ADMIN is set
     const devSuperAdmin = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
@@ -142,6 +213,18 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
+      actorId = userId;
+
+      // Get actor details from Clerk
+      try {
+        const clerk = await clerkClient();
+        const user = await clerk.users.getUser(userId);
+        actorName = user.fullName || user.firstName || null;
+        actorEmail = user.emailAddresses[0]?.emailAddress || null;
+      } catch (error) {
+        // Continue without actor details if Clerk fails
+      }
+
       // Check super-admin status
       const superAdmin = await isSuperAdmin();
       if (!superAdmin) {
@@ -150,6 +233,11 @@ export async function PATCH(request: NextRequest) {
           { status: 403 }
         );
       }
+    } else {
+      // Dev mode actor details
+      actorId = "dev-super-admin";
+      actorName = "Dev Super Admin";
+      actorEmail = "dev@localhost";
     }
 
     const body = await request.json();
@@ -159,6 +247,20 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json(
         { error: "organizationId is required" },
         { status: 400 }
+      );
+    }
+
+    // Get current organization state for audit logging
+    const [targetOrg] = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.id, organizationId))
+      .limit(1);
+
+    if (!targetOrg) {
+      return NextResponse.json(
+        { error: "Organization not found" },
+        { status: 404 }
       );
     }
 
@@ -179,12 +281,62 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    // Create success audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "update_organization",
+        actionType: "update",
+        description: `Super-admin updated organization ${targetOrg.name || organizationId}`,
+        targetType: "organization",
+        targetId: organizationId,
+        targetName: targetOrg.name || null,
+        changes: {
+          before: {
+            name: targetOrg.name,
+            plan: targetOrg.plan,
+            isActive: targetOrg.isActive,
+            brandLimit: targetOrg.brandLimit,
+            userLimit: targetOrg.userLimit,
+          },
+          after: {
+            name: updated.name,
+            plan: updated.plan,
+            isActive: updated.isActive,
+            brandLimit: updated.brandLimit,
+            userLimit: updated.userLimit,
+          },
+        },
+        status: "success",
+      },
+      request
+    );
+
     return NextResponse.json({
       success: true,
       organization: updated,
     });
   } catch (error) {
     console.error("Admin organizations PATCH error:", error);
+
+    // Create failure audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "update_organization",
+        actionType: "update",
+        description: "Failed to update organization",
+        status: "failure",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        errorStack: error instanceof Error ? error.stack : null,
+      },
+      request
+    );
+
     return NextResponse.json(
       {
         error: "Failed to update organization",

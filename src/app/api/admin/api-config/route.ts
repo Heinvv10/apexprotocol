@@ -6,13 +6,19 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { apiIntegrations } from "@/lib/db/schema";
 import { eq, ilike, or, desc, and } from "drizzle-orm";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
+import { createAuditLog } from "@/lib/audit-logger";
 
 export async function GET(request: NextRequest) {
+  // Declare actor variables at function scope for audit logging
+  let actorId: string | null = null;
+  let actorName: string | null = null;
+  let actorEmail: string | null = null;
+
   try {
     // In dev mode, allow access if DEV_SUPER_ADMIN is set
     const devSuperAdmin = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
@@ -27,6 +33,18 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      actorId = userId;
+
+      // Get actor details from Clerk
+      try {
+        const clerk = await clerkClient();
+        const user = await clerk.users.getUser(userId);
+        actorName = user.fullName || user.firstName || null;
+        actorEmail = user.emailAddresses[0]?.emailAddress || null;
+      } catch (error) {
+        // Continue without actor details if Clerk fails
+      }
+
       // Check super-admin status
       const superAdmin = await isSuperAdmin();
       if (!superAdmin) {
@@ -35,6 +53,11 @@ export async function GET(request: NextRequest) {
           { status: 403 }
         );
       }
+    } else {
+      // Dev mode actor details
+      actorId = "dev-super-admin";
+      actorName = "Dev Super Admin";
+      actorEmail = "dev@localhost";
     }
 
     const { searchParams } = new URL(request.url);
@@ -85,6 +108,27 @@ export async function GET(request: NextRequest) {
     // AC-1.4: Return categories list
     const categories = ["ai_models", "search_apis", "analytics"];
 
+    // Create success audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "list_api_integrations",
+        actionType: "access",
+        description: `Super-admin listed API integrations (${integrationsList.length} results)`,
+        metadata: {
+          filters: {
+            search,
+            status,
+            category,
+          },
+        },
+        status: "success",
+      },
+      request
+    );
+
     return NextResponse.json({
       success: true,
       integrations: integrationsList,
@@ -92,6 +136,23 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Admin api-config API error:", error);
+
+    // Create failure audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "list_api_integrations",
+        actionType: "access",
+        description: "Failed to list API integrations",
+        status: "failure",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        errorStack: error instanceof Error ? error.stack : null,
+      },
+      request
+    );
+
     return NextResponse.json(
       {
         error: "Failed to fetch integrations",
@@ -103,6 +164,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Declare actor variables at function scope for audit logging
+  let actorId: string | null = null;
+  let actorName: string | null = null;
+  let actorEmail: string | null = null;
+
   try {
     // In dev mode, allow access if DEV_SUPER_ADMIN is set
     const devSuperAdmin = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
@@ -120,6 +186,17 @@ export async function POST(request: NextRequest) {
       }
 
       currentUserId = userId;
+      actorId = userId;
+
+      // Get actor details from Clerk
+      try {
+        const clerk = await clerkClient();
+        const user = await clerk.users.getUser(userId);
+        actorName = user.fullName || user.firstName || null;
+        actorEmail = user.emailAddresses[0]?.emailAddress || null;
+      } catch (error) {
+        // Continue without actor details if Clerk fails
+      }
 
       // Check super-admin status
       const superAdmin = await isSuperAdmin();
@@ -129,6 +206,11 @@ export async function POST(request: NextRequest) {
           { status: 403 }
         );
       }
+    } else {
+      // Dev mode actor details
+      actorId = "dev-super-admin";
+      actorName = "Dev Super Admin";
+      actorEmail = "dev@localhost";
     }
 
     const body = await request.json();
@@ -187,12 +269,55 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
+    // Create success audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "create_api_integration",
+        actionType: "create",
+        description: `Super-admin created API integration for ${serviceName}`,
+        targetType: "api_integration",
+        targetId: newIntegration.id,
+        targetName: serviceName,
+        changes: {
+          after: {
+            serviceName: newIntegration.serviceName,
+            provider: newIntegration.provider,
+            category: newIntegration.category,
+            status: newIntegration.status,
+            isEnabled: newIntegration.isEnabled,
+          },
+        },
+        status: "success",
+      },
+      request
+    );
+
     return NextResponse.json({
       success: true,
       integration: newIntegration,
     });
   } catch (error) {
     console.error("Admin api-config POST error:", error);
+
+    // Create failure audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "create_api_integration",
+        actionType: "create",
+        description: "Failed to create API integration",
+        status: "failure",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        errorStack: error instanceof Error ? error.stack : null,
+      },
+      request
+    );
+
     return NextResponse.json(
       {
         error: "Failed to create integration",

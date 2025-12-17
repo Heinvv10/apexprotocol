@@ -7,11 +7,12 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { apiIntegrations } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
+import { createAuditLog } from "@/lib/audit-logger";
 
 // Helper function to mask API key (show only last 4 characters)
 function maskApiKey(apiKey: string): string {
@@ -25,6 +26,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Declare actor variables at function scope for audit logging
+  let actorId: string | null = null;
+  let actorName: string | null = null;
+  let actorEmail: string | null = null;
+
   try {
     // In dev mode, allow access if DEV_SUPER_ADMIN is set
     const devSuperAdmin = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
@@ -39,6 +45,18 @@ export async function GET(
         );
       }
 
+      actorId = userId;
+
+      // Get actor details from Clerk
+      try {
+        const clerk = await clerkClient();
+        const user = await clerk.users.getUser(userId);
+        actorName = user.fullName || user.firstName || null;
+        actorEmail = user.emailAddresses[0]?.emailAddress || null;
+      } catch (error) {
+        // Continue without actor details if Clerk fails
+      }
+
       // Check super-admin status
       const superAdmin = await isSuperAdmin();
       if (!superAdmin) {
@@ -47,6 +65,11 @@ export async function GET(
           { status: 403 }
         );
       }
+    } else {
+      // Dev mode actor details
+      actorId = "dev-super-admin";
+      actorName = "Dev Super Admin";
+      actorEmail = "dev@localhost";
     }
 
     // FR-5: Get integration details
@@ -74,12 +97,48 @@ export async function GET(
       },
     };
 
+    // Create success audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "view_api_integration",
+        actionType: "access",
+        description: `Super-admin viewed API integration ${integration.serviceName}`,
+        targetType: "api_integration",
+        targetId: params.id,
+        targetName: integration.serviceName,
+        status: "success",
+      },
+      request
+    );
+
     return NextResponse.json({
       success: true,
       integration: maskedIntegration,
     });
   } catch (error) {
     console.error("Admin api-config GET (by ID) error:", error);
+
+    // Create failure audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "view_api_integration",
+        actionType: "access",
+        description: "Failed to view API integration",
+        targetType: "api_integration",
+        targetId: params.id,
+        status: "failure",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        errorStack: error instanceof Error ? error.stack : null,
+      },
+      request
+    );
+
     return NextResponse.json(
       {
         error: "Failed to fetch integration",
@@ -94,6 +153,11 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Declare actor variables at function scope for audit logging
+  let actorId: string | null = null;
+  let actorName: string | null = null;
+  let actorEmail: string | null = null;
+
   try {
     // In dev mode, allow access if DEV_SUPER_ADMIN is set
     const devSuperAdmin = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
@@ -111,6 +175,17 @@ export async function PATCH(
       }
 
       currentUserId = userId;
+      actorId = userId;
+
+      // Get actor details from Clerk
+      try {
+        const clerk = await clerkClient();
+        const user = await clerk.users.getUser(userId);
+        actorName = user.fullName || user.firstName || null;
+        actorEmail = user.emailAddresses[0]?.emailAddress || null;
+      } catch (error) {
+        // Continue without actor details if Clerk fails
+      }
 
       // Check super-admin status
       const superAdmin = await isSuperAdmin();
@@ -120,10 +195,29 @@ export async function PATCH(
           { status: 403 }
         );
       }
+    } else {
+      // Dev mode actor details
+      actorId = "dev-super-admin";
+      actorName = "Dev Super Admin";
+      actorEmail = "dev@localhost";
     }
 
     const body = await request.json();
     const { config, isEnabled } = body;
+
+    // Get current integration state for audit logging
+    const [targetIntegration] = await db
+      .select()
+      .from(apiIntegrations)
+      .where(eq(apiIntegrations.id, params.id))
+      .limit(1);
+
+    if (!targetIntegration) {
+      return NextResponse.json(
+        { error: "Integration not found" },
+        { status: 404 }
+      );
+    }
 
     // Prepare update object
     const updateData: any = {
@@ -164,12 +258,60 @@ export async function PATCH(
       );
     }
 
+    // Create success audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "update_api_integration",
+        actionType: "update",
+        description: `Super-admin updated API integration ${targetIntegration.serviceName}`,
+        targetType: "api_integration",
+        targetId: params.id,
+        targetName: targetIntegration.serviceName,
+        changes: {
+          before: {
+            status: targetIntegration.status,
+            isEnabled: targetIntegration.isEnabled,
+            config: targetIntegration.config,
+          },
+          after: {
+            status: updated.status,
+            isEnabled: updated.isEnabled,
+            config: updated.config,
+          },
+        },
+        status: "success",
+      },
+      request
+    );
+
     return NextResponse.json({
       success: true,
       integration: updated,
     });
   } catch (error) {
     console.error("Admin api-config PATCH error:", error);
+
+    // Create failure audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "update_api_integration",
+        actionType: "update",
+        description: "Failed to update API integration",
+        targetType: "api_integration",
+        targetId: params.id,
+        status: "failure",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        errorStack: error instanceof Error ? error.stack : null,
+      },
+      request
+    );
+
     return NextResponse.json(
       {
         error: "Failed to update integration",
@@ -184,6 +326,11 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Declare actor variables at function scope for audit logging
+  let actorId: string | null = null;
+  let actorName: string | null = null;
+  let actorEmail: string | null = null;
+
   try {
     // In dev mode, allow access if DEV_SUPER_ADMIN is set
     const devSuperAdmin = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
@@ -198,6 +345,18 @@ export async function DELETE(
         );
       }
 
+      actorId = userId;
+
+      // Get actor details from Clerk
+      try {
+        const clerk = await clerkClient();
+        const user = await clerk.users.getUser(userId);
+        actorName = user.fullName || user.firstName || null;
+        actorEmail = user.emailAddresses[0]?.emailAddress || null;
+      } catch (error) {
+        // Continue without actor details if Clerk fails
+      }
+
       // Check super-admin status
       const superAdmin = await isSuperAdmin();
       if (!superAdmin) {
@@ -206,6 +365,11 @@ export async function DELETE(
           { status: 403 }
         );
       }
+    } else {
+      // Dev mode actor details
+      actorId = "dev-super-admin";
+      actorName = "Dev Super Admin";
+      actorEmail = "dev@localhost";
     }
 
     // FR-6: Delete integration
@@ -221,7 +385,31 @@ export async function DELETE(
       );
     }
 
-    // SR-4: Audit logging would go here in production
+    // Create success audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "delete_api_integration",
+        actionType: "delete",
+        description: `Super-admin deleted API integration ${deleted.serviceName}`,
+        targetType: "api_integration",
+        targetId: params.id,
+        targetName: deleted.serviceName,
+        changes: {
+          before: {
+            serviceName: deleted.serviceName,
+            provider: deleted.provider,
+            category: deleted.category,
+            status: deleted.status,
+            isEnabled: deleted.isEnabled,
+          },
+        },
+        status: "success",
+      },
+      request
+    );
 
     return NextResponse.json({
       success: true,
@@ -229,6 +417,25 @@ export async function DELETE(
     });
   } catch (error) {
     console.error("Admin api-config DELETE error:", error);
+
+    // Create failure audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "delete_api_integration",
+        actionType: "delete",
+        description: "Failed to delete API integration",
+        targetType: "api_integration",
+        targetId: params.id,
+        status: "failure",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        errorStack: error instanceof Error ? error.stack : null,
+      },
+      request
+    );
+
     return NextResponse.json(
       {
         error: "Failed to delete integration",
