@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Target,
   TrendingUp,
@@ -20,7 +21,18 @@ import {
   Eye,
 } from "lucide-react";
 import { useSelectedBrand } from "@/stores";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+
+// Phase 9.1 Components
+import {
+  CompetitorDiscoveryCard,
+  BenchmarkRadarChart,
+  CompetitorComparisonCard,
+} from "@/components/competitive";
+
+// Phase 9.4 - Premium Gating
+import { FeatureGate, UsageMeter } from "@/components/premium";
+import { useCurrentPlan } from "@/hooks/use-subscription";
 
 // Types
 interface CompetitiveSummary {
@@ -319,8 +331,10 @@ function AlertCard({ alert }: { alert: AlertItem }) {
 
 // Main Page Component
 export default function CompetitivePage() {
+  const router = useRouter();
   const selectedBrand = useSelectedBrand();
   const brandId = selectedBrand?.id || "";
+  const currentPlan = useCurrentPlan();
 
   const {
     data: summary,
@@ -331,6 +345,11 @@ export default function CompetitivePage() {
 
   const { data: gapsData } = useCompetitiveGaps(brandId);
   const { data: alertsData } = useCompetitiveAlerts(brandId);
+
+  // Handle upgrade navigation
+  const handleUpgrade = () => {
+    router.push("/dashboard/settings?tab=billing");
+  };
 
   // Handle states
   if (!selectedBrand) {
@@ -406,6 +425,47 @@ export default function CompetitivePage() {
             color={summaryData.alertCount > 5 ? "error" : summaryData.alertCount > 0 ? "warning" : "success"}
           />
         </div>
+
+        {/* Phase 9.1: Benchmark Section - Gated to Professional+ */}
+        <FeatureGate
+          feature="competitive_benchmarking"
+          plan={currentPlan}
+          mode="blur"
+          onUpgrade={handleUpgrade}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <BenchmarkRadarChart
+              brandId={brandId}
+              brandName={selectedBrand?.name || "Your Brand"}
+            />
+            <CompetitorComparisonCard
+              brandId={brandId}
+            />
+          </div>
+        </FeatureGate>
+
+        {/* Phase 9.1: Discovery Section - Gated to Professional+ */}
+        <FeatureGate
+          feature="competitive_discovery"
+          plan={currentPlan}
+          mode="replace"
+          onUpgrade={handleUpgrade}
+        >
+          <CompetitorDiscoveryCard brandId={brandId} />
+        </FeatureGate>
+
+        {/* Competitor Usage Meter for Professional Plan */}
+        {currentPlan === "professional" && (
+          <div className="card-secondary p-4">
+            <UsageMeter
+              resource="competitors"
+              plan={currentPlan}
+              currentUsage={summaryData.competitorCount}
+              variant="detailed"
+              onUpgrade={handleUpgrade}
+            />
+          </div>
+        )}
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

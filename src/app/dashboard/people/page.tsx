@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Users,
   TrendingUp,
@@ -14,7 +15,6 @@ import {
   Bot,
   Linkedin,
   Twitter,
-  ExternalLink,
   Crown,
   Award,
   Mic,
@@ -22,11 +22,13 @@ import {
   CheckCircle,
   Plus,
   User,
-  Star,
-  MessageSquare,
 } from "lucide-react";
 import { useSelectedBrand } from "@/stores";
 import { useQuery } from "@tanstack/react-query";
+
+// Phase 9.4 - Premium Gating
+import { FeatureGate, UsageMeter, PremiumBadge } from "@/components/premium";
+import { useCurrentPlan } from "@/hooks/use-subscription";
 
 // Types
 interface PeopleSummary {
@@ -541,8 +543,10 @@ function TopPerformersCard({ people }: { people: BrandPerson[] }) {
 
 // Main Page Component
 export default function PeoplePage() {
+  const router = useRouter();
   const selectedBrand = useSelectedBrand();
   const brandId = selectedBrand?.id || "";
+  const currentPlan = useCurrentPlan();
 
   const {
     data: summary,
@@ -553,6 +557,11 @@ export default function PeoplePage() {
 
   const { data: peopleData } = useBrandPeople(brandId);
   const { data: aiMentionsData } = usePeopleAiMentions(brandId);
+
+  // Handle upgrade navigation
+  const handleUpgrade = () => {
+    router.push("/dashboard/settings?tab=billing");
+  };
 
   // Handle states
   if (!selectedBrand) {
@@ -644,8 +653,30 @@ export default function PeoplePage() {
           />
         </div>
 
-        {/* Top Performers (if we have people) */}
-        {people.length > 0 && <TopPerformersCard people={people} />}
+        {/* Top Performers - Gated to Professional+ */}
+        {people.length > 0 && (
+          <FeatureGate
+            feature="influence_scoring"
+            plan={currentPlan}
+            mode="blur"
+            onUpgrade={handleUpgrade}
+          >
+            <TopPerformersCard people={people} />
+          </FeatureGate>
+        )}
+
+        {/* People Enrichment Usage Meter for Professional Plan */}
+        {currentPlan === "professional" && (
+          <div className="card-secondary p-4">
+            <UsageMeter
+              resource="people_enrichment"
+              plan={currentPlan}
+              currentUsage={summaryData.totalPeople}
+              variant="detailed"
+              onUpgrade={handleUpgrade}
+            />
+          </div>
+        )}
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -655,11 +686,29 @@ export default function PeoplePage() {
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-primary" />
                 <h2 className="text-lg font-semibold text-foreground">Key People</h2>
+                {currentPlan === "starter" && (
+                  <PremiumBadge requiredPlan="professional" size="sm" />
+                )}
               </div>
-              <button className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors">
-                <Plus className="w-3 h-3" />
-                Add Person
-              </button>
+              <FeatureGate
+                feature="executive_enrichment"
+                plan={currentPlan}
+                mode="replace"
+                fallback={
+                  <button
+                    onClick={handleUpgrade}
+                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Add Person (Upgrade)
+                  </button>
+                }
+              >
+                <button className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors">
+                  <Plus className="w-3 h-3" />
+                  Add Person
+                </button>
+              </FeatureGate>
             </div>
 
             {people.length === 0 ? (

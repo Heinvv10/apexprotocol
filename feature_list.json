@@ -2216,6 +2216,29 @@
     "priority": 200,
     "category": "backend",
     "phase": "phase-7"
+  },
+  {
+    "id": "F009.4.1",
+    "name": "Phase 9.4 - Premium Feature Gating",
+    "description": "Subscription-based feature gating system with plan tiers (starter, professional, enterprise), feature access matrix, resource limits, and upgrade prompts",
+    "test_description": "Non-pro users see upgrade prompt on OSINT features (competitive benchmarking, discovery, executive enrichment), FeatureGate component blocks access with blur/replace/overlay modes, UsageMeter shows remaining resources, PremiumBadge indicates required plan",
+    "passes": true,
+    "priority": 201,
+    "category": "premium",
+    "phase": "phase-9",
+    "files_created": [
+      "src/lib/permissions/feature-gates.ts",
+      "src/components/premium/feature-gate.tsx",
+      "src/components/premium/upgrade-prompt.tsx",
+      "src/components/premium/usage-meter.tsx",
+      "src/components/premium/index.ts",
+      "src/hooks/use-subscription.ts",
+      "e2e/premium-gates.spec.ts"
+    ],
+    "files_modified": [
+      "src/app/dashboard/competitive/page.tsx",
+      "src/app/dashboard/people/page.tsx"
+    ]
   }
 ]
 
