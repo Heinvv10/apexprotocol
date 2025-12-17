@@ -18,7 +18,7 @@ const updateBrandSchema = z.object({
   geoKeywords: z.array(z.string()).optional(),
   competitors: z.any().optional(),
   valuePropositions: z.array(z.string()).optional(),
-  socialLinks: z.record(z.string()).optional().nullable(),
+  socialLinks: z.record(z.string(), z.string()).optional().nullable(),
   voice: z
     .object({
       tone: z.enum(["professional", "friendly", "authoritative", "casual", "formal"]).optional(),

@@ -11,11 +11,15 @@ import { content } from "@/lib/db/schema";
 import { eq, and, desc, asc, like, sql, count } from "drizzle-orm";
 import { z } from "zod";
 
+// Content type and status enums (must match database schema)
+const contentTypes = ["blog_post", "social_post", "product_description", "faq", "landing_page", "email", "ad_copy", "press_release"] as const;
+const contentStatuses = ["draft", "review", "approved", "published", "archived"] as const;
+
 // Query params schema
 const querySchema = z.object({
   brandId: z.string().optional(),
-  type: z.enum(["blog", "social", "faq", "product", "landing", "email"]).optional(),
-  status: z.enum(["draft", "reviewing", "approved", "published", "archived"]).optional(),
+  type: z.enum(contentTypes).optional(),
+  status: z.enum(contentStatuses).optional(),
   search: z.string().optional(),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
@@ -27,16 +31,16 @@ const querySchema = z.object({
 const createSchema = z.object({
   brandId: z.string(),
   title: z.string().min(1),
-  type: z.enum(["blog", "social", "faq", "product", "landing", "email"]),
+  type: z.enum(contentTypes),
   content: z.string().optional().default(""),
-  status: z.enum(["draft", "reviewing", "approved", "published", "archived"]).default("draft"),
+  status: z.enum(contentStatuses).default("draft"),
   excerpt: z.string().optional(),
   keywords: z.array(z.string()).optional(),
   targetPlatform: z.string().optional(),
   targetAudience: z.string().optional(),
   tone: z.string().optional(),
   aiGenerated: z.boolean().default(false),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -98,7 +102,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("[Content API] GET Error:", error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 });
+      return NextResponse.json({ error: error.issues }, { status: 400 });
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
@@ -114,28 +118,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = createSchema.parse(body);
 
-    // Calculate word count
-    const wordCount = data.content ? data.content.split(/\s+/).filter(Boolean).length : 0;
-
     const newContent = await db
       .insert(content)
       .values({
-        id: crypto.randomUUID(),
         brandId: data.brandId,
         title: data.title,
         type: data.type,
-        body: data.content,
+        content: data.content,
         status: data.status,
         excerpt: data.excerpt,
         keywords: data.keywords,
         targetPlatform: data.targetPlatform,
-        targetAudience: data.targetAudience,
-        tone: data.tone,
-        wordCount,
-        aiGenerated: data.aiGenerated,
-        metadata: data.metadata,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        aiMetadata: data.metadata || {},
       })
       .returning();
 
@@ -143,7 +137,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("[Content API] POST Error:", error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 });
+      return NextResponse.json({ error: error.issues }, { status: 400 });
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

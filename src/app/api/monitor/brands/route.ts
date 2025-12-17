@@ -6,6 +6,13 @@ import { z } from "zod";
 import { getOrganizationId } from "@/lib/auth";
 
 // Validation schema for brand creation/update
+// BrandCompetitor schema matching database type
+const brandCompetitorSchema = z.object({
+  name: z.string(),
+  url: z.string(),
+  reason: z.string(),
+});
+
 const brandSchema = z.object({
   name: z.string().min(1, "Brand name is required"),
   domain: z.string().url().optional().nullable(),
@@ -13,7 +20,7 @@ const brandSchema = z.object({
   industry: z.string().optional().nullable(),
   logoUrl: z.string().url().optional().nullable(),
   keywords: z.array(z.string()).optional().default([]),
-  competitors: z.array(z.string()).optional().default([]),
+  competitors: z.array(brandCompetitorSchema).optional().default([]),
   voice: z
     .object({
       tone: z.enum([
@@ -116,19 +123,19 @@ export async function POST(request: NextRequest) {
         industry: validatedData.industry ?? null,
         logoUrl: validatedData.logoUrl ?? null,
         keywords: validatedData.keywords,
-        competitors: validatedData.competitors,
-        voice: validatedData.voice ?? {
+        competitors: validatedData.competitors as typeof brands.$inferInsert["competitors"],
+        voice: (validatedData.voice ?? {
           tone: "professional",
           personality: [],
           targetAudience: "",
           keyMessages: [],
           avoidTopics: [],
-        },
-        visual: validatedData.visual ?? {
+        }) as typeof brands.$inferInsert["voice"],
+        visual: (validatedData.visual ?? {
           primaryColor: null,
           secondaryColor: null,
           fontFamily: null,
-        },
+        }) as typeof brands.$inferInsert["visual"],
         monitoringEnabled: validatedData.monitoringEnabled,
         monitoringPlatforms: validatedData.monitoringPlatforms,
       })

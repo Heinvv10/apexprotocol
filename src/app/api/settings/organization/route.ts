@@ -104,29 +104,32 @@ export async function PUT(request: NextRequest) {
 
     // Create organization if it doesn't exist
     if (existingOrg.length === 0) {
+      const defaultBranding = {
+        primaryColor: "#4926FA",
+        accentColor: "#D82F71",
+        logoUrl: null,
+        faviconUrl: null,
+        appName: null,
+        customDomain: null,
+      };
+      const defaultSettings = {
+        timezone: "UTC",
+        dateFormat: "MM/DD/YYYY",
+        defaultLanguage: "en",
+      };
+      const insertValues: typeof organizations.$inferInsert = {
+        name: validatedData.name || "My Organization",
+        slug: `org-${Date.now()}`,
+        branding: validatedData.branding
+          ? { ...defaultBranding, ...validatedData.branding }
+          : defaultBranding,
+        settings: validatedData.settings
+          ? { ...defaultSettings, ...validatedData.settings }
+          : defaultSettings,
+      };
       const newOrg = await db
         .insert(organizations)
-        .values({
-          id: orgId,
-          name: validatedData.name || "My Organization",
-          slug: "my-organization",
-          branding: validatedData.branding || {
-            primaryColor: "#4926FA",
-            accentColor: "#D82F71",
-            logoUrl: null,
-            faviconUrl: null,
-            appName: null,
-            customDomain: null,
-          },
-          settings: validatedData.settings || {
-            timezone: "UTC",
-            dateFormat: "MM/DD/YYYY",
-            defaultLanguage: "en",
-            shareUsageData: false,
-            aiModelFeedback: false,
-            marketingComms: false,
-          },
-        })
+        .values(insertValues)
         .returning();
 
       return NextResponse.json({

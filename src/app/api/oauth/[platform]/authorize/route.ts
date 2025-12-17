@@ -9,7 +9,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { generateAuthorizationUrl, isPlatformSupported, type SocialPlatform } from "@/lib/oauth";
+import { LinkedInProvider, TwitterProvider } from "@/lib/oauth";
+import { isPlatformImplemented } from "@/lib/oauth";
 
 export async function GET(
   request: NextRequest,
@@ -35,7 +36,7 @@ export async function GET(
     const { platform } = await context.params;
 
     // Validate platform
-    if (!isPlatformSupported(platform)) {
+    if (!isPlatformImplemented(platform)) {
       return NextResponse.json(
         { error: `Unsupported platform: ${platform}` },
         { status: 400 }
@@ -53,14 +54,32 @@ export async function GET(
       );
     }
 
-    // Generate authorization URL
-    const result = generateAuthorizationUrl({
-      platform: platform as SocialPlatform,
-      organizationId: orgId,
-      brandId,
-    });
+    let authUrl: string;
 
-    if (!result) {
+    // Generate authorization URL using platform-specific provider
+    if (platform === "linkedin") {
+      // LinkedIn requires state to be passed in, returns string
+      const state = Buffer.from(JSON.stringify({
+        organizationId: orgId,
+        brandId,
+        timestamp: Date.now(),
+      })).toString("base64url");
+      authUrl = LinkedInProvider.getAuthorizationUrl({ state });
+    } else if (platform === "twitter") {
+      // Twitter generates state internally, returns object
+      const result = await TwitterProvider.getAuthorizationUrl({
+        brandId,
+        organizationId: orgId,
+      });
+      authUrl = result.url;
+    } else {
+      return NextResponse.json(
+        { error: `Unsupported OAuth platform: ${platform}` },
+        { status: 400 }
+      );
+    }
+
+    if (!authUrl) {
       return NextResponse.json(
         { error: `Failed to generate authorization URL for ${platform}` },
         { status: 500 }
@@ -68,7 +87,7 @@ export async function GET(
     }
 
     // Redirect to platform authorization page
-    return NextResponse.redirect(result.url);
+    return NextResponse.redirect(authUrl);
   } catch (error) {
     console.error("[OAuth Authorize] Error:", error);
     return NextResponse.json(

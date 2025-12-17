@@ -37,6 +37,8 @@ export interface CrawledPage {
   openGraph: OpenGraphData;
   timing: PageTiming;
   content: ContentData;
+  appleTouchIcon?: string;
+  favicon?: string;
 }
 
 export interface PageLink {

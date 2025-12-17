@@ -55,7 +55,7 @@ function CustomTooltip({
   showComponents,
 }: {
   active?: boolean;
-  payload?: Array<{ value: number; dataKey: string; color: string }>;
+  payload?: Array<{ value: number; dataKey: string; color: string; payload?: ScoreTrendDataPoint }>;
   label?: string;
   showComponents?: boolean;
 }) {

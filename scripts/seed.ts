@@ -41,7 +41,7 @@ function daysAgo(days: number): Date {
 }
 
 // Helper to pick random item from array
-function randomItem<T>(arr: T[]): T {
+function randomItem<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 

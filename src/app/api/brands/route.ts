@@ -31,7 +31,7 @@ const createBrandSchema = z.object({
   competitors: z.array(competitorSchema).optional().default([]),
   // Brand positioning
   valuePropositions: z.array(z.string()).optional().default([]),
-  socialLinks: z.record(z.string()).optional().default({}),
+  socialLinks: z.record(z.string(), z.string()).optional().default({}),
   // Voice settings
   voice: z
     .object({
@@ -255,7 +255,7 @@ export async function POST(request: NextRequest) {
         geoKeywords: validatedData.geoKeywords,
         competitors: validatedData.competitors,
         valuePropositions: validatedData.valuePropositions,
-        socialLinks: validatedData.socialLinks,
+        socialLinks: validatedData.socialLinks as Record<string, string>,
         voice: {
           tone: validatedData.voice?.tone || "professional",
           personality: validatedData.voice?.personality || [],

@@ -163,7 +163,7 @@ export async function PUT(request: NextRequest) {
         plan: newPlan,
         brandLimit: planLimits.brandLimit,
         userLimit: planLimits.userLimit,
-        features: planLimits.features,
+        features: [...planLimits.features],
         updatedAt: new Date(),
       })
       .where(eq(organizations.id, orgId))
@@ -174,10 +174,10 @@ export async function PUT(request: NextRequest) {
       data: {
         currentPlan: newPlan,
         limits: {
+          ...planLimits,
           brandLimit: updatedOrg[0].brandLimit,
           userLimit: updatedOrg[0].userLimit,
           features: updatedOrg[0].features,
-          ...planLimits,
         },
         message: `${existingOrg[0].plan === newPlan ? "Plan unchanged" : `Upgraded to ${planLimits.name} plan`}`,
       },

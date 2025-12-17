@@ -7,11 +7,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import {
-  getBrandConnectedAccounts,
-  disconnectAccount,
-  isPlatformSupported,
-  PLATFORM_METADATA,
+  TokenService,
   type SocialPlatform,
+  type StoredToken,
+} from "@/lib/oauth";
+import {
+  isValidPlatform,
+  PLATFORM_INFO,
 } from "@/lib/oauth";
 import { db } from "@/lib/db";
 import { brands } from "@/lib/db/schema";
@@ -53,22 +55,28 @@ export async function GET(request: NextRequest) {
     }
 
     // Get connected accounts
-    const connectedAccounts = await getBrandConnectedAccounts(brandId);
+    const connectedAccounts = await TokenService.getConnectedAccounts(brandId);
 
     // Enhance with platform metadata
-    const enhancedAccounts = connectedAccounts.map((account) => ({
+    const enhancedAccounts = connectedAccounts.map((account: StoredToken) => ({
       ...account,
-      platformInfo: isPlatformSupported(account.platform)
-        ? PLATFORM_METADATA[account.platform as SocialPlatform]
+      isActive: account.connectionStatus === "active",
+      platformInfo: isValidPlatform(account.platform)
+        ? PLATFORM_INFO[account.platform as SocialPlatform]
         : null,
     }));
 
     // Get list of all supported platforms with connection status
-    const allPlatforms = Object.entries(PLATFORM_METADATA).map(([key, meta]) => ({
+    const allPlatforms = Object.entries(PLATFORM_INFO).map(([key, meta]) => ({
       platform: key,
-      ...meta,
-      isConnected: connectedAccounts.some((a) => a.platform === key && a.isActive),
-      connectedAccount: connectedAccounts.find((a) => a.platform === key && a.isActive) || null,
+      displayName: meta.displayName,
+      description: meta.description,
+      icon: meta.icon,
+      color: meta.color,
+      oauthSupported: meta.oauthSupported,
+      apiSupported: meta.apiSupported,
+      isConnected: connectedAccounts.some((a: StoredToken) => a.platform === key && a.connectionStatus === "active"),
+      connectedAccount: connectedAccounts.find((a: StoredToken) => a.platform === key && a.connectionStatus === "active") || null,
     }));
 
     return NextResponse.json({
@@ -112,7 +120,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "platform is required" }, { status: 400 });
     }
 
-    if (!isPlatformSupported(platform)) {
+    if (!isValidPlatform(platform)) {
       return NextResponse.json({ error: `Invalid platform: ${platform}` }, { status: 400 });
     }
 
@@ -129,21 +137,22 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Disconnect the account
-    const result = await disconnectAccount({
-      brandId,
-      platform: platform as SocialPlatform,
-    });
-
-    if (!result.success) {
+    try {
+      await TokenService.revokeAllPlatformTokens({
+        brandId,
+        platform: platform as SocialPlatform,
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to disconnect account";
       return NextResponse.json(
-        { error: result.error || "Failed to disconnect account" },
+        { error: errorMessage },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: `${PLATFORM_METADATA[platform as SocialPlatform]?.displayName || platform} account disconnected`,
+      message: `${PLATFORM_INFO[platform as SocialPlatform]?.displayName || platform} account disconnected`,
     });
   } catch (error) {
     console.error("[Social Accounts] DELETE error:", error);

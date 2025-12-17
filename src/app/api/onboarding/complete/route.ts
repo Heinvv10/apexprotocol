@@ -80,6 +80,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Convert string competitors to BrandCompetitor objects
+    const competitorObjects = (data.competitors || [])
+      .filter(c => c.trim().length > 0)
+      .map(name => ({ name, url: "", reason: "" }));
+
     const newBrand = await db
       .insert(brands)
       .values({
@@ -89,7 +94,7 @@ export async function POST(request: NextRequest) {
         industry: data.industry || null,
         monitoringEnabled: true,
         monitoringPlatforms: data.selectedPlatforms,
-        competitors: data.competitors?.filter(c => c.trim().length > 0) || [],
+        competitors: competitorObjects as typeof brands.$inferInsert["competitors"],
       })
       .returning();
 

@@ -11,7 +11,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { completeOAuthFlow, parseOAuthState, isPlatformSupported, type SocialPlatform } from "@/lib/oauth";
+import { LinkedInProvider, TwitterProvider } from "@/lib/oauth";
+import { isPlatformImplemented } from "@/lib/oauth";
 
 export async function GET(
   request: NextRequest,
@@ -51,44 +52,55 @@ export async function GET(
   }
 
   // Validate platform
-  if (!isPlatformSupported(platform)) {
+  if (!isPlatformImplemented(platform)) {
     return NextResponse.redirect(
       `${baseUrl}/dashboard/social?error=${encodeURIComponent(`Unsupported platform: ${platform}`)}`
     );
   }
 
-  // Parse state to validate
-  const stateData = parseOAuthState(state);
-  if (!stateData) {
-    return NextResponse.redirect(
-      `${baseUrl}/dashboard/social?error=${encodeURIComponent("Invalid OAuth state token")}`
-    );
-  }
-
-  // Verify platform matches state
-  if (stateData.platform !== platform) {
-    return NextResponse.redirect(
-      `${baseUrl}/dashboard/social?error=${encodeURIComponent("Platform mismatch in OAuth state")}`
-    );
-  }
-
   try {
-    // Complete the OAuth flow
-    const result = await completeOAuthFlow({
-      platform: platform as SocialPlatform,
-      code,
-      state,
-    });
+    let accountName = "";
 
-    if (!result.success) {
+    // Complete the OAuth flow using platform-specific provider
+    if (platform === "linkedin") {
+      // LinkedIn: parse state to get org/brand, then complete flow
+      let stateData: { organizationId: string; brandId: string };
+      try {
+        stateData = JSON.parse(Buffer.from(state, "base64url").toString("utf-8"));
+      } catch {
+        return NextResponse.redirect(
+          `${baseUrl}/dashboard/social?error=${encodeURIComponent("Invalid state token")}`
+        );
+      }
+
+      if (!stateData.organizationId || !stateData.brandId) {
+        return NextResponse.redirect(
+          `${baseUrl}/dashboard/social?error=${encodeURIComponent("Missing organization or brand in state")}`
+        );
+      }
+
+      const result = await LinkedInProvider.completeOAuthFlow({
+        code,
+        organizationId: stateData.organizationId,
+        brandId: stateData.brandId,
+      });
+      accountName = result.accountInfo?.accountName || "";
+    } else if (platform === "twitter") {
+      // Twitter: pass state directly, it parses internally
+      const result = await TwitterProvider.completeOAuthFlow({
+        code,
+        state,
+      });
+      accountName = result.accountInfo?.accountName || "";
+    } else {
       return NextResponse.redirect(
-        `${baseUrl}/dashboard/social?error=${encodeURIComponent(result.error || "OAuth flow failed")}`
+        `${baseUrl}/dashboard/social?error=${encodeURIComponent(`Unsupported OAuth platform: ${platform}`)}`
       );
     }
 
     // Success! Redirect with success message
     return NextResponse.redirect(
-      `${baseUrl}/dashboard/social?success=connected&platform=${platform}&account=${encodeURIComponent(result.accountInfo?.accountName || "")}`
+      `${baseUrl}/dashboard/social?success=connected&platform=${platform}&account=${encodeURIComponent(accountName)}`
     );
   } catch (error) {
     console.error(`[OAuth Callback] ${platform} error:`, error);

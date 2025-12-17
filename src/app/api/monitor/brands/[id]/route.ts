@@ -5,6 +5,13 @@ import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { getOrganizationId } from "@/lib/auth";
 
+// BrandCompetitor schema matching database type
+const brandCompetitorSchema = z.object({
+  name: z.string(),
+  url: z.string(),
+  reason: z.string(),
+});
+
 // Validation schema for brand update
 const updateBrandSchema = z.object({
   name: z.string().min(1).optional(),
@@ -13,7 +20,7 @@ const updateBrandSchema = z.object({
   industry: z.string().optional().nullable(),
   logoUrl: z.string().url().optional().nullable(),
   keywords: z.array(z.string()).optional(),
-  competitors: z.array(z.string()).optional(),
+  competitors: z.array(brandCompetitorSchema).optional(),
   voice: z
     .object({
       tone: z.enum([
@@ -134,7 +141,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const updatedBrand = await db
       .update(brands)
       .set({
-        ...validatedData,
+        ...(validatedData as Partial<typeof brands.$inferInsert>),
         updatedAt: new Date(),
       })
       .where(eq(brands.id, id))
