@@ -6,13 +6,19 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { users, organizations } from "@/lib/db/schema";
 import { eq, sql, ilike, or, desc, and } from "drizzle-orm";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
+import { createAuditLog } from "@/lib/audit-logger";
 
 export async function GET(request: NextRequest) {
+  // Declare actor variables at function scope for audit logging
+  let actorId: string | null = null;
+  let actorName: string | null = null;
+  let actorEmail: string | null = null;
+
   try {
     // In dev mode, allow access if DEV_SUPER_ADMIN is set
     const devSuperAdmin = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
@@ -27,6 +33,18 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      actorId = userId;
+
+      // Get actor details from Clerk
+      try {
+        const clerk = await clerkClient();
+        const user = await clerk.users.getUser(userId);
+        actorName = user.fullName || user.firstName || null;
+        actorEmail = user.emailAddresses[0]?.emailAddress || null;
+      } catch (error) {
+        // Continue without actor details if Clerk fails
+      }
+
       // Check super-admin status
       const superAdmin = await isSuperAdmin();
       if (!superAdmin) {
@@ -35,6 +53,11 @@ export async function GET(request: NextRequest) {
           { status: 403 }
         );
       }
+    } else {
+      // Dev mode actor details
+      actorId = "dev-super-admin";
+      actorName = "Dev Super Admin";
+      actorEmail = "dev@localhost";
     }
 
     const { searchParams } = new URL(request.url);
@@ -136,6 +159,33 @@ export async function GET(request: NextRequest) {
 
     const [{ count: total }] = await totalQuery;
 
+    // Create success audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "list_users",
+        actionType: "access",
+        description: `Super-admin listed users (page ${page}, ${usersList.length} results)`,
+        metadata: {
+          filters: {
+            search,
+            organizationId,
+            role,
+            status,
+          },
+          pagination: {
+            page,
+            limit,
+            total,
+          },
+        },
+        status: "success",
+      },
+      request
+    );
+
     return NextResponse.json({
       success: true,
       users: usersList,
@@ -148,6 +198,23 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Admin users API error:", error);
+
+    // Create failure audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "list_users",
+        actionType: "access",
+        description: "Failed to list users",
+        status: "failure",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        errorStack: error instanceof Error ? error.stack : null,
+      },
+      request
+    );
+
     return NextResponse.json(
       {
         error: "Failed to fetch users",
@@ -159,6 +226,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  // Declare actor variables at function scope for audit logging
+  let actorId: string | null = null;
+  let actorName: string | null = null;
+  let actorEmail: string | null = null;
+
   try {
     // In dev mode, allow access if DEV_SUPER_ADMIN is set
     const devSuperAdmin = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
@@ -176,6 +248,17 @@ export async function PATCH(request: NextRequest) {
       }
 
       currentUserId = userId;
+      actorId = userId;
+
+      // Get actor details from Clerk
+      try {
+        const clerk = await clerkClient();
+        const user = await clerk.users.getUser(userId);
+        actorName = user.fullName || user.firstName || null;
+        actorEmail = user.emailAddresses[0]?.emailAddress || null;
+      } catch (error) {
+        // Continue without actor details if Clerk fails
+      }
 
       // Check super-admin status
       const superAdmin = await isSuperAdmin();
@@ -185,6 +268,11 @@ export async function PATCH(request: NextRequest) {
           { status: 403 }
         );
       }
+    } else {
+      // Dev mode actor details
+      actorId = "dev-super-admin";
+      actorName = "Dev Super Admin";
+      actorEmail = "dev@localhost";
     }
 
     const body = await request.json();
@@ -205,16 +293,30 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    // Get current user state for audit logging
+    const [targetUser] = await db
+      .select({
+        id: users.id,
+        clerkUserId: users.clerkUserId,
+        name: users.name,
+        email: users.email,
+        isActive: users.isActive,
+        isSuperAdmin: users.isSuperAdmin,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!targetUser) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
+
     // FR-6 AC-6.5: Cannot revoke own super-admin status
     if (updates.isSuperAdmin === false) {
-      // Get the target user's Clerk ID
-      const targetUser = await db
-        .select({ clerkUserId: users.clerkUserId })
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
-
-      if (targetUser[0]?.clerkUserId === currentUserId) {
+      if (targetUser.clerkUserId === currentUserId) {
         return NextResponse.json(
           { error: "Cannot revoke your own super-admin status" },
           { status: 403 }
@@ -261,12 +363,82 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    // Determine action and create audit log
+    let action = "update_user";
+    let actionType: "update" | "security" = "update";
+    let description = "";
+
+    if (typeof updates.isActive === "boolean") {
+      if (updates.isActive) {
+        action = "activate_user";
+        description = `Super-admin activated user ${targetUser.name || targetUser.email}`;
+      } else {
+        action = "suspend_user";
+        description = `Super-admin suspended user ${targetUser.name || targetUser.email}`;
+      }
+    }
+
+    if (typeof updates.isSuperAdmin === "boolean") {
+      actionType = "security";
+      if (updates.isSuperAdmin) {
+        action = "grant_super_admin";
+        description = `Super-admin granted super-admin privileges to ${targetUser.name || targetUser.email}`;
+      } else {
+        action = "revoke_super_admin";
+        description = `Super-admin revoked super-admin privileges from ${targetUser.name || targetUser.email}`;
+      }
+    }
+
+    // Create success audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action,
+        actionType,
+        description,
+        targetType: "user",
+        targetId: userId,
+        targetName: targetUser.name || targetUser.email || null,
+        changes: {
+          before: {
+            isActive: targetUser.isActive,
+            isSuperAdmin: targetUser.isSuperAdmin,
+          },
+          after: {
+            isActive: updated.isActive,
+            isSuperAdmin: updated.isSuperAdmin,
+          },
+        },
+        status: "success",
+      },
+      request
+    );
+
     return NextResponse.json({
       success: true,
       user: updated,
     });
   } catch (error) {
     console.error("Admin users PATCH error:", error);
+
+    // Create failure audit log
+    await createAuditLog(
+      {
+        actorId,
+        actorName,
+        actorEmail,
+        action: "update_user",
+        actionType: "update",
+        description: "Failed to update user",
+        status: "failure",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        errorStack: error instanceof Error ? error.stack : null,
+      },
+      request
+    );
+
     return NextResponse.json(
       {
         error: "Failed to update user",
