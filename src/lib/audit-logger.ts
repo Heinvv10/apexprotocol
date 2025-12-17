@@ -36,12 +36,12 @@ export interface CreateAuditLogParams {
 
   // Changes (for update actions)
   changes?: {
-    before?: Record<string, any>;
-    after?: Record<string, any>;
+    before?: Record<string, unknown>;
+    after?: Record<string, unknown>;
   };
 
   // Additional metadata (flexible structure for filters, pagination, etc.)
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 
   // Status
   status?: "success" | "failure" | "warning";
@@ -145,14 +145,14 @@ const SENSITIVE_FIELDS = [
  * Redact sensitive data from changes object
  */
 export function redactSensitiveData(changes: {
-  before?: Record<string, any>;
-  after?: Record<string, any>;
+  before?: Record<string, unknown>;
+  after?: Record<string, unknown>;
 }): {
-  before?: Record<string, any>;
-  after?: Record<string, any>;
+  before?: Record<string, unknown>;
+  after?: Record<string, unknown>;
 } {
-  const redact = (obj: Record<string, any>): Record<string, any> => {
-    const redacted: Record<string, any> = {};
+  const redact = (obj: Record<string, unknown>): Record<string, unknown> => {
+    const redacted: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(obj)) {
       // Check if field name is sensitive
@@ -160,7 +160,7 @@ export function redactSensitiveData(changes: {
         redacted[key] = "[REDACTED]";
       } else if (typeof value === "object" && value !== null && !Array.isArray(value)) {
         // Recursively redact nested objects
-        redacted[key] = redact(value);
+        redacted[key] = redact(value as Record<string, unknown>);
       } else {
         redacted[key] = value;
       }
@@ -193,7 +193,7 @@ export async function getPreviousLogHash(): Promise<string | null> {
     }
 
     return previousLogs[0].integrityHash || null;
-  } catch (error) {
+  } catch (_error) {
     // Return null on error to avoid breaking the application
     return null;
   }
@@ -209,7 +209,7 @@ export async function getPreviousLogHash(): Promise<string | null> {
 export async function createAuditLog(
   params: CreateAuditLogParams,
   request: NextRequest | null
-): Promise<any | null> {
+): Promise<unknown> {
   try {
     // Extract metadata from request
     const requestMetadata = extractMetadata(request);
@@ -259,8 +259,8 @@ export async function createAuditLog(
         targetType: params.targetType || null,
         targetId: params.targetId || null,
         targetName: params.targetName || null,
-        changes: sanitizedChanges as any,
-        metadata: combinedMetadata as any,
+        changes: sanitizedChanges as unknown as typeof systemAuditLogs.$inferInsert.changes,
+        metadata: combinedMetadata as unknown as typeof systemAuditLogs.$inferInsert.metadata,
         status: params.status || "success",
         errorMessage: params.errorMessage || null,
         errorStack: params.errorStack || null,
@@ -275,7 +275,6 @@ export async function createAuditLog(
     // Never throw - log error and return null
     // This ensures audit logging failures don't break API operations
     if (process.env.NODE_ENV !== "test") {
-      // eslint-disable-next-line no-console
       console.error("Failed to create audit log:", error);
     }
     return null;

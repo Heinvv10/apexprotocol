@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         const user = await clerk.users.getUser(userId);
         actorName = user.fullName || user.firstName || null;
         actorEmail = user.emailAddresses[0]?.emailAddress || null;
-      } catch (error) {
+      } catch (_error) {
         // Continue without actor details if Clerk fails
       }
 
@@ -80,12 +80,12 @@ export async function GET(request: NextRequest) {
 
     // FR-7: Filter by status
     if (status && status !== "all") {
-      conditions.push(eq(apiIntegrations.status, status as any));
+      conditions.push(eq(apiIntegrations.status, status as "configured" | "not_configured" | "disabled" | "error"));
     }
 
     // FR-7: Filter by category
     if (category && category !== "all") {
-      conditions.push(eq(apiIntegrations.category, category as any));
+      conditions.push(eq(apiIntegrations.category, category as "ai_models" | "search_apis" | "analytics"));
     }
 
     // FR-1: Get all integrations
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
         const user = await clerk.users.getUser(userId);
         actorName = user.fullName || user.firstName || null;
         actorEmail = user.emailAddresses[0]?.emailAddress || null;
-      } catch (error) {
+      } catch (_error) {
         // Continue without actor details if Clerk fails
       }
 

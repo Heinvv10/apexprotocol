@@ -53,7 +53,7 @@ export async function GET(
         const user = await clerk.users.getUser(userId);
         actorName = user.fullName || user.firstName || null;
         actorEmail = user.emailAddresses[0]?.emailAddress || null;
-      } catch (error) {
+      } catch (_error) {
         // Continue without actor details if Clerk fails
       }
 
@@ -183,7 +183,7 @@ export async function PATCH(
         const user = await clerk.users.getUser(userId);
         actorName = user.fullName || user.firstName || null;
         actorEmail = user.emailAddresses[0]?.emailAddress || null;
-      } catch (error) {
+      } catch (_error) {
         // Continue without actor details if Clerk fails
       }
 
@@ -220,7 +220,7 @@ export async function PATCH(
     }
 
     // Prepare update object
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       updatedAt: new Date(),
       updatedBy: currentUserId,
     };
@@ -353,7 +353,7 @@ export async function DELETE(
         const user = await clerk.users.getUser(userId);
         actorName = user.fullName || user.firstName || null;
         actorEmail = user.emailAddresses[0]?.emailAddress || null;
-      } catch (error) {
+      } catch (_error) {
         // Continue without actor details if Clerk fails
       }
 
