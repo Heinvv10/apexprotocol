@@ -335,27 +335,30 @@ export default function CompetitivePage() {
   // Handle states
   if (!selectedBrand) {
     return (
-      <div className="dashboard-bg min-h-screen">
+      <div className="space-y-6 relative">
         <PageHeader />
         <SelectBrandPrompt />
+        <DecorativeStar />
       </div>
     );
   }
 
   if (summaryLoading) {
     return (
-      <div className="dashboard-bg min-h-screen">
+      <div className="space-y-6 relative">
         <PageHeader />
         <LoadingState />
+        <DecorativeStar />
       </div>
     );
   }
 
   if (summaryError) {
     return (
-      <div className="dashboard-bg min-h-screen">
+      <div className="space-y-6 relative">
         <PageHeader />
         <ErrorState error={summaryError as Error} onRetry={() => refetchSummary()} />
+        <DecorativeStar />
       </div>
     );
   }
@@ -371,10 +374,10 @@ export default function CompetitivePage() {
   };
 
   return (
-    <div className="dashboard-bg min-h-screen">
+    <div className="space-y-6 relative">
       <PageHeader />
 
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         {/* Top Row - SOV and Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <SOVGauge value={summaryData.shareOfVoice} trend={summaryData.sovTrend} />
@@ -528,6 +531,28 @@ export default function CompetitivePage() {
           </div>
         )}
       </div>
+
+      <DecorativeStar />
+    </div>
+  );
+}
+
+// Decorative Star Component
+function DecorativeStar() {
+  return (
+    <div className="absolute bottom-8 right-8 w-12 h-12 opacity-60 pointer-events-none">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M24 0L26.5 21.5L48 24L26.5 26.5L24 48L21.5 26.5L0 24L21.5 21.5L24 0Z"
+          fill="url(#starGradientCompetitive)"
+        />
+        <defs>
+          <linearGradient id="starGradientCompetitive" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#00E5CC" stopOpacity="0.6"/>
+            <stop offset="1" stopColor="#8B5CF6" stopOpacity="0.3"/>
+          </linearGradient>
+        </defs>
+      </svg>
     </div>
   );
 }
@@ -535,13 +560,13 @@ export default function CompetitivePage() {
 // Page Header Component
 function PageHeader() {
   return (
-    <div className="flex items-center justify-between px-8 py-4 border-b border-white/5">
+    <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <div className="apex-logo-icon w-8 h-8">
+        <div className="w-8 h-8">
           <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGrad)" />
+            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradCompetitive)" />
             <defs>
-              <linearGradient id="apexGrad" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
+              <linearGradient id="apexGradCompetitive" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#00E5CC"/>
                 <stop offset="1" stopColor="#8B5CF6"/>
               </linearGradient>
@@ -551,34 +576,14 @@ function PageHeader() {
         <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
           APEX
         </span>
-        <span className="text-xl font-light text-white ml-1">Competitive Intelligence</span>
+        <span className="text-xl font-light text-foreground ml-1">Competitive</span>
       </div>
 
-      {/* Navigation Tabs */}
-      <nav className="flex items-center gap-8">
-        <Link href="/dashboard" className="text-sm text-slate-400 hover:text-white transition-colors">
-          Orbit
-        </Link>
-        <Link href="/dashboard/monitor" className="text-sm text-slate-400 hover:text-white transition-colors">
-          Monitor
-        </Link>
-        <Link href="/dashboard/competitive" className="text-sm text-cyan-400 font-medium relative">
-          Competitive
-          <span className="absolute -bottom-4 left-0 right-0 h-0.5 bg-cyan-400 rounded-full" />
-        </Link>
-        <Link href="/dashboard/recommendations" className="text-sm text-slate-400 hover:text-white transition-colors">
-          Recommendations
-        </Link>
-        <Link href="/dashboard/settings" className="text-sm text-slate-400 hover:text-white transition-colors">
-          Settings
-        </Link>
-      </nav>
-
       {/* AI Status */}
-      <div className="ai-status-indicator">
-        <span className="ai-status-dot active" />
-        <span className="text-xs text-slate-400">AI Status:</span>
-        <span className="text-xs text-cyan-400 font-medium">Active</span>
+      <div className="flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <span className="text-xs text-muted-foreground">AI Status:</span>
+        <span className="text-xs text-primary font-medium">Active</span>
       </div>
     </div>
   );

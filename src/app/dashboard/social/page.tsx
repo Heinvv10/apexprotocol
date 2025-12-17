@@ -22,9 +22,84 @@ import {
   Smile,
   Frown,
   Meh,
+  Radar,
 } from "lucide-react";
 import { useSelectedBrand } from "@/stores";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ServiceScanResults, ScanBrandButton } from "@/components/social";
+
+// Helper to extract handle from URL
+function extractHandleFromUrl(url: string, platform: string): string | null {
+  if (!url) return null;
+
+  try {
+    // Remove trailing slashes and clean up
+    const cleanUrl = url.replace(/\/+$/, "");
+
+    // Platform-specific extraction patterns
+    const patterns: Record<string, RegExp[]> = {
+      twitter: [
+        /twitter\.com\/(@?\w+)/i,
+        /x\.com\/(@?\w+)/i,
+      ],
+      youtube: [
+        /youtube\.com\/@([^\/\?]+)/i,
+        /youtube\.com\/channel\/([^\/\?]+)/i,
+        /youtube\.com\/c\/([^\/\?]+)/i,
+        /youtube\.com\/user\/([^\/\?]+)/i,
+      ],
+      facebook: [
+        /facebook\.com\/([^\/\?]+)/i,
+        /fb\.com\/([^\/\?]+)/i,
+      ],
+      linkedin: [
+        /linkedin\.com\/company\/([^\/\?]+)/i,
+        /linkedin\.com\/in\/([^\/\?]+)/i,
+      ],
+      instagram: [
+        /instagram\.com\/([^\/\?]+)/i,
+      ],
+    };
+
+    const platformPatterns = patterns[platform.toLowerCase()];
+    if (!platformPatterns) {
+      // Fallback: try to extract last path segment
+      const lastSegment = cleanUrl.split("/").filter(Boolean).pop();
+      return lastSegment || null;
+    }
+
+    for (const pattern of platformPatterns) {
+      const match = cleanUrl.match(pattern);
+      if (match && match[1]) {
+        return match[1].replace(/^@/, ""); // Remove @ prefix
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Get handles map from brand social links
+function getSocialHandles(socialLinks: Record<string, string> | undefined): Record<string, string> {
+  if (!socialLinks) return {};
+
+  const handles: Record<string, string> = {};
+  const supportedPlatforms = ["twitter", "youtube", "facebook"];
+
+  for (const [platform, url] of Object.entries(socialLinks)) {
+    const normalizedPlatform = platform.toLowerCase();
+    if (supportedPlatforms.includes(normalizedPlatform)) {
+      const handle = extractHandleFromUrl(url, normalizedPlatform);
+      if (handle) {
+        handles[normalizedPlatform] = handle;
+      }
+    }
+  }
+
+  return handles;
+}
 
 // Platform icons (simple colored circles with initials as fallback)
 const PlatformIcon = ({ platform, className }: { platform: string; className?: string }) => {
@@ -521,6 +596,15 @@ function SentimentSummary({ positive, neutral, negative }: { positive: number; n
 export default function SocialPage() {
   const selectedBrand = useSelectedBrand();
   const brandId = selectedBrand?.id || "";
+  const queryClient = useQueryClient();
+
+  // Extract social handles from brand's socialLinks
+  const socialHandles = React.useMemo(
+    () => getSocialHandles(selectedBrand?.socialLinks as Record<string, string> | undefined),
+    [selectedBrand?.socialLinks]
+  );
+
+  const hasSocialHandles = Object.keys(socialHandles).length > 0;
 
   const {
     data: summary,
@@ -532,30 +616,41 @@ export default function SocialPage() {
   const { data: accountsData } = useSocialAccounts(brandId);
   const { data: mentionsData } = useSocialMentions(brandId);
 
+  // Callback when scan completes - invalidate relevant queries
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleScanComplete = React.useCallback((_results?: unknown) => {
+    // Invalidate scan results and summary queries to refetch fresh data
+    queryClient.invalidateQueries({ queryKey: ["social", "scan-results", brandId] });
+    queryClient.invalidateQueries({ queryKey: ["social", "summary", brandId] });
+  }, [queryClient, brandId]);
+
   // Handle states
   if (!selectedBrand) {
     return (
-      <div className="dashboard-bg min-h-screen">
+      <div className="space-y-6 relative">
         <PageHeader />
         <SelectBrandPrompt />
+        <DecorativeStar />
       </div>
     );
   }
 
   if (summaryLoading) {
     return (
-      <div className="dashboard-bg min-h-screen">
+      <div className="space-y-6 relative">
         <PageHeader />
         <LoadingState />
+        <DecorativeStar />
       </div>
     );
   }
 
   if (summaryError) {
     return (
-      <div className="dashboard-bg min-h-screen">
+      <div className="space-y-6 relative">
         <PageHeader />
         <ErrorState error={summaryError as Error} onRetry={() => refetchSummary()} />
+        <DecorativeStar />
       </div>
     );
   }
@@ -589,10 +684,10 @@ export default function SocialPage() {
   };
 
   return (
-    <div className="dashboard-bg min-h-screen">
+    <div className="space-y-6 relative">
       <PageHeader />
 
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         {/* Top Row - SMO Score and Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <SMOScoreGauge value={summaryData.smoScore} trend={summaryData.smoTrend} breakdown={breakdown} />
@@ -621,6 +716,56 @@ export default function SocialPage() {
             color={summaryData.negativeMentions > summaryData.positiveMentions ? "warning" : "success"}
           />
         </div>
+
+        {/* Service Scanner Results - Public Data (No OAuth Required) */}
+        {hasSocialHandles && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Radar className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">Platform Analytics</h2>
+                <span className="text-xs text-muted-foreground px-2 py-0.5 bg-primary/10 rounded-full">
+                  Public Data
+                </span>
+              </div>
+              <ScanBrandButton
+                brandId={brandId}
+                handles={{
+                  twitter: socialHandles.twitter,
+                  youtube: socialHandles.youtube,
+                  facebook: socialHandles.facebook,
+                }}
+                onScanComplete={handleScanComplete}
+              />
+            </div>
+            <ServiceScanResults
+              brandId={brandId}
+              handles={{
+                twitter: socialHandles.twitter,
+                youtube: socialHandles.youtube,
+                facebook: socialHandles.facebook,
+              }}
+            />
+          </div>
+        )}
+
+        {/* No Social Handles Configured */}
+        {!hasSocialHandles && (
+          <div className="card-secondary p-6 text-center">
+            <Radar className="w-12 h-12 text-primary/40 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">No Social Handles Configured</h3>
+            <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+              Add your brand&apos;s social media links to enable automatic scanning of public metrics from Twitter, YouTube, and Facebook.
+            </p>
+            <Link
+              href={`/dashboard/brands/${brandId}/edit`}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              Add Social Links
+            </Link>
+          </div>
+        )}
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -752,6 +897,28 @@ export default function SocialPage() {
           </div>
         )}
       </div>
+
+      <DecorativeStar />
+    </div>
+  );
+}
+
+// Decorative Star Component
+function DecorativeStar() {
+  return (
+    <div className="absolute bottom-8 right-8 w-12 h-12 opacity-60 pointer-events-none">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M24 0L26.5 21.5L48 24L26.5 26.5L24 48L21.5 26.5L0 24L21.5 21.5L24 0Z"
+          fill="url(#starGradientSocial)"
+        />
+        <defs>
+          <linearGradient id="starGradientSocial" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#00E5CC" stopOpacity="0.6"/>
+            <stop offset="1" stopColor="#8B5CF6" stopOpacity="0.3"/>
+          </linearGradient>
+        </defs>
+      </svg>
     </div>
   );
 }
@@ -759,13 +926,13 @@ export default function SocialPage() {
 // Page Header Component
 function PageHeader() {
   return (
-    <div className="flex items-center justify-between px-8 py-4 border-b border-white/5">
+    <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <div className="apex-logo-icon w-8 h-8">
+        <div className="w-8 h-8">
           <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGrad)" />
+            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradSocial)" />
             <defs>
-              <linearGradient id="apexGrad" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
+              <linearGradient id="apexGradSocial" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#00E5CC"/>
                 <stop offset="1" stopColor="#8B5CF6"/>
               </linearGradient>
@@ -775,34 +942,14 @@ function PageHeader() {
         <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
           APEX
         </span>
-        <span className="text-xl font-light text-white ml-1">Social Media</span>
+        <span className="text-xl font-light text-foreground ml-1">Social</span>
       </div>
 
-      {/* Navigation Tabs */}
-      <nav className="flex items-center gap-8">
-        <Link href="/dashboard" className="text-sm text-slate-400 hover:text-white transition-colors">
-          Orbit
-        </Link>
-        <Link href="/dashboard/monitor" className="text-sm text-slate-400 hover:text-white transition-colors">
-          Monitor
-        </Link>
-        <Link href="/dashboard/social" className="text-sm text-cyan-400 font-medium relative">
-          Social
-          <span className="absolute -bottom-4 left-0 right-0 h-0.5 bg-cyan-400 rounded-full" />
-        </Link>
-        <Link href="/dashboard/people" className="text-sm text-slate-400 hover:text-white transition-colors">
-          People
-        </Link>
-        <Link href="/dashboard/settings" className="text-sm text-slate-400 hover:text-white transition-colors">
-          Settings
-        </Link>
-      </nav>
-
       {/* AI Status */}
-      <div className="ai-status-indicator">
-        <span className="ai-status-dot active" />
-        <span className="text-xs text-slate-400">AI Status:</span>
-        <span className="text-xs text-cyan-400 font-medium">Active</span>
+      <div className="flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <span className="text-xs text-muted-foreground">AI Status:</span>
+        <span className="text-xs text-primary font-medium">Active</span>
       </div>
     </div>
   );

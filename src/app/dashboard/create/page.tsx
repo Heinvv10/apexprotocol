@@ -1,7 +1,59 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Search, Filter, FileText, ChevronDown, Sparkles, PenTool, Wand2, LayoutTemplate, Bot, ArrowRight, Loader2, AlertCircle, RefreshCw, MessageSquare, Users, FileCheck } from "lucide-react";
+import { Plus, Search, Filter, FileText, ChevronDown, Sparkles, PenTool, Wand2, LayoutTemplate, Bot, ArrowRight, AlertCircle, RefreshCw, MessageSquare, Users, FileCheck } from "lucide-react";
+
+// Page Header Component
+function PageHeader() {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradCreate)" />
+            <defs>
+              <linearGradient id="apexGradCreate" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#00E5CC"/>
+                <stop offset="1" stopColor="#8B5CF6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+          APEX
+        </span>
+        <span className="text-xl font-light text-foreground ml-1">Create</span>
+      </div>
+
+      {/* AI Status */}
+      <div className="flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <span className="text-xs text-muted-foreground">AI Status:</span>
+        <span className="text-xs text-primary font-medium">Active</span>
+      </div>
+    </div>
+  );
+}
+
+// Decorative Star Component
+function DecorativeStar() {
+  return (
+    <div className="absolute bottom-8 right-8 w-12 h-12 opacity-60 pointer-events-none">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M24 0L26.5 21.5L48 24L26.5 26.5L24 48L21.5 26.5L0 24L21.5 21.5L24 0Z"
+          fill="url(#starGradientCreate)"
+        />
+        <defs>
+          <linearGradient id="starGradientCreate" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#00E5CC" stopOpacity="0.6"/>
+            <stop offset="1" stopColor="#8B5CF6" stopOpacity="0.3"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
 import Link from "next/link";
 import { ContentCard, ContentItem, ContentStatus, ContentType } from "@/components/create";
 import { Button } from "@/components/ui/button";
@@ -329,17 +381,10 @@ export default function CreatePage() {
   // Show select brand prompt if no brand selected
   if (!selectedBrand) {
     return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Create</h2>
-            <p className="text-muted-foreground">
-              Generate and manage AI-optimized content
-            </p>
-          </div>
-        </div>
+      <div className="space-y-6 relative">
+        <PageHeader />
         <SelectBrandPrompt />
+        <DecorativeStar />
       </div>
     );
   }
@@ -347,16 +392,10 @@ export default function CreatePage() {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Create</h2>
-            <p className="text-muted-foreground">
-              Generate and manage AI-optimized content
-            </p>
-          </div>
-        </div>
+      <div className="space-y-6 relative">
+        <PageHeader />
         <ContentLoadingState />
+        <DecorativeStar />
       </div>
     );
   }
@@ -364,16 +403,10 @@ export default function CreatePage() {
   // Show error state
   if (error) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Create</h2>
-            <p className="text-muted-foreground">
-              Generate and manage AI-optimized content
-            </p>
-          </div>
-        </div>
+      <div className="space-y-6 relative">
+        <PageHeader />
         <ContentErrorState error={error as Error} onRetry={() => refetch()} />
+        <DecorativeStar />
       </div>
     );
   }
@@ -381,47 +414,35 @@ export default function CreatePage() {
   // Show empty state if no content at all
   if (!hasContent) {
     return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Create</h2>
-            <p className="text-muted-foreground">
-              Generate and manage AI-optimized content
-            </p>
-          </div>
-        </div>
+      <div className="space-y-6 relative">
+        <PageHeader />
         {/* Brand Voice Panel */}
         <BrandVoicePanel brand={selectedBrand} />
         <CreateEmptyState />
+        <DecorativeStar />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Create</h2>
-          <p className="text-muted-foreground">
-            Generate and manage AI-optimized content
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link href="/dashboard/create/brief">
-            <Button variant="outline">
-              <FileCheck className="mr-2 h-4 w-4" />
-              Generate Brief
-            </Button>
-          </Link>
-          <Link href="/dashboard/create/new">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              New Content
-            </Button>
-          </Link>
-        </div>
+    <div className="space-y-6 relative">
+      {/* Page Header */}
+      <PageHeader />
+
+      {/* Action Buttons */}
+      <div className="flex items-center justify-end gap-2">
+        <Link href="/dashboard/create/brief">
+          <Button variant="outline">
+            <FileCheck className="mr-2 h-4 w-4" />
+            Generate Brief
+          </Button>
+        </Link>
+        <Link href="/dashboard/create/new">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            New Content
+          </Button>
+        </Link>
       </div>
 
       {/* Brand Voice Panel */}
@@ -552,6 +573,9 @@ export default function CreatePage() {
           Showing {filteredContent.length} of {content.length} items
         </p>
       )}
+
+      {/* Decorative Star */}
+      <DecorativeStar />
     </div>
   );
 }

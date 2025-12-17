@@ -59,6 +59,38 @@ interface OrganizationSettings {
   };
 }
 
+// Page Header Component
+function PageHeader() {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradSettings)" />
+            <defs>
+              <linearGradient id="apexGradSettings" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#00E5CC"/>
+                <stop offset="1" stopColor="#8B5CF6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+          APEX
+        </span>
+        <span className="text-xl font-light text-foreground ml-1">Settings</span>
+      </div>
+
+      {/* AI Status */}
+      <div className="flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <span className="text-xs text-muted-foreground">AI Status:</span>
+        <span className="text-xs text-primary font-medium">Active</span>
+      </div>
+    </div>
+  );
+}
+
 // Decorative star component
 function DecorativeStar() {
   return (
@@ -223,54 +255,16 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="dashboard-bg min-h-screen relative">
-      {/* Header Row */}
-      <div className="flex items-center justify-between px-8 py-4 border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <div className="apex-logo-icon w-8 h-8">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradSettings)" />
-              <defs>
-                <linearGradient id="apexGradSettings" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#00E5CC"/>
-                  <stop offset="1" stopColor="#8B5CF6"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-            APEX
-          </span>
-          <span className="text-xl font-light text-white ml-1">Onboard</span>
-        </div>
-
-        {/* Navigation Tabs */}
-        <nav className="flex items-center gap-8">
-          <Link href="/dashboard" className="text-sm text-slate-400 hover:text-white transition-colors">
-            Dashboard
-          </Link>
-          <Link href="/dashboard/monitor" className="text-sm text-slate-400 hover:text-white transition-colors">
-            Monitor
-          </Link>
-          <Link href="/dashboard/feedback" className="text-sm text-slate-400 hover:text-white transition-colors">
-            Feedback
-          </Link>
-        </nav>
-
-        {/* AI Status */}
-        <div className="ai-status-indicator">
-          <span className="ai-status-dot active" />
-          <span className="text-xs text-slate-400">AI Status:</span>
-          <span className="text-xs text-cyan-400 font-medium">Active</span>
-        </div>
-      </div>
+    <div className="space-y-6 relative">
+      {/* APEX Header */}
+      <PageHeader />
 
       {/* Main Content */}
-      <div className="flex gap-6 p-6 relative">
+      <div className="flex gap-6">
         {/* Settings Sidebar */}
         <div className="w-56 flex-shrink-0">
           <div className="settings-sidebar-card">
-            <h2 className="text-lg font-semibold text-white mb-4">APEX Settings</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">APEX Settings</h2>
             <nav className="space-y-1">
               {settingsNav.map((item) => {
                 const Icon = item.icon;
@@ -301,7 +295,7 @@ export default function SettingsPage() {
             {/* General Settings (default) */}
             {activeSection === "general" && (
               <>
-                <h1 className="text-2xl font-semibold text-white mb-8">General Settings</h1>
+                <h1 className="text-2xl font-semibold text-foreground mb-8">General Settings</h1>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Left Column */}
@@ -309,55 +303,55 @@ export default function SettingsPage() {
                 {/* Profile Section - TODO: Integrate with Clerk user data */}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500/30 to-purple-500/30 flex items-center justify-center border border-white/10">
-                      <User className="w-6 h-6 text-slate-400" />
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/30 to-accent-purple/30 flex items-center justify-center border border-white/10">
+                      <User className="w-6 h-6 text-muted-foreground" />
                     </div>
                     <div>
-                      <h3 className="text-white font-medium">No profile configured</h3>
-                      <p className="text-sm text-slate-400">Connect your account to view profile</p>
+                      <h3 className="text-foreground font-medium">No profile configured</h3>
+                      <p className="text-sm text-muted-foreground">Connect your account to view profile</p>
                     </div>
                   </div>
                   <button className="settings-edit-btn">Edit Profile</button>
                 </div>
 
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground/70">
                   Configure your profile settings and preferences below.
                 </p>
 
                 {/* Brand Name */}
                 <div className="space-y-3">
-                  <label className="text-sm font-medium text-white">Brand Name</label>
+                  <label className="text-sm font-medium text-foreground">Brand Name</label>
                   <input
                     type="text"
                     value={brandName}
                     onChange={(e) => setBrandName(e.target.value)}
                     placeholder="Enter your brand name"
-                    className="settings-input w-full bg-transparent text-white placeholder:text-slate-400 outline-none"
+                    className="settings-input w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
                     disabled={isLoading}
                   />
                 </div>
 
                 {/* Website URL */}
                 <div className="space-y-3">
-                  <label className="text-sm font-medium text-white">Website URL</label>
+                  <label className="text-sm font-medium text-foreground">Website URL</label>
                   <input
                     type="url"
                     value={websiteUrl}
                     onChange={(e) => setWebsiteUrl(e.target.value)}
                     placeholder="https://example.com"
-                    className="settings-input w-full bg-transparent text-white placeholder:text-slate-400 outline-none"
+                    className="settings-input w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
                     disabled={isLoading}
                   />
                 </div>
 
                 {/* Localization */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-white">Localization</h3>
+                  <h3 className="text-sm font-medium text-foreground">Localization</h3>
 
                   <div className="space-y-3">
                     {/* Language Dropdown */}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-400">Language</span>
+                      <span className="text-sm text-muted-foreground">Language</span>
                       <div className="relative">
                         <button
                           className="settings-dropdown"
@@ -368,14 +362,14 @@ export default function SettingsPage() {
                           disabled={isLoading}
                         >
                           <span>{LANGUAGES.find(l => l.code === language)?.name || "Select language"}</span>
-                          <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${languageDropdownOpen ? "rotate-180" : ""}`} />
+                          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${languageDropdownOpen ? "rotate-180" : ""}`} />
                         </button>
                         {languageDropdownOpen && (
-                          <div className="absolute right-0 top-full mt-1 w-48 bg-slate-800 border border-white/10 rounded-lg shadow-lg z-50 py-1 max-h-60 overflow-y-auto">
+                          <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-white/10 rounded-lg shadow-lg z-50 py-1 max-h-60 overflow-y-auto">
                             {LANGUAGES.map((lang) => (
                               <button
                                 key={lang.code}
-                                className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors ${language === lang.code ? "text-cyan-400" : "text-slate-300"}`}
+                                className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors ${language === lang.code ? "text-primary" : "text-muted-foreground"}`}
                                 onClick={() => {
                                   setLanguage(lang.code);
                                   setLanguageDropdownOpen(false);
@@ -391,7 +385,7 @@ export default function SettingsPage() {
 
                     {/* Timezone Dropdown */}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-400">Timezone</span>
+                      <span className="text-sm text-muted-foreground">Timezone</span>
                       <div className="relative">
                         <button
                           className="settings-dropdown"
@@ -402,14 +396,14 @@ export default function SettingsPage() {
                           disabled={isLoading}
                         >
                           <span>{TIMEZONES.find(t => t.code === timezone)?.name || "Select timezone"}</span>
-                          <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${timezoneDropdownOpen ? "rotate-180" : ""}`} />
+                          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${timezoneDropdownOpen ? "rotate-180" : ""}`} />
                         </button>
                         {timezoneDropdownOpen && (
-                          <div className="absolute right-0 top-full mt-1 w-64 bg-slate-800 border border-white/10 rounded-lg shadow-lg z-50 py-1 max-h-60 overflow-y-auto">
+                          <div className="absolute right-0 top-full mt-1 w-64 bg-card border border-white/10 rounded-lg shadow-lg z-50 py-1 max-h-60 overflow-y-auto">
                             {TIMEZONES.map((tz) => (
                               <button
                                 key={tz.code}
-                                className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors ${timezone === tz.code ? "text-cyan-400" : "text-slate-300"}`}
+                                className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors ${timezone === tz.code ? "text-primary" : "text-muted-foreground"}`}
                                 onClick={() => {
                                   setTimezone(tz.code);
                                   setTimezoneDropdownOpen(false);
@@ -427,8 +421,8 @@ export default function SettingsPage() {
 
                 {/* Data & Privacy */}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-medium text-white">Data & Privacy</h3>
-                  <p className="text-xs text-slate-500">
+                  <h3 className="text-sm font-medium text-foreground">Data & Privacy</h3>
+                  <p className="text-xs text-muted-foreground/70">
                     Manage your data preferences and privacy settings.
                     Deleting your account will remove all associated data.
                   </p>
@@ -445,8 +439,8 @@ export default function SettingsPage() {
                 <div className="settings-feature-card">
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h3 className="text-white font-medium">Brand Preview</h3>
-                      <p className="text-xs text-slate-400">How your brand appears in AI responses</p>
+                      <h3 className="text-foreground font-medium">Brand Preview</h3>
+                      <p className="text-xs text-muted-foreground">How your brand appears in AI responses</p>
                     </div>
                     <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${primaryColor}33` }}>
                       <span style={{ color: primaryColor }} className="text-xl">⟨⟩</span>
@@ -465,13 +459,13 @@ export default function SettingsPage() {
                         />
                       )}
                       {appName ? (
-                        <span className="text-lg font-semibold text-white">{appName}</span>
+                        <span className="text-lg font-semibold text-foreground">{appName}</span>
                       ) : !logoUrl ? (
-                        <span className="text-sm text-slate-500">No brand configured</span>
+                        <span className="text-sm text-muted-foreground/70">No brand configured</span>
                       ) : null}
                     </div>
                     <button
-                      className="text-xs text-cyan-400 hover:text-cyan-300 mt-2"
+                      className="text-xs text-primary hover:text-primary/80 mt-2"
                       onClick={() => setBrandModalOpen(true)}
                     >
                       Configure Brand
@@ -481,7 +475,7 @@ export default function SettingsPage() {
 
                 {/* Privacy Settings */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-white flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
                     Privacy Settings
                   </h3>
 
@@ -491,7 +485,7 @@ export default function SettingsPage() {
                       onClick={() => setShareUsageData(!shareUsageData)}
                       disabled={isLoading}
                     >
-                      <span className="text-xs text-slate-400 text-left">Share anonymous usage data<br/>Help improve the platform</span>
+                      <span className="text-xs text-muted-foreground text-left">Share anonymous usage data<br/>Help improve the platform</span>
                       <div className={`settings-toggle ${shareUsageData ? "active" : ""}`}>
                         <div className="settings-toggle-knob" />
                       </div>
@@ -502,7 +496,7 @@ export default function SettingsPage() {
                       onClick={() => setAiModelFeedback(!aiModelFeedback)}
                       disabled={isLoading}
                     >
-                      <span className="text-xs text-slate-400 text-left">AI model feedback<br/>Allow AI to learn from your usage</span>
+                      <span className="text-xs text-muted-foreground text-left">AI model feedback<br/>Allow AI to learn from your usage</span>
                       <div className={`settings-toggle ${aiModelFeedback ? "active" : ""}`}>
                         <div className="settings-toggle-knob" />
                       </div>
@@ -513,7 +507,7 @@ export default function SettingsPage() {
                       onClick={() => setMarketingComms(!marketingComms)}
                       disabled={isLoading}
                     >
-                      <span className="text-xs text-slate-400 text-left">Marketing communications<br/>Receive product updates and tips</span>
+                      <span className="text-xs text-muted-foreground text-left">Marketing communications<br/>Receive product updates and tips</span>
                       <div className={`settings-toggle ${marketingComms ? "active" : ""}`}>
                         <div className="settings-toggle-knob" />
                       </div>
@@ -559,35 +553,35 @@ export default function SettingsPage() {
             {(activeSection === "team" || activeSection === "billing") && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">{activeSection === "team" ? "Team Management" : "Billing & Plan"}</h2>
-                  <p className="text-sm text-slate-400 mt-1">
+                  <h2 className="text-lg font-semibold text-foreground">{activeSection === "team" ? "Team Management" : "Billing & Plan"}</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
                     This section is coming soon
                   </p>
                 </div>
                 <div className="card-tertiary flex items-center justify-center py-12">
-                  <p className="text-slate-500">Content will be available soon</p>
+                  <p className="text-muted-foreground/70">Content will be available soon</p>
                 </div>
               </div>
             )}
           </div>
         </div>
-
-        {/* Decorative Star */}
-        <DecorativeStar />
       </div>
+
+      {/* Decorative Star */}
+      <DecorativeStar />
 
       {/* Brand Configuration Modal */}
       {brandModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-white/10 rounded-xl w-full max-w-md shadow-2xl">
+          <div className="bg-card border border-white/10 rounded-xl w-full max-w-md shadow-2xl">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <h2 className="text-lg font-semibold text-white">Configure Brand</h2>
+              <h2 className="text-lg font-semibold text-foreground">Configure Brand</h2>
               <button
                 onClick={() => setBrandModalOpen(false)}
                 className="p-1 rounded hover:bg-white/10 transition-colors"
               >
-                <X className="w-5 h-5 text-slate-400" />
+                <X className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
 
@@ -595,7 +589,7 @@ export default function SettingsPage() {
             <div className="p-4 space-y-4">
               {/* Logo Upload */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-white">Logo</label>
+                <label className="text-sm font-medium text-foreground">Logo</label>
                 <div className="flex items-center gap-4">
                   {/* Logo Preview */}
                   <div
@@ -609,7 +603,7 @@ export default function SettingsPage() {
                         className="w-full h-full object-contain"
                       />
                     ) : (
-                      <Upload className="w-6 h-6 text-slate-500" />
+                      <Upload className="w-6 h-6 text-muted-foreground/70" />
                     )}
                   </div>
                   {/* Upload Button */}
@@ -624,7 +618,7 @@ export default function SettingsPage() {
                     <button
                       onClick={() => logoInputRef.current?.click()}
                       disabled={isUploadingLogo}
-                      className="w-full px-4 py-2 text-sm bg-white/5 border border-white/10 rounded-lg text-white hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+                      className="w-full px-4 py-2 text-sm bg-white/5 border border-white/10 rounded-lg text-foreground hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
                     >
                       {isUploadingLogo ? (
                         <>
@@ -641,31 +635,31 @@ export default function SettingsPage() {
                     {logoUrl && (
                       <button
                         onClick={() => setLogoUrl(null)}
-                        className="w-full px-4 py-1.5 text-xs text-red-400 hover:text-red-300 transition-colors"
+                        className="w-full px-4 py-1.5 text-xs text-error hover:text-error/80 transition-colors"
                       >
                         Remove Logo
                       </button>
                     )}
-                    <p className="text-xs text-slate-500">PNG, JPG, GIF, WebP or SVG. Max 5MB.</p>
+                    <p className="text-xs text-muted-foreground/70">PNG, JPG, GIF, WebP or SVG. Max 5MB.</p>
                   </div>
                 </div>
               </div>
 
               {/* App Name */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-white">App Name</label>
+                <label className="text-sm font-medium text-foreground">App Name</label>
                 <input
                   type="text"
                   value={appName}
                   onChange={(e) => setAppName(e.target.value)}
                   placeholder="Your brand name"
-                  className="settings-input w-full bg-transparent text-white placeholder:text-slate-400 outline-none"
+                  className="settings-input w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
                 />
               </div>
 
               {/* Primary Color */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-white">Primary Color</label>
+                <label className="text-sm font-medium text-foreground">Primary Color</label>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
@@ -677,14 +671,14 @@ export default function SettingsPage() {
                     type="text"
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}
-                    className="settings-input flex-1 bg-transparent text-white placeholder:text-slate-400 outline-none uppercase"
+                    className="settings-input flex-1 bg-transparent text-foreground placeholder:text-muted-foreground outline-none uppercase"
                   />
                 </div>
               </div>
 
               {/* Accent Color */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-white">Accent Color</label>
+                <label className="text-sm font-medium text-foreground">Accent Color</label>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
@@ -696,14 +690,14 @@ export default function SettingsPage() {
                     type="text"
                     value={accentColor}
                     onChange={(e) => setAccentColor(e.target.value)}
-                    className="settings-input flex-1 bg-transparent text-white placeholder:text-slate-400 outline-none uppercase"
+                    className="settings-input flex-1 bg-transparent text-foreground placeholder:text-muted-foreground outline-none uppercase"
                   />
                 </div>
               </div>
 
               {/* Preview */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-white">Preview</label>
+                <label className="text-sm font-medium text-foreground">Preview</label>
                 <div
                   className="h-20 rounded-lg flex items-center justify-center gap-3 border border-white/10"
                   style={{ background: `linear-gradient(135deg, ${primaryColor}44, ${accentColor}44)` }}
@@ -715,7 +709,7 @@ export default function SettingsPage() {
                       className="w-10 h-10 object-contain"
                     />
                   )}
-                  <span className="font-semibold text-white">{appName || "Your Brand"}</span>
+                  <span className="font-semibold text-foreground">{appName || "Your Brand"}</span>
                 </div>
               </div>
             </div>
@@ -724,13 +718,13 @@ export default function SettingsPage() {
             <div className="flex items-center justify-end gap-3 p-4 border-t border-white/10">
               <button
                 onClick={() => setBrandModalOpen(false)}
-                className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
+                className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() => setBrandModalOpen(false)}
-                className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
               >
                 Apply
               </button>

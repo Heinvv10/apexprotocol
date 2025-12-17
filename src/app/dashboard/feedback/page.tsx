@@ -12,6 +12,38 @@ import {
   type VerifiedData,
 } from "@/components/feedback";
 
+// Page Header Component
+function PageHeader() {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradFeedback)" />
+            <defs>
+              <linearGradient id="apexGradFeedback" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#00E5CC"/>
+                <stop offset="1" stopColor="#8B5CF6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+          APEX
+        </span>
+        <span className="text-xl font-light text-foreground ml-1">Feedback</span>
+      </div>
+
+      {/* AI Status */}
+      <div className="flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <span className="text-xs text-muted-foreground">AI Status:</span>
+        <span className="text-xs text-primary font-medium">Active</span>
+      </div>
+    </div>
+  );
+}
+
 // Decorative star component
 function DecorativeStar() {
   return (
@@ -123,117 +155,69 @@ export default function FeedbackPage() {
   const hasData = hallucinations.length > 0 || fixesDeployed.length > 0 || verified.length > 0;
 
   return (
-    <div className="dashboard-bg min-h-screen relative">
-      {/* Header Row */}
-      <div className="flex items-center justify-between px-8 py-4 border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <div className="apex-logo-icon w-8 h-8">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradFeedback)" />
-              <defs>
-                <linearGradient id="apexGradFeedback" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#00E5CC"/>
-                  <stop offset="1" stopColor="#8B5CF6"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-            APEX
-          </span>
-          <span className="text-xl font-light text-white ml-1">Feedback</span>
-        </div>
+    <div className="space-y-6 relative">
+      {/* APEX Header */}
+      <PageHeader />
 
-        {/* Navigation Tabs */}
-        <nav className="flex items-center gap-8">
-          <Link href="/dashboard" className="text-sm text-slate-400 hover:text-white transition-colors">
-            Orbit
-          </Link>
-          <Link href="/dashboard/monitor" className="text-sm text-slate-400 hover:text-white transition-colors">
-            Monitor
-          </Link>
-          <Link href="/dashboard/feedback" className="text-sm text-cyan-400 font-medium relative">
-            Feedback
-            <span className="absolute -bottom-4 left-0 right-0 h-0.5 bg-cyan-400 rounded-full" />
-          </Link>
-          <Link href="/dashboard/engine-room" className="text-sm text-slate-400 hover:text-white transition-colors">
-            Engines
-          </Link>
-          <Link href="/dashboard/settings" className="text-sm text-slate-400 hover:text-white transition-colors">
-            Settings
-          </Link>
-        </nav>
+      {/* Page Title */}
+      <h1 className="text-2xl font-semibold text-foreground">
+        Knowledge Graph Corrections
+      </h1>
 
-        {/* AI Status */}
-        <div className="ai-status-indicator">
-          <span className="ai-status-dot active" />
-          <span className="text-xs text-slate-400">AI Status:</span>
-          <span className="text-xs text-cyan-400 font-medium">Active</span>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="p-6 relative">
-        {/* Page Title */}
-        <h1 className="text-2xl font-semibold text-white mb-6">
-          Knowledge Graph Corrections
-        </h1>
-
-        {hasData ? (
-          /* 3-Column Workflow - only show when there's data */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Column 1: Detected Hallucinations */}
-            <div className="feedback-column-card">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-white">Detected Hallucinations</h2>
-                <button className="text-muted-foreground hover:text-white transition-colors">
-                  <MoreHorizontal className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                {hallucinations.map((item) => (
-                  <HallucinationCard key={item.id} data={item} />
-                ))}
-              </div>
+      {hasData ? (
+        /* 3-Column Workflow - only show when there's data */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Column 1: Detected Hallucinations */}
+          <div className="feedback-column-card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-foreground">Detected Hallucinations</h2>
+              <button className="text-muted-foreground hover:text-foreground transition-colors">
+                <MoreHorizontal className="w-5 h-5" />
+              </button>
             </div>
-
-            {/* Column 2: Fix Deployed */}
-            <div className="feedback-column-card">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-white">Fix Deployed</h2>
-                <button className="text-muted-foreground hover:text-white transition-colors">
-                  <MoreHorizontal className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                {fixesDeployed.map((item) => (
-                  <FixDeployedCard key={item.id} data={item} />
-                ))}
-              </div>
-            </div>
-
-            {/* Column 3: Verified in AI */}
-            <div className="feedback-column-card">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-white">Verified in AI</h2>
-                <button className="text-muted-foreground hover:text-white transition-colors">
-                  <MoreHorizontal className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                {verified.map((item) => (
-                  <VerifiedCard key={item.id} data={item} />
-                ))}
-              </div>
+            <div className="space-y-4">
+              {hallucinations.map((item) => (
+                <HallucinationCard key={item.id} data={item} />
+              ))}
             </div>
           </div>
-        ) : (
-          <FeedbackEmptyState />
-        )}
 
-        {/* Decorative Star */}
-        <DecorativeStar />
-      </div>
+          {/* Column 2: Fix Deployed */}
+          <div className="feedback-column-card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-foreground">Fix Deployed</h2>
+              <button className="text-muted-foreground hover:text-foreground transition-colors">
+                <MoreHorizontal className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              {fixesDeployed.map((item) => (
+                <FixDeployedCard key={item.id} data={item} />
+              ))}
+            </div>
+          </div>
+
+          {/* Column 3: Verified in AI */}
+          <div className="feedback-column-card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-foreground">Verified in AI</h2>
+              <button className="text-muted-foreground hover:text-foreground transition-colors">
+                <MoreHorizontal className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              {verified.map((item) => (
+                <VerifiedCard key={item.id} data={item} />
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <FeedbackEmptyState />
+      )}
+
+      {/* Decorative Star */}
+      <DecorativeStar />
     </div>
   );
 }

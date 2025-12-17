@@ -802,6 +802,58 @@ function PopulatedDashboard({ brandId, brandName }: { brandId: string; brandName
   );
 }
 
+// Page Header Component
+function PageHeader() {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradDashboard)" />
+            <defs>
+              <linearGradient id="apexGradDashboard" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#00E5CC"/>
+                <stop offset="1" stopColor="#8B5CF6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+          APEX
+        </span>
+        <span className="text-xl font-light text-foreground ml-1">Dashboard</span>
+      </div>
+
+      {/* AI Status */}
+      <div className="flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <span className="text-xs text-muted-foreground">AI Status:</span>
+        <span className="text-xs text-primary font-medium">Active</span>
+      </div>
+    </div>
+  );
+}
+
+// Decorative Star Component
+function DecorativeStar() {
+  return (
+    <div className="absolute bottom-8 right-8 w-12 h-12 opacity-60 pointer-events-none">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M24 0L26.5 21.5L48 24L26.5 26.5L24 48L21.5 26.5L0 24L21.5 21.5L24 0Z"
+          fill="url(#starGradientDashboard)"
+        />
+        <defs>
+          <linearGradient id="starGradientDashboard" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#00E5CC" stopOpacity="0.6"/>
+            <stop offset="1" stopColor="#8B5CF6" stopOpacity="0.3"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const brands = useBrands();
   const selectedBrand = useSelectedBrand();
@@ -815,21 +867,45 @@ export default function DashboardPage() {
 
   // Show loading state while fetching
   if (isLoading && brands.length === 0) {
-    return <DashboardSkeleton />;
+    return (
+      <div className="space-y-6 relative">
+        <PageHeader />
+        <DashboardSkeleton />
+        <DecorativeStar />
+      </div>
+    );
   }
 
   // Determine if user has data (at least one brand set up)
   const hasData = brands.length > 0;
 
   if (!hasData) {
-    return <EmptyStateDashboard />;
+    return (
+      <div className="space-y-6 relative">
+        <PageHeader />
+        <EmptyStateDashboard />
+        <DecorativeStar />
+      </div>
+    );
   }
 
   // Show populated dashboard when brand is selected
   if (selectedBrand) {
-    return <PopulatedDashboard brandId={selectedBrand.id} brandName={selectedBrand.name} />;
+    return (
+      <div className="space-y-6 relative">
+        <PageHeader />
+        <PopulatedDashboard brandId={selectedBrand.id} brandName={selectedBrand.name} />
+        <DecorativeStar />
+      </div>
+    );
   }
 
   // Show onboarding if brands exist but none selected
-  return <EmptyStateDashboard />;
+  return (
+    <div className="space-y-6 relative">
+      <PageHeader />
+      <EmptyStateDashboard />
+      <DecorativeStar />
+    </div>
+  );
 }

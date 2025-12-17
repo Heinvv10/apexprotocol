@@ -21,12 +21,63 @@ import {
   LayoutGrid,
   List,
   FileSearch,
-  Settings,
   AlertCircle,
   Loader2,
   RefreshCw,
   Bot,
 } from "lucide-react";
+
+// Page Header Component
+function PageHeader() {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradRecommendations)" />
+            <defs>
+              <linearGradient id="apexGradRecommendations" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#00E5CC"/>
+                <stop offset="1" stopColor="#8B5CF6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+          APEX
+        </span>
+        <span className="text-xl font-light text-foreground ml-1">Recommendations</span>
+      </div>
+
+      {/* AI Status */}
+      <div className="flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <span className="text-xs text-muted-foreground">AI Status:</span>
+        <span className="text-xs text-primary font-medium">Active</span>
+      </div>
+    </div>
+  );
+}
+
+// Decorative Star Component
+function DecorativeStar() {
+  return (
+    <div className="absolute bottom-8 right-8 w-12 h-12 opacity-60 pointer-events-none">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M24 0L26.5 21.5L48 24L26.5 26.5L24 48L21.5 26.5L0 24L21.5 21.5L24 0Z"
+          fill="url(#starGradientRecommendations)"
+        />
+        <defs>
+          <linearGradient id="starGradientRecommendations" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#00E5CC" stopOpacity="0.6"/>
+            <stop offset="1" stopColor="#8B5CF6" stopOpacity="0.3"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -606,20 +657,10 @@ export default function RecommendationsPage() {
   // State 1: No brand selected
   if (noBrandSelected) {
     return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Lightbulb className="h-6 w-6 text-primary" />
-              Smart Recommendations
-            </h2>
-            <p className="text-muted-foreground mt-1">
-              AI-powered suggestions to improve your GEO score
-            </p>
-          </div>
-        </div>
+      <div className="space-y-6 relative">
+        <PageHeader />
         <SelectBrandPrompt />
+        <DecorativeStar />
       </div>
     );
   }
@@ -627,20 +668,10 @@ export default function RecommendationsPage() {
   // State 2: Loading
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Lightbulb className="h-6 w-6 text-primary" />
-              Smart Recommendations
-            </h2>
-            <p className="text-muted-foreground mt-1">
-              AI-powered suggestions to improve your GEO score
-            </p>
-          </div>
-        </div>
+      <div className="space-y-6 relative">
+        <PageHeader />
         <RecommendationsLoadingState />
+        <DecorativeStar />
       </div>
     );
   }
@@ -648,20 +679,10 @@ export default function RecommendationsPage() {
   // State 3: Error
   if (error) {
     return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Lightbulb className="h-6 w-6 text-primary" />
-              Smart Recommendations
-            </h2>
-            <p className="text-muted-foreground mt-1">
-              AI-powered suggestions to improve your GEO score
-            </p>
-          </div>
-        </div>
+      <div className="space-y-6 relative">
+        <PageHeader />
         <RecommendationsErrorState error={error as Error} onRetry={() => refetch()} />
+        <DecorativeStar />
       </div>
     );
   }
@@ -669,38 +690,21 @@ export default function RecommendationsPage() {
   // State 4: No data (empty state)
   if (!hasData) {
     return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Lightbulb className="h-6 w-6 text-primary" />
-              Smart Recommendations
-            </h2>
-            <p className="text-muted-foreground mt-1">
-              AI-powered suggestions to improve your GEO score
-            </p>
-          </div>
-        </div>
+      <div className="space-y-6 relative">
+        <PageHeader />
         <RecommendationsEmptyState />
+        <DecorativeStar />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Lightbulb className="h-6 w-6 text-primary" />
-            Smart Recommendations
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            AI-powered suggestions to improve your GEO score
-          </p>
-        </div>
-        {/* View Toggle */}
+    <div className="space-y-6 relative">
+      {/* Page Header */}
+      <PageHeader />
+
+      {/* View Toggle */}
+      <div className="flex justify-end">
         <div className="flex items-center gap-1 p-1 rounded-lg bg-[#18181B] border border-[#27272A]">
           <Button variant="ghost" size="sm" className="h-8 px-3 bg-primary/20 text-primary">
             <List className="h-4 w-4 mr-1.5" />
@@ -828,6 +832,9 @@ export default function RecommendationsPage() {
           Showing {filteredRecommendations.length} of {recommendations.length} recommendations
         </div>
       )}
-      </div>
+
+      {/* Decorative Star */}
+      <DecorativeStar />
+    </div>
   );
 }

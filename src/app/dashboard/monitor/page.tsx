@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Radar, Settings, ArrowRight, Bot, Sparkles, AlertCircle, Loader2, RefreshCw } from "lucide-react";
+import { Radar, ArrowRight, Bot, Sparkles, AlertCircle, Loader2, RefreshCw, Settings } from "lucide-react";
 import { FilterSidebar, SmartTable, QueryRow } from "@/components/monitor";
 import { useSelectedBrand } from "@/stores";
 import { useMentionsByBrand, Mention } from "@/hooks/useMonitor";
@@ -334,15 +334,15 @@ export default function MonitorPage() {
   const hasData = filteredQueries.length > 0;
 
   return (
-    <div className="dashboard-bg min-h-screen relative">
-      {/* Header Row */}
-      <div className="flex items-center justify-between px-8 py-4 border-b border-white/5">
+    <div className="space-y-6 relative">
+      {/* Header Row: APEX branding + AI Status */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="apex-logo-icon w-8 h-8">
+          <div className="w-8 h-8">
             <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGrad)" />
+              <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradMonitor)" />
               <defs>
-                <linearGradient id="apexGrad" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
+                <linearGradient id="apexGradMonitor" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
                   <stop stopColor="#00E5CC"/>
                   <stop offset="1" stopColor="#8B5CF6"/>
                 </linearGradient>
@@ -352,88 +352,64 @@ export default function MonitorPage() {
           <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
             APEX
           </span>
-          <span className="text-xl font-light text-white ml-1">Monitor</span>
+          <span className="text-xl font-light text-foreground ml-1">Monitor</span>
         </div>
 
-        {/* Navigation Tabs */}
-        <nav className="flex items-center gap-8">
-          <Link href="/dashboard" className="text-sm text-slate-400 hover:text-white transition-colors">
-            Orbit
-          </Link>
-          <Link href="/dashboard/monitor" className="text-sm text-cyan-400 font-medium relative">
-            Monitor
-            <span className="absolute -bottom-4 left-0 right-0 h-0.5 bg-cyan-400 rounded-full" />
-          </Link>
-          <Link href="/dashboard/feedback" className="text-sm text-slate-400 hover:text-white transition-colors">
-            Feedback
-          </Link>
-          <Link href="/dashboard/engine-room" className="text-sm text-slate-400 hover:text-white transition-colors">
-            Engines
-          </Link>
-          <Link href="/dashboard/settings" className="text-sm text-slate-400 hover:text-white transition-colors">
-            Settings
-          </Link>
-        </nav>
-
         {/* AI Status */}
-        <div className="ai-status-indicator">
-          <span className="ai-status-dot active" />
-          <span className="text-xs text-slate-400">AI Status:</span>
-          <span className="text-xs text-cyan-400 font-medium">Active</span>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-xs text-muted-foreground">AI Status:</span>
+          <span className="text-xs text-primary font-medium">Active</span>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex gap-6 p-6 relative">
-        {/* State 1: No brand selected */}
-        {noBrandSelected ? (
-          <SelectBrandPrompt />
-        ) : /* State 2: Loading */ isLoading ? (
-          <MonitorLoadingState />
-        ) : /* State 3: Error */ error ? (
-          <MonitorErrorState error={error as Error} onRetry={() => refetch()} />
-        ) : /* State 4: Has data */ hasData ? (
-          <>
-            {/* Filter Sidebar - only show when there's data */}
-            <FilterSidebar
-              filters={filterGroups}
-              selectedFilters={selectedFilters}
-              onFilterChange={handleFilterChange}
-              onClearAll={handleClearAll}
-            />
+      {noBrandSelected ? (
+        <SelectBrandPrompt />
+      ) : isLoading ? (
+        <MonitorLoadingState />
+      ) : error ? (
+        <MonitorErrorState error={error as Error} onRetry={() => refetch()} />
+      ) : hasData ? (
+        <div className="flex gap-6">
+          {/* Filter Sidebar - only show when there's data */}
+          <FilterSidebar
+            filters={filterGroups}
+            selectedFilters={selectedFilters}
+            onFilterChange={handleFilterChange}
+            onClearAll={handleClearAll}
+          />
 
-            {/* Live Query Analysis Section */}
-            <div className="flex-1 min-w-0">
-              <div className="monitor-content-card">
-                {/* Section Header */}
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold text-white">Live Query Analysis</h2>
-                  <span className="text-sm text-muted-foreground">
-                    {filteredQueries.length} mention{filteredQueries.length !== 1 ? "s" : ""}
-                    {selectedBrand && ` for ${selectedBrand.name}`}
-                  </span>
-                </div>
-
-                {/* Smart Table Badge */}
-                <div className="mb-4">
-                  <span className="smart-table-badge">
-                    Smart Table
-                  </span>
-                </div>
-
-                {/* Table */}
-                <SmartTable data={filteredQueries} />
+          {/* Live Query Analysis Section */}
+          <div className="flex-1 min-w-0">
+            <div className="card-secondary p-6">
+              {/* Section Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-foreground">Live Query Analysis</h3>
+                <span className="text-sm text-muted-foreground">
+                  {filteredQueries.length} mention{filteredQueries.length !== 1 ? "s" : ""}
+                  {selectedBrand && ` for ${selectedBrand.name}`}
+                </span>
               </div>
-            </div>
-          </>
-        ) : (
-          /* State 5: Brand selected but no mentions */
-          <MonitorEmptyState />
-        )}
 
-        {/* Decorative Star */}
-        <DecorativeStar />
-      </div>
+              {/* Smart Table Badge */}
+              <div className="mb-4">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                  Smart Table
+                </span>
+              </div>
+
+              {/* Table */}
+              <SmartTable data={filteredQueries} />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <MonitorEmptyState />
+      )}
+
+      {/* Decorative Star */}
+      <DecorativeStar />
     </div>
   );
 }

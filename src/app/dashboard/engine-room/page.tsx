@@ -143,6 +143,38 @@ function EngineRoomEmptyState() {
   );
 }
 
+// Page Header Component
+function PageHeader() {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradEngine)" />
+            <defs>
+              <linearGradient id="apexGradEngine" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#00E5CC"/>
+                <stop offset="1" stopColor="#8B5CF6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+          APEX
+        </span>
+        <span className="text-xl font-light text-foreground ml-1">Engines</span>
+      </div>
+
+      {/* AI Status */}
+      <div className="flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <span className="text-xs text-muted-foreground">AI Status:</span>
+        <span className="text-xs text-primary font-medium">Active</span>
+      </div>
+    </div>
+  );
+}
+
 // Decorative star component
 function DecorativeStar() {
   return (
@@ -189,81 +221,35 @@ export default function EngineRoomPage() {
   const currentData = platformData[activePlatform] || { model: "", perception: "" };
 
   return (
-    <div className="dashboard-bg min-h-screen relative">
-      {/* Header Row */}
-      <div className="flex items-center justify-between px-8 py-4 border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <div className="apex-logo-icon w-8 h-8">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradEngine)" />
-              <defs>
-                <linearGradient id="apexGradEngine" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#00E5CC"/>
-                  <stop offset="1" stopColor="#8B5CF6"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-            APEX
-          </span>
-          <span className="text-xl font-light text-white ml-1">Engines</span>
-        </div>
-
-        {/* Navigation Tabs */}
-        <nav className="flex items-center gap-8">
-          <Link href="/dashboard" className="text-sm text-slate-400 hover:text-white transition-colors">
-            Orbit
-          </Link>
-          <Link href="/dashboard/monitor" className="text-sm text-slate-400 hover:text-white transition-colors">
-            Monitor
-          </Link>
-          <Link href="/dashboard/feedback" className="text-sm text-slate-400 hover:text-white transition-colors">
-            Feedback
-          </Link>
-          <Link href="/dashboard/engine-room" className="text-sm text-cyan-400 font-medium relative">
-            Engines
-            <span className="absolute -bottom-4 left-0 right-0 h-0.5 bg-cyan-400 rounded-full" />
-          </Link>
-          <Link href="/dashboard/settings" className="text-sm text-slate-400 hover:text-white transition-colors">
-            Settings
-          </Link>
-        </nav>
-
-        {/* AI Status */}
-        <div className="ai-status-indicator">
-          <span className="ai-status-dot active" />
-          <span className="text-xs text-slate-400">AI Status:</span>
-          <span className="text-xs text-cyan-400 font-medium">Active</span>
-        </div>
-      </div>
+    <div className="space-y-6 relative">
+      {/* APEX Header */}
+      <PageHeader />
 
       {/* Main Content */}
-      <div className="flex gap-6 p-6 relative">
-        {hasData ? (
-          <>
-            {/* Platform Tabs Row */}
-            <div className="px-8 py-4 border-b border-white/5">
-              <div className="flex items-center gap-2">
-                {platforms.map((platform) => {
-                  const isActive = activePlatform === platform.id;
-                  return (
-                    <button
-                      key={platform.id}
-                      onClick={() => setActivePlatform(platform.id)}
-                      className={`engine-platform-tab ${isActive ? "active" : ""}`}
-                      style={{
-                        borderColor: isActive ? platform.color : "transparent",
-                      }}
-                    >
-                      <span className="text-sm">{platform.icon}</span>
-                      <span>{platform.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+      {hasData ? (
+        <div className="space-y-6">
+          {/* Platform Tabs Row */}
+          <div className="flex items-center gap-2">
+            {platforms.map((platform) => {
+              const isActive = activePlatform === platform.id;
+              return (
+                <button
+                  key={platform.id}
+                  onClick={() => setActivePlatform(platform.id)}
+                  className={`engine-platform-tab ${isActive ? "active" : ""}`}
+                  style={{
+                    borderColor: isActive ? platform.color : "transparent",
+                  }}
+                >
+                  <span className="text-sm">{platform.icon}</span>
+                  <span>{platform.name}</span>
+                </button>
+              );
+            })}
+          </div>
 
+          {/* Content Grid */}
+          <div className="flex gap-6">
             {/* Filter Sidebar */}
             <div className="w-56 flex-shrink-0">
               <div className="engine-sidebar-card">
@@ -274,16 +260,16 @@ export default function EngineRoomPage() {
                       {/* Group Header */}
                       <button
                         onClick={() => toggleGroup(group.id)}
-                        className="w-full flex items-center gap-2 py-2 text-sm font-medium text-white hover:text-cyan-400 transition-colors"
+                        className="w-full flex items-center gap-2 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
                       >
                         <ChevronDown
-                          className={`w-4 h-4 text-slate-500 transition-transform ${
+                          className={`w-4 h-4 text-muted-foreground transition-transform ${
                             expandedGroups[group.id] ? "rotate-180" : ""
                           }`}
                         />
                         <span className="flex-1 text-left">{group.label}</span>
                         {group.count !== undefined && (
-                          <span className="text-xs text-slate-500">({group.count})</span>
+                          <span className="text-xs text-muted-foreground">({group.count})</span>
                         )}
                       </button>
 
@@ -298,17 +284,17 @@ export default function EngineRoomPage() {
                               <div
                                 className={`w-4 h-4 rounded border transition-colors flex items-center justify-center ${
                                   option.checked
-                                    ? "bg-cyan-500/20 border-cyan-500"
-                                    : "border-slate-600 group-hover:border-slate-500"
+                                    ? "bg-primary/20 border-primary"
+                                    : "border-muted-foreground/50 group-hover:border-muted-foreground"
                                 }`}
                               >
                                 {option.checked && (
-                                  <svg className="w-2.5 h-2.5 text-cyan-400" viewBox="0 0 12 12" fill="none">
+                                  <svg className="w-2.5 h-2.5 text-primary" viewBox="0 0 12 12" fill="none">
                                     <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                   </svg>
                                 )}
                               </div>
-                              <span className="text-sm text-slate-400 group-hover:text-slate-300">
+                              <span className="text-sm text-muted-foreground group-hover:text-foreground">
                                 {option.label}
                               </span>
                             </label>
@@ -330,7 +316,7 @@ export default function EngineRoomPage() {
                     key={badge.id}
                     className={`engine-metric-badge ${badge.active ? "active" : ""}`}
                   >
-                    {badge.active && <span className="w-2 h-2 rounded-full bg-cyan-400" />}
+                    {badge.active && <span className="w-2 h-2 rounded-full bg-primary" />}
                     <span>{badge.label}</span>
                   </button>
                 ))}
@@ -340,16 +326,16 @@ export default function EngineRoomPage() {
               <div className="engine-content-card">
                 {/* Engine Header */}
                 <div className="mb-6">
-                  <h1 className="text-2xl font-semibold text-white">
+                  <h1 className="text-2xl font-semibold text-foreground">
                     Engine Room - {currentPlatform?.name || ""}
                   </h1>
-                  <p className="text-sm text-slate-400 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Tracking Model: {currentData.model}
                   </p>
                 </div>
 
                 {/* Perception Section */}
-                <h2 className="text-lg font-medium text-white mb-6">
+                <h2 className="text-lg font-medium text-foreground mb-6">
                   {currentData.perception}
                 </h2>
 
@@ -388,14 +374,14 @@ export default function EngineRoomPage() {
                 </div>
               </div>
             </div>
-          </>
-        ) : (
-          <EngineRoomEmptyState />
-        )}
+          </div>
+        </div>
+      ) : (
+        <EngineRoomEmptyState />
+      )}
 
-        {/* Decorative Star */}
-        <DecorativeStar />
-      </div>
+      {/* Decorative Star */}
+      <DecorativeStar />
     </div>
   );
 }

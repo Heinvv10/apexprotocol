@@ -311,8 +311,15 @@ export default function SocialSettingsPage() {
   // No brand selected
   if (!selectedBrand) {
     return (
-      <div className="dashboard-bg min-h-screen">
-        <PageHeader />
+      <div className="space-y-6">
+        {/* Back Link */}
+        <Link
+          href="/dashboard/settings"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Settings
+        </Link>
         <div className="flex-1 flex items-center justify-center min-h-[500px]">
           <div className="text-center max-w-md space-y-4">
             <Share2 className="w-16 h-16 text-primary/40 mx-auto" />
@@ -335,8 +342,15 @@ export default function SocialSettingsPage() {
   // Loading
   if (isLoading) {
     return (
-      <div className="dashboard-bg min-h-screen">
-        <PageHeader />
+      <div className="space-y-6">
+        {/* Back Link */}
+        <Link
+          href="/dashboard/settings"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Settings
+        </Link>
         <div className="flex-1 flex items-center justify-center min-h-[500px]">
           <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
@@ -347,8 +361,15 @@ export default function SocialSettingsPage() {
   // Error
   if (error) {
     return (
-      <div className="dashboard-bg min-h-screen">
-        <PageHeader />
+      <div className="space-y-6">
+        {/* Back Link */}
+        <Link
+          href="/dashboard/settings"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Settings
+        </Link>
         <div className="flex-1 flex items-center justify-center min-h-[500px]">
           <div className="text-center max-w-md space-y-4">
             <XCircle className="w-16 h-16 text-error/40 mx-auto" />
@@ -371,138 +392,91 @@ export default function SocialSettingsPage() {
   const summary = data?.summary || { total: 0, connected: 0, needsReconnect: 0, implemented: 0 };
 
   return (
-    <div className="dashboard-bg min-h-screen">
-      <PageHeader />
+    <div className="space-y-6">
       <OAuthStatusToast />
 
-      <div className="p-6 max-w-4xl mx-auto space-y-6">
-        {/* Back Link */}
-        <Link
-          href="/dashboard/settings"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Settings
-        </Link>
+      {/* Back Link */}
+      <Link
+        href="/dashboard/settings"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Settings
+      </Link>
 
-        {/* Header */}
-        <div className="card-primary p-6">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
-              <Share2 className="w-6 h-6 text-primary" />
-            </div>
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-foreground mb-1">Social Media Connections</h1>
-              <p className="text-muted-foreground">
-                Connect your social media accounts to monitor brand presence and engagement.
-              </p>
-            </div>
+      {/* Header */}
+      <div className="card-primary p-6">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
+            <Share2 className="w-6 h-6 text-primary" />
           </div>
-
-          {/* Summary Stats */}
-          <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/5">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">{summary.connected}</div>
-              <div className="text-sm text-muted-foreground">Connected</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-warning">{summary.needsReconnect}</div>
-              <div className="text-sm text-muted-foreground">Need Attention</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-muted-foreground">{summary.implemented}</div>
-              <div className="text-sm text-muted-foreground">Available</div>
-            </div>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-foreground mb-1">Social Media Connections</h1>
+            <p className="text-muted-foreground">
+              Connect your social media accounts to monitor brand presence and engagement.
+            </p>
           </div>
         </div>
 
-        {/* Connection Cards */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <Settings className="w-5 h-5" />
-            Platform Connections
-          </h2>
-
-          <div className="grid gap-4">
-            {connections.map((connection) => (
-              <ConnectionCard
-                key={connection.platform}
-                connection={connection}
-                brandId={brandId}
-                onConnect={() => handleConnect(connection.platform)}
-                onDisconnect={() => handleDisconnect(connection.platform)}
-              />
-            ))}
+        {/* Summary Stats */}
+        <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/5">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-primary">{summary.connected}</div>
+            <div className="text-sm text-muted-foreground">Connected</div>
           </div>
-        </div>
-
-        {/* Help Section */}
-        <div className="card-tertiary p-6">
-          <h3 className="text-sm font-medium text-foreground mb-2">Need Help?</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Learn how to set up social media integrations and get the most out of Apex social monitoring.
-          </p>
-          <div className="flex items-center gap-4">
-            <a
-              href="https://docs.apex.io/social-integrations"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-primary hover:text-primary/80 transition-colors"
-            >
-              View Documentation
-            </a>
-            <a
-              href="mailto:support@apex.io"
-              className="text-sm text-primary hover:text-primary/80 transition-colors"
-            >
-              Contact Support
-            </a>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-warning">{summary.needsReconnect}</div>
+            <div className="text-sm text-muted-foreground">Need Attention</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-muted-foreground">{summary.implemented}</div>
+            <div className="text-sm text-muted-foreground">Available</div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-// Page Header
-function PageHeader() {
-  return (
-    <div className="flex items-center justify-between px-8 py-4 border-b border-white/5">
-      <div className="flex items-center gap-2">
-        <div className="apex-logo-icon w-8 h-8">
-          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGrad)" />
-            <defs>
-              <linearGradient id="apexGrad" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#00E5CC" />
-                <stop offset="1" stopColor="#8B5CF6" />
-              </linearGradient>
-            </defs>
-          </svg>
+      {/* Connection Cards */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <Settings className="w-5 h-5" />
+          Platform Connections
+        </h2>
+
+        <div className="grid gap-4">
+          {connections.map((connection) => (
+            <ConnectionCard
+              key={connection.platform}
+              connection={connection}
+              brandId={brandId}
+              onConnect={() => handleConnect(connection.platform)}
+              onDisconnect={() => handleDisconnect(connection.platform)}
+            />
+          ))}
         </div>
-        <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-          APEX
-        </span>
-        <span className="text-xl font-light text-white ml-1">Social Settings</span>
       </div>
 
-      <nav className="flex items-center gap-8">
-        <Link href="/dashboard" className="text-sm text-slate-400 hover:text-white transition-colors">
-          Orbit
-        </Link>
-        <Link href="/dashboard/social" className="text-sm text-slate-400 hover:text-white transition-colors">
-          Social
-        </Link>
-        <Link href="/dashboard/settings" className="text-sm text-cyan-400 font-medium relative">
-          Settings
-          <span className="absolute -bottom-4 left-0 right-0 h-0.5 bg-cyan-400 rounded-full" />
-        </Link>
-      </nav>
-
-      <div className="ai-status-indicator">
-        <span className="ai-status-dot active" />
-        <span className="text-xs text-slate-400">AI Status:</span>
-        <span className="text-xs text-cyan-400 font-medium">Active</span>
+      {/* Help Section */}
+      <div className="card-tertiary p-6">
+        <h3 className="text-sm font-medium text-foreground mb-2">Need Help?</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Learn how to set up social media integrations and get the most out of Apex social monitoring.
+        </p>
+        <div className="flex items-center gap-4">
+          <a
+            href="https://docs.apex.io/social-integrations"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary hover:text-primary/80 transition-colors"
+          >
+            View Documentation
+          </a>
+          <a
+            href="mailto:support@apex.io"
+            className="text-sm text-primary hover:text-primary/80 transition-colors"
+          >
+            Contact Support
+          </a>
+        </div>
       </div>
     </div>
   );

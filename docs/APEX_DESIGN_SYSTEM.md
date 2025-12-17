@@ -1,7 +1,7 @@
 # APEX Design System
 
 > **Single Source of Truth** for all UI/UX implementation
-> **Version**: 4.0
+> **Version**: 4.1
 > **Last Updated**: December 2024
 > **Implementation**: `src/app/globals.css`
 
@@ -317,6 +317,194 @@ const DESIGN = {
 
 ---
 
+## Page Layout Pattern (Unified)
+
+All dashboard pages follow a consistent layout structure. There are two patterns: **Main Pages** and **Sub-Pages**.
+
+---
+
+### Main Page Structure
+
+Main pages (top-level dashboard routes) use the full APEX header with decorative elements.
+
+```tsx
+<div className="space-y-6 relative">
+  {/* 1. APEX Branding Header + AI Status */}
+  <PageHeader />
+
+  {/* 2. Main Content (cards, tables, etc.) */}
+  {/* Uses card-primary, card-secondary, card-tertiary */}
+
+  {/* 3. Decorative Star (fixed position) */}
+  <DecorativeStar />
+</div>
+```
+
+### PageHeader Component (Main Pages)
+
+**IMPORTANT**: Each page must use a unique gradient ID to avoid SVG conflicts.
+
+```tsx
+function PageHeader() {
+  return (
+    <div className="flex items-center justify-between">
+      {/* Left: APEX Logo + Module Name */}
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradMonitor)" />
+            <defs>
+              <linearGradient id="apexGradMonitor" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#00E5CC"/>
+                <stop offset="1" stopColor="#8B5CF6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+          APEX
+        </span>
+        <span className="text-xl font-light text-foreground ml-1">Monitor</span>
+      </div>
+
+      {/* Right: AI Status Indicator */}
+      <div className="flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <span className="text-xs text-muted-foreground">AI Status:</span>
+        <span className="text-xs text-primary font-medium">Active</span>
+      </div>
+    </div>
+  );
+}
+```
+
+### DecorativeStar Component
+
+**IMPORTANT**: Each page must use a unique gradient ID (e.g., `starGradientMonitor`).
+
+```tsx
+function DecorativeStar() {
+  return (
+    <div className="absolute bottom-8 right-8 w-12 h-12 opacity-60 pointer-events-none">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M24 0L26.5 21.5L48 24L26.5 26.5L24 48L21.5 26.5L0 24L21.5 21.5L24 0Z"
+          fill="url(#starGradientMonitor)"
+        />
+        <defs>
+          <linearGradient id="starGradientMonitor" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#00E5CC" stopOpacity="0.6"/>
+            <stop offset="1" stopColor="#8B5CF6" stopOpacity="0.3"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+```
+
+---
+
+### Sub-Page Structure
+
+Sub-pages (nested routes like `/dashboard/monitor/mentions`) use a simpler pattern with a back link instead of the full APEX header.
+
+```tsx
+<div className="space-y-6">
+  {/* 1. Back Link */}
+  <Link
+    href="/dashboard/monitor"
+    className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+  >
+    <ArrowLeft className="w-4 h-4" />
+    Back to Monitor
+  </Link>
+
+  {/* 2. Page Title */}
+  <h1 className="text-2xl font-bold text-foreground">Mentions</h1>
+
+  {/* 3. Main Content */}
+  {/* Uses card-primary, card-secondary, card-tertiary */}
+</div>
+```
+
+**Key differences from Main Pages:**
+- No `relative` on wrapper (no DecorativeStar)
+- No PageHeader component
+- Uses back link for navigation
+- Simpler, cleaner layout
+
+---
+
+### Gradient ID Naming Convention
+
+To avoid SVG gradient conflicts when multiple pages are rendered, use unique IDs:
+
+| Page | Logo Gradient ID | Star Gradient ID |
+|------|------------------|------------------|
+| Dashboard | `apexGradDashboard` | `starGradientDashboard` |
+| Monitor | `apexGradMonitor` | `starGradientMonitor` |
+| Audit | `apexGradAudit` | `starGradientAudit` |
+| Create | `apexGradCreate` | `starGradientCreate` |
+| Feedback | `apexGradFeedback` | `starGradientFeedback` |
+| Engines | `apexGradEngine` | `starGradientEngine` |
+| Settings | `apexGradSettings` | `starGradientSettings` |
+| Reports | `apexGradReports` | `starGradientReports` |
+| Brands | `apexGradBrands` | `starGradientBrands` |
+| Portfolios | `apexGradPortfolios` | `starGradientPortfolios` |
+| Competitive | `apexGradCompetitive` | `starGradientCompetitive` |
+| Social | `apexGradSocial` | `starGradientSocial` |
+| People | `apexGradPeople` | `starGradientPeople` |
+
+---
+
+### Key Layout Rules
+
+| Rule | Main Pages | Sub-Pages |
+|------|------------|-----------|
+| **Wrapper** | `space-y-6 relative` | `space-y-6` |
+| **Header** | PageHeader with APEX logo + AI status | Back link only |
+| **Content** | Uses card hierarchy | Uses card hierarchy |
+| **Decorative** | DecorativeStar at bottom-right | None |
+| **Navigation** | Via main sidebar | Back link to parent |
+
+---
+
+### All Main Pages (with unified layout)
+
+| Route | Module Name | Gradient Suffix |
+|-------|-------------|-----------------|
+| `/dashboard` | Orbit | Dashboard |
+| `/dashboard/monitor` | Monitor | Monitor |
+| `/dashboard/audit` | Audit | Audit |
+| `/dashboard/create` | Create | Create |
+| `/dashboard/feedback` | Feedback | Feedback |
+| `/dashboard/engine-room` | Engines | Engine |
+| `/dashboard/settings` | Settings | Settings |
+| `/dashboard/reports` | Reports | Reports |
+| `/dashboard/brands` | Brands | Brands |
+| `/dashboard/portfolios` | Portfolios | Portfolios |
+| `/dashboard/competitive` | Competitive | Competitive |
+| `/dashboard/social` | Social | Social |
+| `/dashboard/people` | People | People |
+| `/dashboard/recommendations` | Recommendations | Recommendations |
+
+### Sub-Pages (with back link pattern)
+
+- `/dashboard/monitor/mentions`
+- `/dashboard/monitor/settings`
+- `/dashboard/monitor/prompts`
+- `/dashboard/monitor/analytics/*`
+- `/dashboard/create/new`
+- `/dashboard/create/brief`
+- `/dashboard/audit/history`
+- `/dashboard/audit/results`
+- `/dashboard/settings/social`
+- `/dashboard/recommendations/calendar`
+- `/dashboard/recommendations/kanban`
+
+---
+
 ## Anti-Patterns
 
 | DO NOT | DO INSTEAD |
@@ -328,6 +516,8 @@ const DESIGN = {
 | Bouncy animations | Use smooth, professional easing |
 | Basic `<Card>` component | Use `.card-primary/.secondary/.tertiary` |
 | Pure white text everywhere | Use `textSecondary` for body text |
+| Module shell wrappers | Use `space-y-6 relative` (flowing content) |
+| Secondary nav in pages | Use main sidebar for module navigation |
 
 ---
 
