@@ -1,0 +1,56 @@
+# Project Expertise - Auto-updated by expert-self-improve hook
+# Last updated: 2025-12-17T18:05:20.081Z
+# Version: 3
+
+expertise:
+  project: apex
+  domain: full-stack-web
+  version: 3
+  last_updated: 2025-12-17T18:05:20.081Z
+  stack:
+    language: typescript
+    runtime: node
+    framework: next.js
+    orm: drizzle
+  key_locations:
+    project_claude: .claude
+    docs: docs
+    public: public
+    scripts: scripts
+    src: src
+    api: src/app/api
+    tests: src/app/dashboard/__tests__
+    components: src/components
+    hooks: src/hooks
+    lib: src/lib
+    database: src/lib/db
+    services: src/lib/services
+    types: src/types
+    utils: src/utils
+    middleware: src/middleware
+  patterns:
+    - name: Auto-generated expertise
+      when: starting work on this project
+      notes: This expertise file was auto-generated. It will improve as you work on the project via expert-self-improve hook.
+  anti_patterns:
+    - name: Working without context
+      why_bad: Wastes time searching for files and patterns
+      what_to_do: Read this expertise file first, validate against code, then act
+  commands:
+    dev: npm run dev
+    build: npm run build
+    test: npm test
+    lint: npm run lint
+    db_generate: npm run db:generate
+    db_migrate: npm run db:migrate
+    db_push: npm run db:push
+  update_history:
+    - version: 3
+      date: 2025-12-17T18:05:20.081Z
+      changes: "Added locations: middleware; Files modified: 4 (ts)"
+    - version: 2
+      date: 2025-12-17T17:47:19.096Z
+      changes: "Added locations: types, utils; Files modified: 7 (ts)"
+    - version: 1
+      date: 2025-12-17T17:16:27.252Z
+      changes: Auto-generated initial expertise file

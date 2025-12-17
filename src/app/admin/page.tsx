@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   Building2,
   Users,
@@ -8,14 +9,49 @@ import {
   TrendingUp,
   Server,
   Database,
-  Cpu,
   HardDrive,
   AlertCircle,
   CheckCircle,
   Clock,
   RefreshCw,
+  Settings,
+  FileText,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+// Types for API responses
+interface DashboardStats {
+  totalOrganizations: number;
+  organizationsThisMonth: number;
+  totalUsers: number;
+  usersThisWeek: number;
+  activeSessions: number;
+  apiRequests24h: number;
+}
+
+interface SystemHealth {
+  apiServer: { status: string; uptime: string; responseTime: number };
+  database: { status: string; latency: number; connected: boolean };
+  redis: { status: string; connected: boolean; message: string };
+  jobQueue: { status: string; pending: number };
+  aiServices: { status: string; activeCount: number; errorCount: number };
+}
+
+interface ResourceUsage {
+  database: { sizeFormatted: string; maxSizeFormatted: string; usagePercent: number };
+  storage: { usedFormatted: string; maxFormatted: string; usagePercent: number };
+  apiUsage: { requestsToday: number; usagePercent: number };
+}
+
+interface ActivityItem {
+  id: string;
+  actionFormatted: string;
+  actorName: string;
+  actorEmail: string;
+  targetName: string;
+  relativeTime: string;
+}
 
 // Stats card component following design system
 function StatsCard({
@@ -25,6 +61,7 @@ function StatsCard({
   changeType,
   icon: Icon,
   tier = "secondary",
+  loading = false,
 }: {
   title: string;
   value: string | number;
@@ -32,6 +69,7 @@ function StatsCard({
   changeType?: "positive" | "negative" | "neutral";
   icon: React.ComponentType<{ className?: string }>;
   tier?: "primary" | "secondary" | "tertiary";
+  loading?: boolean;
 }) {
   const tierClasses = {
     primary: "card-primary",
@@ -44,19 +82,25 @@ function StatsCard({
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="text-2xl font-bold mt-1">{value}</p>
-          {change && (
-            <p
-              className={`text-xs mt-1 ${
-                changeType === "positive"
-                  ? "text-emerald-400"
-                  : changeType === "negative"
-                  ? "text-red-400"
-                  : "text-muted-foreground"
-              }`}
-            >
-              {change}
-            </p>
+          {loading ? (
+            <Loader2 className="h-6 w-6 animate-spin mt-2 text-muted-foreground" />
+          ) : (
+            <>
+              <p className="text-2xl font-bold mt-1">{value}</p>
+              {change && (
+                <p
+                  className={`text-xs mt-1 ${
+                    changeType === "positive"
+                      ? "text-emerald-400"
+                      : changeType === "negative"
+                      ? "text-red-400"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {change}
+                </p>
+              )}
+            </>
           )}
         </div>
         <div
@@ -75,10 +119,12 @@ function HealthIndicator({
   label,
   status,
   value,
+  loading = false,
 }: {
   label: string;
   status: "healthy" | "warning" | "critical";
   value: string;
+  loading?: boolean;
 }) {
   const statusConfig = {
     healthy: { color: "text-emerald-400", bg: "bg-emerald-500/20", icon: CheckCircle },
@@ -93,17 +139,23 @@ function HealthIndicator({
     <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
       <div className="flex items-center gap-3">
         <div className={`p-1.5 rounded ${config.bg}`}>
-          <Icon className={`h-4 w-4 ${config.color}`} />
+          {loading ? (
+            <Loader2 className={`h-4 w-4 animate-spin ${config.color}`} />
+          ) : (
+            <Icon className={`h-4 w-4 ${config.color}`} />
+          )}
         </div>
         <span className="text-sm">{label}</span>
       </div>
-      <span className={`text-sm font-medium ${config.color}`}>{value}</span>
+      <span className={`text-sm font-medium ${config.color}`}>
+        {loading ? "..." : value}
+      </span>
     </div>
   );
 }
 
 // Recent activity item
-function ActivityItem({
+function RecentActivityItem({
   action,
   target,
   user,
@@ -123,7 +175,7 @@ function ActivityItem({
         <p className="text-sm">
           <span className="font-medium">{user}</span>{" "}
           <span className="text-muted-foreground">{action}</span>{" "}
-          <span className="font-medium">{target}</span>
+          {target && <span className="font-medium">{target}</span>}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
           <Clock className="h-3 w-3" />
@@ -134,12 +186,77 @@ function ActivityItem({
   );
 }
 
+// Format large numbers
+function formatNumber(num: number): string {
+  if (num >= 1000000) {
+    return `${(num / 1000000).toFixed(1)}M`;
+  }
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(1)}K`;
+  }
+  return num.toString();
+}
+
 export default function AdminDashboardPage() {
   const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const [stats, setStats] = React.useState<DashboardStats | null>(null);
+  const [health, setHealth] = React.useState<SystemHealth | null>(null);
+  const [resources, setResources] = React.useState<ResourceUsage | null>(null);
+  const [activities, setActivities] = React.useState<ActivityItem[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  // Fetch all dashboard data
+  const fetchDashboardData = React.useCallback(async () => {
+    try {
+      setError(null);
+
+      const [statsRes, healthRes, resourcesRes, activityRes] = await Promise.all([
+        fetch("/api/admin/dashboard/stats"),
+        fetch("/api/admin/dashboard/health"),
+        fetch("/api/admin/dashboard/resources"),
+        fetch("/api/admin/dashboard/activity?limit=5"),
+      ]);
+
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData.stats);
+      }
+
+      if (healthRes.ok) {
+        const healthData = await healthRes.json();
+        setHealth(healthData.health);
+      }
+
+      if (resourcesRes.ok) {
+        const resourcesData = await resourcesRes.json();
+        setResources(resourcesData.resources);
+      }
+
+      if (activityRes.ok) {
+        const activityData = await activityRes.json();
+        setActivities(activityData.activities || []);
+      }
+    } catch (err) {
+      setError("Failed to fetch dashboard data");
+      console.error("Dashboard fetch error:", err);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  // Initial fetch and auto-refresh every 30 seconds
+  React.useEffect(() => {
+    fetchDashboardData();
+
+    const interval = setInterval(fetchDashboardData, 30000);
+    return () => clearInterval(interval);
+  }, [fetchDashboardData]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
+    fetchDashboardData();
   };
 
   return (
@@ -163,6 +280,7 @@ export default function AdminDashboardPage() {
             variant="outline"
             size="sm"
             onClick={handleRefresh}
+            disabled={isRefreshing}
             className="border-white/10 hover:bg-white/5"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
@@ -171,39 +289,53 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
+      {/* Error state */}
+      {error && (
+        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400">
+          <p className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            {error}
+          </p>
+        </div>
+      )}
+
       {/* Key Metrics - Primary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
           title="Total Organizations"
-          value="24"
-          change="+3 this month"
+          value={stats?.totalOrganizations ?? 0}
+          change={stats ? `+${stats.organizationsThisMonth} this month` : undefined}
           changeType="positive"
           icon={Building2}
           tier="primary"
+          loading={loading}
         />
         <StatsCard
           title="Total Users"
-          value="156"
-          change="+12 this week"
+          value={stats?.totalUsers ?? 0}
+          change={stats ? `+${stats.usersThisWeek} this week` : undefined}
           changeType="positive"
           icon={Users}
           tier="primary"
+          loading={loading}
         />
         <StatsCard
           title="Active Sessions"
-          value="42"
+          value={stats?.activeSessions ?? 0}
           change="Real-time"
           changeType="neutral"
           icon={Activity}
           tier="primary"
+          loading={loading}
         />
         <StatsCard
           title="API Requests (24h)"
-          value="12.4K"
-          change="+8% vs yesterday"
-          changeType="positive"
+          value={formatNumber(stats?.apiRequests24h ?? 0)}
+          change="From audit logs"
+          changeType="neutral"
           icon={TrendingUp}
           tier="primary"
+          loading={loading}
         />
       </div>
 
@@ -216,71 +348,89 @@ export default function AdminDashboardPage() {
             System Health
           </h3>
           <div className="space-y-3">
-            <HealthIndicator label="API Server" status="healthy" value="99.9% uptime" />
-            <HealthIndicator label="Database" status="healthy" value="45ms latency" />
-            <HealthIndicator label="Redis Cache" status="healthy" value="Connected" />
-            <HealthIndicator label="Job Queue" status="warning" value="12 pending" />
-            <HealthIndicator label="AI Services" status="healthy" value="All online" />
+            <HealthIndicator
+              label="API Server"
+              status={(health?.apiServer.status as "healthy" | "warning" | "critical") || "healthy"}
+              value={health ? `${health.apiServer.uptime} uptime` : "..."}
+              loading={loading}
+            />
+            <HealthIndicator
+              label="Database"
+              status={(health?.database.status as "healthy" | "warning" | "critical") || "healthy"}
+              value={health ? `${health.database.latency}ms latency` : "..."}
+              loading={loading}
+            />
+            <HealthIndicator
+              label="Redis Cache"
+              status={(health?.redis.status as "healthy" | "warning" | "critical") || "warning"}
+              value={health?.redis.message || "..."}
+              loading={loading}
+            />
+            <HealthIndicator
+              label="Job Queue"
+              status={(health?.jobQueue.status as "healthy" | "warning" | "critical") || "healthy"}
+              value={health ? `${health.jobQueue.pending} pending` : "..."}
+              loading={loading}
+            />
+            <HealthIndicator
+              label="AI Services"
+              status={(health?.aiServices.status as "healthy" | "warning" | "critical") || "healthy"}
+              value={health ? `${health.aiServices.activeCount} active` : "..."}
+              loading={loading}
+            />
           </div>
         </div>
 
         {/* Resource Usage - Secondary Card */}
         <div className="lg:col-span-1 card-secondary">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Cpu className="h-5 w-5 text-red-400" />
+            <Database className="h-5 w-5 text-red-400" />
             Resource Usage
           </h3>
           <div className="space-y-4">
             <div>
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-muted-foreground">CPU Usage</span>
-                <span>34%</span>
+                <span className="text-muted-foreground">Database</span>
+                <span>{resources?.database.sizeFormatted || "..."} / {resources?.database.maxSizeFormatted || "..."}</span>
               </div>
               <div className="h-2 rounded-full bg-white/10">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400"
-                  style={{ width: "34%" }}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-muted-foreground">Memory</span>
-                <span>62%</span>
-              </div>
-              <div className="h-2 rounded-full bg-white/10">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-400"
-                  style={{ width: "62%" }}
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500"
+                  style={{ width: `${resources?.database.usagePercent || 0}%` }}
                 />
               </div>
             </div>
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-muted-foreground">Storage</span>
-                <span>28%</span>
+                <span>{resources?.storage.usedFormatted || "..."} / {resources?.storage.maxFormatted || "..."}</span>
               </div>
               <div className="h-2 rounded-full bg-white/10">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400"
-                  style={{ width: "28%" }}
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 transition-all duration-500"
+                  style={{ width: `${resources?.storage.usagePercent || 0}%` }}
+                />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-muted-foreground">API Requests Today</span>
+                <span>{formatNumber(resources?.apiUsage.requestsToday || 0)}</span>
+              </div>
+              <div className="h-2 rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all duration-500"
+                  style={{ width: `${Math.min(resources?.apiUsage.usagePercent || 0, 100)}%` }}
                 />
               </div>
             </div>
             <div className="pt-2 border-t border-white/10 mt-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground flex items-center gap-2">
-                  <Database className="h-4 w-4" />
+                  <HardDrive className="h-4 w-4" />
                   Database Size
                 </span>
-                <span>2.4 GB / 10 GB</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-muted-foreground flex items-center gap-2">
-                  <HardDrive className="h-4 w-4" />
-                  File Storage
-                </span>
-                <span>8.2 GB / 50 GB</span>
+                <span>{resources?.database.sizeFormatted || "..."}</span>
               </div>
             </div>
           </div>
@@ -293,31 +443,37 @@ export default function AdminDashboardPage() {
             Recent Admin Activity
           </h3>
           <div className="space-y-2">
-            <ActivityItem
-              action="upgraded plan for"
-              target="Acme Corp"
-              user="admin@apex.io"
-              time="5 minutes ago"
-            />
-            <ActivityItem
-              action="enabled feature flag"
-              target="osint_deep_scan"
-              user="admin@apex.io"
-              time="1 hour ago"
-            />
-            <ActivityItem
-              action="created organization"
-              target="TechStart Inc"
-              user="admin@apex.io"
-              time="3 hours ago"
-            />
-            <ActivityItem
-              action="modified API limits for"
-              target="Enterprise Plan"
-              user="admin@apex.io"
-              time="Yesterday"
-            />
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : activities.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No recent activity
+              </p>
+            ) : (
+              activities.map((activity) => (
+                <RecentActivityItem
+                  key={activity.id}
+                  action={activity.actionFormatted}
+                  target={activity.targetName}
+                  user={activity.actorName || activity.actorEmail}
+                  time={activity.relativeTime}
+                />
+              ))
+            )}
           </div>
+          {activities.length > 0 && (
+            <div className="mt-4 pt-3 border-t border-white/10">
+              <Link
+                href="/admin/audit-logs"
+                className="text-sm text-red-400 hover:text-red-300 flex items-center gap-1"
+              >
+                View all activity
+                <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 
@@ -325,37 +481,44 @@ export default function AdminDashboardPage() {
       <div className="card-secondary">
         <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Button
-            variant="outline"
-            className="h-auto py-4 flex-col gap-2 border-white/10 hover:bg-white/5 hover:border-red-500/30"
-          >
-            <Building2 className="h-5 w-5 text-red-400" />
-            <span className="text-xs">New Organization</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-auto py-4 flex-col gap-2 border-white/10 hover:bg-white/5 hover:border-red-500/30"
-          >
-            <Users className="h-5 w-5 text-red-400" />
-            <span className="text-xs">Manage Users</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-auto py-4 flex-col gap-2 border-white/10 hover:bg-white/5 hover:border-red-500/30"
-          >
-            <Activity className="h-5 w-5 text-red-400" />
-            <span className="text-xs">View Logs</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-auto py-4 flex-col gap-2 border-white/10 hover:bg-white/5 hover:border-red-500/30"
-          >
-            <Server className="h-5 w-5 text-red-400" />
-            <span className="text-xs">System Settings</span>
-          </Button>
+          <Link href="/admin/organizations">
+            <Button
+              variant="outline"
+              className="w-full h-auto py-4 flex-col gap-2 border-white/10 hover:bg-white/5 hover:border-red-500/30"
+            >
+              <Building2 className="h-5 w-5 text-red-400" />
+              <span className="text-xs">Organizations</span>
+            </Button>
+          </Link>
+          <Link href="/admin/users">
+            <Button
+              variant="outline"
+              className="w-full h-auto py-4 flex-col gap-2 border-white/10 hover:bg-white/5 hover:border-red-500/30"
+            >
+              <Users className="h-5 w-5 text-red-400" />
+              <span className="text-xs">Manage Users</span>
+            </Button>
+          </Link>
+          <Link href="/admin/audit-logs">
+            <Button
+              variant="outline"
+              className="w-full h-auto py-4 flex-col gap-2 border-white/10 hover:bg-white/5 hover:border-red-500/30"
+            >
+              <FileText className="h-5 w-5 text-red-400" />
+              <span className="text-xs">Audit Logs</span>
+            </Button>
+          </Link>
+          <Link href="/admin/api-config">
+            <Button
+              variant="outline"
+              className="w-full h-auto py-4 flex-col gap-2 border-white/10 hover:bg-white/5 hover:border-red-500/30"
+            >
+              <Settings className="h-5 w-5 text-red-400" />
+              <span className="text-xs">API Config</span>
+            </Button>
+          </Link>
         </div>
       </div>
-
     </div>
   );
 }

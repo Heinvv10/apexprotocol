@@ -59,7 +59,11 @@
       "Bash(npx eslint:*)",
       "Bash(cut:*)",
       "Bash(npm run lint:*)",
-      "Skill(apex-ui-ux)"
+      "Skill(apex-ui-ux)",
+      "Bash(timeout 30 npm test -- src/app/api/admin/users/route.test.ts --run)",
+      "Bash(npm run:*)",
+      "Bash(bun:*)",
+      "Bash(node C:/Users/HeinvanVuuren/.claude/hooks/auto-generate-project-knowledge.ts)"
     ]
   }
 }
