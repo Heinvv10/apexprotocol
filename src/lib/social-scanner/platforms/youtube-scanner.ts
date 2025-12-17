@@ -70,13 +70,11 @@ export class YouTubeScanner extends SocialScannerBase {
         maxResults: 5,
       });
 
-      // Find exact match by custom URL or title
+      // Find exact match by title (customUrl not available in search results)
       const normalizedHandle = handle.toLowerCase().replace(/^@/, "");
       const channel = searchResponse.data.items?.find((item) => {
         const title = item.snippet?.channelTitle?.toLowerCase() || "";
-        const customUrl = item.snippet?.customUrl?.toLowerCase().replace(/^@/, "") || "";
         return (
-          customUrl === normalizedHandle ||
           title === normalizedHandle ||
           title.includes(normalizedHandle)
         );
@@ -108,31 +106,31 @@ export class YouTubeScanner extends SocialScannerBase {
   ): YouTubeProfile {
     const snippet = channel.snippet || {};
     const statistics = channel.statistics || {};
-    const branding = channel.brandingSettings?.channel || {};
+    const branding = channel.brandingSettings?.image || {};
 
     return {
       platform: "youtube",
       platformId: channel.id || "",
       handle: snippet.customUrl?.replace(/^@/, "") || channel.id || "",
       displayName: snippet.title || "",
-      bio: snippet.description || undefined,
+      bio: snippet.description ?? undefined,
       followerCount: parseInt(statistics.subscriberCount || "0", 10),
       followingCount: 0, // YouTube doesn't have following concept
       postCount: parseInt(statistics.videoCount || "0", 10),
       isVerified: false, // YouTube verification not available via API
       profileUrl: `https://youtube.com/channel/${channel.id}`,
-      avatarUrl: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url,
-      bannerUrl: branding.bannerExternalUrl,
-      location: snippet.country,
-      website: branding.unsubscribedTrailer, // Not ideal, but closest to website
+      avatarUrl: snippet.thumbnails?.high?.url ?? snippet.thumbnails?.default?.url ?? undefined,
+      bannerUrl: branding.bannerExternalUrl ?? undefined,
+      location: snippet.country ?? undefined,
+      website: undefined, // YouTube doesn't expose website in this API
       createdAt: snippet.publishedAt ? new Date(snippet.publishedAt) : undefined,
       platformSpecific: {
         channelId: channel.id || "",
         subscriberCount: parseInt(statistics.subscriberCount || "0", 10),
         videoCount: parseInt(statistics.videoCount || "0", 10),
         viewCount: parseInt(statistics.viewCount || "0", 10),
-        customUrl: snippet.customUrl,
-        country: snippet.country,
+        customUrl: snippet.customUrl ?? undefined,
+        country: snippet.country ?? undefined,
       },
     };
   }
