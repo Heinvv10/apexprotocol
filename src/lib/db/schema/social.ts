@@ -345,6 +345,257 @@ export const socialScoresRelations = relations(socialScores, ({ one }) => ({
 }));
 
 // ============================================================================
+// Phase 8: OAuth Tokens Table (Secure Token Storage)
+// ============================================================================
+
+export const connectionStatusEnum = pgEnum("connection_status", [
+  "active",
+  "expired",
+  "revoked",
+  "error",
+  "pending",
+]);
+
+export const syncJobStatusEnum = pgEnum("sync_job_status", [
+  "pending",
+  "running",
+  "completed",
+  "failed",
+  "cancelled",
+]);
+
+export const syncJobTypeEnum = pgEnum("sync_job_type", [
+  "metrics",
+  "mentions",
+  "followers",
+  "posts",
+  "profile",
+  "full_sync",
+]);
+
+// Dedicated OAuth tokens table with encryption support
+export const socialOauthTokens = pgTable(
+  "social_oauth_tokens",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    organizationId: text("organization_id").notNull(),
+    brandId: text("brand_id")
+      .notNull()
+      .references(() => brands.id, { onDelete: "cascade" }),
+
+    // Platform info
+    platform: socialPlatformEnum("platform").notNull(),
+
+    // OAuth tokens (should be encrypted in production)
+    accessToken: text("access_token").notNull(),
+    refreshToken: text("refresh_token"),
+    tokenType: text("token_type").default("Bearer"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    scopes: jsonb("scopes").$type<string[]>().default([]),
+
+    // Account info from OAuth response
+    accountId: text("account_id"), // Platform-specific user/page ID
+    accountName: text("account_name"),
+    accountHandle: text("account_handle"),
+    profileUrl: text("profile_url"),
+    avatarUrl: text("avatar_url"),
+
+    // Connection status
+    connectionStatus: connectionStatusEnum("connection_status").default("active"),
+    lastError: text("last_error"),
+    lastErrorAt: timestamp("last_error_at", { withTimezone: true }),
+
+    // Timestamps
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueBrandPlatformAccount: unique().on(table.brandId, table.platform, table.accountId),
+  })
+);
+
+// ============================================================================
+// Phase 8: API Rate Limits Table
+// ============================================================================
+
+// Track rate limits per platform/endpoint
+export const apiRateLimits = pgTable(
+  "api_rate_limits",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    platform: socialPlatformEnum("platform").notNull(),
+    endpoint: text("endpoint").notNull(), // e.g., 'user/timeline', 'mentions', 'analytics'
+
+    // Rate limit tracking
+    requestsMade: integer("requests_made").default(0),
+    requestsLimit: integer("requests_limit").notNull(),
+    windowStartAt: timestamp("window_start_at", { withTimezone: true }).defaultNow(),
+    windowDurationSeconds: integer("window_duration_seconds").default(900), // 15 min default
+    resetAt: timestamp("reset_at", { withTimezone: true }),
+
+    // Backoff tracking
+    consecutiveErrors: integer("consecutive_errors").default(0),
+    backoffUntil: timestamp("backoff_until", { withTimezone: true }),
+
+    // Timestamps
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    uniquePlatformEndpoint: unique().on(table.platform, table.endpoint),
+  })
+);
+
+// ============================================================================
+// Phase 8: Social Sync Jobs Table
+// ============================================================================
+
+// Track background sync jobs
+export const socialSyncJobs = pgTable("social_sync_jobs", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  brandId: text("brand_id")
+    .notNull()
+    .references(() => brands.id, { onDelete: "cascade" }),
+  socialAccountId: text("social_account_id").references(() => socialAccounts.id, {
+    onDelete: "cascade",
+  }),
+
+  // Job info
+  platform: socialPlatformEnum("platform").notNull(),
+  jobType: syncJobTypeEnum("job_type").notNull(),
+  status: syncJobStatusEnum("status").default("pending"),
+
+  // Execution tracking
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  recordsProcessed: integer("records_processed").default(0),
+  recordsTotal: integer("records_total"),
+
+  // Error handling
+  errorMessage: text("error_message"),
+  retryCount: integer("retry_count").default(0),
+  maxRetries: integer("max_retries").default(3),
+  nextRetryAt: timestamp("next_retry_at", { withTimezone: true }),
+
+  // Job metadata
+  jobMetadata: jsonb("job_metadata").$type<Record<string, unknown>>(),
+
+  // Timestamps
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ============================================================================
+// Phase 8: Social Posts Table (Brand's Own Content)
+// ============================================================================
+
+export const socialPostTypeEnum = pgEnum("social_post_type", [
+  "text",
+  "image",
+  "video",
+  "carousel",
+  "story",
+  "reel",
+  "live",
+  "poll",
+  "thread",
+  "article",
+]);
+
+// Track brand's own social media posts
+export const socialPosts = pgTable(
+  "social_posts",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    brandId: text("brand_id")
+      .notNull()
+      .references(() => brands.id, { onDelete: "cascade" }),
+    socialAccountId: text("social_account_id").references(() => socialAccounts.id, {
+      onDelete: "cascade",
+    }),
+
+    // Platform info
+    platform: socialPlatformEnum("platform").notNull(),
+    platformPostId: text("platform_post_id").notNull(), // Platform-specific post ID
+
+    // Content
+    content: text("content"),
+    postType: socialPostTypeEnum("post_type"),
+    postUrl: text("post_url"),
+
+    // Publication
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    isPublished: boolean("is_published").default(true),
+    scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
+
+    // Engagement metrics
+    likesCount: integer("likes_count").default(0),
+    commentsCount: integer("comments_count").default(0),
+    sharesCount: integer("shares_count").default(0),
+    savesCount: integer("saves_count").default(0),
+    impressionsCount: integer("impressions_count").default(0),
+    reachCount: integer("reach_count").default(0),
+    engagementRate: real("engagement_rate"),
+
+    // Sentiment analysis
+    sentimentScore: real("sentiment_score"), // -1 to 1
+
+    // Content metadata
+    hashtags: jsonb("hashtags").$type<string[]>().default([]),
+    mentions: jsonb("mentions").$type<string[]>().default([]),
+    mediaUrls: jsonb("media_urls").$type<string[]>().default([]),
+
+    // Timestamps
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueBrandPlatformPost: unique().on(table.brandId, table.platform, table.platformPostId),
+  })
+);
+
+// ============================================================================
+// Phase 8: Relations for New Tables
+// ============================================================================
+
+export const socialOauthTokensRelations = relations(socialOauthTokens, ({ one }) => ({
+  brand: one(brands, {
+    fields: [socialOauthTokens.brandId],
+    references: [brands.id],
+  }),
+}));
+
+export const socialSyncJobsRelations = relations(socialSyncJobs, ({ one }) => ({
+  brand: one(brands, {
+    fields: [socialSyncJobs.brandId],
+    references: [brands.id],
+  }),
+  socialAccount: one(socialAccounts, {
+    fields: [socialSyncJobs.socialAccountId],
+    references: [socialAccounts.id],
+  }),
+}));
+
+export const socialPostsRelations = relations(socialPosts, ({ one }) => ({
+  brand: one(brands, {
+    fields: [socialPosts.brandId],
+    references: [brands.id],
+  }),
+  socialAccount: one(socialAccounts, {
+    fields: [socialPosts.socialAccountId],
+    references: [socialAccounts.id],
+  }),
+}));
+
+// ============================================================================
 // Type Exports
 // ============================================================================
 
@@ -356,3 +607,13 @@ export type SocialMetric = typeof socialMetrics.$inferSelect;
 export type NewSocialMetric = typeof socialMetrics.$inferInsert;
 export type SocialScore = typeof socialScores.$inferSelect;
 export type NewSocialScore = typeof socialScores.$inferInsert;
+
+// Phase 8 types
+export type SocialOauthToken = typeof socialOauthTokens.$inferSelect;
+export type NewSocialOauthToken = typeof socialOauthTokens.$inferInsert;
+export type ApiRateLimit = typeof apiRateLimits.$inferSelect;
+export type NewApiRateLimit = typeof apiRateLimits.$inferInsert;
+export type SocialSyncJob = typeof socialSyncJobs.$inferSelect;
+export type NewSocialSyncJob = typeof socialSyncJobs.$inferInsert;
+export type SocialPost = typeof socialPosts.$inferSelect;
+export type NewSocialPost = typeof socialPosts.$inferInsert;

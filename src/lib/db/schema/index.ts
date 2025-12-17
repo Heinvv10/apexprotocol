@@ -182,6 +182,23 @@ export {
   type PlatformMetrics,
   type TokenMetadata,
   type SocialPlatformBreakdown,
+  // Phase 8: OAuth & Sync
+  socialOauthTokens,
+  apiRateLimits,
+  socialSyncJobs,
+  socialPosts,
+  connectionStatusEnum,
+  syncJobStatusEnum,
+  syncJobTypeEnum,
+  socialPostTypeEnum,
+  type SocialOauthToken,
+  type NewSocialOauthToken,
+  type ApiRateLimit,
+  type NewApiRateLimit,
+  type SocialSyncJob,
+  type NewSocialSyncJob,
+  type SocialPost,
+  type NewSocialPost,
 } from "./social";
 
 export {
@@ -189,6 +206,10 @@ export {
   socialMentionsRelations,
   socialMetricsRelations,
   socialScoresRelations,
+  // Phase 8 relations
+  socialOauthTokensRelations,
+  socialSyncJobsRelations,
+  socialPostsRelations,
 } from "./social";
 
 // People/Leadership (Phase 7.2)
