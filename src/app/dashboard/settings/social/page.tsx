@@ -299,7 +299,7 @@ export default function SocialSettingsPage() {
 
   const handleConnect = (platform: string) => {
     // Redirect to OAuth initiation endpoint
-    window.location.href = `/api/oauth/${platform}?brandId=${brandId}`;
+    window.location.assign(`/api/oauth/${platform}?brandId=${brandId}`);
   };
 
   const handleDisconnect = (platform: string) => {
