@@ -326,3 +326,12 @@ export {
   speakingOpportunitiesRelations,
   opportunityMatchesRelations,
 } from "./enrichment";
+
+// System Audit Logs (Admin Phase 5)
+export {
+  systemAuditLogs,
+  auditActionTypeEnum,
+  auditStatusTypeEnum,
+  type SystemAuditLog,
+  type NewSystemAuditLog,
+} from "./system-audit-logs";
