@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
+  // Fix Turbopack root directory detection
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
+
   // Enable standalone output for Docker deployments
   output: "standalone",
 

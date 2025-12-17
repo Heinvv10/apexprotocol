@@ -82,10 +82,10 @@ export async function GET(_request: NextRequest) {
       data: {
         currentPlan,
         limits: {
+          ...PLAN_LIMITS[currentPlan],
           brandLimit: org[0].brandLimit,
           userLimit: org[0].userLimit,
           features: org[0].features,
-          ...PLAN_LIMITS[currentPlan],
         },
         allPlans: PLAN_LIMITS,
       },
@@ -137,7 +137,7 @@ export async function PUT(request: NextRequest) {
           plan: newPlan,
           brandLimit: planLimits.brandLimit,
           userLimit: planLimits.userLimit,
-          features: planLimits.features,
+          features: [...planLimits.features],
         })
         .returning();
 
@@ -146,10 +146,10 @@ export async function PUT(request: NextRequest) {
         data: {
           currentPlan: newPlan,
           limits: {
+            ...planLimits,
             brandLimit: newOrg[0].brandLimit,
             userLimit: newOrg[0].userLimit,
             features: newOrg[0].features,
-            ...planLimits,
           },
           message: `Upgraded to ${planLimits.name} plan`,
         },

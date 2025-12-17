@@ -21,6 +21,8 @@ import {
   getConfiguredPlatformNames,
   type ScannerPlatform,
   type BatchScanResult,
+  type SocialPost,
+  type BrandMention,
 } from "@/lib/social-scanner";
 
 // ============================================================================
@@ -99,8 +101,8 @@ async function saveScanResultsToDb(
 
     // Calculate aggregated metrics from scan data
     const profile = platformResult.profile;
-    const posts = platformResult.posts || [];
-    const mentions = platformResult.mentions || [];
+    const posts: SocialPost[] = platformResult.recentPosts || [];
+    const mentions: BrandMention[] = platformResult.mentions || [];
 
     // Calculate average engagement
     let avgLikes = 0;
@@ -110,11 +112,11 @@ async function saveScanResultsToDb(
     let totalEngagement = 0;
 
     if (posts.length > 0) {
-      avgLikes = Math.round(posts.reduce((sum, p) => sum + (p.metrics?.likes || 0), 0) / posts.length);
-      avgComments = Math.round(posts.reduce((sum, p) => sum + (p.metrics?.comments || 0), 0) / posts.length);
-      avgShares = Math.round(posts.reduce((sum, p) => sum + (p.metrics?.shares || 0), 0) / posts.length);
-      avgViews = Math.round(posts.reduce((sum, p) => sum + (p.metrics?.views || 0), 0) / posts.length);
-      totalEngagement = posts.reduce((sum, p) => {
+      avgLikes = Math.round(posts.reduce((sum: number, p: SocialPost) => sum + (p.metrics?.likes || 0), 0) / posts.length);
+      avgComments = Math.round(posts.reduce((sum: number, p: SocialPost) => sum + (p.metrics?.comments || 0), 0) / posts.length);
+      avgShares = Math.round(posts.reduce((sum: number, p: SocialPost) => sum + (p.metrics?.shares || 0), 0) / posts.length);
+      avgViews = Math.round(posts.reduce((sum: number, p: SocialPost) => sum + (p.metrics?.views || 0), 0) / posts.length);
+      totalEngagement = posts.reduce((sum: number, p: SocialPost) => {
         const m = p.metrics;
         return sum + (m?.likes || 0) + (m?.comments || 0) + (m?.shares || 0);
       }, 0);
@@ -129,7 +131,7 @@ async function saveScanResultsToDb(
     // Calculate post frequency (posts per day based on date range)
     let postFrequency = 0;
     if (posts.length >= 2) {
-      const dates = posts.map(p => new Date(p.publishedAt).getTime()).sort((a, b) => a - b);
+      const dates = posts.map((p: SocialPost) => new Date(p.publishedAt).getTime()).sort((a: number, b: number) => a - b);
       const dayRange = (dates[dates.length - 1] - dates[0]) / (1000 * 60 * 60 * 24);
       if (dayRange > 0) {
         postFrequency = posts.length / dayRange;
@@ -176,33 +178,33 @@ async function saveScanResultsToDb(
           isVerified: profile.isVerified,
           profileUrl: profile.profileUrl,
           avatarUrl: profile.avatarUrl || undefined,
-          platformSpecific: profile.platformSpecific,
+          platformSpecific: profile.metadata,
         } : null,
-        postsData: posts.map(p => ({
+        postsData: posts.map((p: SocialPost) => ({
           postId: p.postId,
           content: p.content,
-          postType: p.postType,
-          publishedAt: p.publishedAt,
+          postType: p.platform as string,
+          publishedAt: p.publishedAt instanceof Date ? p.publishedAt.toISOString() : String(p.publishedAt),
           engagement: {
             likes: p.metrics?.likes || 0,
             comments: p.metrics?.comments || 0,
             shares: p.metrics?.shares || 0,
-            views: p.metrics?.views,
+            views: p.metrics?.views ?? undefined,
           },
           postUrl: p.postUrl,
         })),
-        mentionsData: mentions.map(m => ({
-          postId: m.mentionId,
+        mentionsData: mentions.map((m: BrandMention) => ({
+          postId: m.postId,
           authorHandle: m.authorUsername,
           content: m.content,
-          sentiment: m.sentiment,
-          sentimentScore: m.sentimentScore,
+          sentiment: m.sentiment ?? undefined,
+          sentimentScore: undefined,
           engagement: {
             likes: m.metrics?.likes || 0,
             comments: m.metrics?.comments || 0,
             shares: m.metrics?.shares || 0,
           },
-          mentionedAt: m.mentionedAt,
+          mentionedAt: m.publishedAt instanceof Date ? m.publishedAt.toISOString() : String(m.publishedAt),
           postUrl: m.postUrl,
         })),
         followerCount,
@@ -220,7 +222,7 @@ async function saveScanResultsToDb(
         sentimentNegative,
         scanStatus,
         errorCode: platformResult.error ? "SCAN_ERROR" : null,
-        errorMessage: platformResult.error || null,
+        errorMessage: platformResult.error?.message || null,
         scannedAt: now,
         nextScanAt: nextScan,
       })
@@ -243,33 +245,33 @@ async function saveScanResultsToDb(
             isVerified: profile.isVerified,
             profileUrl: profile.profileUrl,
             avatarUrl: profile.avatarUrl || undefined,
-            platformSpecific: profile.platformSpecific,
+            platformSpecific: profile.metadata,
           } : null,
-          postsData: posts.map(p => ({
+          postsData: posts.map((p: SocialPost) => ({
             postId: p.postId,
             content: p.content,
-            postType: p.postType,
-            publishedAt: p.publishedAt,
+            postType: p.platform as string,
+            publishedAt: p.publishedAt instanceof Date ? p.publishedAt.toISOString() : String(p.publishedAt),
             engagement: {
               likes: p.metrics?.likes || 0,
               comments: p.metrics?.comments || 0,
               shares: p.metrics?.shares || 0,
-              views: p.metrics?.views,
+              views: p.metrics?.views ?? undefined,
             },
             postUrl: p.postUrl,
           })),
-          mentionsData: mentions.map(m => ({
-            postId: m.mentionId,
+          mentionsData: mentions.map((m: BrandMention) => ({
+            postId: m.postId,
             authorHandle: m.authorUsername,
             content: m.content,
-            sentiment: m.sentiment,
-            sentimentScore: m.sentimentScore,
+            sentiment: m.sentiment ?? undefined,
+            sentimentScore: undefined,
             engagement: {
               likes: m.metrics?.likes || 0,
               comments: m.metrics?.comments || 0,
               shares: m.metrics?.shares || 0,
             },
-            mentionedAt: m.mentionedAt,
+            mentionedAt: m.publishedAt instanceof Date ? m.publishedAt.toISOString() : String(m.publishedAt),
             postUrl: m.postUrl,
           })),
           followerCount,
@@ -287,7 +289,7 @@ async function saveScanResultsToDb(
           sentimentNegative,
           scanStatus,
           errorCode: platformResult.error ? "SCAN_ERROR" : null,
-          errorMessage: platformResult.error || null,
+          errorMessage: platformResult.error?.message || null,
           scannedAt: now,
           nextScanAt: nextScan,
           updatedAt: now,

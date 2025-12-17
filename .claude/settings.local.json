@@ -50,7 +50,15 @@
       "Bash(cd:*)",
       "Bash(find:*)",
       "Bash(dir:*)",
-      "Bash(npm run db:generate:*)"
+      "Bash(npm run db:generate:*)",
+      "Bash(wc:*)",
+      "Bash(grep:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npm run lint)",
+      "Bash(node scripts/zero-tolerance-check.js:*)",
+      "Bash(npx eslint:*)",
+      "Bash(cut:*)",
+      "Bash(npm run lint:*)"
     ]
   }
 }

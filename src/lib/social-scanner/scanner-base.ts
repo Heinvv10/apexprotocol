@@ -3,22 +3,68 @@
  *
  * Abstract base class providing common functionality for all platform scanners.
  * Handles rate limiting, error handling, and result formatting.
+ *
+ * NOTE: This is currently unused - platform scanners implement SocialScanner directly.
+ * Kept for potential future refactoring.
  */
 
 import type {
-  ServiceScanPlatform,
+  ScannerPlatform,
   SocialProfile,
   SocialPost,
-  SocialMention,
-  ScanResult,
-  FullScanResult,
-  ScanOptions,
+  BrandMention,
   ScanError,
-  ScanErrorCode,
   RateLimitInfo,
-  ISocialScanner,
+  ProfileScanResult,
+  PostsScanResult,
+  MentionsScanResult,
 } from "./types";
-import { getRateLimitConfig, SCAN_CONFIG } from "./config";
+import { DEFAULT_SCAN_OPTIONS } from "./config";
+
+// Type aliases for compatibility
+type ServiceScanPlatform = ScannerPlatform;
+type SocialMention = BrandMention;
+
+interface ScanOptions {
+  maxPosts?: number;
+  maxMentions?: number;
+  sinceDays?: number;
+  includeRetweets?: boolean;
+}
+
+interface FullScanResult {
+  success: boolean;
+  platform: ScannerPlatform;
+  scanType: "full";
+  data: {
+    profile: SocialProfile;
+    recentPosts: SocialPost[];
+    mentions: BrandMention[];
+  };
+  scannedAt: Date;
+  error?: ScanError;
+}
+
+// Configuration for rate limiting
+const SCAN_CONFIG = {
+  defaultMaxPosts: DEFAULT_SCAN_OPTIONS.postsLimit,
+  defaultMaxMentions: DEFAULT_SCAN_OPTIONS.mentionsLimit ?? 50,
+  defaultMentionDays: 7,
+};
+
+// Rate limit configuration per platform/endpoint
+interface RateLimitConfig {
+  requestsPerWindow: number;
+  windowDurationMs: number;
+}
+
+function getRateLimitConfig(_platform: ScannerPlatform, _endpoint: string): RateLimitConfig {
+  // Default rate limits - can be customized per platform
+  return {
+    requestsPerWindow: 100,
+    windowDurationMs: 15 * 60 * 1000, // 15 minutes
+  };
+}
 
 // In-memory rate limit tracking (shared across all scanner instances)
 interface RateLimitBucket {
@@ -30,7 +76,12 @@ interface RateLimitBucket {
 
 const rateLimitBuckets: Map<string, RateLimitBucket> = new Map();
 
-export abstract class SocialScannerBase implements ISocialScanner {
+/**
+ * Abstract base class for social scanners.
+ * Note: Does not implement SocialScanner directly due to different method signatures.
+ * Platform-specific scanners should implement SocialScanner interface directly.
+ */
+export abstract class SocialScannerBase {
   abstract platform: ServiceScanPlatform;
 
   // Abstract methods that must be implemented by each platform
@@ -50,7 +101,7 @@ export abstract class SocialScannerBase implements ISocialScanner {
   // Public API Methods
   // ============================================================================
 
-  async getProfile(handle: string): Promise<ScanResult<SocialProfile>> {
+  async getProfile(handle: string): Promise<ProfileScanResult> {
     const normalizedHandle = this.normalizeHandle(handle);
 
     try {
@@ -61,8 +112,8 @@ export abstract class SocialScannerBase implements ISocialScanner {
       return {
         success: true,
         platform: this.platform,
-        scanType: "profile",
         data: profile,
+        error: null,
         scannedAt: new Date(),
         rateLimitInfo: this.getRateLimitInfo("userLookup"),
       };
@@ -70,58 +121,61 @@ export abstract class SocialScannerBase implements ISocialScanner {
       return {
         success: false,
         platform: this.platform,
-        scanType: "profile",
-        data: null as unknown as SocialProfile,
+        data: null,
         scannedAt: new Date(),
         error: this.handleError(error),
+        rateLimitInfo: null,
       };
     }
   }
 
   async getRecentPosts(
-    handle: string,
-    options?: ScanOptions
-  ): Promise<ScanResult<SocialPost[]>> {
-    const normalizedHandle = this.normalizeHandle(handle);
-    const maxPosts = options?.maxPosts || SCAN_CONFIG.defaultMaxPosts;
+    userId: string,
+    options?: { limit?: number; cursor?: string }
+  ): Promise<PostsScanResult> {
+    const normalizedHandle = this.normalizeHandle(userId);
+    const maxPosts = options?.limit || SCAN_CONFIG.defaultMaxPosts;
 
     try {
       await this.checkRateLimit("userTimeline");
 
       const posts = await this.fetchRecentPosts(normalizedHandle, maxPosts);
 
-      // Filter based on options
-      let filteredPosts = posts;
-      if (options?.includeRetweets === false) {
-        filteredPosts = filteredPosts.filter((p) => !p.isRepost);
-      }
-
       return {
         success: true,
         platform: this.platform,
-        scanType: "posts",
-        data: filteredPosts,
+        data: posts,
+        error: null,
         scannedAt: new Date(),
         rateLimitInfo: this.getRateLimitInfo("userTimeline"),
+        pagination: {
+          hasMore: false,
+          nextCursor: null,
+          totalCount: posts.length,
+        },
       };
     } catch (error) {
       return {
         success: false,
         platform: this.platform,
-        scanType: "posts",
-        data: [],
+        data: null,
         scannedAt: new Date(),
         error: this.handleError(error),
+        rateLimitInfo: null,
+        pagination: null,
       };
     }
   }
 
   async searchMentions(
-    query: string,
-    options?: ScanOptions
-  ): Promise<ScanResult<SocialMention[]>> {
-    const maxMentions = options?.maxMentions || SCAN_CONFIG.defaultMaxMentions;
-    const sinceDays = options?.sinceDays || SCAN_CONFIG.defaultMentionDays;
+    keywords: string[],
+    options?: { limit?: number; cursor?: string; since?: Date }
+  ): Promise<MentionsScanResult> {
+    const maxMentions = options?.limit || SCAN_CONFIG.defaultMaxMentions;
+    const sinceDays = options?.since
+      ? Math.ceil((Date.now() - options.since.getTime()) / (1000 * 60 * 60 * 24))
+      : SCAN_CONFIG.defaultMentionDays;
+    const query = keywords.join(" OR ");
 
     try {
       await this.checkRateLimit("searchTweets");
@@ -131,19 +185,25 @@ export abstract class SocialScannerBase implements ISocialScanner {
       return {
         success: true,
         platform: this.platform,
-        scanType: "mentions",
         data: mentions,
+        error: null,
         scannedAt: new Date(),
         rateLimitInfo: this.getRateLimitInfo("searchTweets"),
+        pagination: {
+          hasMore: false,
+          nextCursor: null,
+          totalCount: mentions.length,
+        },
       };
     } catch (error) {
       return {
         success: false,
         platform: this.platform,
-        scanType: "mentions",
-        data: [],
+        data: null,
         scannedAt: new Date(),
         error: this.handleError(error),
+        rateLimitInfo: null,
+        pagination: null,
       };
     }
   }
@@ -155,26 +215,46 @@ export abstract class SocialScannerBase implements ISocialScanner {
       // Run all scans in parallel
       const [profileResult, postsResult, mentionsResult] = await Promise.all([
         this.getProfile(normalizedHandle),
-        this.getRecentPosts(normalizedHandle, options),
-        this.searchMentions(normalizedHandle, options),
+        this.getRecentPosts(normalizedHandle, { limit: options?.maxPosts }),
+        this.searchMentions([normalizedHandle], { limit: options?.maxMentions }),
       ]);
 
       const success =
         profileResult.success || postsResult.success || mentionsResult.success;
+
+      // Handle null profile case - create empty profile
+      const profile = profileResult.data ?? {
+        platform: this.platform,
+        platformId: "",
+        username: normalizedHandle,
+        displayName: normalizedHandle,
+        bio: null,
+        avatarUrl: null,
+        profileUrl: "",
+        isVerified: false,
+        followerCount: 0,
+        followingCount: 0,
+        postCount: 0,
+        createdAt: null,
+        metadata: {},
+      };
+
+      // Get error if any failed
+      const firstError = !success
+        ? (profileResult.error ?? postsResult.error ?? mentionsResult.error ?? undefined)
+        : undefined;
 
       return {
         success,
         platform: this.platform,
         scanType: "full",
         data: {
-          profile: profileResult.data,
+          profile,
           recentPosts: postsResult.data || [],
           mentions: mentionsResult.data || [],
         },
         scannedAt: new Date(),
-        error: !success
-          ? profileResult.error || postsResult.error || mentionsResult.error
-          : undefined,
+        error: firstError,
       };
     } catch (error) {
       return {
@@ -182,7 +262,21 @@ export abstract class SocialScannerBase implements ISocialScanner {
         platform: this.platform,
         scanType: "full",
         data: {
-          profile: null as unknown as SocialProfile,
+          profile: {
+            platform: this.platform,
+            platformId: "",
+            username: normalizedHandle,
+            displayName: normalizedHandle,
+            bio: null,
+            avatarUrl: null,
+            profileUrl: "",
+            isVerified: false,
+            followerCount: 0,
+            followingCount: 0,
+            postCount: 0,
+            createdAt: null,
+            metadata: {},
+          },
           recentPosts: [],
           mentions: [],
         },
@@ -217,7 +311,7 @@ export abstract class SocialScannerBase implements ISocialScanner {
     // Check if rate limited
     if (bucket.requestCount >= config.requestsPerWindow) {
       const waitMs = config.windowDurationMs - (now - bucket.windowStartMs);
-      throw this.createError("RATE_LIMITED", `Rate limited. Retry after ${Math.ceil(waitMs / 1000)} seconds`, Math.ceil(waitMs / 1000));
+      throw this.createError("RATE_LIMITED", `Rate limited. Retry after ${Math.ceil(waitMs / 1000)} seconds`, Math.ceil(waitMs / 1000), true);
     }
 
     // Increment counter
@@ -231,23 +325,19 @@ export abstract class SocialScannerBase implements ISocialScanner {
 
     if (!bucket) {
       return {
-        platform: this.platform,
-        endpoint,
         limit: config.requestsPerWindow,
         remaining: config.requestsPerWindow,
-        resetsAt: new Date(Date.now() + config.windowDurationMs),
+        resetAt: new Date(Date.now() + config.windowDurationMs),
       };
     }
 
     const remaining = Math.max(0, config.requestsPerWindow - bucket.requestCount);
-    const resetsAt = new Date(bucket.windowStartMs + config.windowDurationMs);
+    const resetAt = new Date(bucket.windowStartMs + config.windowDurationMs);
 
     return {
-      platform: this.platform,
-      endpoint,
       limit: config.requestsPerWindow,
       remaining,
-      resetsAt,
+      resetAt,
     };
   }
 
@@ -284,15 +374,16 @@ export abstract class SocialScannerBase implements ISocialScanner {
   }
 
   protected createError(
-    code: ScanErrorCode,
+    code: string,
     message: string,
-    retryAfter?: number
+    retryAfter?: number | null,
+    retryable: boolean = false
   ): ScanError {
     return {
       code,
       message,
-      platform: this.platform,
-      retryAfter,
+      retryable,
+      retryAfter: retryAfter ?? null,
     };
   }
 
@@ -302,33 +393,33 @@ export abstract class SocialScannerBase implements ISocialScanner {
       const message = error.message.toLowerCase();
 
       if (message.includes("rate limit") || message.includes("429")) {
-        return this.createError("RATE_LIMITED", "Rate limit exceeded", 900); // 15 min default
+        return this.createError("RATE_LIMITED", "Rate limit exceeded", 900, true); // retryable
       }
 
       if (message.includes("not found") || message.includes("404")) {
-        return this.createError("NOT_FOUND", "Account not found");
+        return this.createError("NOT_FOUND", "Account not found", null, false);
       }
 
       if (message.includes("private") || message.includes("protected")) {
-        return this.createError("PRIVATE_ACCOUNT", "Account is private");
+        return this.createError("PRIVATE_ACCOUNT", "Account is private", null, false);
       }
 
       if (message.includes("suspended") || message.includes("banned")) {
-        return this.createError("SUSPENDED", "Account is suspended");
+        return this.createError("SUSPENDED", "Account is suspended", null, false);
       }
 
       if (message.includes("unauthorized") || message.includes("401")) {
-        return this.createError("INVALID_CREDENTIALS", "Invalid API credentials");
+        return this.createError("INVALID_CREDENTIALS", "Invalid API credentials", null, false);
       }
 
       if (message.includes("network") || message.includes("ECONNREFUSED")) {
-        return this.createError("NETWORK_ERROR", "Network connection failed");
+        return this.createError("NETWORK_ERROR", "Network connection failed", null, true); // retryable
       }
 
-      return this.createError("API_ERROR", error.message);
+      return this.createError("API_ERROR", error.message, null, true);
     }
 
-    return this.createError("UNKNOWN", "An unknown error occurred");
+    return this.createError("UNKNOWN", "An unknown error occurred", null, false);
   }
 
   protected calculateEngagementRate(

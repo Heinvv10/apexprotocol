@@ -167,8 +167,8 @@ class YouTubeScannerImpl implements SocialScanner {
         postCount: parseInt(statistics.videoCount || "0", 10),
         createdAt: snippet.publishedAt ? new Date(snippet.publishedAt) : null,
         metadata: {
-          customUrl: snippet.customUrl,
-          country: snippet.country || branding.country,
+          customUrl: snippet.customUrl ?? undefined,
+          country: (snippet.country ?? branding.country) ?? undefined,
           viewCount: parseInt(statistics.viewCount || "0", 10),
           videoCount: parseInt(statistics.videoCount || "0", 10),
           hiddenSubscriberCount: statistics.hiddenSubscriberCount || false,
@@ -329,16 +329,16 @@ class YouTubeScannerImpl implements SocialScanner {
           },
           mediaUrls: [snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url || ""].filter(Boolean),
           hashtags: [...new Set(hashtags)], // Deduplicate
-          mentions: [], // YouTube doesn't have @ mentions
+          mentions: [] as string[], // YouTube doesn't have @ mentions
           metadata: {
             title: snippet.title || "",
             description: snippet.description || "",
-            thumbnailUrl: snippet.thumbnails?.high?.url,
-            duration: video.contentDetails?.duration,
-            categoryId: snippet.categoryId,
-            tags: snippet.tags,
-            privacyStatus: video.status?.privacyStatus,
-            defaultLanguage: snippet.defaultLanguage,
+            thumbnailUrl: snippet.thumbnails?.high?.url ?? undefined,
+            duration: video.contentDetails?.duration ?? undefined,
+            categoryId: snippet.categoryId ?? undefined,
+            tags: snippet.tags ?? undefined,
+            privacyStatus: video.status?.privacyStatus ?? undefined,
+            defaultLanguage: snippet.defaultLanguage ?? undefined,
           },
         };
       });

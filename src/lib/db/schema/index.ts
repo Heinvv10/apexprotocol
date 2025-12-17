@@ -290,3 +290,31 @@ export {
   brandReviewsRelations,
   locationScoresRelations,
 } from "./locations";
+
+// People Enrichment (Phase 9.3)
+export {
+  peopleEnrichment,
+  speakingOpportunities,
+  opportunityMatches,
+  enrichmentSourceEnum,
+  eventTypeEnum,
+  opportunityStatusEnum,
+  type PeopleEnrichmentRecord,
+  type NewPeopleEnrichmentRecord,
+  type SpeakingOpportunity,
+  type NewSpeakingOpportunity,
+  type OpportunityMatch,
+  type NewOpportunityMatch,
+  type CareerPosition,
+  type Education,
+  type Certification,
+  type Publication,
+  type ConferenceAppearance,
+  type PodcastAppearance,
+} from "./enrichment";
+
+export {
+  peopleEnrichmentRelations,
+  speakingOpportunitiesRelations,
+  opportunityMatchesRelations,
+} from "./enrichment";

@@ -8,10 +8,31 @@ import {
   decimal,
   boolean,
   date,
+  real,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
 import { brands } from "./brands";
+
+// ============================================
+// Phase 9.1: Competitor Discovery Enums
+// ============================================
+
+// Discovery method enum - how was this competitor discovered?
+export const discoveryMethodEnum = pgEnum("discovery_method", [
+  "keyword_overlap",
+  "ai_co_occurrence",
+  "industry_match",
+  "search_overlap",
+  "manual",
+]);
+
+// Discovery status enum - what's the user's decision?
+export const discoveryStatusEnum = pgEnum("discovery_status", [
+  "pending",
+  "confirmed",
+  "rejected",
+]);
 
 // SERP Feature type enum
 export const serpFeatureTypeEnum = pgEnum("serp_feature_type", [
@@ -223,6 +244,119 @@ export const competitiveAlerts = pgTable("competitive_alerts", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+// ============================================
+// Phase 9.1: Discovered Competitors Table
+// ============================================
+
+// Auto-discovered competitors waiting for user confirmation
+export const discoveredCompetitors = pgTable("discovered_competitors", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  brandId: text("brand_id")
+    .notNull()
+    .references(() => brands.id, { onDelete: "cascade" }),
+
+  // Competitor identification
+  competitorName: text("competitor_name").notNull(),
+  competitorDomain: text("competitor_domain"),
+
+  // Discovery method and confidence
+  discoveryMethod: discoveryMethodEnum("discovery_method").notNull(),
+  confidenceScore: real("confidence_score").notNull(), // 0-1 scale
+
+  // Discovery signals (contributing factors)
+  keywordOverlap: real("keyword_overlap"), // % of keywords shared
+  aiCoOccurrence: real("ai_co_occurrence"), // % of mentions together
+  industryMatch: boolean("industry_match").default(false),
+
+  // Evidence data
+  sharedKeywords: jsonb("shared_keywords").$type<string[]>().default([]),
+  coOccurrenceQueries: jsonb("co_occurrence_queries").$type<string[]>().default([]),
+  metadata: jsonb("metadata").$type<DiscoveryMetadata>().default({}),
+
+  // User decision
+  status: discoveryStatusEnum("status").default("pending").notNull(),
+  confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+  rejectedAt: timestamp("rejected_at", { withTimezone: true }),
+  rejectionReason: text("rejection_reason"),
+
+  // Timestamps
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Discovery metadata type
+export interface DiscoveryMetadata {
+  industryCategory?: string;
+  serviceArea?: string;
+  keywordCount?: number;
+  mentionCount?: number;
+  firstSeenAt?: string;
+  rawSignals?: Record<string, unknown>;
+}
+
+// ============================================
+// Phase 9.1: Competitor Snapshots Table
+// ============================================
+
+// Point-in-time snapshots of competitor metrics for trend tracking
+export const competitorSnapshots = pgTable("competitor_snapshots", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  brandId: text("brand_id")
+    .notNull()
+    .references(() => brands.id, { onDelete: "cascade" }),
+
+  // Competitor identification
+  competitorName: text("competitor_name").notNull(),
+  competitorDomain: text("competitor_domain").notNull(),
+
+  // Snapshot date
+  snapshotDate: date("snapshot_date").notNull(),
+
+  // GEO/AEO metrics
+  geoScore: integer("geo_score"), // 0-100
+  aiMentionCount: integer("ai_mention_count"),
+  avgMentionPosition: real("avg_mention_position"),
+  sentimentScore: real("sentiment_score"), // -1 to 1
+
+  // Social metrics
+  socialFollowers: integer("social_followers"),
+  socialEngagementRate: real("social_engagement_rate"),
+
+  // Content metrics
+  contentPageCount: integer("content_page_count"),
+  blogPostCount: integer("blog_post_count"),
+  lastContentPublished: timestamp("last_content_published", { withTimezone: true }),
+
+  // Technical metrics
+  schemaTypes: jsonb("schema_types").$type<string[]>().default([]),
+  structuredDataScore: integer("structured_data_score"),
+
+  // Platform breakdown
+  platformBreakdown: jsonb("platform_breakdown").$type<PlatformMetrics[]>().default([]),
+
+  // Metadata
+  metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
+
+  // Timestamps
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Platform metrics breakdown type
+export interface PlatformMetrics {
+  platform: string; // chatgpt, claude, gemini, etc.
+  mentions: number;
+  avgPosition: number;
+  sentiment: {
+    positive: number;
+    neutral: number;
+    negative: number;
+  };
+}
+
 // Relations
 export const serpFeaturesRelations = relations(serpFeatures, ({ one }) => ({
   brand: one(brands, {
@@ -259,6 +393,20 @@ export const competitiveAlertsRelations = relations(competitiveAlerts, ({ one })
   }),
 }));
 
+export const discoveredCompetitorsRelations = relations(discoveredCompetitors, ({ one }) => ({
+  brand: one(brands, {
+    fields: [discoveredCompetitors.brandId],
+    references: [brands.id],
+  }),
+}));
+
+export const competitorSnapshotsRelations = relations(competitorSnapshots, ({ one }) => ({
+  brand: one(brands, {
+    fields: [competitorSnapshots.brandId],
+    references: [brands.id],
+  }),
+}));
+
 // Type exports
 export type SerpFeature = typeof serpFeatures.$inferSelect;
 export type NewSerpFeature = typeof serpFeatures.$inferInsert;
@@ -274,3 +422,10 @@ export type NewCompetitiveGap = typeof competitiveGaps.$inferInsert;
 
 export type CompetitiveAlert = typeof competitiveAlerts.$inferSelect;
 export type NewCompetitiveAlert = typeof competitiveAlerts.$inferInsert;
+
+// Phase 9.1: New type exports
+export type DiscoveredCompetitor = typeof discoveredCompetitors.$inferSelect;
+export type NewDiscoveredCompetitor = typeof discoveredCompetitors.$inferInsert;
+
+export type CompetitorSnapshot = typeof competitorSnapshots.$inferSelect;
+export type NewCompetitorSnapshot = typeof competitorSnapshots.$inferInsert;

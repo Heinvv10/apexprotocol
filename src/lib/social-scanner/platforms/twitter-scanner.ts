@@ -9,7 +9,7 @@
  * - User lookup, tweets, search available
  */
 
-import { TwitterApi } from "twitter-api-v2";
+import { TwitterApi, type TweetV2, type ReferencedTweetV2 } from "twitter-api-v2";
 import type {
   SocialScanner,
   ProfileScanResult,
@@ -127,9 +127,9 @@ class TwitterScannerImpl implements SocialScanner {
         avatarUrl: user.profile_image_url?.replace("_normal", "_400x400") || null,
         profileUrl: PLATFORM_URLS.twitter.profile(user.username),
         isVerified: user.verified || false,
-        followerCount: metrics.followers_count,
-        followingCount: metrics.following_count,
-        postCount: metrics.tweet_count,
+        followerCount: metrics.followers_count ?? 0,
+        followingCount: metrics.following_count ?? 0,
+        postCount: metrics.tweet_count ?? 0,
         createdAt: user.created_at ? new Date(user.created_at) : null,
         metadata: {
           location: user.location,
@@ -205,7 +205,9 @@ class TwitterScannerImpl implements SocialScanner {
         }
       }
 
-      const posts: TwitterPost[] = (response.data || []).map((tweet) => {
+      // Access tweets from paginator - response.data.data contains the array
+      const tweets: TweetV2[] = response.data?.data ?? [];
+      const posts: TwitterPost[] = tweets.map((tweet: TweetV2) => {
         const metrics = tweet.public_metrics || {
           like_count: 0,
           reply_count: 0,
@@ -241,10 +243,10 @@ class TwitterScannerImpl implements SocialScanner {
         }
 
         // Check for retweets, quotes, replies
-        const referencedTweets = tweet.referenced_tweets || [];
-        const isRetweet = referencedTweets.some((rt) => rt.type === "retweeted");
-        const isQuote = referencedTweets.some((rt) => rt.type === "quoted");
-        const isReply = referencedTweets.some((rt) => rt.type === "replied_to");
+        const referencedTweets: ReferencedTweetV2[] = tweet.referenced_tweets || [];
+        const isRetweet = referencedTweets.some((rt: ReferencedTweetV2) => rt.type === "retweeted");
+        const isQuote = referencedTweets.some((rt: ReferencedTweetV2) => rt.type === "quoted");
+        const isReply = referencedTweets.some((rt: ReferencedTweetV2) => rt.type === "replied_to");
 
         return {
           platform: "twitter" as const,
@@ -269,9 +271,9 @@ class TwitterScannerImpl implements SocialScanner {
             isRetweet,
             isQuote,
             isReply,
-            replyToTweetId: referencedTweets.find((rt) => rt.type === "replied_to")?.id,
-            quotedTweetId: referencedTweets.find((rt) => rt.type === "quoted")?.id,
-            retweetedTweetId: referencedTweets.find((rt) => rt.type === "retweeted")?.id,
+            replyToTweetId: referencedTweets.find((rt: ReferencedTweetV2) => rt.type === "replied_to")?.id,
+            quotedTweetId: referencedTweets.find((rt: ReferencedTweetV2) => rt.type === "quoted")?.id,
+            retweetedTweetId: referencedTweets.find((rt: ReferencedTweetV2) => rt.type === "retweeted")?.id,
           },
         };
       });
@@ -376,7 +378,9 @@ class TwitterScannerImpl implements SocialScanner {
         }
       }
 
-      const mentions: BrandMention[] = (response.data || []).map((tweet) => {
+      // Access tweets from search response - response.data.data contains the array
+      const searchTweets: TweetV2[] = response.data?.data ?? [];
+      const mentions: BrandMention[] = searchTweets.map((tweet: TweetV2) => {
         const metrics = tweet.public_metrics || {
           like_count: 0,
           reply_count: 0,
