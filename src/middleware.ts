@@ -126,7 +126,7 @@ async function productionMiddleware(request: NextRequest) {
       if (!isSuperAdmin && !devSuperAdmin) {
         const url = new URL("/dashboard", req.url);
         url.searchParams.set("error", "super_admin_required");
-        return Response.redirect(url);
+        return NextResponse.redirect(url);
       }
     }
 
@@ -136,7 +136,7 @@ async function productionMiddleware(request: NextRequest) {
       if (orgRole !== "org:admin") {
         const url = new URL("/dashboard", req.url);
         url.searchParams.set("error", "unauthorized");
-        return Response.redirect(url);
+        return NextResponse.redirect(url);
       }
     }
   });
