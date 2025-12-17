@@ -21,7 +21,7 @@ vi.mock("@/lib/auth/super-admin", () => ({
   isSuperAdmin: vi.fn(),
 }));
 
-// Mock database
+// Mock database with proper query chain
 vi.mock("@/lib/db", () => ({
   db: {
     select: vi.fn().mockReturnThis(),
@@ -29,7 +29,7 @@ vi.mock("@/lib/db", () => ({
     where: vi.fn().mockReturnThis(),
     orderBy: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
-    offset: vi.fn().mockReturnThis(),
+    offset: vi.fn(),
     insert: vi.fn().mockReturnThis(),
     values: vi.fn().mockReturnThis(),
     returning: vi.fn(),
@@ -39,6 +39,41 @@ vi.mock("@/lib/db", () => ({
 import { auth } from "@clerk/nextjs/server";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
 import { db } from "@/lib/db";
+
+// Helper to set up database mocks for GET requests
+function setupGetMocks(logs: any[], totalCount?: number) {
+  const count = totalCount !== undefined ? totalCount : logs.length;
+
+  // Reset mocks
+  vi.mocked(db.where).mockReturnValue(db as any);
+  vi.mocked(db.from).mockReturnValue(db as any);
+
+  // Setup sequential query responses
+  let queryCount = 0;
+
+  vi.mocked(db.where).mockImplementation((clause: any) => {
+    queryCount++;
+    if (queryCount === 1) {
+      // First query is count
+      return Promise.resolve([{ count }]) as any;
+    }
+    // Second query is logs - continue chain
+    return db as any;
+  });
+
+  // Logs query resolves at offset
+  vi.mocked(db.offset).mockResolvedValue(logs);
+}
+
+// Helper to set up database mocks for POST requests
+function setupPostMocks(createdLog: any, previousLogHash: string | null = null) {
+  // Mock previous log hash query (first query)
+  const previousLog = previousLogHash ? [{ integrityHash: previousLogHash }] : [];
+  vi.mocked(db.limit).mockResolvedValueOnce(previousLog);
+
+  // Mock insert returning (second query)
+  vi.mocked(db.returning).mockResolvedValue([createdLog]);
+}
 
 describe("GET /api/admin/audit-logs - List Audit Logs (FR-1)", () => {
   beforeEach(() => {
@@ -72,7 +107,7 @@ describe("GET /api/admin/audit-logs - List Audit Logs (FR-1)", () => {
       },
     ];
 
-    vi.mocked(db.returning).mockResolvedValue(mockLogs);
+    setupGetMocks(mockLogs);
 
     const request = new NextRequest("http://localhost:3000/api/admin/audit-logs");
     const response = await GET(request);
@@ -140,7 +175,7 @@ describe("GET /api/admin/audit-logs - List Audit Logs (FR-1)", () => {
       },
     ];
 
-    vi.mocked(db.returning).mockResolvedValue(mockLogs);
+    setupGetMocks(mockLogs);
 
     const request = new NextRequest("http://localhost:3000/api/admin/audit-logs");
     const response = await GET(request);
@@ -172,9 +207,9 @@ describe("GET /api/admin/audit-logs - List Audit Logs (FR-1)", () => {
       createdAt: new Date(),
     }));
 
-    vi.mocked(db.returning).mockResolvedValue(mockLogs);
+    setupGetMocks(mockLogs);
 
-    const request = new NextRequest("http://localhost:3000/api/admin/audit-logs?page=1&pageSize=10");
+    const request = new NextRequest("http://localhost:3000/api/admin/audit-logs?page=1&limit=10");
     const response = await GET(request);
     const data = await response.json();
 
@@ -187,7 +222,7 @@ describe("GET /api/admin/audit-logs - List Audit Logs (FR-1)", () => {
   });
 
   it("should show total count of logs (AC-1.8)", async () => {
-    vi.mocked(db.returning).mockResolvedValue([]);
+    setupGetMocks([]);
 
     const request = new NextRequest("http://localhost:3000/api/admin/audit-logs");
     const response = await GET(request);
@@ -227,7 +262,7 @@ describe("GET /api/admin/audit-logs - Filter Functionality (FR-2)", () => {
       },
     ];
 
-    vi.mocked(db.returning).mockResolvedValue(mockLogs);
+    setupGetMocks(mockLogs);
 
     const request = new NextRequest(`http://localhost:3000/api/admin/audit-logs?actor=${actorId}`);
     const response = await GET(request);
@@ -262,7 +297,7 @@ describe("GET /api/admin/audit-logs - Filter Functionality (FR-2)", () => {
       },
     ];
 
-    vi.mocked(db.returning).mockResolvedValue(mockLogs);
+    setupGetMocks(mockLogs);
 
     const request = new NextRequest(`http://localhost:3000/api/admin/audit-logs?action=${action}`);
     const response = await GET(request);
@@ -297,7 +332,7 @@ describe("GET /api/admin/audit-logs - Filter Functionality (FR-2)", () => {
       },
     ];
 
-    vi.mocked(db.returning).mockResolvedValue(mockLogs);
+    setupGetMocks(mockLogs);
 
     const request = new NextRequest(`http://localhost:3000/api/admin/audit-logs?targetType=${targetType}`);
     const response = await GET(request);
@@ -332,7 +367,7 @@ describe("GET /api/admin/audit-logs - Filter Functionality (FR-2)", () => {
       },
     ];
 
-    vi.mocked(db.returning).mockResolvedValue(mockLogs);
+    setupGetMocks(mockLogs);
 
     const request = new NextRequest(`http://localhost:3000/api/admin/audit-logs?status=${status}`);
     const response = await GET(request);
@@ -346,8 +381,8 @@ describe("GET /api/admin/audit-logs - Filter Functionality (FR-2)", () => {
   });
 
   it("should filter by date range (AC-2.5)", async () => {
-    const dateFrom = "2025-12-01T00:00:00Z";
-    const dateTo = "2025-12-17T23:59:59Z";
+    const startDate = "2025-12-01T00:00:00Z";
+    const endDate = "2025-12-17T23:59:59Z";
     const mockLogs = [
       {
         id: "log_1",
@@ -368,20 +403,20 @@ describe("GET /api/admin/audit-logs - Filter Functionality (FR-2)", () => {
       },
     ];
 
-    vi.mocked(db.returning).mockResolvedValue(mockLogs);
+    setupGetMocks(mockLogs);
 
     const request = new NextRequest(
-      `http://localhost:3000/api/admin/audit-logs?dateFrom=${dateFrom}&dateTo=${dateTo}`
+      `http://localhost:3000/api/admin/audit-logs?startDate=${startDate}&endDate=${endDate}`
     );
     const response = await GET(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data.filters.dateFrom).toBe(dateFrom);
-    expect(data.filters.dateTo).toBe(dateTo);
+    expect(data.filters.startDate).toBe(startDate);
+    expect(data.filters.endDate).toBe(endDate);
 
-    const from = new Date(dateFrom);
-    const to = new Date(dateTo);
+    const from = new Date(startDate);
+    const to = new Date(endDate);
     data.logs.forEach((log: any) => {
       const logDate = new Date(log.timestamp);
       expect(logDate.getTime()).toBeGreaterThanOrEqual(from.getTime());
@@ -412,7 +447,7 @@ describe("GET /api/admin/audit-logs - Filter Functionality (FR-2)", () => {
       },
     ];
 
-    vi.mocked(db.returning).mockResolvedValue(mockLogs);
+    setupGetMocks(mockLogs);
 
     const request = new NextRequest(
       `http://localhost:3000/api/admin/audit-logs?action=${action}&status=${status}`
@@ -460,7 +495,7 @@ describe("GET /api/admin/audit-logs - Search Functionality (FR-3)", () => {
       },
     ];
 
-    vi.mocked(db.returning).mockResolvedValue(mockLogs);
+    setupGetMocks(mockLogs);
 
     const request = new NextRequest(`http://localhost:3000/api/admin/audit-logs?search=${search}`);
     const response = await GET(request);
@@ -484,7 +519,7 @@ describe("GET /api/admin/audit-logs - Search Functionality (FR-3)", () => {
   it("should return empty array when no results found (AC-3.5)", async () => {
     const search = "nonexistent_search_term_xyz123";
 
-    vi.mocked(db.returning).mockResolvedValue([]);
+    setupGetMocks([]);
 
     const request = new NextRequest(`http://localhost:3000/api/admin/audit-logs?search=${search}`);
     const response = await GET(request);
@@ -536,7 +571,7 @@ describe("POST /api/admin/audit-logs - Create Log (Internal)", () => {
       createdAt: new Date(),
     };
 
-    vi.mocked(db.returning).mockResolvedValue([mockCreatedLog]);
+    setupPostMocks(mockCreatedLog, "sha256:xyz789");
 
     const request = new NextRequest("http://localhost:3000/api/admin/audit-logs", {
       method: "POST",
@@ -549,7 +584,7 @@ describe("POST /api/admin/audit-logs - Create Log (Internal)", () => {
 
     expect(response.status).toBe(201);
     expect(data).toHaveProperty("success", true);
-    expect(data).toHaveProperty("logId");
+    expect(data).toHaveProperty("log");
   });
 
   it("should handle system-triggered actions with no actor (EC-3)", async () => {
@@ -575,7 +610,7 @@ describe("POST /api/admin/audit-logs - Create Log (Internal)", () => {
       createdAt: new Date(),
     };
 
-    vi.mocked(db.returning).mockResolvedValue([mockCreatedLog]);
+    setupPostMocks(mockCreatedLog);
 
     const request = new NextRequest("http://localhost:3000/api/admin/audit-logs", {
       method: "POST",
@@ -597,7 +632,7 @@ describe("Security - Authentication and Authorization", () => {
     process.env.NODE_ENV = "development";
     process.env.DEV_SUPER_ADMIN = "true";
 
-    vi.mocked(db.returning).mockResolvedValue([]);
+    setupGetMocks([]);
 
     const request = new NextRequest("http://localhost:3000/api/admin/audit-logs");
     const response = await GET(request);
@@ -622,7 +657,7 @@ describe("Security - Authentication and Authorization", () => {
       createdAt: new Date(),
     };
 
-    vi.mocked(db.returning).mockResolvedValue([mockCreatedLog]);
+    setupPostMocks(mockCreatedLog);
 
     const request = new NextRequest("http://localhost:3000/api/admin/audit-logs", {
       method: "POST",

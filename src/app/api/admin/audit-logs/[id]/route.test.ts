@@ -87,8 +87,20 @@ describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
       },
     ];
 
-    vi.mocked(db.limit).mockResolvedValueOnce([mockLog]); // Main log
-    vi.mocked(db.limit).mockResolvedValueOnce(mockRelatedLogs); // Related logs
+    // Reset and configure limit mock for this test
+    let limitCallCount = 0;
+    vi.mocked(db.limit).mockReset();
+    vi.mocked(db.limit).mockImplementation((arg?: any) => {
+      limitCallCount++;
+      if (limitCallCount === 1) {
+        // First call: main log query
+        return Promise.resolve([mockLog]) as any;
+      } else if (limitCallCount === 3 && arg === 10) {
+        // Third call with arg 10: related logs query
+        return Promise.resolve(mockRelatedLogs) as any;
+      }
+      return Promise.resolve([]) as any;
+    });
 
     const request = new NextRequest(`http://localhost:3000/api/admin/audit-logs/${logId}`);
     const response = await GET(request, { params: { id: logId } });
@@ -121,6 +133,8 @@ describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
   it("should return 404 when log not found (FR-4)", async () => {
     const logId = "log_nonexistent";
 
+    // Reset and configure limit mock for this test
+    vi.mocked(db.limit).mockReset();
     vi.mocked(db.limit).mockResolvedValue([]);
 
     const request = new NextRequest(`http://localhost:3000/api/admin/audit-logs/${logId}`);
@@ -131,9 +145,11 @@ describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
 
   it("should include related logs (AC-4.5)", async () => {
     const logId = "log_test123";
+    const baseTimestamp = new Date("2025-12-17T10:00:00Z");
+
     const mockLog = {
       id: logId,
-      timestamp: new Date(),
+      timestamp: baseTimestamp,
       actorId: "user_123",
       actorName: "User",
       actorEmail: "user@example.com",
@@ -147,28 +163,40 @@ describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
       status: "success",
       metadata: { sessionId: "sess_789" },
       integrityHash: "sha256:abc123",
-      createdAt: new Date(),
+      createdAt: baseTimestamp,
     };
 
     const mockRelatedLogs = [
       {
         id: "log_related1",
-        timestamp: new Date(),
+        timestamp: new Date("2025-12-17T10:05:00Z"), // 5 minutes after
         action: "access",
         actionType: "access",
         description: "Accessed organization",
       },
       {
         id: "log_related2",
-        timestamp: new Date(),
+        timestamp: new Date("2025-12-17T10:10:00Z"), // 10 minutes after
         action: "create",
         actionType: "create",
         description: "Created user in organization",
       },
     ];
 
-    vi.mocked(db.limit).mockResolvedValueOnce([mockLog]);
-    vi.mocked(db.limit).mockResolvedValueOnce(mockRelatedLogs);
+    // Reset and configure limit mock for this test
+    let limitCallCount = 0;
+    vi.mocked(db.limit).mockReset();
+    vi.mocked(db.limit).mockImplementation((arg?: any) => {
+      limitCallCount++;
+      if (limitCallCount === 1) {
+        // First call: main log query
+        return Promise.resolve([mockLog]) as any;
+      } else if (limitCallCount === 3 && arg === 10) {
+        // Third call with arg 10: related logs query
+        return Promise.resolve(mockRelatedLogs) as any;
+      }
+      return Promise.resolve([]) as any;
+    });
 
     const request = new NextRequest(`http://localhost:3000/api/admin/audit-logs/${logId}`);
     const response = await GET(request, { params: { id: logId } });
