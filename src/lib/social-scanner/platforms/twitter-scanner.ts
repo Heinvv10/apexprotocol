@@ -1,409 +1,524 @@
 /**
- * Twitter/X Scanner
+ * Twitter Scanner
  *
- * Service-level Twitter scanner using Twitter API v2 with Bearer Token.
- * No user OAuth required for public data access.
+ * Service-level Twitter/X scanning using Bearer Token (App-Only Authentication).
+ * Uses twitter-api-v2 package for API access.
  *
- * Rate Limits (Free Tier):
- * - User lookup: 300 requests/15 min
- * - User timeline: 1500 requests/15 min
- * - Search tweets: 450 requests/15 min
+ * Free tier limits:
+ * - 450 requests per 15-minute window
+ * - User lookup, tweets, search available
  */
 
-import { TwitterApi, TweetV2, UserV2 } from "twitter-api-v2";
-import { SocialScannerBase } from "../scanner-base";
-import { getTwitterCredentials } from "../config";
+import { TwitterApi } from "twitter-api-v2";
 import type {
-  ServiceScanPlatform,
-  SocialProfile,
+  SocialScanner,
+  ProfileScanResult,
+  PostsScanResult,
+  MentionsScanResult,
   TwitterProfile,
-  SocialPost,
   TwitterPost,
-  SocialMention,
-  PostType,
-  MentionSentiment,
+  BrandMention,
+  ScanError,
+  RateLimitInfo,
 } from "../types";
+import {
+  getTwitterBearerToken,
+  TWITTER_CONFIG,
+  PLATFORM_URLS,
+  ERROR_CODES,
+} from "../config";
 
-export class TwitterScanner extends SocialScannerBase {
-  platform: ServiceScanPlatform = "twitter";
+// ============================================================================
+// Twitter Scanner Implementation
+// ============================================================================
+
+class TwitterScannerImpl implements SocialScanner {
+  platform = "twitter" as const;
   private client: TwitterApi | null = null;
 
-  constructor() {
-    super();
-    this.initializeClient();
-  }
-
-  private initializeClient(): void {
-    const credentials = getTwitterCredentials();
-    if (credentials) {
-      this.client = new TwitterApi(credentials.bearerToken);
-    }
-  }
-
   isConfigured(): boolean {
-    return this.client !== null;
+    return TWITTER_CONFIG.isConfigured;
   }
 
-  // ============================================================================
-  // Profile Fetching
-  // ============================================================================
-
-  protected async fetchProfile(handle: string): Promise<SocialProfile> {
+  private getClient(): TwitterApi {
     if (!this.client) {
-      throw new Error("Twitter API not configured");
-    }
-
-    const user = await this.client.v2.userByUsername(handle, {
-      "user.fields": [
-        "id",
-        "name",
-        "username",
-        "description",
-        "profile_image_url",
-        "public_metrics",
-        "verified",
-        "verified_type",
-        "location",
-        "url",
-        "created_at",
-        "protected",
-        "pinned_tweet_id",
-      ],
-    });
-
-    if (!user.data) {
-      throw new Error("User not found");
-    }
-
-    return this.transformUserToProfile(user.data);
-  }
-
-  private transformUserToProfile(user: UserV2): TwitterProfile {
-    const metrics = user.public_metrics || {
-      followers_count: 0,
-      following_count: 0,
-      tweet_count: 0,
-      listed_count: 0,
-    };
-
-    return {
-      platform: "twitter",
-      platformId: user.id,
-      handle: user.username,
-      displayName: user.name,
-      bio: user.description,
-      followerCount: metrics.followers_count ?? 0,
-      followingCount: metrics.following_count ?? 0,
-      postCount: metrics.tweet_count ?? 0,
-      isVerified: user.verified || false,
-      profileUrl: `https://twitter.com/${user.username}`,
-      avatarUrl: user.profile_image_url?.replace("_normal", "_400x400"),
-      location: user.location,
-      website: user.url,
-      createdAt: user.created_at ? new Date(user.created_at) : undefined,
-      platformSpecific: {
-        listedCount: metrics.listed_count,
-        pinnedTweetId: user.pinned_tweet_id,
-        protected: user.protected,
-      },
-    };
-  }
-
-  // ============================================================================
-  // Posts/Tweets Fetching
-  // ============================================================================
-
-  protected async fetchRecentPosts(
-    handle: string,
-    maxPosts: number
-  ): Promise<SocialPost[]> {
-    if (!this.client) {
-      throw new Error("Twitter API not configured");
-    }
-
-    // First get user ID
-    const user = await this.client.v2.userByUsername(handle);
-    if (!user.data) {
-      throw new Error("User not found");
-    }
-
-    // Get user's tweets
-    const tweets = await this.client.v2.userTimeline(user.data.id, {
-      max_results: Math.min(maxPosts, 100), // API max is 100
-      "tweet.fields": [
-        "id",
-        "text",
-        "created_at",
-        "public_metrics",
-        "entities",
-        "attachments",
-        "conversation_id",
-        "in_reply_to_user_id",
-        "referenced_tweets",
-        "lang",
-      ],
-      expansions: ["referenced_tweets.id", "attachments.media_keys"],
-      "media.fields": ["type", "url", "preview_image_url"],
-    });
-
-    if (!tweets.data?.data) {
-      return [];
-    }
-
-    return tweets.data.data.map((tweet) =>
-      this.transformTweetToPost(tweet, user.data!)
-    );
-  }
-
-  private transformTweetToPost(tweet: TweetV2, user: UserV2): TwitterPost {
-    const metrics = tweet.public_metrics || {
-      like_count: 0,
-      retweet_count: 0,
-      reply_count: 0,
-      quote_count: 0,
-      bookmark_count: 0,
-    };
-
-    // Determine post type
-    let postType: PostType = "text";
-    let isRepost = false;
-    let originalPostId: string | undefined;
-
-    if (tweet.referenced_tweets) {
-      const refType = tweet.referenced_tweets[0]?.type;
-      if (refType === "retweeted") {
-        postType = "retweet";
-        isRepost = true;
-        originalPostId = tweet.referenced_tweets[0]?.id;
-      } else if (refType === "quoted") {
-        postType = "quote";
+      const bearerToken = getTwitterBearerToken();
+      if (!bearerToken) {
+        throw new Error("Twitter Bearer Token not configured");
       }
+      this.client = new TwitterApi(bearerToken);
     }
-
-    // Extract hashtags and mentions
-    const hashtags = tweet.entities?.hashtags?.map((h) => h.tag) || [];
-    const mentions = tweet.entities?.mentions?.map((m) => m.username) || [];
-
-    // Extract media URLs
-    const mediaUrls = tweet.entities?.urls
-      ?.filter((u) => u.expanded_url?.includes("pic.twitter.com"))
-      .map((u) => u.expanded_url || "") || [];
-
-    return {
-      platform: "twitter",
-      postId: tweet.id,
-      authorId: user.id,
-      authorHandle: user.username,
-      authorName: user.name,
-      content: tweet.text,
-      postType,
-      publishedAt: tweet.created_at ? new Date(tweet.created_at) : new Date(),
-      engagement: {
-        likes: metrics.like_count,
-        comments: metrics.reply_count,
-        shares: metrics.retweet_count + metrics.quote_count,
-        impressions: (tweet.public_metrics as Record<string, number> | undefined)?.impression_count,
-      },
-      postUrl: `https://twitter.com/${user.username}/status/${tweet.id}`,
-      mediaUrls,
-      hashtags,
-      mentions,
-      isRepost,
-      originalPostId,
-      platformSpecific: {
-        retweetCount: metrics.retweet_count,
-        quoteCount: metrics.quote_count,
-        replyCount: metrics.reply_count,
-        bookmarkCount: metrics.bookmark_count,
-        conversationId: tweet.conversation_id,
-        inReplyToUserId: tweet.in_reply_to_user_id,
-        language: tweet.lang,
-      },
-    };
+    return this.client;
   }
 
-  // ============================================================================
-  // Mentions/Search
-  // ============================================================================
+  /**
+   * Get Twitter profile by handle
+   */
+  async getProfile(handle: string): Promise<ProfileScanResult> {
+    const scannedAt = new Date();
 
-  protected async fetchMentions(
-    query: string,
-    maxMentions: number,
-    sinceDays: number
-  ): Promise<SocialMention[]> {
-    if (!this.client) {
-      throw new Error("Twitter API not configured");
+    if (!this.isConfigured()) {
+      return {
+        success: false,
+        platform: "twitter",
+        data: null,
+        error: {
+          code: ERROR_CODES.NOT_CONFIGURED,
+          message: "Twitter API not configured. Set TWITTER_BEARER_TOKEN environment variable.",
+          retryable: false,
+          retryAfter: null,
+        },
+        scannedAt,
+        rateLimitInfo: null,
+      };
     }
 
-    // Calculate start time
-    const startTime = new Date();
-    startTime.setDate(startTime.getDate() - sinceDays);
+    // Normalize handle (remove @ if present)
+    const normalizedHandle = handle.replace(/^@/, "");
 
-    // Search for mentions of the brand
-    // Exclude retweets to get unique mentions
-    const searchQuery = `${query} -is:retweet`;
+    try {
+      const client = this.getClient();
+      const response = await client.v2.userByUsername(normalizedHandle, {
+        "user.fields": [
+          "id",
+          "name",
+          "username",
+          "description",
+          "profile_image_url",
+          "verified",
+          "public_metrics",
+          "created_at",
+          "location",
+          "url",
+          "pinned_tweet_id",
+        ],
+      });
 
-    const searchResult = await this.client.v2.search(searchQuery, {
-      max_results: Math.min(maxMentions, 100),
-      start_time: startTime.toISOString(),
-      "tweet.fields": [
-        "id",
-        "text",
-        "created_at",
-        "public_metrics",
-        "author_id",
-        "entities",
-        "lang",
-      ],
-      expansions: ["author_id"],
-      "user.fields": [
-        "id",
-        "username",
-        "name",
-        "public_metrics",
-        "verified",
-        "profile_image_url",
-      ],
-    });
-
-    if (!searchResult.data?.data) {
-      return [];
-    }
-
-    // Create user lookup map
-    const userMap = new Map<string, UserV2>();
-    if (searchResult.includes?.users) {
-      for (const user of searchResult.includes.users) {
-        userMap.set(user.id, user);
+      if (!response.data) {
+        return {
+          success: false,
+          platform: "twitter",
+          data: null,
+          error: {
+            code: ERROR_CODES.NOT_FOUND,
+            message: `Twitter user @${normalizedHandle} not found`,
+            retryable: false,
+            retryAfter: null,
+          },
+          scannedAt,
+          rateLimitInfo: null,
+        };
       }
-    }
 
-    return searchResult.data.data.map((tweet) => {
-      const author = userMap.get(tweet.author_id || "");
-      return this.transformTweetToMention(tweet, author, query);
-    });
+      const user = response.data;
+      const metrics = user.public_metrics || {
+        followers_count: 0,
+        following_count: 0,
+        tweet_count: 0,
+        listed_count: 0,
+      };
+
+      const profile: TwitterProfile = {
+        platform: "twitter",
+        platformId: user.id,
+        username: user.username,
+        displayName: user.name,
+        bio: user.description || null,
+        avatarUrl: user.profile_image_url?.replace("_normal", "_400x400") || null,
+        profileUrl: PLATFORM_URLS.twitter.profile(user.username),
+        isVerified: user.verified || false,
+        followerCount: metrics.followers_count,
+        followingCount: metrics.following_count,
+        postCount: metrics.tweet_count,
+        createdAt: user.created_at ? new Date(user.created_at) : null,
+        metadata: {
+          location: user.location,
+          website: user.url,
+          pinnedTweetId: user.pinned_tweet_id,
+          listedCount: metrics.listed_count,
+        },
+      };
+
+      return {
+        success: true,
+        platform: "twitter",
+        data: profile,
+        error: null,
+        scannedAt,
+        rateLimitInfo: null,
+      };
+    } catch (error) {
+      return this.handleError(error, scannedAt);
+    }
   }
 
-  private transformTweetToMention(
-    tweet: TweetV2,
-    author: UserV2 | undefined,
-    searchQuery: string
-  ): SocialMention {
-    const metrics = tweet.public_metrics || {
-      like_count: 0,
-      retweet_count: 0,
-      reply_count: 0,
-      quote_count: 0,
-    };
+  /**
+   * Get recent tweets for a user
+   */
+  async getRecentPosts(
+    userId: string,
+    options?: { limit?: number; cursor?: string }
+  ): Promise<PostsScanResult> {
+    const scannedAt = new Date();
+    const limit = options?.limit || 20;
 
-    const authorMetrics = author?.public_metrics || {
-      followers_count: 0,
-    };
+    if (!this.isConfigured()) {
+      return {
+        success: false,
+        platform: "twitter",
+        data: null,
+        error: {
+          code: ERROR_CODES.NOT_CONFIGURED,
+          message: "Twitter API not configured. Set TWITTER_BEARER_TOKEN environment variable.",
+          retryable: false,
+          retryAfter: null,
+        },
+        scannedAt,
+        rateLimitInfo: null,
+        pagination: null,
+      };
+    }
 
-    // Basic sentiment analysis based on common patterns
-    const sentiment = this.analyzeSentiment(tweet.text);
+    try {
+      const client = this.getClient();
+      const response = await client.v2.userTimeline(userId, {
+        max_results: Math.min(limit, 100),
+        pagination_token: options?.cursor,
+        "tweet.fields": [
+          "id",
+          "text",
+          "created_at",
+          "public_metrics",
+          "entities",
+          "referenced_tweets",
+          "conversation_id",
+          "author_id",
+        ],
+        expansions: ["author_id"],
+        "user.fields": ["username"],
+      });
+
+      const authorMap = new Map<string, string>();
+      if (response.includes?.users) {
+        for (const user of response.includes.users) {
+          authorMap.set(user.id, user.username);
+        }
+      }
+
+      const posts: TwitterPost[] = (response.data || []).map((tweet) => {
+        const metrics = tweet.public_metrics || {
+          like_count: 0,
+          reply_count: 0,
+          retweet_count: 0,
+          impression_count: 0,
+        };
+
+        const authorUsername = authorMap.get(tweet.author_id || userId) || "unknown";
+
+        // Extract hashtags and mentions
+        const hashtags: string[] = [];
+        const mentions: string[] = [];
+        const mediaUrls: string[] = [];
+
+        if (tweet.entities) {
+          if (tweet.entities.hashtags) {
+            for (const h of tweet.entities.hashtags) {
+              hashtags.push(h.tag);
+            }
+          }
+          if (tweet.entities.mentions) {
+            for (const m of tweet.entities.mentions) {
+              mentions.push(m.username);
+            }
+          }
+          if (tweet.entities.urls) {
+            for (const u of tweet.entities.urls) {
+              if (u.media_key) {
+                mediaUrls.push(u.expanded_url || u.url);
+              }
+            }
+          }
+        }
+
+        // Check for retweets, quotes, replies
+        const referencedTweets = tweet.referenced_tweets || [];
+        const isRetweet = referencedTweets.some((rt) => rt.type === "retweeted");
+        const isQuote = referencedTweets.some((rt) => rt.type === "quoted");
+        const isReply = referencedTweets.some((rt) => rt.type === "replied_to");
+
+        return {
+          platform: "twitter" as const,
+          postId: tweet.id,
+          authorId: tweet.author_id || userId,
+          authorUsername,
+          content: tweet.text,
+          postUrl: PLATFORM_URLS.twitter.tweet(authorUsername, tweet.id),
+          publishedAt: tweet.created_at ? new Date(tweet.created_at) : new Date(),
+          metrics: {
+            likes: metrics.like_count,
+            comments: metrics.reply_count,
+            shares: metrics.retweet_count,
+            views: metrics.impression_count || null,
+            engagementRate: null,
+          },
+          mediaUrls,
+          hashtags,
+          mentions,
+          metadata: {
+            conversationId: tweet.conversation_id,
+            isRetweet,
+            isQuote,
+            isReply,
+            replyToTweetId: referencedTweets.find((rt) => rt.type === "replied_to")?.id,
+            quotedTweetId: referencedTweets.find((rt) => rt.type === "quoted")?.id,
+            retweetedTweetId: referencedTweets.find((rt) => rt.type === "retweeted")?.id,
+          },
+        };
+      });
+
+      return {
+        success: true,
+        platform: "twitter",
+        data: posts,
+        error: null,
+        scannedAt,
+        rateLimitInfo: null,
+        pagination: {
+          hasMore: !!response.meta?.next_token,
+          nextCursor: response.meta?.next_token || null,
+          totalCount: response.meta?.result_count || posts.length,
+        },
+      };
+    } catch (error) {
+      const result = this.handleError(error, scannedAt);
+      return {
+        ...result,
+        data: null,
+        pagination: null,
+      };
+    }
+  }
+
+  /**
+   * Search for brand mentions
+   */
+  async searchMentions(
+    keywords: string[],
+    options?: { limit?: number; cursor?: string; since?: Date }
+  ): Promise<MentionsScanResult> {
+    const scannedAt = new Date();
+    const limit = options?.limit || 50;
+
+    if (!this.isConfigured()) {
+      return {
+        success: false,
+        platform: "twitter",
+        data: null,
+        error: {
+          code: ERROR_CODES.NOT_CONFIGURED,
+          message: "Twitter API not configured. Set TWITTER_BEARER_TOKEN environment variable.",
+          retryable: false,
+          retryAfter: null,
+        },
+        scannedAt,
+        rateLimitInfo: null,
+        pagination: null,
+      };
+    }
+
+    if (keywords.length === 0) {
+      return {
+        success: false,
+        platform: "twitter",
+        data: null,
+        error: {
+          code: ERROR_CODES.INVALID_HANDLE,
+          message: "At least one keyword is required for mention search",
+          retryable: false,
+          retryAfter: null,
+        },
+        scannedAt,
+        rateLimitInfo: null,
+        pagination: null,
+      };
+    }
+
+    try {
+      const client = this.getClient();
+
+      // Build query: combine keywords with OR
+      const query = keywords.map((k) => `"${k}"`).join(" OR ");
+
+      const response = await client.v2.search(query, {
+        max_results: Math.min(limit, 100),
+        next_token: options?.cursor,
+        start_time: options?.since?.toISOString(),
+        "tweet.fields": [
+          "id",
+          "text",
+          "created_at",
+          "public_metrics",
+          "entities",
+          "author_id",
+        ],
+        expansions: ["author_id"],
+        "user.fields": ["username", "name", "public_metrics"],
+      });
+
+      const userMap = new Map<string, { username: string; name: string; followers: number }>();
+      if (response.includes?.users) {
+        for (const user of response.includes.users) {
+          userMap.set(user.id, {
+            username: user.username,
+            name: user.name,
+            followers: user.public_metrics?.followers_count || 0,
+          });
+        }
+      }
+
+      const mentions: BrandMention[] = (response.data || []).map((tweet) => {
+        const metrics = tweet.public_metrics || {
+          like_count: 0,
+          reply_count: 0,
+          retweet_count: 0,
+          impression_count: 0,
+        };
+
+        const author = userMap.get(tweet.author_id || "") || {
+          username: "unknown",
+          name: "Unknown",
+          followers: 0,
+        };
+
+        // Determine which keywords matched
+        const matchedKeywords = keywords.filter((kw) =>
+          tweet.text.toLowerCase().includes(kw.toLowerCase())
+        );
+
+        return {
+          platform: "twitter" as const,
+          postId: tweet.id,
+          content: tweet.text,
+          authorId: tweet.author_id || "",
+          authorUsername: author.username,
+          authorDisplayName: author.name,
+          authorFollowers: author.followers,
+          postUrl: PLATFORM_URLS.twitter.tweet(author.username, tweet.id),
+          publishedAt: tweet.created_at ? new Date(tweet.created_at) : new Date(),
+          sentiment: null, // Would need AI analysis
+          metrics: {
+            likes: metrics.like_count,
+            comments: metrics.reply_count,
+            shares: metrics.retweet_count,
+            views: metrics.impression_count || null,
+            engagementRate: null,
+          },
+          matchedKeywords,
+          metadata: {},
+        };
+      });
+
+      return {
+        success: true,
+        platform: "twitter",
+        data: mentions,
+        error: null,
+        scannedAt,
+        rateLimitInfo: null,
+        pagination: {
+          hasMore: !!response.meta?.next_token,
+          nextCursor: response.meta?.next_token || null,
+          totalCount: response.meta?.result_count || mentions.length,
+        },
+      };
+    } catch (error) {
+      const result = this.handleError(error, scannedAt);
+      return {
+        ...result,
+        data: null,
+        pagination: null,
+      };
+    }
+  }
+
+  /**
+   * Handle API errors
+   */
+  private handleError(
+    error: unknown,
+    scannedAt: Date
+  ): ProfileScanResult {
+    const scanError = this.parseError(error);
+    return {
+      success: false,
+      platform: "twitter",
+      data: null,
+      error: scanError,
+      scannedAt,
+      rateLimitInfo: this.extractRateLimitInfo(error),
+    };
+  }
+
+  private parseError(error: unknown): ScanError {
+    if (error instanceof Error) {
+      const message = error.message;
+
+      // Twitter API v2 rate limit error
+      if (message.includes("429") || message.includes("Too Many Requests")) {
+        return {
+          code: ERROR_CODES.RATE_LIMITED,
+          message: "Twitter rate limit exceeded. Try again later.",
+          retryable: true,
+          retryAfter: 15 * 60, // 15 minutes
+        };
+      }
+
+      // Unauthorized error
+      if (message.includes("401") || message.includes("Unauthorized")) {
+        return {
+          code: ERROR_CODES.UNAUTHORIZED,
+          message: "Twitter API authorization failed. Check Bearer Token.",
+          retryable: false,
+          retryAfter: null,
+        };
+      }
+
+      // User not found
+      if (message.includes("404") || message.includes("Not Found")) {
+        return {
+          code: ERROR_CODES.NOT_FOUND,
+          message: "Twitter user not found",
+          retryable: false,
+          retryAfter: null,
+        };
+      }
+
+      return {
+        code: ERROR_CODES.API_ERROR,
+        message: message,
+        retryable: true,
+        retryAfter: 60,
+      };
+    }
 
     return {
-      platform: "twitter",
-      postId: tweet.id,
-      authorId: author?.id || tweet.author_id || "unknown",
-      authorHandle: author?.username || "unknown",
-      authorName: author?.name,
-      authorFollowers: authorMetrics.followers_count,
-      authorVerified: author?.verified || false,
-      content: tweet.text,
-      sentiment: sentiment.label,
-      sentimentScore: sentiment.score,
-      engagement: {
-        likes: metrics.like_count,
-        comments: metrics.reply_count,
-        shares: metrics.retweet_count + metrics.quote_count,
-      },
-      mentionedAt: tweet.created_at ? new Date(tweet.created_at) : new Date(),
-      postUrl: `https://twitter.com/${author?.username || "i"}/status/${tweet.id}`,
-      matchedKeywords: [searchQuery],
-      mentionType: tweet.text.includes(`@${searchQuery}`)
-        ? "direct"
-        : tweet.text.includes(`#${searchQuery}`)
-          ? "hashtag"
-          : "keyword",
+      code: ERROR_CODES.API_ERROR,
+      message: "Unknown Twitter API error",
+      retryable: true,
+      retryAfter: 60,
     };
   }
 
-  // ============================================================================
-  // Sentiment Analysis (Basic)
-  // ============================================================================
-
-  private analyzeSentiment(text: string): {
-    label: MentionSentiment;
-    score: number;
-  } {
-    const lowercaseText = text.toLowerCase();
-
-    // Positive indicators
-    const positiveWords = [
-      "love",
-      "great",
-      "amazing",
-      "awesome",
-      "excellent",
-      "fantastic",
-      "wonderful",
-      "best",
-      "happy",
-      "thank",
-      "recommend",
-      "impressed",
-      "perfect",
-      "brilliant",
-    ];
-
-    // Negative indicators
-    const negativeWords = [
-      "hate",
-      "terrible",
-      "awful",
-      "worst",
-      "bad",
-      "poor",
-      "disappointed",
-      "frustrat",
-      "annoyed",
-      "angry",
-      "scam",
-      "avoid",
-      "never",
-      "horrible",
-    ];
-
-    let positiveCount = 0;
-    let negativeCount = 0;
-
-    for (const word of positiveWords) {
-      if (lowercaseText.includes(word)) positiveCount++;
-    }
-
-    for (const word of negativeWords) {
-      if (lowercaseText.includes(word)) negativeCount++;
-    }
-
-    // Calculate score (-1 to 1)
-    const total = positiveCount + negativeCount;
-    if (total === 0) {
-      return { label: "neutral", score: 0 };
-    }
-
-    const score = (positiveCount - negativeCount) / total;
-
-    if (score > 0.2) {
-      return { label: "positive", score };
-    } else if (score < -0.2) {
-      return { label: "negative", score };
-    }
-
-    return { label: "neutral", score };
+  private extractRateLimitInfo(error: unknown): RateLimitInfo | null {
+    // Twitter API v2 includes rate limit headers in errors
+    // This would need to be extracted from the error response headers
+    // For now, return estimated limits
+    return null;
   }
 }
 
-// Export singleton instance
-export const twitterScanner = new TwitterScanner();
+// ============================================================================
+// Export Singleton
+// ============================================================================
+
+export const TwitterScanner = new TwitterScannerImpl();

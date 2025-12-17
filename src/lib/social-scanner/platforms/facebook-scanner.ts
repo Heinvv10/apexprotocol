@@ -1,34 +1,37 @@
 /**
  * Facebook Scanner
  *
- * Service-level Facebook scanner using Graph API with App Access Token.
- * Limited to public page data (no user profiles without OAuth).
+ * Service-level Facebook scanning using Graph API with App Token.
+ * Uses direct HTTP calls to Graph API.
  *
- * Rate Limits:
- * - 200 requests per hour for app-level requests
+ * Free tier limits:
+ * - 200 requests per hour for page data
+ * - App Access Token (app_id|app_secret) for public page data
  *
- * Limitations:
- * - Can only access public Facebook Pages
- * - Cannot access personal profiles
- * - Cannot search across all posts
- * - Must know the Page ID or username
+ * Note: Facebook Graph API only allows access to PUBLIC pages.
+ * Personal profiles require user OAuth tokens.
  */
 
-import { SocialScannerBase } from "../scanner-base";
-import { getFacebookCredentials } from "../config";
 import type {
-  ServiceScanPlatform,
-  SocialProfile,
+  SocialScanner,
+  ProfileScanResult,
+  PostsScanResult,
+  MentionsScanResult,
   FacebookProfile,
-  SocialPost,
   FacebookPost,
-  SocialMention,
-  PostType,
-  MentionSentiment,
+  BrandMention,
+  ScanError,
 } from "../types";
+import {
+  getFacebookAppToken,
+  FACEBOOK_CONFIG,
+  PLATFORM_URLS,
+  ERROR_CODES,
+} from "../config";
 
-const GRAPH_API_VERSION = "v22.0";
-const GRAPH_API_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
+// ============================================================================
+// Types for Facebook Graph API Responses
+// ============================================================================
 
 interface FacebookPageResponse {
   id: string;
@@ -36,417 +39,707 @@ interface FacebookPageResponse {
   username?: string;
   about?: string;
   description?: string;
+  category?: string;
   fan_count?: number;
   followers_count?: number;
-  category?: string;
-  category_list?: Array<{ id: string; name: string }>;
-  link?: string;
-  website?: string;
-  location?: {
-    city?: string;
-    country?: string;
-    street?: string;
-  };
   picture?: {
     data: {
       url: string;
-      width: number;
-      height: number;
     };
   };
-  cover?: {
-    source: string;
-  };
-  verification_status?: string;
-  is_verified?: boolean;
-  checkins?: number;
+  link?: string;
+  website?: string;
+  talking_about_count?: number;
+  posts_count?: number;
 }
 
 interface FacebookPostResponse {
   id: string;
   message?: string;
-  story?: string;
   created_time: string;
   full_picture?: string;
-  permalink_url?: string;
-  shares?: { count: number };
-  reactions?: { summary: { total_count: number } };
-  comments?: { summary: { total_count: number } };
-  status_type?: string;
+  shares?: {
+    count: number;
+  };
+  reactions?: {
+    summary: {
+      total_count: number;
+    };
+  };
+  comments?: {
+    summary: {
+      total_count: number;
+    };
+  };
   type?: string;
+  permalink_url?: string;
   attachments?: {
     data: Array<{
       type: string;
       url?: string;
-      media?: { image: { src: string } };
+      title?: string;
     }>;
   };
 }
 
-interface FacebookFeedResponse {
-  data: FacebookPostResponse[];
+interface FacebookPagingResponse<T> {
+  data: T[];
   paging?: {
+    cursors?: {
+      before: string;
+      after: string;
+    };
     next?: string;
-    cursors?: { before: string; after: string };
+    previous?: string;
   };
 }
 
-export class FacebookScanner extends SocialScannerBase {
-  platform: ServiceScanPlatform = "facebook";
-  private accessToken: string | null = null;
+interface FacebookSearchResponse {
+  data: Array<{
+    id: string;
+    name: string;
+    category?: string;
+    picture?: {
+      data: {
+        url: string;
+      };
+    };
+    link?: string;
+    fan_count?: number;
+  }>;
+  paging?: {
+    cursors?: {
+      before: string;
+      after: string;
+    };
+    next?: string;
+  };
+}
 
-  constructor() {
-    super();
-    this.initializeClient();
-  }
+// ============================================================================
+// Facebook Scanner Implementation
+// ============================================================================
 
-  private initializeClient(): void {
-    const credentials = getFacebookCredentials();
-    if (credentials) {
-      this.accessToken = credentials.appAccessToken;
-    }
-  }
+const GRAPH_API_BASE = "https://graph.facebook.com/v18.0";
+
+class FacebookScannerImpl implements SocialScanner {
+  platform = "facebook" as const;
 
   isConfigured(): boolean {
-    return this.accessToken !== null;
-  }
-
-  // ============================================================================
-  // API Helper
-  // ============================================================================
-
-  private async graphRequest<T>(
-    endpoint: string,
-    params: Record<string, string> = {}
-  ): Promise<T> {
-    if (!this.accessToken) {
-      throw new Error("Facebook API not configured");
-    }
-
-    const url = new URL(`${GRAPH_API_BASE}${endpoint}`);
-    url.searchParams.set("access_token", this.accessToken);
-
-    for (const [key, value] of Object.entries(params)) {
-      url.searchParams.set(key, value);
-    }
-
-    const response = await fetch(url.toString());
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      const errorMessage =
-        error.error?.message || `Facebook API error: ${response.status}`;
-
-      if (response.status === 404) {
-        throw new Error("Page not found");
-      }
-      if (response.status === 429) {
-        throw new Error("Rate limit exceeded");
-      }
-      if (response.status === 190 || response.status === 401) {
-        throw new Error("Invalid access token");
-      }
-
-      throw new Error(errorMessage);
-    }
-
-    return response.json();
-  }
-
-  // ============================================================================
-  // Profile Fetching
-  // ============================================================================
-
-  protected async fetchProfile(handle: string): Promise<SocialProfile> {
-    // Try to fetch page by ID or username
-    const fields = [
-      "id",
-      "name",
-      "username",
-      "about",
-      "description",
-      "fan_count",
-      "followers_count",
-      "category",
-      "category_list",
-      "link",
-      "website",
-      "location",
-      "picture.width(400).height(400)",
-      "cover",
-      "verification_status",
-      "is_verified",
-      "checkins",
-    ].join(",");
-
-    const page = await this.graphRequest<FacebookPageResponse>(`/${handle}`, {
-      fields,
-    });
-
-    return this.transformPageToProfile(page);
-  }
-
-  private transformPageToProfile(page: FacebookPageResponse): FacebookProfile {
-    const location = page.location
-      ? [page.location.city, page.location.country].filter(Boolean).join(", ")
-      : undefined;
-
-    return {
-      platform: "facebook",
-      platformId: page.id,
-      handle: page.username || page.id,
-      displayName: page.name,
-      bio: page.about || page.description,
-      followerCount: page.followers_count || page.fan_count || 0,
-      followingCount: 0, // Pages don't follow others
-      postCount: 0, // Would require additional API call
-      isVerified: page.is_verified || false,
-      profileUrl: page.link || `https://facebook.com/${page.username || page.id}`,
-      avatarUrl: page.picture?.data?.url,
-      bannerUrl: page.cover?.source,
-      location,
-      website: page.website,
-      platformSpecific: {
-        pageId: page.id,
-        fanCount: page.fan_count || 0,
-        category: page.category,
-        categoryList: page.category_list?.map((c) => c.name),
-        about: page.about,
-        checkins: page.checkins,
-      },
-    };
-  }
-
-  // ============================================================================
-  // Posts Fetching
-  // ============================================================================
-
-  protected async fetchRecentPosts(
-    handle: string,
-    maxPosts: number
-  ): Promise<SocialPost[]> {
-    const fields = [
-      "id",
-      "message",
-      "story",
-      "created_time",
-      "full_picture",
-      "permalink_url",
-      "shares",
-      "reactions.summary(true)",
-      "comments.summary(true)",
-      "status_type",
-      "type",
-      "attachments{type,url,media}",
-    ].join(",");
-
-    const feed = await this.graphRequest<FacebookFeedResponse>(
-      `/${handle}/posts`,
-      {
-        fields,
-        limit: Math.min(maxPosts, 100).toString(),
-      }
-    );
-
-    // Get page info for author details
-    const profile = await this.fetchProfile(handle);
-
-    return feed.data.map((post) => this.transformPostToSocialPost(post, profile));
-  }
-
-  private transformPostToSocialPost(
-    post: FacebookPostResponse,
-    profile: FacebookProfile
-  ): FacebookPost {
-    // Determine post type
-    let postType: PostType = "text";
-    if (post.type === "photo" || post.full_picture) {
-      postType = "image";
-    } else if (post.type === "video") {
-      postType = "video";
-    } else if (post.type === "link") {
-      postType = "link";
-    }
-
-    // Extract media URLs
-    const mediaUrls: string[] = [];
-    if (post.full_picture) {
-      mediaUrls.push(post.full_picture);
-    }
-    if (post.attachments?.data) {
-      for (const attachment of post.attachments.data) {
-        if (attachment.media?.image?.src) {
-          mediaUrls.push(attachment.media.image.src);
-        }
-      }
-    }
-
-    return {
-      platform: "facebook",
-      postId: post.id,
-      authorId: profile.platformId,
-      authorHandle: profile.handle,
-      authorName: profile.displayName,
-      content: post.message || post.story || "",
-      postType,
-      publishedAt: new Date(post.created_time),
-      engagement: {
-        likes: post.reactions?.summary?.total_count || 0,
-        comments: post.comments?.summary?.total_count || 0,
-        shares: post.shares?.count || 0,
-      },
-      postUrl:
-        post.permalink_url ||
-        `https://facebook.com/${profile.handle}/posts/${post.id.split("_")[1]}`,
-      mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
-      hashtags: this.extractHashtags(post.message || ""),
-      mentions: this.extractMentions(post.message || ""),
-      isRepost: false,
-      platformSpecific: {
-        statusType: post.status_type,
-      },
-    };
-  }
-
-  private extractHashtags(text: string): string[] {
-    const matches = text.match(/#\w+/g);
-    return matches ? matches.map((h) => h.slice(1)) : [];
-  }
-
-  private extractMentions(text: string): string[] {
-    const matches = text.match(/@\w+/g);
-    return matches ? matches.map((m) => m.slice(1)) : [];
-  }
-
-  // ============================================================================
-  // Mentions/Search
-  // ============================================================================
-
-  protected async fetchMentions(
-    query: string,
-    maxMentions: number,
-    _sinceDays: number
-  ): Promise<SocialMention[]> {
-    // Facebook Graph API doesn't support searching across all public posts
-    // with just an App Access Token. This would require:
-    // 1. User OAuth to search their feed
-    // 2. Page Insights for page-specific data
-    // 3. Third-party services for broader search
-
-    // For now, return empty array with a note about limitations
-    console.warn(
-      "Facebook mention search requires user OAuth or third-party service. " +
-        "Returning empty results for service-level scan."
-    );
-
-    // We could potentially search for tagged posts on a known page
-    // but that's very limited. For comprehensive Facebook mentions,
-    // users would need to connect their accounts (Premium feature).
-
-    return [];
-  }
-
-  // ============================================================================
-  // Additional Methods
-  // ============================================================================
-
-  /**
-   * Get page insights (requires Page Access Token, not App Token)
-   * This is a placeholder for when user OAuth is available
-   */
-  async getPageInsights(
-    _pageId: string,
-    _metrics: string[]
-  ): Promise<Record<string, unknown> | null> {
-    // This would require a Page Access Token from user OAuth
-    console.warn("Page insights require user OAuth (Premium feature)");
-    return null;
+    return FACEBOOK_CONFIG.isConfigured;
   }
 
   /**
-   * Search for public pages by name
+   * Get Facebook page profile by ID or username
    */
-  async searchPages(query: string, limit = 10): Promise<FacebookProfile[]> {
+  async getProfile(handle: string): Promise<ProfileScanResult> {
+    const scannedAt = new Date();
+
+    if (!this.isConfigured()) {
+      return {
+        success: false,
+        platform: "facebook",
+        data: null,
+        error: {
+          code: ERROR_CODES.NOT_CONFIGURED,
+          message: "Facebook API not configured. Set FACEBOOK_APP_ID and FACEBOOK_APP_SECRET environment variables.",
+          retryable: false,
+          retryAfter: null,
+        },
+        scannedAt,
+        rateLimitInfo: null,
+      };
+    }
+
+    const appToken = getFacebookAppToken();
+    if (!appToken) {
+      return {
+        success: false,
+        platform: "facebook",
+        data: null,
+        error: {
+          code: ERROR_CODES.NOT_CONFIGURED,
+          message: "Facebook App Token could not be generated.",
+          retryable: false,
+          retryAfter: null,
+        },
+        scannedAt,
+        rateLimitInfo: null,
+      };
+    }
+
     try {
-      const response = await this.graphRequest<{
-        data: FacebookPageResponse[];
-      }>("/search", {
-        q: query,
-        type: "page",
-        limit: limit.toString(),
-        fields: "id,name,username,fan_count,category,picture.width(400)",
+      // Try direct page lookup
+      const fields = [
+        "id",
+        "name",
+        "username",
+        "about",
+        "description",
+        "category",
+        "fan_count",
+        "followers_count",
+        "picture.type(large)",
+        "link",
+        "website",
+        "talking_about_count",
+      ].join(",");
+
+      const url = `${GRAPH_API_BASE}/${encodeURIComponent(handle)}?fields=${fields}&access_token=${appToken}`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        // If not found by ID/username, try searching
+        if (data.error?.code === 803 || data.error?.code === 100) {
+          return this.searchAndGetProfile(handle, appToken, scannedAt);
+        }
+
+        return {
+          success: false,
+          platform: "facebook",
+          data: null,
+          error: this.parseGraphApiError(data.error),
+          scannedAt,
+          rateLimitInfo: null,
+        };
+      }
+
+      const page = data as FacebookPageResponse;
+      const profile: FacebookProfile = {
+        platform: "facebook",
+        platformId: page.id,
+        username: page.username || page.id,
+        displayName: page.name,
+        bio: page.about || page.description || null,
+        avatarUrl: page.picture?.data?.url || null,
+        profileUrl: page.link || PLATFORM_URLS.facebook.page(page.id),
+        isVerified: false, // Not available via basic Graph API
+        followerCount: page.followers_count || page.fan_count || 0,
+        followingCount: 0, // Pages don't follow others
+        postCount: 0, // Not directly available
+        createdAt: null, // Not available via basic Graph API
+        metadata: {
+          category: page.category,
+          about: page.about,
+          website: page.website,
+          fanCount: page.fan_count,
+          talkingAboutCount: page.talking_about_count,
+        },
+      };
+
+      return {
+        success: true,
+        platform: "facebook",
+        data: profile,
+        error: null,
+        scannedAt,
+        rateLimitInfo: null,
+      };
+    } catch (error) {
+      return this.handleError(error, scannedAt);
+    }
+  }
+
+  /**
+   * Search for page and get profile
+   */
+  private async searchAndGetProfile(
+    query: string,
+    appToken: string,
+    scannedAt: Date
+  ): Promise<ProfileScanResult> {
+    try {
+      const searchUrl = `${GRAPH_API_BASE}/pages/search?q=${encodeURIComponent(query)}&fields=id,name,category,picture,link,fan_count&access_token=${appToken}`;
+
+      const searchResponse = await fetch(searchUrl);
+      const searchData = (await searchResponse.json()) as FacebookSearchResponse;
+
+      if (!searchResponse.ok || !searchData.data?.length) {
+        return {
+          success: false,
+          platform: "facebook",
+          data: null,
+          error: {
+            code: ERROR_CODES.NOT_FOUND,
+            message: `Facebook page "${query}" not found`,
+            retryable: false,
+            retryAfter: null,
+          },
+          scannedAt,
+          rateLimitInfo: null,
+        };
+      }
+
+      // Get full details for the first match
+      const pageId = searchData.data[0].id;
+      const fields = [
+        "id",
+        "name",
+        "username",
+        "about",
+        "description",
+        "category",
+        "fan_count",
+        "followers_count",
+        "picture.type(large)",
+        "link",
+        "website",
+        "talking_about_count",
+      ].join(",");
+
+      const pageUrl = `${GRAPH_API_BASE}/${pageId}?fields=${fields}&access_token=${appToken}`;
+      const pageResponse = await fetch(pageUrl);
+      const page = (await pageResponse.json()) as FacebookPageResponse;
+
+      if (!pageResponse.ok) {
+        return {
+          success: false,
+          platform: "facebook",
+          data: null,
+          error: {
+            code: ERROR_CODES.API_ERROR,
+            message: "Failed to fetch page details",
+            retryable: true,
+            retryAfter: 60,
+          },
+          scannedAt,
+          rateLimitInfo: null,
+        };
+      }
+
+      const profile: FacebookProfile = {
+        platform: "facebook",
+        platformId: page.id,
+        username: page.username || page.id,
+        displayName: page.name,
+        bio: page.about || page.description || null,
+        avatarUrl: page.picture?.data?.url || null,
+        profileUrl: page.link || PLATFORM_URLS.facebook.page(page.id),
+        isVerified: false,
+        followerCount: page.followers_count || page.fan_count || 0,
+        followingCount: 0,
+        postCount: 0,
+        createdAt: null,
+        metadata: {
+          category: page.category,
+          about: page.about,
+          website: page.website,
+          fanCount: page.fan_count,
+          talkingAboutCount: page.talking_about_count,
+        },
+      };
+
+      return {
+        success: true,
+        platform: "facebook",
+        data: profile,
+        error: null,
+        scannedAt,
+        rateLimitInfo: null,
+      };
+    } catch (error) {
+      return this.handleError(error, scannedAt);
+    }
+  }
+
+  /**
+   * Get recent posts for a page
+   *
+   * Note: With App Token, you can only get PUBLIC posts from PUBLIC pages.
+   * Private pages or user profiles require user OAuth tokens.
+   */
+  async getRecentPosts(
+    pageId: string,
+    options?: { limit?: number; cursor?: string }
+  ): Promise<PostsScanResult> {
+    const scannedAt = new Date();
+    const limit = options?.limit || 20;
+
+    if (!this.isConfigured()) {
+      return {
+        success: false,
+        platform: "facebook",
+        data: null,
+        error: {
+          code: ERROR_CODES.NOT_CONFIGURED,
+          message: "Facebook API not configured. Set FACEBOOK_APP_ID and FACEBOOK_APP_SECRET environment variables.",
+          retryable: false,
+          retryAfter: null,
+        },
+        scannedAt,
+        rateLimitInfo: null,
+        pagination: null,
+      };
+    }
+
+    const appToken = getFacebookAppToken();
+    if (!appToken) {
+      return {
+        success: false,
+        platform: "facebook",
+        data: null,
+        error: {
+          code: ERROR_CODES.NOT_CONFIGURED,
+          message: "Facebook App Token could not be generated.",
+          retryable: false,
+          retryAfter: null,
+        },
+        scannedAt,
+        rateLimitInfo: null,
+        pagination: null,
+      };
+    }
+
+    try {
+      const fields = [
+        "id",
+        "message",
+        "created_time",
+        "full_picture",
+        "shares",
+        "reactions.summary(true)",
+        "comments.summary(true)",
+        "type",
+        "permalink_url",
+        "attachments{type,url,title}",
+      ].join(",");
+
+      let url = `${GRAPH_API_BASE}/${pageId}/posts?fields=${fields}&limit=${limit}&access_token=${appToken}`;
+
+      if (options?.cursor) {
+        url += `&after=${options.cursor}`;
+      }
+
+      const response = await fetch(url);
+      const data = (await response.json()) as FacebookPagingResponse<FacebookPostResponse> & { error?: { message: string; code: number } };
+
+      if (!response.ok || data.error) {
+        return {
+          success: false,
+          platform: "facebook",
+          data: null,
+          error: this.parseGraphApiError(data.error),
+          scannedAt,
+          rateLimitInfo: null,
+          pagination: null,
+        };
+      }
+
+      // Get page name for author info
+      const pageInfoUrl = `${GRAPH_API_BASE}/${pageId}?fields=name,username&access_token=${appToken}`;
+      const pageInfoResponse = await fetch(pageInfoUrl);
+      const pageInfo = (await pageInfoResponse.json()) as { name?: string; username?: string };
+      const pageName = pageInfo.name || pageInfo.username || pageId;
+
+      const posts: FacebookPost[] = (data.data || []).map((post) => {
+        const mediaUrls: string[] = [];
+        if (post.full_picture) {
+          mediaUrls.push(post.full_picture);
+        }
+
+        // Extract hashtags from message
+        const hashtags: string[] = [];
+        const mentions: string[] = [];
+        if (post.message) {
+          const hashtagMatches = post.message.match(/#[\w]+/g) || [];
+          hashtags.push(...hashtagMatches.map((h) => h.slice(1)));
+
+          // Extract @mentions
+          const mentionMatches = post.message.match(/@[\w.]+/g) || [];
+          mentions.push(...mentionMatches.map((m) => m.slice(1)));
+        }
+
+        return {
+          platform: "facebook" as const,
+          postId: post.id,
+          authorId: pageId,
+          authorUsername: pageName,
+          content: post.message || "",
+          postUrl: post.permalink_url || PLATFORM_URLS.facebook.post(pageId, post.id.split("_")[1] || post.id),
+          publishedAt: new Date(post.created_time),
+          metrics: {
+            likes: post.reactions?.summary?.total_count || 0,
+            comments: post.comments?.summary?.total_count || 0,
+            shares: post.shares?.count || 0,
+            views: null,
+            engagementRate: null,
+          },
+          mediaUrls,
+          hashtags,
+          mentions,
+          metadata: {
+            type: post.type,
+            attachments: post.attachments?.data,
+          },
+        };
       });
 
-      return response.data.map((page) => this.transformPageToProfile(page));
-    } catch {
-      // Page search might be restricted
-      return [];
+      return {
+        success: true,
+        platform: "facebook",
+        data: posts,
+        error: null,
+        scannedAt,
+        rateLimitInfo: null,
+        pagination: {
+          hasMore: !!data.paging?.next,
+          nextCursor: data.paging?.cursors?.after || null,
+          totalCount: null, // Facebook doesn't provide total count
+        },
+      };
+    } catch (error) {
+      const result = this.handleError(error, scannedAt);
+      return {
+        ...result,
+        data: null,
+        pagination: null,
+      };
     }
   }
 
-  // ============================================================================
-  // Sentiment Analysis (Basic)
-  // ============================================================================
+  /**
+   * Search for brand mentions
+   *
+   * Note: Facebook's public content search is very limited.
+   * This primarily searches for public pages mentioning keywords.
+   */
+  async searchMentions(
+    keywords: string[],
+    options?: { limit?: number; cursor?: string; since?: Date }
+  ): Promise<MentionsScanResult> {
+    const scannedAt = new Date();
+    const limit = options?.limit || 50;
 
-  private analyzeSentiment(text: string): {
-    label: MentionSentiment;
-    score: number;
-  } {
-    const lowercaseText = text.toLowerCase();
-
-    const positiveWords = [
-      "love",
-      "amazing",
-      "great",
-      "awesome",
-      "excellent",
-      "thank",
-      "perfect",
-      "best",
-      "happy",
-      "wonderful",
-    ];
-
-    const negativeWords = [
-      "hate",
-      "terrible",
-      "awful",
-      "worst",
-      "bad",
-      "disappointed",
-      "angry",
-      "poor",
-      "scam",
-      "avoid",
-    ];
-
-    let positiveCount = 0;
-    let negativeCount = 0;
-
-    for (const word of positiveWords) {
-      if (lowercaseText.includes(word)) positiveCount++;
+    if (!this.isConfigured()) {
+      return {
+        success: false,
+        platform: "facebook",
+        data: null,
+        error: {
+          code: ERROR_CODES.NOT_CONFIGURED,
+          message: "Facebook API not configured. Set FACEBOOK_APP_ID and FACEBOOK_APP_SECRET environment variables.",
+          retryable: false,
+          retryAfter: null,
+        },
+        scannedAt,
+        rateLimitInfo: null,
+        pagination: null,
+      };
     }
 
-    for (const word of negativeWords) {
-      if (lowercaseText.includes(word)) negativeCount++;
+    if (keywords.length === 0) {
+      return {
+        success: false,
+        platform: "facebook",
+        data: null,
+        error: {
+          code: ERROR_CODES.INVALID_HANDLE,
+          message: "At least one keyword is required for mention search",
+          retryable: false,
+          retryAfter: null,
+        },
+        scannedAt,
+        rateLimitInfo: null,
+        pagination: null,
+      };
     }
 
-    const total = positiveCount + negativeCount;
-    if (total === 0) {
-      return { label: "neutral", score: 0 };
+    const appToken = getFacebookAppToken();
+    if (!appToken) {
+      return {
+        success: false,
+        platform: "facebook",
+        data: null,
+        error: {
+          code: ERROR_CODES.NOT_CONFIGURED,
+          message: "Facebook App Token could not be generated.",
+          retryable: false,
+          retryAfter: null,
+        },
+        scannedAt,
+        rateLimitInfo: null,
+        pagination: null,
+      };
     }
 
-    const score = (positiveCount - negativeCount) / total;
+    try {
+      // Facebook Graph API doesn't support general content search with App Token
+      // We can only search for pages. For actual post mentions, you'd need
+      // user OAuth or Facebook's Business API with special permissions.
 
-    if (score > 0.2) {
-      return { label: "positive", score };
-    } else if (score < -0.2) {
-      return { label: "negative", score };
+      // Search for pages mentioning the keywords
+      const query = keywords.join(" ");
+      const searchUrl = `${GRAPH_API_BASE}/pages/search?q=${encodeURIComponent(query)}&fields=id,name,category,picture,link,fan_count,about&limit=${limit}&access_token=${appToken}`;
+
+      const response = await fetch(searchUrl);
+      const data = (await response.json()) as FacebookSearchResponse & { error?: { message: string; code: number } };
+
+      if (!response.ok || data.error) {
+        return {
+          success: false,
+          platform: "facebook",
+          data: null,
+          error: this.parseGraphApiError(data.error),
+          scannedAt,
+          rateLimitInfo: null,
+          pagination: null,
+        };
+      }
+
+      // Convert page results to "mentions" (pages that might be related)
+      const mentions: BrandMention[] = (data.data || []).map((page) => {
+        const matchedKeywords = keywords.filter(
+          (kw) =>
+            page.name?.toLowerCase().includes(kw.toLowerCase()) ||
+            page.category?.toLowerCase().includes(kw.toLowerCase())
+        );
+
+        return {
+          platform: "facebook" as const,
+          postId: page.id,
+          content: `Page: ${page.name}${page.category ? ` (${page.category})` : ""}`,
+          authorId: page.id,
+          authorUsername: page.name,
+          authorDisplayName: page.name,
+          authorFollowers: page.fan_count || 0,
+          postUrl: page.link || PLATFORM_URLS.facebook.page(page.id),
+          publishedAt: new Date(), // Pages don't have a published date
+          sentiment: null,
+          metrics: {
+            likes: page.fan_count || 0,
+            comments: 0,
+            shares: 0,
+            views: null,
+            engagementRate: null,
+          },
+          matchedKeywords,
+          metadata: {
+            type: "page",
+            category: page.category,
+          },
+        };
+      });
+
+      return {
+        success: true,
+        platform: "facebook",
+        data: mentions,
+        error: null,
+        scannedAt,
+        rateLimitInfo: null,
+        pagination: {
+          hasMore: !!data.paging?.next,
+          nextCursor: data.paging?.cursors?.after || null,
+          totalCount: null,
+        },
+      };
+    } catch (error) {
+      const result = this.handleError(error, scannedAt);
+      return {
+        ...result,
+        data: null,
+        pagination: null,
+      };
+    }
+  }
+
+  /**
+   * Handle API errors
+   */
+  private handleError(error: unknown, scannedAt: Date): ProfileScanResult {
+    const scanError = this.parseError(error);
+    return {
+      success: false,
+      platform: "facebook",
+      data: null,
+      error: scanError,
+      scannedAt,
+      rateLimitInfo: null,
+    };
+  }
+
+  private parseGraphApiError(error?: { message: string; code: number }): ScanError {
+    if (!error) {
+      return {
+        code: ERROR_CODES.API_ERROR,
+        message: "Unknown Facebook API error",
+        retryable: true,
+        retryAfter: 60,
+      };
     }
 
-    return { label: "neutral", score };
+    // Rate limit
+    if (error.code === 4 || error.code === 17 || error.code === 341) {
+      return {
+        code: ERROR_CODES.RATE_LIMITED,
+        message: "Facebook rate limit exceeded. Try again later.",
+        retryable: true,
+        retryAfter: 60 * 60, // 1 hour
+      };
+    }
+
+    // Unauthorized / Invalid token
+    if (error.code === 190 || error.code === 102) {
+      return {
+        code: ERROR_CODES.UNAUTHORIZED,
+        message: "Facebook API authorization failed. Check App ID and Secret.",
+        retryable: false,
+        retryAfter: null,
+      };
+    }
+
+    // Not found
+    if (error.code === 803 || error.code === 100) {
+      return {
+        code: ERROR_CODES.NOT_FOUND,
+        message: "Facebook page not found",
+        retryable: false,
+        retryAfter: null,
+      };
+    }
+
+    return {
+      code: ERROR_CODES.API_ERROR,
+      message: error.message || "Facebook API error",
+      retryable: true,
+      retryAfter: 60,
+    };
+  }
+
+  private parseError(error: unknown): ScanError {
+    if (error instanceof Error) {
+      const message = error.message;
+
+      if (message.includes("ETIMEDOUT") || message.includes("ECONNREFUSED")) {
+        return {
+          code: ERROR_CODES.NETWORK_ERROR,
+          message: "Network error connecting to Facebook API",
+          retryable: true,
+          retryAfter: 30,
+        };
+      }
+
+      return {
+        code: ERROR_CODES.API_ERROR,
+        message: message,
+        retryable: true,
+        retryAfter: 60,
+      };
+    }
+
+    return {
+      code: ERROR_CODES.API_ERROR,
+      message: "Unknown Facebook API error",
+      retryable: true,
+      retryAfter: 60,
+    };
   }
 }
 
-// Export singleton instance
-export const facebookScanner = new FacebookScanner();
+// ============================================================================
+// Export Singleton
+// ============================================================================
+
+export const FacebookScanner = new FacebookScannerImpl();

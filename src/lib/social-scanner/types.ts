@@ -5,73 +5,63 @@
  * These types provide a consistent interface across all platforms.
  */
 
-// Supported platforms for service-level scanning
-export type ServiceScanPlatform = "twitter" | "youtube" | "facebook";
+// ============================================================================
+// Platform Types
+// ============================================================================
 
-// All platforms (including those requiring user OAuth)
-export type SocialPlatform =
-  | ServiceScanPlatform
-  | "linkedin"
-  | "instagram"
-  | "tiktok"
-  | "github"
-  | "pinterest"
-  | "medium"
-  | "reddit";
+export type ScannerPlatform = "twitter" | "youtube" | "facebook";
+
+export type ScanStatus = "pending" | "scanning" | "completed" | "failed" | "rate_limited";
 
 // ============================================================================
 // Profile Types
 // ============================================================================
 
 export interface SocialProfile {
-  platform: SocialPlatform;
+  platform: ScannerPlatform;
   platformId: string;
-  handle: string;
+  username: string;
   displayName: string;
-  bio?: string;
+  bio: string | null;
+  avatarUrl: string | null;
+  profileUrl: string;
+  isVerified: boolean;
   followerCount: number;
   followingCount: number;
   postCount: number;
-  isVerified: boolean;
-  profileUrl: string;
-  avatarUrl?: string;
-  bannerUrl?: string;
-  location?: string;
-  website?: string;
-  createdAt?: Date;
-  platformSpecific?: Record<string, unknown>;
+  createdAt: Date | null;
+  metadata: Record<string, unknown>;
 }
 
 export interface TwitterProfile extends SocialProfile {
   platform: "twitter";
-  platformSpecific?: {
-    listedCount?: number;
+  metadata: {
+    location?: string;
+    website?: string;
     pinnedTweetId?: string;
-    protected?: boolean;
+    listedCount?: number;
   };
 }
 
 export interface YouTubeProfile extends SocialProfile {
   platform: "youtube";
-  platformSpecific?: {
-    channelId: string;
-    subscriberCount: number;
-    videoCount: number;
-    viewCount: number;
+  metadata: {
     customUrl?: string;
     country?: string;
+    viewCount?: number;
+    videoCount?: number;
+    hiddenSubscriberCount?: boolean;
   };
 }
 
 export interface FacebookProfile extends SocialProfile {
   platform: "facebook";
-  platformSpecific?: {
-    pageId: string;
-    fanCount: number;
+  metadata: {
     category?: string;
-    categoryList?: string[];
     about?: string;
-    checkins?: number;
+    website?: string;
+    fanCount?: number;
+    talkingAboutCount?: number;
   };
 }
 
@@ -79,249 +69,270 @@ export interface FacebookProfile extends SocialProfile {
 // Post/Content Types
 // ============================================================================
 
-export type PostType =
-  | "text"
-  | "image"
-  | "video"
-  | "link"
-  | "carousel"
-  | "poll"
-  | "retweet"
-  | "quote"
-  | "thread";
-
 export interface SocialPost {
-  platform: SocialPlatform;
+  platform: ScannerPlatform;
   postId: string;
   authorId: string;
-  authorHandle: string;
-  authorName?: string;
+  authorUsername: string;
   content: string;
-  postType: PostType;
-  publishedAt: Date;
-  engagement: PostEngagement;
   postUrl: string;
-  mediaUrls?: string[];
-  hashtags?: string[];
-  mentions?: string[];
-  isRepost?: boolean;
-  originalPostId?: string;
-  platformSpecific?: Record<string, unknown>;
+  publishedAt: Date;
+  metrics: PostMetrics;
+  mediaUrls: string[];
+  hashtags: string[];
+  mentions: string[];
+  metadata: Record<string, unknown>;
 }
 
-export interface PostEngagement {
+export interface PostMetrics {
   likes: number;
   comments: number;
   shares: number;
-  views?: number;
-  impressions?: number;
-  saves?: number;
-  clicks?: number;
+  views: number | null;
+  engagementRate: number | null;
 }
 
 export interface TwitterPost extends SocialPost {
   platform: "twitter";
-  platformSpecific?: {
-    retweetCount: number;
-    quoteCount: number;
-    replyCount: number;
-    bookmarkCount?: number;
+  metadata: {
+    replyToTweetId?: string;
+    quotedTweetId?: string;
+    retweetedTweetId?: string;
     conversationId?: string;
-    inReplyToUserId?: string;
-    language?: string;
+    isRetweet?: boolean;
+    isQuote?: boolean;
+    isReply?: boolean;
   };
 }
 
 export interface YouTubeVideo extends SocialPost {
   platform: "youtube";
-  postType: "video";
-  platformSpecific?: {
-    videoId: string;
-    channelId: string;
+  metadata: {
+    title: string;
+    description: string;
+    thumbnailUrl?: string;
     duration?: string;
-    definition?: "hd" | "sd";
     categoryId?: string;
     tags?: string[];
-    thumbnail?: string;
+    privacyStatus?: string;
+    defaultLanguage?: string;
   };
 }
 
 export interface FacebookPost extends SocialPost {
   platform: "facebook";
-  platformSpecific?: {
-    reactionsBreakdown?: {
-      like: number;
-      love: number;
-      haha: number;
-      wow: number;
-      sad: number;
-      angry: number;
+  metadata: {
+    type?: string;
+    attachments?: Array<{
+      type: string;
+      url?: string;
+      title?: string;
+    }>;
+    reactions?: {
+      like?: number;
+      love?: number;
+      haha?: number;
+      wow?: number;
+      sad?: number;
+      angry?: number;
     };
-    statusType?: string;
   };
 }
 
 // ============================================================================
-// Mention/Search Types
+// Search/Mention Types
 // ============================================================================
 
-export type MentionSentiment = "positive" | "neutral" | "negative";
-
-export interface SocialMention {
-  platform: SocialPlatform;
+export interface BrandMention {
+  platform: ScannerPlatform;
   postId: string;
-  authorId: string;
-  authorHandle: string;
-  authorName?: string;
-  authorFollowers?: number;
-  authorVerified?: boolean;
   content: string;
-  sentiment?: MentionSentiment;
-  sentimentScore?: number; // -1 to 1
-  engagement: PostEngagement;
-  mentionedAt: Date;
+  authorId: string;
+  authorUsername: string;
+  authorDisplayName: string;
+  authorFollowers: number;
   postUrl: string;
-  matchedKeywords?: string[];
-  mentionType?: "direct" | "hashtag" | "keyword";
+  publishedAt: Date;
+  sentiment: "positive" | "neutral" | "negative" | null;
+  metrics: PostMetrics;
+  matchedKeywords: string[];
+  metadata: Record<string, unknown>;
 }
 
 // ============================================================================
-// Scan Request/Response Types
+// Scan Result Types
 // ============================================================================
 
-export interface ScanRequest {
-  brandId: string;
-  platform: ServiceScanPlatform;
-  handle?: string;
-  keywords?: string[];
-  scanType: ScanType;
-  options?: ScanOptions;
-}
-
-export type ScanType = "profile" | "posts" | "mentions" | "full";
-
-export interface ScanOptions {
-  maxPosts?: number;
-  maxMentions?: number;
-  sinceDays?: number;
-  includeRetweets?: boolean;
-  includeReplies?: boolean;
-}
-
-export interface ScanResult<T = unknown> {
+export interface ScanResult<T> {
   success: boolean;
-  platform: ServiceScanPlatform;
-  scanType: ScanType;
-  data: T;
+  platform: ScannerPlatform;
+  data: T | null;
+  error: ScanError | null;
   scannedAt: Date;
-  rateLimitInfo?: RateLimitInfo;
-  error?: ScanError;
+  rateLimitInfo: RateLimitInfo | null;
+}
+
+export interface ScanError {
+  code: string;
+  message: string;
+  retryable: boolean;
+  retryAfter: number | null;
+}
+
+export interface RateLimitInfo {
+  limit: number;
+  remaining: number;
+  resetAt: Date;
 }
 
 export interface ProfileScanResult extends ScanResult<SocialProfile> {
-  scanType: "profile";
+  data: SocialProfile | null;
 }
 
 export interface PostsScanResult extends ScanResult<SocialPost[]> {
-  scanType: "posts";
+  data: SocialPost[] | null;
+  pagination: {
+    hasMore: boolean;
+    nextCursor: string | null;
+    totalCount: number | null;
+  } | null;
 }
 
-export interface MentionsScanResult extends ScanResult<SocialMention[]> {
-  scanType: "mentions";
+export interface MentionsScanResult extends ScanResult<BrandMention[]> {
+  data: BrandMention[] | null;
+  pagination: {
+    hasMore: boolean;
+    nextCursor: string | null;
+    totalCount: number | null;
+  } | null;
 }
 
-export interface FullScanResult extends ScanResult<{
-  profile: SocialProfile;
+// ============================================================================
+// Batch Scan Types
+// ============================================================================
+
+export interface BatchScanRequest {
+  brandId: string;
+  platforms: ScannerPlatform[];
+  handles: {
+    twitter?: string;
+    youtube?: string;
+    facebook?: string;
+  };
+  options?: {
+    includeProfile?: boolean;
+    includePosts?: boolean;
+    includeMentions?: boolean;
+    postsLimit?: number;
+    mentionsLimit?: number;
+    keywords?: string[];
+  };
+}
+
+export interface BatchScanResult {
+  brandId: string;
+  startedAt: Date;
+  completedAt: Date;
+  results: {
+    twitter?: PlatformScanResult;
+    youtube?: PlatformScanResult;
+    facebook?: PlatformScanResult;
+  };
+  summary: {
+    totalFollowers: number;
+    totalPosts: number;
+    totalEngagement: number;
+    averageEngagementRate: number;
+    platformsScanned: number;
+    platformsFailed: number;
+  };
+}
+
+export interface PlatformScanResult {
+  status: ScanStatus;
+  profile: SocialProfile | null;
   recentPosts: SocialPost[];
-  mentions: SocialMention[];
-}> {
-  scanType: "full";
-}
-
-// ============================================================================
-// Rate Limiting Types
-// ============================================================================
-
-export interface RateLimitInfo {
-  platform: ServiceScanPlatform;
-  endpoint: string;
-  limit: number;
-  remaining: number;
-  resetsAt: Date;
-}
-
-export interface RateLimitConfig {
-  requestsPerWindow: number;
-  windowDurationMs: number;
-  dailyLimit?: number;
-}
-
-// ============================================================================
-// Error Types
-// ============================================================================
-
-export type ScanErrorCode =
-  | "RATE_LIMITED"
-  | "NOT_FOUND"
-  | "PRIVATE_ACCOUNT"
-  | "SUSPENDED"
-  | "API_ERROR"
-  | "INVALID_CREDENTIALS"
-  | "NETWORK_ERROR"
-  | "UNKNOWN";
-
-export interface ScanError {
-  code: ScanErrorCode;
-  message: string;
-  retryAfter?: number; // seconds
-  platform: ServiceScanPlatform;
-  details?: Record<string, unknown>;
+  mentions: BrandMention[];
+  error: ScanError | null;
+  scannedAt: Date;
 }
 
 // ============================================================================
 // Scanner Interface
 // ============================================================================
 
-export interface ISocialScanner {
-  platform: ServiceScanPlatform;
+export interface SocialScanner {
+  platform: ScannerPlatform;
+
   isConfigured(): boolean;
 
-  // Profile scanning
-  getProfile(handle: string): Promise<ScanResult<SocialProfile>>;
+  getProfile(handle: string): Promise<ProfileScanResult>;
 
-  // Posts scanning
-  getRecentPosts(handle: string, options?: ScanOptions): Promise<ScanResult<SocialPost[]>>;
+  getRecentPosts(
+    userId: string,
+    options?: { limit?: number; cursor?: string }
+  ): Promise<PostsScanResult>;
 
-  // Mention scanning
-  searchMentions(query: string, options?: ScanOptions): Promise<ScanResult<SocialMention[]>>;
-
-  // Full scan (combines all)
-  fullScan(handle: string, options?: ScanOptions): Promise<FullScanResult>;
+  searchMentions(
+    keywords: string[],
+    options?: { limit?: number; cursor?: string; since?: Date }
+  ): Promise<MentionsScanResult>;
 }
 
 // ============================================================================
-// Aggregated Types (for dashboard display)
+// Database Types (for storing scan results)
 // ============================================================================
 
-export interface AggregatedSocialMetrics {
-  totalFollowers: number;
-  totalPosts: number;
-  avgEngagementRate: number;
-  platformBreakdown: {
-    platform: ServiceScanPlatform;
-    followers: number;
-    posts: number;
-    engagementRate: number;
-    lastUpdated: Date;
-  }[];
-}
-
-export interface BrandSocialPresence {
+export interface ServiceScanRecord {
+  id: string;
   brandId: string;
-  profiles: SocialProfile[];
-  totalFollowers: number;
-  totalEngagement: number;
-  platforms: ServiceScanPlatform[];
-  lastScanAt: Date;
-  nextScanAt?: Date;
+  platform: ScannerPlatform;
+  handle: string;
+  status: ScanStatus;
+  profileData: SocialProfile | null;
+  postsData: SocialPost[] | null;
+  mentionsData: BrandMention[] | null;
+  errorMessage: string | null;
+  scannedAt: Date;
+  expiresAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ============================================================================
+// Engagement Calculation Helpers
+// ============================================================================
+
+export function calculateEngagementRate(
+  metrics: PostMetrics,
+  followerCount: number
+): number {
+  if (followerCount === 0) return 0;
+
+  const totalEngagement = metrics.likes + metrics.comments + metrics.shares;
+  return (totalEngagement / followerCount) * 100;
+}
+
+export function aggregateMetrics(posts: SocialPost[]): {
+  totalLikes: number;
+  totalComments: number;
+  totalShares: number;
+  totalViews: number;
+  averageEngagement: number;
+} {
+  const totals = posts.reduce(
+    (acc, post) => ({
+      totalLikes: acc.totalLikes + post.metrics.likes,
+      totalComments: acc.totalComments + post.metrics.comments,
+      totalShares: acc.totalShares + post.metrics.shares,
+      totalViews: acc.totalViews + (post.metrics.views || 0),
+    }),
+    { totalLikes: 0, totalComments: 0, totalShares: 0, totalViews: 0 }
+  );
+
+  const averageEngagement = posts.length > 0
+    ? (totals.totalLikes + totals.totalComments + totals.totalShares) / posts.length
+    : 0;
+
+  return { ...totals, averageEngagement };
 }

@@ -1,205 +1,197 @@
 /**
  * Social Scanner Configuration
  *
- * Service-level credentials and rate limit configuration.
- * These credentials belong to Apex (not individual users).
+ * Service-level credential configuration for scanning public social data.
+ * These are Apex's own API keys, not user-specific OAuth tokens.
  */
 
-import type { ServiceScanPlatform, RateLimitConfig } from "./types";
+import type { ScannerPlatform } from "./types";
 
 // ============================================================================
-// Service Credentials
+// Environment Variable Configuration
 // ============================================================================
 
-interface TwitterCredentials {
-  bearerToken: string;
+export interface PlatformConfig {
+  platform: ScannerPlatform;
+  isConfigured: boolean;
+  rateLimits: {
+    requestsPerWindow: number;
+    windowMs: number;
+    dailyLimit: number | null;
+  };
 }
 
-interface YouTubeCredentials {
-  apiKey: string;
-}
-
-interface FacebookCredentials {
-  appId: string;
-  appSecret: string;
-  appAccessToken: string;
-}
-
-export const getTwitterCredentials = (): TwitterCredentials | null => {
-  const bearerToken = process.env.TWITTER_BEARER_TOKEN;
-  if (!bearerToken) return null;
-  return { bearerToken };
+/**
+ * Twitter/X API v2 Configuration
+ * - Free tier: 450 requests per 15-minute window
+ * - Uses Bearer Token for app-only authentication
+ */
+export const TWITTER_CONFIG: PlatformConfig = {
+  platform: "twitter",
+  isConfigured: !!process.env.TWITTER_BEARER_TOKEN,
+  rateLimits: {
+    requestsPerWindow: 450,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    dailyLimit: null,
+  },
 };
 
-export const getYouTubeCredentials = (): YouTubeCredentials | null => {
-  const apiKey = process.env.YOUTUBE_API_KEY;
-  if (!apiKey) return null;
-  return { apiKey };
+/**
+ * YouTube Data API v3 Configuration
+ * - Free tier: 10,000 quota units per day
+ * - Uses API Key for public data access
+ */
+export const YOUTUBE_CONFIG: PlatformConfig = {
+  platform: "youtube",
+  isConfigured: !!process.env.YOUTUBE_API_KEY,
+  rateLimits: {
+    requestsPerWindow: 100, // Conservative estimate
+    windowMs: 60 * 1000, // 1 minute
+    dailyLimit: 10000, // Quota units
+  },
 };
 
-export const getFacebookCredentials = (): FacebookCredentials | null => {
+/**
+ * Facebook Graph API Configuration
+ * - Uses App Access Token (app_id|app_secret)
+ * - Rate limit: 200 requests per hour for page data
+ */
+export const FACEBOOK_CONFIG: PlatformConfig = {
+  platform: "facebook",
+  isConfigured: !!process.env.FACEBOOK_APP_ID && !!process.env.FACEBOOK_APP_SECRET,
+  rateLimits: {
+    requestsPerWindow: 200,
+    windowMs: 60 * 60 * 1000, // 1 hour
+    dailyLimit: null,
+  },
+};
+
+// ============================================================================
+// Credential Accessors
+// ============================================================================
+
+export function getTwitterBearerToken(): string | null {
+  return process.env.TWITTER_BEARER_TOKEN || null;
+}
+
+export function getYouTubeApiKey(): string | null {
+  return process.env.YOUTUBE_API_KEY || null;
+}
+
+export function getFacebookAppToken(): string | null {
   const appId = process.env.FACEBOOK_APP_ID;
   const appSecret = process.env.FACEBOOK_APP_SECRET;
+
   if (!appId || !appSecret) return null;
 
-  // App Access Token is simply appId|appSecret
-  const appAccessToken = `${appId}|${appSecret}`;
-  return { appId, appSecret, appAccessToken };
-};
+  // Facebook App Access Token format
+  return `${appId}|${appSecret}`;
+}
 
-export const isServiceConfigured = (platform: ServiceScanPlatform): boolean => {
+// ============================================================================
+// Configuration Helpers
+// ============================================================================
+
+export function getPlatformConfig(platform: ScannerPlatform): PlatformConfig {
   switch (platform) {
     case "twitter":
-      return getTwitterCredentials() !== null;
+      return TWITTER_CONFIG;
     case "youtube":
-      return getYouTubeCredentials() !== null;
+      return YOUTUBE_CONFIG;
     case "facebook":
-      return getFacebookCredentials() !== null;
-    default:
-      return false;
+      return FACEBOOK_CONFIG;
   }
-};
+}
 
-export const getConfiguredPlatforms = (): ServiceScanPlatform[] => {
-  const platforms: ServiceScanPlatform[] = ["twitter", "youtube", "facebook"];
-  return platforms.filter(isServiceConfigured);
-};
+export function isServiceScannerConfigured(platform: ScannerPlatform): boolean {
+  return getPlatformConfig(platform).isConfigured;
+}
 
-// ============================================================================
-// Rate Limit Configuration
-// ============================================================================
+export function getConfiguredPlatforms(): ScannerPlatform[] {
+  const platforms: ScannerPlatform[] = ["twitter", "youtube", "facebook"];
+  return platforms.filter(isServiceScannerConfigured);
+}
 
-// Twitter API v2 Free Tier limits
-// https://developer.twitter.com/en/docs/twitter-api/rate-limits
-export const TWITTER_RATE_LIMITS: Record<string, RateLimitConfig> = {
-  // User lookup: 300 requests per 15 minutes
-  userLookup: {
-    requestsPerWindow: 300,
-    windowDurationMs: 15 * 60 * 1000, // 15 minutes
-  },
-  // User timeline: 1500 requests per 15 minutes
-  userTimeline: {
-    requestsPerWindow: 1500,
-    windowDurationMs: 15 * 60 * 1000,
-  },
-  // Search tweets: 450 requests per 15 minutes
-  searchTweets: {
-    requestsPerWindow: 450,
-    windowDurationMs: 15 * 60 * 1000,
-  },
-};
-
-// YouTube Data API v3 limits
-// https://developers.google.com/youtube/v3/getting-started#quota
-export const YOUTUBE_RATE_LIMITS: Record<string, RateLimitConfig> = {
-  // Daily quota: 10,000 units
-  // Search: 100 units per request
-  search: {
-    requestsPerWindow: 100, // Max 100 searches per day (100 * 100 = 10,000 units)
-    windowDurationMs: 24 * 60 * 60 * 1000, // 24 hours
-    dailyLimit: 10000,
-  },
-  // Channels.list: 1 unit per request
-  channelsList: {
-    requestsPerWindow: 10000,
-    windowDurationMs: 24 * 60 * 60 * 1000,
-    dailyLimit: 10000,
-  },
-  // Videos.list: 1 unit per request
-  videosList: {
-    requestsPerWindow: 10000,
-    windowDurationMs: 24 * 60 * 60 * 1000,
-    dailyLimit: 10000,
-  },
-};
-
-// Facebook Graph API limits
-// https://developers.facebook.com/docs/graph-api/overview/rate-limiting
-export const FACEBOOK_RATE_LIMITS: Record<string, RateLimitConfig> = {
-  // App-level: 200 requests per hour per user
-  default: {
-    requestsPerWindow: 200,
-    windowDurationMs: 60 * 60 * 1000, // 1 hour
-  },
-};
-
-export const getRateLimitConfig = (
-  platform: ServiceScanPlatform,
-  endpoint: string
-): RateLimitConfig => {
-  switch (platform) {
-    case "twitter":
-      return TWITTER_RATE_LIMITS[endpoint] || TWITTER_RATE_LIMITS.userLookup;
-    case "youtube":
-      return YOUTUBE_RATE_LIMITS[endpoint] || YOUTUBE_RATE_LIMITS.channelsList;
-    case "facebook":
-      return FACEBOOK_RATE_LIMITS[endpoint] || FACEBOOK_RATE_LIMITS.default;
-    default:
-      return { requestsPerWindow: 60, windowDurationMs: 60 * 1000 };
-  }
-};
+export function getUnconfiguredPlatforms(): ScannerPlatform[] {
+  const platforms: ScannerPlatform[] = ["twitter", "youtube", "facebook"];
+  return platforms.filter((p) => !isServiceScannerConfigured(p));
+}
 
 // ============================================================================
-// Platform Display Configuration
+// Platform URL Helpers
 // ============================================================================
 
-export const PLATFORM_CONFIG: Record<
-  ServiceScanPlatform,
-  {
-    name: string;
-    color: string;
-    icon: string;
-    baseUrl: string;
-    profileUrlPattern: string;
-  }
-> = {
+export const PLATFORM_URLS = {
   twitter: {
-    name: "Twitter/X",
-    color: "#1DA1F2",
-    icon: "twitter",
-    baseUrl: "https://twitter.com",
-    profileUrlPattern: "https://twitter.com/{handle}",
+    profile: (handle: string) => `https://twitter.com/${handle}`,
+    tweet: (handle: string, tweetId: string) => `https://twitter.com/${handle}/status/${tweetId}`,
   },
   youtube: {
-    name: "YouTube",
-    color: "#FF0000",
-    icon: "youtube",
-    baseUrl: "https://youtube.com",
-    profileUrlPattern: "https://youtube.com/@{handle}",
+    channel: (channelId: string) => `https://youtube.com/channel/${channelId}`,
+    channelHandle: (handle: string) => `https://youtube.com/@${handle}`,
+    video: (videoId: string) => `https://youtube.com/watch?v=${videoId}`,
   },
   facebook: {
-    name: "Facebook",
-    color: "#1877F2",
-    icon: "facebook",
-    baseUrl: "https://facebook.com",
-    profileUrlPattern: "https://facebook.com/{handle}",
+    page: (pageId: string) => `https://facebook.com/${pageId}`,
+    post: (pageId: string, postId: string) => `https://facebook.com/${pageId}/posts/${postId}`,
   },
 };
 
-export const getProfileUrl = (platform: ServiceScanPlatform, handle: string): string => {
-  return PLATFORM_CONFIG[platform].profileUrlPattern.replace("{handle}", handle);
+// ============================================================================
+// Cache TTL Configuration
+// ============================================================================
+
+export const CACHE_TTL = {
+  profile: 6 * 60 * 60 * 1000, // 6 hours
+  posts: 1 * 60 * 60 * 1000, // 1 hour
+  mentions: 30 * 60 * 1000, // 30 minutes
 };
 
 // ============================================================================
-// Scan Scheduling Configuration
+// Default Scan Options
 // ============================================================================
 
-export const SCAN_CONFIG = {
-  // Default interval between automatic scans (in hours)
-  defaultScanIntervalHours: 6,
+export const DEFAULT_SCAN_OPTIONS = {
+  postsLimit: 20,
+  mentionsLimit: 50,
+  includeProfile: true,
+  includePosts: true,
+  includeMentions: true,
+};
 
-  // Maximum age of cached data before re-scan (in hours)
-  maxCacheAgeHours: 12,
+// ============================================================================
+// Error Codes
+// ============================================================================
 
-  // Maximum number of posts to fetch per scan
-  defaultMaxPosts: 50,
+export const ERROR_CODES = {
+  NOT_CONFIGURED: "SCANNER_NOT_CONFIGURED",
+  RATE_LIMITED: "RATE_LIMIT_EXCEEDED",
+  NOT_FOUND: "PROFILE_NOT_FOUND",
+  UNAUTHORIZED: "UNAUTHORIZED_ACCESS",
+  API_ERROR: "API_ERROR",
+  NETWORK_ERROR: "NETWORK_ERROR",
+  INVALID_HANDLE: "INVALID_HANDLE",
+  PARSE_ERROR: "RESPONSE_PARSE_ERROR",
+};
 
-  // Maximum number of mentions to search for
-  defaultMaxMentions: 100,
+// ============================================================================
+// Documentation Links
+// ============================================================================
 
-  // Days to look back for mentions
-  defaultMentionDays: 7,
-
-  // Priority order for scanning (if rate limited, which platform first)
-  platformPriority: ["twitter", "youtube", "facebook"] as ServiceScanPlatform[],
+export const API_DOCS = {
+  twitter: {
+    portal: "https://developer.twitter.com/en/portal/dashboard",
+    docs: "https://developer.twitter.com/en/docs/twitter-api",
+    rateLimit: "https://developer.twitter.com/en/docs/twitter-api/rate-limits",
+  },
+  youtube: {
+    console: "https://console.cloud.google.com/apis/credentials",
+    docs: "https://developers.google.com/youtube/v3/docs",
+    quota: "https://developers.google.com/youtube/v3/getting-started#quota",
+  },
+  facebook: {
+    portal: "https://developers.facebook.com/apps",
+    docs: "https://developers.facebook.com/docs/graph-api",
+    rateLimit: "https://developers.facebook.com/docs/graph-api/overview/rate-limiting",
+  },
 };

@@ -1,151 +1,271 @@
 /**
  * Social Scanner Module
  *
- * Service-level social media scanning using Apex's own API credentials.
- * No user OAuth required for public data access.
+ * Service-level social media scanning for public data.
+ * Uses Apex's own API keys to scan ANY brand without user OAuth.
  *
  * Supported Platforms:
- * - Twitter/X: Official API v2 with Bearer Token
- * - YouTube: Data API v3 with API Key
- * - Facebook: Graph API with App Access Token
+ * - Twitter/X: Bearer Token (450 req/15min)
+ * - YouTube: API Key (10K units/day)
+ * - Facebook: App Token (200 req/hour)
  *
  * Usage:
  * ```typescript
- * import { scanBrand, twitterScanner, youtubeScanner } from "@/lib/social-scanner";
+ * import { scanBrand, TwitterScanner, isServiceScannerConfigured } from "@/lib/social-scanner";
  *
- * // Scan a single platform
- * const twitterResult = await twitterScanner.getProfile("brandname");
+ * // Single platform scan
+ * const profile = await TwitterScanner.getProfile("elonmusk");
  *
- * // Scan all configured platforms
- * const results = await scanBrand("brandname", ["twitter", "youtube", "facebook"]);
+ * // Full brand scan across all configured platforms
+ * const result = await scanBrand({
+ *   brandId: "brand_123",
+ *   handles: { twitter: "elonmusk", youtube: "@mkbhd" }
+ * });
  * ```
  */
 
+// ============================================================================
+// Re-exports
+// ============================================================================
+
 // Types
 export type {
-  // Platform types
-  ServiceScanPlatform,
-  SocialPlatform,
-  // Profile types
+  ScannerPlatform,
+  ScanStatus,
   SocialProfile,
   TwitterProfile,
   YouTubeProfile,
   FacebookProfile,
-  // Post types
   SocialPost,
+  PostMetrics,
   TwitterPost,
   YouTubeVideo,
   FacebookPost,
-  PostType,
-  PostEngagement,
-  // Mention types
-  SocialMention,
-  MentionSentiment,
-  // Scan types
-  ScanRequest,
+  BrandMention,
   ScanResult,
-  ScanType,
-  ScanOptions,
+  ScanError,
+  RateLimitInfo,
   ProfileScanResult,
   PostsScanResult,
   MentionsScanResult,
-  FullScanResult,
-  // Rate limiting
-  RateLimitInfo,
-  RateLimitConfig,
-  // Errors
-  ScanError,
-  ScanErrorCode,
-  // Interface
-  ISocialScanner,
-  // Aggregated
-  AggregatedSocialMetrics,
-  BrandSocialPresence,
+  BatchScanRequest,
+  BatchScanResult,
+  PlatformScanResult,
+  SocialScanner,
+  ServiceScanRecord,
 } from "./types";
+
+export { calculateEngagementRate, aggregateMetrics } from "./types";
 
 // Config
 export {
-  getTwitterCredentials,
-  getYouTubeCredentials,
-  getFacebookCredentials,
-  isServiceConfigured,
+  TWITTER_CONFIG,
+  YOUTUBE_CONFIG,
+  FACEBOOK_CONFIG,
+  getTwitterBearerToken,
+  getYouTubeApiKey,
+  getFacebookAppToken,
+  getPlatformConfig,
+  isServiceScannerConfigured,
   getConfiguredPlatforms,
-  getRateLimitConfig,
-  TWITTER_RATE_LIMITS,
-  YOUTUBE_RATE_LIMITS,
-  FACEBOOK_RATE_LIMITS,
-  PLATFORM_CONFIG,
-  getProfileUrl,
-  SCAN_CONFIG,
+  getUnconfiguredPlatforms,
+  PLATFORM_URLS,
+  CACHE_TTL,
+  DEFAULT_SCAN_OPTIONS,
+  ERROR_CODES,
+  API_DOCS,
 } from "./config";
 
-// Base scanner
-export { SocialScannerBase } from "./scanner-base";
-
-// Platform scanners
+// Platforms
 export {
-  // Classes
   TwitterScanner,
   YouTubeScanner,
   FacebookScanner,
-  // Singleton instances
-  twitterScanner,
-  youtubeScanner,
-  facebookScanner,
-  // Utilities
   getScanner,
+  getAllScanners,
   getConfiguredScanners,
   isScannerConfigured,
-  getAvailablePlatforms,
+  getConfiguredPlatformNames,
+  getUnconfiguredPlatformNames,
+  getProfile,
+  getRecentPosts,
+  searchMentions,
 } from "./platforms";
 
 // ============================================================================
-// Convenience Functions
+// Batch Scanning Service
 // ============================================================================
 
-import {
-  twitterScanner,
-  youtubeScanner,
-  facebookScanner,
-  getScanner,
-  getConfiguredScanners,
-} from "./platforms";
 import type {
-  ServiceScanPlatform,
-  ScanOptions,
-  FullScanResult,
-  SocialProfile,
+  BatchScanRequest,
+  BatchScanResult,
+  PlatformScanResult,
+  ScannerPlatform,
 } from "./types";
+import { DEFAULT_SCAN_OPTIONS } from "./config";
+import { getScanner, getConfiguredPlatformNames } from "./platforms";
 
 /**
- * Scan a brand across multiple platforms
- *
- * @param handle - The social media handle to scan
- * @param platforms - Platforms to scan (defaults to all configured)
- * @param options - Scan options
- * @returns Map of platform to scan results
+ * Scan a brand across multiple social platforms in parallel
  */
-export async function scanBrand(
-  handle: string,
-  platforms?: ServiceScanPlatform[],
-  options?: ScanOptions
-): Promise<Map<ServiceScanPlatform, FullScanResult>> {
-  const results = new Map<ServiceScanPlatform, FullScanResult>();
+export async function scanBrand(request: BatchScanRequest): Promise<BatchScanResult> {
+  const startedAt = new Date();
+  const options = { ...DEFAULT_SCAN_OPTIONS, ...request.options };
 
-  // Get platforms to scan
-  const platformsToScan = platforms
-    ? platforms.filter((p) => {
-        const scanner = getScanner(p);
-        return scanner.isConfigured();
-      })
-    : getConfiguredScanners().map(({ platform }) => platform);
+  // Determine which platforms to scan
+  const configuredPlatforms = getConfiguredPlatformNames();
+  const requestedPlatforms = request.platforms.length > 0
+    ? request.platforms.filter((p) => configuredPlatforms.includes(p))
+    : configuredPlatforms;
 
-  // Scan all platforms in parallel
+  // Filter to only platforms with handles provided
+  const platformsToScan = requestedPlatforms.filter((platform) => {
+    const handle = request.handles[platform];
+    return handle && handle.trim().length > 0;
+  });
+
+  // Scan each platform in parallel
   const scanPromises = platformsToScan.map(async (platform) => {
-    const scanner = getScanner(platform);
-    const result = await scanner.fullScan(handle, options);
+    const handle = request.handles[platform]!;
+    const result = await scanPlatform(platform, handle, options);
     return { platform, result };
   });
+
+  const scanResults = await Promise.all(scanPromises);
+
+  // Build results object
+  const results: BatchScanResult["results"] = {};
+  let totalFollowers = 0;
+  let totalPosts = 0;
+  let totalEngagement = 0;
+  let platformsScanned = 0;
+  let platformsFailed = 0;
+
+  for (const { platform, result } of scanResults) {
+    results[platform] = result;
+
+    if (result.status === "completed" && result.profile) {
+      platformsScanned++;
+      totalFollowers += result.profile.followerCount;
+      totalPosts += result.recentPosts.length;
+
+      // Calculate engagement from posts
+      for (const post of result.recentPosts) {
+        totalEngagement += post.metrics.likes + post.metrics.comments + post.metrics.shares;
+      }
+    } else {
+      platformsFailed++;
+    }
+  }
+
+  const averageEngagementRate = totalFollowers > 0 && totalPosts > 0
+    ? (totalEngagement / totalPosts / totalFollowers) * 100
+    : 0;
+
+  return {
+    brandId: request.brandId,
+    startedAt,
+    completedAt: new Date(),
+    results,
+    summary: {
+      totalFollowers,
+      totalPosts,
+      totalEngagement,
+      averageEngagementRate,
+      platformsScanned,
+      platformsFailed,
+    },
+  };
+}
+
+/**
+ * Scan a single platform for a brand
+ */
+async function scanPlatform(
+  platform: ScannerPlatform,
+  handle: string,
+  options: typeof DEFAULT_SCAN_OPTIONS
+): Promise<PlatformScanResult> {
+  const scanner = getScanner(platform);
+  const scannedAt = new Date();
+
+  try {
+    // Get profile
+    const profileResult = await scanner.getProfile(handle);
+
+    if (!profileResult.success || !profileResult.data) {
+      return {
+        status: profileResult.error?.code === "RATE_LIMIT_EXCEEDED" ? "rate_limited" : "failed",
+        profile: null,
+        recentPosts: [],
+        mentions: [],
+        error: profileResult.error,
+        scannedAt,
+      };
+    }
+
+    const profile = profileResult.data;
+    const userId = profile.platformId;
+
+    // Get recent posts (if requested)
+    let recentPosts: PlatformScanResult["recentPosts"] = [];
+    if (options.includePosts) {
+      const postsResult = await scanner.getRecentPosts(userId, {
+        limit: options.postsLimit,
+      });
+      if (postsResult.success && postsResult.data) {
+        recentPosts = postsResult.data;
+      }
+    }
+
+    // Skip mentions for now (expensive API calls)
+    // Can be enabled per-request if needed
+
+    return {
+      status: "completed",
+      profile,
+      recentPosts,
+      mentions: [],
+      error: null,
+      scannedAt,
+    };
+  } catch (error) {
+    return {
+      status: "failed",
+      profile: null,
+      recentPosts: [],
+      mentions: [],
+      error: {
+        code: "SCAN_ERROR",
+        message: error instanceof Error ? error.message : "Unknown error",
+        retryable: true,
+        retryAfter: 60,
+      },
+      scannedAt,
+    };
+  }
+}
+
+/**
+ * Quick scan - just get profile info across all configured platforms
+ */
+export async function quickScan(
+  handles: BatchScanRequest["handles"]
+): Promise<Map<ScannerPlatform, PlatformScanResult>> {
+  const configuredPlatforms = getConfiguredPlatformNames();
+  const results = new Map<ScannerPlatform, PlatformScanResult>();
+
+  const scanPromises = configuredPlatforms
+    .filter((platform) => handles[platform])
+    .map(async (platform) => {
+      const handle = handles[platform]!;
+      const result = await scanPlatform(platform, handle, {
+        ...DEFAULT_SCAN_OPTIONS,
+        includePosts: false,
+        includeMentions: false,
+      });
+      return { platform, result };
+    });
 
   const scanResults = await Promise.all(scanPromises);
 
@@ -157,143 +277,20 @@ export async function scanBrand(
 }
 
 /**
- * Get profile from all configured platforms
- *
- * @param handle - The social media handle
- * @returns Array of profiles from each platform
+ * Get scan status summary
  */
-export async function getProfilesFromAllPlatforms(
-  handle: string
-): Promise<{ platform: ServiceScanPlatform; profile: SocialProfile | null; error?: string }[]> {
-  const configuredScanners = getConfiguredScanners();
-
-  const results = await Promise.all(
-    configuredScanners.map(async ({ platform, scanner }) => {
-      try {
-        const result = await scanner.getProfile(handle);
-        return {
-          platform,
-          profile: result.success ? result.data : null,
-          error: result.error?.message,
-        };
-      } catch (error) {
-        return {
-          platform,
-          profile: null,
-          error: error instanceof Error ? error.message : "Unknown error",
-        };
-      }
-    })
-  );
-
-  return results;
-}
-
-/**
- * Calculate aggregated metrics from scan results
- *
- * @param results - Map of platform to scan results
- * @returns Aggregated metrics across all platforms
- */
-export function aggregateMetrics(
-  results: Map<ServiceScanPlatform, FullScanResult>
-): {
-  totalFollowers: number;
-  totalPosts: number;
-  averageEngagement: number;
-  platforms: ServiceScanPlatform[];
+export function getScannerStatus(): {
+  configured: ScannerPlatform[];
+  unconfigured: ScannerPlatform[];
+  ready: boolean;
 } {
-  let totalFollowers = 0;
-  let totalPosts = 0;
-  let totalEngagement = 0;
-  let engagementCount = 0;
-  const platforms: ServiceScanPlatform[] = [];
-
-  for (const [platform, result] of results) {
-    if (result.success && result.data.profile) {
-      platforms.push(platform);
-      totalFollowers += result.data.profile.followerCount || 0;
-      totalPosts += result.data.profile.postCount || 0;
-
-      // Calculate engagement from recent posts
-      if (result.data.recentPosts) {
-        for (const post of result.data.recentPosts) {
-          const engagement =
-            (post.engagement.likes || 0) +
-            (post.engagement.comments || 0) +
-            (post.engagement.shares || 0);
-          totalEngagement += engagement;
-          engagementCount++;
-        }
-      }
-    }
-  }
+  const configured = getConfiguredPlatformNames();
+  const allPlatforms: ScannerPlatform[] = ["twitter", "youtube", "facebook"];
+  const unconfigured = allPlatforms.filter((p) => !configured.includes(p));
 
   return {
-    totalFollowers,
-    totalPosts,
-    averageEngagement: engagementCount > 0 ? totalEngagement / engagementCount : 0,
-    platforms,
-  };
-}
-
-/**
- * Check service health - verify all credentials are valid
- */
-export async function checkServiceHealth(): Promise<{
-  healthy: boolean;
-  platforms: {
-    platform: ServiceScanPlatform;
-    configured: boolean;
-    healthy: boolean;
-    error?: string;
-  }[];
-}> {
-  const platforms: ServiceScanPlatform[] = ["twitter", "youtube", "facebook"];
-  const results: {
-    platform: ServiceScanPlatform;
-    configured: boolean;
-    healthy: boolean;
-    error?: string;
-  }[] = [];
-
-  for (const platform of platforms) {
-    const scanner = getScanner(platform);
-    const configured = scanner.isConfigured();
-
-    if (!configured) {
-      results.push({ platform, configured: false, healthy: false });
-      continue;
-    }
-
-    // Try a simple API call to verify credentials
-    try {
-      // Use a known account for health check
-      const testHandles: Record<ServiceScanPlatform, string> = {
-        twitter: "twitter",
-        youtube: "YouTube",
-        facebook: "Meta",
-      };
-
-      const result = await scanner.getProfile(testHandles[platform]);
-      results.push({
-        platform,
-        configured: true,
-        healthy: result.success,
-        error: result.error?.message,
-      });
-    } catch (error) {
-      results.push({
-        platform,
-        configured: true,
-        healthy: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  }
-
-  return {
-    healthy: results.every((r) => r.healthy),
-    platforms: results,
+    configured,
+    unconfigured,
+    ready: configured.length > 0,
   };
 }
