@@ -14,10 +14,12 @@ import {
   Link2,
   Award,
   Pencil,
+  MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Brand, BrandCompetitor } from "@/stores/brand-store";
 import { Button } from "@/components/ui/button";
+import { LocationsSection } from "@/components/locations";
 
 // AI Platforms for monitoring display (colors from UI_DESIGN_SYSTEM.md)
 const AI_PLATFORMS = [
@@ -396,7 +398,7 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6" style={{ backgroundColor: DESIGN.cardBg }}>
+        <div className="flex-1 overflow-y-auto p-6 space-y-6" style={{ backgroundColor: DESIGN.bgCard }}>
           {/* Confidence Score */}
           {renderConfidenceScore()}
 
@@ -497,6 +499,19 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
             {brand.monitoringEnabled === false && (
               <p className="text-xs mt-1" style={{ color: DESIGN.textMuted }}>Monitoring is currently disabled</p>
             )}
+          </div>
+
+          {/* Locations Section (Phase 9.2) */}
+          <div
+            className="pt-6"
+            style={{ borderTop: `1px solid ${DESIGN.borderDefault}` }}
+          >
+            <LocationsSection
+              brandId={brand.id}
+              brandName={brand.name}
+              compact={false}
+              maxLocations={4}
+            />
           </div>
         </div>
       </div>

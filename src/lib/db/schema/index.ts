@@ -23,6 +23,7 @@ export {
   brands,
   type Brand,
   type NewBrand,
+  type BrandCompetitor,
   type BrandVoice,
   type BrandVisual,
 } from "./brands";
@@ -110,8 +111,15 @@ export {
   shareOfVoice,
   competitiveGaps,
   competitiveAlerts,
+  // Phase 9.1: Competitor Discovery Tables
+  discoveredCompetitors,
+  competitorSnapshots,
+  // Enums
   serpFeatureTypeEnum,
   featureOwnerEnum,
+  discoveryMethodEnum,
+  discoveryStatusEnum,
+  // Types
   type SerpFeature,
   type NewSerpFeature,
   type SerpFeatureMetadata,
@@ -124,6 +132,13 @@ export {
   type NewCompetitiveGap,
   type CompetitiveAlert,
   type NewCompetitiveAlert,
+  // Phase 9.1: New types
+  type DiscoveredCompetitor,
+  type NewDiscoveredCompetitor,
+  type DiscoveryMetadata,
+  type CompetitorSnapshot,
+  type NewCompetitorSnapshot,
+  type PlatformMetrics as CompetitorPlatformMetrics,
 } from "./competitive";
 
 export {
@@ -132,6 +147,9 @@ export {
   shareOfVoiceRelations,
   competitiveGapsRelations,
   competitiveAlertsRelations,
+  // Phase 9.1: New relations
+  discoveredCompetitorsRelations,
+  competitorSnapshotsRelations,
 } from "./competitive";
 
 // Portfolio & Enterprise Features
@@ -247,3 +265,28 @@ export {
   peopleAiMentionsRelations,
   peopleScoresRelations,
 } from "./people";
+
+// Locations (Phase 9.2)
+export {
+  brandLocations,
+  brandReviews,
+  locationScores,
+  locationTypeEnum,
+  reviewSourceEnum,
+  type BrandLocation,
+  type NewBrandLocation,
+  type BrandReview,
+  type NewBrandReview,
+  type LocationScore,
+  type NewLocationScore,
+  type LocationPhoto,
+  type OpeningHours,
+  type LocationMetadata,
+  type ReviewKeyword,
+} from "./locations";
+
+export {
+  brandLocationsRelations,
+  brandReviewsRelations,
+  locationScoresRelations,
+} from "./locations";
