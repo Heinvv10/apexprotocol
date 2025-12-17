@@ -32,7 +32,7 @@ export default function Error({ error, reset }: ErrorProps) {
 
           {/* Description */}
           <p className="text-sm text-muted-foreground mb-6">
-            We encountered an unexpected error. Don't worry, your data is safe.
+            We encountered an unexpected error. Don&apos;t worry, your data is safe.
             You can try again or return to the dashboard.
           </p>
 

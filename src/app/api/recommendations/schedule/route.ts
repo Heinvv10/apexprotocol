@@ -191,7 +191,8 @@ function handleGetUpcoming(searchParams: URLSearchParams) {
   const upcoming = autoScheduler.getUpcomingSchedules(days);
 
   // Group by day
-  const byDay: Record<string, any[]> = {};
+  type ScheduleResponseType = ReturnType<typeof formatScheduleResponse>;
+  const byDay: Record<string, ScheduleResponseType[]> = {};
   for (const schedule of upcoming) {
     const dayKey = schedule.scheduledFor.toISOString().split("T")[0];
     if (!byDay[dayKey]) {

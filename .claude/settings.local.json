@@ -58,7 +58,8 @@
       "Bash(node scripts/zero-tolerance-check.js:*)",
       "Bash(npx eslint:*)",
       "Bash(cut:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Skill(apex-ui-ux)"
     ]
   }
 }

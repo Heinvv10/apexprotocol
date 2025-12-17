@@ -252,7 +252,7 @@ export default function MonitorPage() {
   const queries: QueryRow[] = React.useMemo(() => {
     if (!mentionsResponse?.mentions) return [];
     return mentionsResponse.mentions.map(mentionToQueryRow);
-  }, [mentionsResponse?.mentions]);
+  }, [mentionsResponse]);
 
   // Build dynamic filter groups from mention data
   const filterGroups = React.useMemo(() => {
@@ -291,7 +291,7 @@ export default function MonitorPage() {
         })),
       },
     ];
-  }, [mentionsResponse?.mentions]);
+  }, [mentionsResponse]);
 
   const [selectedFilters, setSelectedFilters] = React.useState<Record<string, string[]>>({
     topics: [],

@@ -451,7 +451,12 @@ export class EmailManager {
    * Send via SendGrid
    */
   private async sendViaSendGrid(message: EmailMessage): Promise<{ id: string; success: boolean }> {
-    const personalizations: any = {
+    interface SendGridPersonalization {
+      to: { email: string }[];
+      cc?: { email: string }[];
+      bcc?: { email: string }[];
+    }
+    const personalizations: SendGridPersonalization = {
       to: (Array.isArray(message.to) ? message.to : [message.to]).map((email) => ({ email })),
     };
 

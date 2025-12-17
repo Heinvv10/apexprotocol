@@ -100,7 +100,7 @@ export default function MentionsPage() {
 
       return true;
     });
-  }, [selectedPlatforms, selectedSentiments, dateRange]);
+  }, [mentions, selectedPlatforms, selectedSentiments, dateRange]);
 
   // Calculate stats from filtered mentions
   const sentimentCounts = filteredMentions.reduce(

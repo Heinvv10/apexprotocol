@@ -200,7 +200,7 @@ export class GoogleSearchConsoleManager {
       throw new Error(`Failed to get sites: ${data.error.message}`);
     }
 
-    return (data.siteEntry || []).map((s: any) => ({
+    return (data.siteEntry || []).map((s: Record<string, unknown>) => ({
       siteUrl: s.siteUrl,
       permissionLevel: s.permissionLevel,
     }));
@@ -287,7 +287,7 @@ export class GoogleSearchConsoleManager {
       startDate: string;
       endDate: string;
       dimensions?: ("query" | "page" | "country" | "device" | "date")[];
-      dimensionFilterGroups?: any[];
+      dimensionFilterGroups?: Record<string, unknown>[];
       rowLimit?: number;
       startRow?: number;
       aggregationType?: "auto" | "byPage" | "byProperty";
@@ -331,7 +331,7 @@ export class GoogleSearchConsoleManager {
     }
 
     return {
-      rows: (data.rows || []).map((row: any) => ({
+      rows: (data.rows || []).map((row: Record<string, unknown>) => ({
         keys: row.keys || [],
         clicks: row.clicks || 0,
         impressions: row.impressions || 0,

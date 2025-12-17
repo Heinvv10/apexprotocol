@@ -11,6 +11,7 @@ import {
   slackManager,
   formatSlackConnectionResponse,
   formatSlackMessageResponse,
+  type SlackBlock,
 } from "@/lib/integrations/slack";
 
 // Request schemas
@@ -288,7 +289,7 @@ async function handleSendMessage(body: unknown) {
 
   const sent = await slackManager.sendMessage(brandId, {
     text: message.text,
-    blocks: message.blocks as any,
+    blocks: message.blocks as SlackBlock[] | undefined,
     threadTs: message.threadTs,
     unfurlLinks: message.unfurlLinks,
     unfurlMedia: message.unfurlMedia,

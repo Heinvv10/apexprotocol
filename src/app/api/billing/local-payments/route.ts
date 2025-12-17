@@ -13,6 +13,7 @@ import {
   formatBankDetailsResponse,
   type LocalPaymentProvider,
   type Currency,
+  type PaymentStatus,
   PPP_PRICING,
   LOCAL_PLAN_PRICES,
 } from "@/lib/billing/local-payments";
@@ -223,7 +224,7 @@ function handleGetPayments(
   options: { status: string | null; provider: LocalPaymentProvider | null; limit: number }
 ) {
   const payments = localPaymentManager.getPayments(organizationId, {
-    status: options.status as any,
+    status: options.status as PaymentStatus | undefined,
     provider: options.provider || undefined,
     limit: options.limit,
   });

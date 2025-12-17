@@ -127,7 +127,7 @@ export class AutoScheduler {
 
     // Track daily slots
     const dailySlots = new Map<string, number>();
-    let currentDate = new Date(startDate);
+    const currentDate = new Date(startDate);
     let currentTime = this.getNextWorkingTime(currentDate);
 
     for (const rec of sortedRecs) {

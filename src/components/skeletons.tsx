@@ -128,6 +128,11 @@ export function StatCardSkeleton() {
 
 // Chart skeleton
 export function ChartSkeleton({ height = 300 }: { height?: number }) {
+  // Generate bar heights once on mount using useState to avoid calling Math.random during render
+  const [barHeights] = React.useState(() =>
+    Array.from({ length: 8 }, () => Math.random() * 60 + 20)
+  );
+
   return (
     <div className="card-secondary">
       {/* Header */}
@@ -143,12 +148,12 @@ export function ChartSkeleton({ height = 300 }: { height?: number }) {
       >
         {/* Fake chart lines */}
         <div className="absolute inset-0 flex items-end justify-around px-4 pb-8">
-          {Array.from({ length: 8 }).map((_, i) => (
+          {barHeights.map((barHeight, i) => (
             <div
               key={i}
               className="w-4 bg-muted/20 rounded-t"
               style={{
-                height: `${Math.random() * 60 + 20}%`,
+                height: `${barHeight}%`,
               }}
             />
           ))}

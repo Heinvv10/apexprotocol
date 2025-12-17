@@ -537,7 +537,7 @@ function PreviewStep({
           <div className="flex-1 min-w-0">
             <p className="font-medium truncate" style={{ color: DESIGN.textPrimary }}>{data.brandName}</p>
             {data.tagline && (
-              <p className="text-xs italic" style={{ color: DESIGN.primaryCyan }}>"{data.tagline}"</p>
+              <p className="text-xs italic" style={{ color: DESIGN.primaryCyan }}>&quot;{data.tagline}&quot;</p>
             )}
             <p className="text-sm" style={{ color: DESIGN.textSecondary }}>{data.industry}</p>
           </div>

@@ -330,7 +330,7 @@ export default function CreatePage() {
   const content: ContentItem[] = React.useMemo(() => {
     if (!contentResponse?.content) return [];
     return contentResponse.content.map(contentToItem);
-  }, [contentResponse?.content]);
+  }, [contentResponse]);
 
   const [searchQuery, setSearchQuery] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<ContentStatus | "all">("all");

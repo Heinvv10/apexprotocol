@@ -96,7 +96,7 @@ export async function PUT(request: NextRequest) {
     const validatedData = updateOrganizationSchema.parse(body);
 
     // Check if organization exists
-    let existingOrg = await db
+    const existingOrg = await db
       .select()
       .from(organizations)
       .where(eq(organizations.id, orgId))

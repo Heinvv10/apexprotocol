@@ -14,6 +14,7 @@ import {
   type CrisisType,
   type AlertChannel,
   type CrisisSeverity,
+  type CrisisThreshold,
 } from "@/lib/notifications/crisis";
 
 const VALID_CRISIS_TYPES: CrisisType[] = [
@@ -453,7 +454,10 @@ function handleUpdateThreshold(body: unknown) {
 
   const { thresholdId, ...updates } = schema.parse(body);
 
-  const threshold = crisisAlertManager.updateThreshold(thresholdId, updates as any);
+  const threshold = crisisAlertManager.updateThreshold(
+    thresholdId,
+    updates as Partial<Omit<CrisisThreshold, "id" | "brandId" | "createdAt">>
+  );
 
   if (!threshold) {
     return NextResponse.json(

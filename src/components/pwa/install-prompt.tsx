@@ -164,13 +164,13 @@ function IOSInstallInstructions() {
         <div className="w-5 h-5 rounded-full bg-muted/20 flex items-center justify-center text-[10px] font-medium">
           2
         </div>
-        <span>Scroll and tap "Add to Home Screen"</span>
+        <span>Scroll and tap &quot;Add to Home Screen&quot;</span>
       </div>
       <div className="flex items-center gap-2">
         <div className="w-5 h-5 rounded-full bg-muted/20 flex items-center justify-center text-[10px] font-medium">
           3
         </div>
-        <span>Tap "Add" to install</span>
+        <span>Tap &quot;Add&quot; to install</span>
       </div>
     </div>
   );

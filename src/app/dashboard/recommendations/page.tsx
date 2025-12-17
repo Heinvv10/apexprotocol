@@ -619,7 +619,7 @@ export default function RecommendationsPage() {
   const recommendations: Recommendation[] = React.useMemo(() => {
     if (!recommendationsResponse?.recommendations) return [];
     return recommendationsResponse.recommendations.map(apiToUIRecommendation);
-  }, [recommendationsResponse?.recommendations]);
+  }, [recommendationsResponse]);
 
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [priorityFilter, setPriorityFilter] = React.useState("all");

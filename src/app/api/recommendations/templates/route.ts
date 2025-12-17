@@ -14,6 +14,7 @@ import {
   createTemplateFromRecommendation,
   type RecommendationTemplate,
 } from "@/lib/recommendations";
+import type { RecommendationCategory, RecommendationSource } from "@/lib/recommendations/types";
 
 // Request schemas
 const renderTemplateSchema = z.object({
@@ -66,12 +67,21 @@ export async function GET(request: NextRequest) {
     // Get templates
     let templates: RecommendationTemplate[];
     if (category) {
-      templates = templateRegistry.getTemplatesByCategory(category as any);
+      templates = templateRegistry.getTemplatesByCategory(category as RecommendationCategory);
     } else {
       templates = templateRegistry.getAllTemplates();
     }
 
     // Group by category
+    interface TemplateSummary {
+      id: string;
+      name: string;
+      source: string;
+      impactLevel: number;
+      effortLevel: number;
+      variableCount: number;
+      tags: string[];
+    }
     const grouped = templates.reduce(
       (acc, template) => {
         if (!acc[template.category]) {
@@ -88,7 +98,7 @@ export async function GET(request: NextRequest) {
         });
         return acc;
       },
-      {} as Record<string, any[]>
+      {} as Record<string, TemplateSummary[]>
     );
 
     return NextResponse.json({
@@ -274,9 +284,9 @@ async function handleFindTemplate(body: unknown) {
   const { category, source, context } = findTemplateSchema.parse(body);
 
   const matchingTemplate = findMatchingTemplate(templateRegistry, {
-    category,
-    source,
-    ...(context as any),
+    category: category as RecommendationCategory | undefined,
+    source: source as RecommendationSource | undefined,
+    ...((context || {}) as { tags?: string[]; issueType?: string }),
   });
 
   if (!matchingTemplate) {
@@ -315,7 +325,7 @@ async function handleCreateFromRecommendation(body: unknown) {
   const { recommendation, name, variables } = schema.parse(body);
 
   const template = createTemplateFromRecommendation(
-    recommendation as any,
+    recommendation,
     name,
     variables
   );

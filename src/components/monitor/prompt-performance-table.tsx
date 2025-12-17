@@ -55,6 +55,48 @@ const sentimentConfig: Record<SentimentType, { label: string; color: string; bgC
   },
 };
 
+// Move components outside to avoid "Cannot create components during render" error
+function SortIcon({
+  field,
+  sortField,
+  sortDirection
+}: {
+  field: SortField;
+  sortField: SortField;
+  sortDirection: SortDirection;
+}) {
+  if (sortField !== field) {
+    return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
+  }
+  return sortDirection === "asc" ? (
+    <ArrowUp className="h-4 w-4 text-primary" />
+  ) : (
+    <ArrowDown className="h-4 w-4 text-primary" />
+  );
+}
+
+function TrendIcon({ trend, value }: { trend: "up" | "down" | "stable"; value: number }) {
+  if (trend === "up") {
+    return (
+      <span className="inline-flex items-center gap-1 text-success text-xs font-medium">
+        <TrendingUp className="h-3 w-3" />+{value}%
+      </span>
+    );
+  }
+  if (trend === "down") {
+    return (
+      <span className="inline-flex items-center gap-1 text-error text-xs font-medium">
+        <TrendingDown className="h-3 w-3" />-{value}%
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-muted-foreground text-xs font-medium">
+      <Minus className="h-3 w-3" />0%
+    </span>
+  );
+}
+
 export function PromptPerformanceTable({
   prompts,
   onExport,
@@ -66,7 +108,7 @@ export function PromptPerformanceTable({
 
   // Filter and sort prompts
   const filteredPrompts = React.useMemo(() => {
-    let result = prompts.filter((prompt) =>
+    const result = prompts.filter((prompt) =>
       prompt.promptText.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -105,39 +147,6 @@ export function PromptPerformanceTable({
     }
   };
 
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
-    }
-    return sortDirection === "asc" ? (
-      <ArrowUp className="h-4 w-4 text-primary" />
-    ) : (
-      <ArrowDown className="h-4 w-4 text-primary" />
-    );
-  };
-
-  const TrendIcon = ({ trend, value }: { trend: "up" | "down" | "stable"; value: number }) => {
-    if (trend === "up") {
-      return (
-        <span className="inline-flex items-center gap-1 text-success text-xs font-medium">
-          <TrendingUp className="h-3 w-3" />+{value}%
-        </span>
-      );
-    }
-    if (trend === "down") {
-      return (
-        <span className="inline-flex items-center gap-1 text-error text-xs font-medium">
-          <TrendingDown className="h-3 w-3" />-{value}%
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-1 text-muted-foreground text-xs font-medium">
-        <Minus className="h-3 w-3" />0%
-      </span>
-    );
-  };
-
   return (
     <div className={cn("space-y-4", className)}>
       {/* Search and Export */}
@@ -168,7 +177,7 @@ export function PromptPerformanceTable({
                   className="inline-flex items-center gap-2 hover:text-primary transition-colors"
                 >
                   Search Prompt
-                  <SortIcon field="promptText" />
+                  <SortIcon field="promptText" sortField={sortField} sortDirection={sortDirection} />
                 </button>
               </th>
               <th className="text-left p-4 font-medium">Platforms</th>
@@ -178,7 +187,7 @@ export function PromptPerformanceTable({
                   className="inline-flex items-center gap-2 hover:text-primary transition-colors"
                 >
                   Frequency
-                  <SortIcon field="frequency" />
+                  <SortIcon field="frequency" sortField={sortField} sortDirection={sortDirection} />
                 </button>
               </th>
               <th className="text-left p-4 font-medium">Trend</th>
@@ -188,7 +197,7 @@ export function PromptPerformanceTable({
                   className="inline-flex items-center gap-2 hover:text-primary transition-colors"
                 >
                   Sentiment
-                  <SortIcon field="sentiment" />
+                  <SortIcon field="sentiment" sortField={sortField} sortDirection={sortDirection} />
                 </button>
               </th>
               <th className="text-left p-4 font-medium">
@@ -197,7 +206,7 @@ export function PromptPerformanceTable({
                   className="inline-flex items-center gap-2 hover:text-primary transition-colors"
                 >
                   Last Seen
-                  <SortIcon field="lastSeen" />
+                  <SortIcon field="lastSeen" sortField={sortField} sortDirection={sortDirection} />
                 </button>
               </th>
             </tr>

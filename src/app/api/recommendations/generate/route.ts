@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Gather monitor data if requested
-    let monitorDataArray: MonitorData[] = [];
+    const monitorDataArray: MonitorData[] = [];
     if (includeMonitor) {
       const recentMentions = await db.query.brandMentions.findMany({
         where: eq(brandMentions.brandId, brandId),

@@ -85,6 +85,24 @@ function CompetitorEmptyState() {
   );
 }
 
+// Move SortIcon outside to avoid "Cannot create components during render" error
+function SortIcon({
+  column,
+  sortBy,
+  sortDirection,
+}: {
+  column: "geoScore" | "mentions" | "visibility";
+  sortBy: "geoScore" | "mentions" | "visibility";
+  sortDirection: "asc" | "desc";
+}) {
+  if (sortBy !== column) return null;
+  return sortDirection === "desc" ? (
+    <ChevronDown className="w-3.5 h-3.5" />
+  ) : (
+    <ChevronUp className="w-3.5 h-3.5" />
+  );
+}
+
 interface CompetitorComparisonProps {
   className?: string;
   data?: CompetitorData[];
@@ -115,15 +133,6 @@ export function CompetitorComparison({ className, data }: CompetitorComparisonPr
       setSortBy(column);
       setSortDirection("desc");
     }
-  };
-
-  const SortIcon = ({ column }: { column: typeof sortBy }) => {
-    if (sortBy !== column) return null;
-    return sortDirection === "desc" ? (
-      <ChevronDown className="w-3.5 h-3.5" />
-    ) : (
-      <ChevronUp className="w-3.5 h-3.5" />
-    );
   };
 
   // Show empty state if no data
@@ -181,7 +190,7 @@ export function CompetitorComparison({ className, data }: CompetitorComparisonPr
               >
                 <div className="flex items-center gap-1">
                   GEO Score
-                  <SortIcon column="geoScore" />
+                  <SortIcon column="geoScore" sortBy={sortBy} sortDirection={sortDirection} />
                 </div>
               </th>
               <th
@@ -190,7 +199,7 @@ export function CompetitorComparison({ className, data }: CompetitorComparisonPr
               >
                 <div className="flex items-center gap-1">
                   Mentions
-                  <SortIcon column="mentions" />
+                  <SortIcon column="mentions" sortBy={sortBy} sortDirection={sortDirection} />
                 </div>
               </th>
               <th
@@ -199,7 +208,7 @@ export function CompetitorComparison({ className, data }: CompetitorComparisonPr
               >
                 <div className="flex items-center gap-1">
                   Visibility
-                  <SortIcon column="visibility" />
+                  <SortIcon column="visibility" sortBy={sortBy} sortDirection={sortDirection} />
                 </div>
               </th>
               <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">

@@ -257,7 +257,7 @@ export async function getExistingGaps(
     limit?: number;
   }
 ): Promise<GapOpportunity[]> {
-  let query = db.query.competitiveGaps.findMany({
+  const query = db.query.competitiveGaps.findMany({
     where: and(
       eq(competitiveGaps.brandId, brandId),
       options?.type ? eq(competitiveGaps.gapType, options.type) : undefined,

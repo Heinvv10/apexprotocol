@@ -503,7 +503,7 @@ export class GamificationEngine {
     }
 
     const breakdown: XPBreakdownItem[] = [];
-    let baseXP = config.baseXP;
+    const baseXP = config.baseXP;
     let bonusXP = 0;
 
     // Check daily limit
@@ -635,7 +635,7 @@ export class GamificationEngine {
     const today = new Date().toISOString().split("T")[0];
     const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
 
-    let updatedStreaks = { ...progress.streaks };
+    const updatedStreaks = { ...progress.streaks };
 
     if (progress.streaks.lastLoginDate === today) {
       // Already logged in today

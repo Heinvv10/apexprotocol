@@ -1,0 +1,1046 @@
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\analytics\unified-score\route.ts
+   4:33  warning  'recommendations' is defined but never used         @typescript-eslint/no-unused-vars
+   5:37  warning  'gte' is defined but never used                     @typescript-eslint/no-unused-vars
+   8:3   warning  'calculateGEOScore' is defined but never used       @typescript-eslint/no-unused-vars
+  30:21  warning  'orgId' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  47:11  warning  'thirtyDaysAgo' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\audit\[id]\route.ts
+  10:18  warning  'brands' is defined but never used  @typescript-eslint/no-unused-vars
+  11:14  warning  'and' is defined but never used     @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\brands\route.ts
+  74:27  warning  '_request' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\brands\scrape\route.ts
+  197:3  warning  'userId' is defined but never used  @typescript-eslint/no-unused-vars
+  198:3  warning  'orgId' is defined but never used   @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\competitive\discover\route.ts
+  12:18  warning  'discoveredCompetitors' is defined but never used  @typescript-eslint/no-unused-vars
+  13:14  warning  'and' is defined but never used                    @typescript-eslint/no-unused-vars
+  13:19  warning  'desc' is defined but never used                   @typescript-eslint/no-unused-vars
+  17:3   warning  'runDiscoveryProcess' is defined but never used    @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\competitive\route.ts
+   15:37  warning  'sql' is defined but never used                            @typescript-eslint/no-unused-vars
+   23:8   warning  'CompetitiveIntelligence' is defined but never used        @typescript-eslint/no-unused-vars
+  268:5   warning  'competitorComparison' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\compliance\route.ts
+  40:21  warning  'orgId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\content\route.ts
+  11:36  warning  'sql' is defined but never used            @typescript-eslint/no-unused-vars
+  57:57  warning  'sort' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\create\suggestions\route.ts
+  11:10  warning  'getPrompt' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\cron\competitive-snapshot\route.ts
+  19:10  warning  'headers' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\cron\social-scan\route.ts
+  13:38  warning  'scanJobQueue' is defined but never used                   @typescript-eslint/no-unused-vars
+  23:7   warning  'INTER_PLATFORM_DELAY' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\export\[id]\download\route.ts
+  69:12  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\export\[id]\route.ts
+  44:12  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  76:12  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\export\[id]\status\route.ts
+  45:12  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\export\history\route.ts
+  40:12  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\export\route.ts
+   20:3   warning  'PDFReportGenerator' is defined but never used  @typescript-eslint/no-unused-vars
+  233:3   warning  '_filters' is defined but never used            @typescript-eslint/no-unused-vars
+  518:9   warning  'negative' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  729:41  warning  'filters' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  778:12  warning  'error' is defined but never used               @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\export\templates\route.ts
+  89:12  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\locations\[id]\route.ts
+  18:14  warning  'and' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\locations\route.ts
+  19:30  warning  'gte' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\locations\sync\route.ts
+  12:14  warning  'and' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\monitor\brands\route.ts
+  65:27  warning  '_request' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\monitor\platforms\route.ts
+  94:27  warning  '_request' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\notifications\crisis\route.ts
+  36:7  warning  'VALID_SEVERITIES' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\onboarding\status\route.ts
+  24:27  warning  '_request' is defined but never used                 @typescript-eslint/no-unused-vars
+  48:11  warning  'effectiveOrgId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\opportunities\[id]\route.ts
+  12:33  warning  'opportunityMatches' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\opportunities\match\route.ts
+  17:36  warning  'inArray' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\opportunities\route.ts
+  11:33  warning  'opportunityMatches' is defined but never used  @typescript-eslint/no-unused-vars
+  11:53  warning  'brandPeople' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\people\[id]\route.ts
+  12:23  warning  'brands' is defined but never used           @typescript-eslint/no-unused-vars
+  83:20  warning  '_brand' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\portfolios\[id]\route.ts
+  11:19  warning  'desc' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\portfolios\route.ts
+  14:29  warning  'getUserId' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\recommendations\entities\route.ts
+  12:3  warning  'identifyCoverageGaps' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\recommendations\templates\route.ts
+  253:47  warning  'index' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\reports\route.ts
+  313:38  warning  'm' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\settings\api-keys\route.ts
+  67:27  warning  '_request' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\settings\organization\route.ts
+  37:27  warning  '_request' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\settings\subscription\route.ts
+  42:27  warning  '_request' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\settings\team\route.ts
+  25:27  warning  '_request' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\social\route.ts
+  361:40  warning  'accountData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\social\scan\route.ts
+   16:14  warning  'and' is defined but never used             @typescript-eslint/no-unused-vars
+  307:21  warning  'orgId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\usage\breakdown\route.ts
+  23:11  warning  'queryOrgId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\usage\history\route.ts
+  12:21  warning  'orgId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\usage\purchase\route.ts
+  10:15  warning  'UsageMetricType' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\usage\summary\route.ts
+  24:11  warning  'period' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\api\v1\route.ts
+  132:26  warning  '_page' is defined but never used      @typescript-eslint/no-unused-vars
+  132:41  warning  '_pageSize' is defined but never used  @typescript-eslint/no-unused-vars
+  141:28  warning  '_brandId' is defined but never used   @typescript-eslint/no-unused-vars
+  141:53  warning  '_page' is defined but never used      @typescript-eslint/no-unused-vars
+  141:68  warning  '_pageSize' is defined but never used  @typescript-eslint/no-unused-vars
+  150:35  warning  '_brandId' is defined but never used   @typescript-eslint/no-unused-vars
+  150:60  warning  '_page' is defined but never used      @typescript-eslint/no-unused-vars
+  150:75  warning  '_pageSize' is defined but never used  @typescript-eslint/no-unused-vars
+  159:29  warning  '_brandId' is defined but never used   @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\audit\page.tsx
+  155:58  error  Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `auditsResponse.audits`, but the source dependencies were [auditsResponse?.audits]. Inferred different dependency than source.
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\audit\page.tsx:155:58
+  153 |
+  154 |   // Transform API audits to history items
+> 155 |   const auditHistory: AuditHistoryItem[] = React.useMemo(() => {
+      |                                                          ^^^^^^^
+> 156 |     if (!auditsResponse?.audits) return [];
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 157 |     return auditsResponse.audits.map(auditToHistoryItem);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 158 |   }, [auditsResponse?.audits]);
+      | ^^^^ Could not preserve existing manual memoization
+  159 |
+  160 |   const [url, setUrl] = React.useState("");
+  161 |   const [error, setError] = React.useState<string | null>(null);  react-hooks/preserve-manual-memoization
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\brands\page.tsx
+    19:3   warning  'Users' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+    22:3   warning  'Palette' is defined but never used                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+   754:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1002:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1150:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\create\new\page.tsx
+  32:29  warning  'status' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\create\page.tsx
+  183:46  warning  'keyMessages' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+  330:48  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `contentResponse.content`, but the source dependencies were [contentResponse?.content]. Inferred different dependency than source.
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\create\page.tsx:330:48
+  328 |
+  329 |   // Transform API content to UI format
+> 330 |   const content: ContentItem[] = React.useMemo(() => {
+      |                                                ^^^^^^^
+> 331 |     if (!contentResponse?.content) return [];
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 332 |     return contentResponse.content.map(contentToItem);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 333 |   }, [contentResponse?.content]);
+      | ^^^^ Could not preserve existing manual memoization
+  334 |
+  335 |   const [searchQuery, setSearchQuery] = React.useState("");
+  336 |   const [statusFilter, setStatusFilter] = React.useState<ContentStatus | "all">("all");  react-hooks/preserve-manual-memoization
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\monitor\analytics\citations\page.tsx
+  25:3  warning  'ChevronUp' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\monitor\analytics\page.tsx
+  192:47  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `stats`, but the source dependencies were [filteredData, stats.total]. Inferred less specific property than source.
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\monitor\analytics\page.tsx:192:47
+  190 |
+  191 |   // Platform breakdown data for bar chart (sorted by volume descending)
+> 192 |   const platformBreakdownData = React.useMemo(() => {
+      |                                               ^^^^^^^
+> 193 |     return Object.entries(platformConfig)
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 194 |       .map(([key, config]) => {
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 210 |       .sort((a, b) => b.total - a.total);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 211 |   }, [filteredData, stats.total]);
+      | ^^^^ Could not preserve existing manual memoization
+  212 |
+  213 |   // Sentiment data - TODO: Fetch from database
+  214 |   // Currently returns empty placeholders until sentiment analysis is implemented  react-hooks/preserve-manual-memoization
+  211:6   warning  React Hook React.useMemo has a missing dependency: 'platformConfig'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-hooks/exhaustive-deps
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\monitor\mentions\page.tsx
+   22:10  warning  'MentionsEmptyState' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   74:9   warning  'hasData' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   77:42  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `mentions`, but the source dependencies were [selectedPlatforms, selectedSentiments, dateRange]. Inferred different dependency than source.
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\monitor\mentions\page.tsx:77:42
+   75 |
+   76 |   // Filter logic
+>  77 |   const filteredMentions = React.useMemo(() => {
+      |                                          ^^^^^^^
+>  78 |     return mentions.filter((mention) => {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  79 |       // Platform filter
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 102 |     });
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 103 |   }, [selectedPlatforms, selectedSentiments, dateRange]);
+      | ^^^^ Could not preserve existing manual memoization
+  104 |
+  105 |   // Calculate stats from filtered mentions
+  106 |   const sentimentCounts = filteredMentions.reduce(  react-hooks/preserve-manual-memoization
+  103:6   warning  React Hook React.useMemo has a missing dependency: 'mentions'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    react-hooks/exhaustive-deps
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\monitor\page.tsx
+   24:9   warning  'citationMap' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+  252:45  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `mentionsResponse.mentions`, but the source dependencies were [mentionsResponse?.mentions]. Inferred different dependency than source.
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\monitor\page.tsx:252:45
+  250 |
+  251 |   // Transform mentions to QueryRow format for SmartTable
+> 252 |   const queries: QueryRow[] = React.useMemo(() => {
+      |                                             ^^^^^^^
+> 253 |     if (!mentionsResponse?.mentions) return [];
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 254 |     return mentionsResponse.mentions.map(mentionToQueryRow);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 255 |   }, [mentionsResponse?.mentions]);
+      | ^^^^ Could not preserve existing manual memoization
+  256 |
+  257 |   // Build dynamic filter groups from mention data
+  258 |   const filterGroups = React.useMemo(() => {                                                                                               react-hooks/preserve-manual-memoization
+  258:38  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `mentionsResponse`, but the source dependencies were [mentionsResponse?.mentions]. Inferred less specific property than source.
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\monitor\page.tsx:258:38
+  256 |
+  257 |   // Build dynamic filter groups from mention data
+> 258 |   const filterGroups = React.useMemo(() => {
+      |                                      ^^^^^^^
+> 259 |     if (!mentionsResponse?.mentions?.length) return emptyFilterGroups;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 260 |
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 293 |     ];
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 294 |   }, [mentionsResponse?.mentions]);
+      | ^^^^ Could not preserve existing manual memoization
+  295 |
+  296 |   const [selectedFilters, setSelectedFilters] = React.useState<Record<string, string[]>>({
+  297 |     topics: [],  react-hooks/preserve-manual-memoization
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\monitor\prompts\page.tsx
+  6:48  warning  'PlatformId' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\monitor\settings\page.tsx
+  21:31  warning  'data' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\people\page.tsx
+  352:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\recommendations\page.tsx
+  619:59  error  Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `recommendationsResponse.recommendations`, but the source dependencies were [recommendationsResponse?.recommendations]. Inferred different dependency than source.
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\recommendations\page.tsx:619:59
+  617 |
+  618 |   // Transform API recommendations to UI format
+> 619 |   const recommendations: Recommendation[] = React.useMemo(() => {
+      |                                                           ^^^^^^^
+> 620 |     if (!recommendationsResponse?.recommendations) return [];
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 621 |     return recommendationsResponse.recommendations.map(apiToUIRecommendation);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 622 |   }, [recommendationsResponse?.recommendations]);
+      | ^^^^ Could not preserve existing manual memoization
+  623 |
+  624 |   const [statusFilter, setStatusFilter] = React.useState("all");
+  625 |   const [priorityFilter, setPriorityFilter] = React.useState("all");  react-hooks/preserve-manual-memoization
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\reports\page.tsx
+  120:11  warning  'ReportContent' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\settings\page.tsx
+    4:8   warning  'Link' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+   45:11  warning  'OrganizationSettings' is defined but never used                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  455:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  600:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  706:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\settings\social\page.tsx
+  162:3   warning  'brandId' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+  171:39  warning  'accountName' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  302:5   error    Error: This value cannot be modified
+
+Modifying a variable defined outside a component or hook is not allowed. Consider using an effect.
+
+C:\Jarvis\AI Workspace\Apex\src\app\dashboard\settings\social\page.tsx:302:5
+  300 |   const handleConnect = (platform: string) => {
+  301 |     // Redirect to OAuth initiation endpoint
+> 302 |     window.location.href = `/api/oauth/${platform}?brandId=${brandId}`;
+      |     ^^^^^^^^^^^^^^^ value cannot be modified
+  303 |   };
+  304 |
+  305 |   const handleDisconnect = (platform: string) => {  react-hooks/immutability
+
+C:\Jarvis\AI Workspace\Apex\src\app\error.tsx
+  4:42  warning  'ArrowLeft' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\app\onboarding\page.tsx
+  78:11  warning  'markBrandAdded' is assigned a value but never used            @typescript-eslint/no-unused-vars
+  79:11  warning  'markMonitoringConfigured' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\brands\brand-detail-view.tsx
+   17:3   warning  'MapPin' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   19:10  warning  'cn' is defined but never used                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  334:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Jarvis\AI Workspace\Apex\src\components\brands\scrape-wizard.tsx
+   13:10  warning  'Progress' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   15:10  warning  'cn' is defined but never used                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+   59:5   warning  'isLoading' is assigned a value but never used                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  521:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Jarvis\AI Workspace\Apex\src\components\command-palette\command-palette.tsx
+  18:3  warning  'Sun' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\competitive\benchmark-radar-chart.tsx
+  89:6  warning  React Hook React.useEffect has a missing dependency: 'fetchBenchmarkData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Jarvis\AI Workspace\Apex\src\components\competitive\competitor-comparison-card.tsx
+   13:3  warning  'ExternalLink' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+  234:6  warning  React Hook React.useEffect has a missing dependency: 'fetchBenchmarkData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Jarvis\AI Workspace\Apex\src\components\competitive\competitor-discovery-card.tsx
+   11:3  warning  'X' is defined but never used                                                                                              @typescript-eslint/no-unused-vars
+   15:3  warning  'TrendingUp' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+   16:3  warning  'ExternalLink' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+  112:6  warning  React Hook React.useEffect has a missing dependency: 'fetchDiscoveries'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Jarvis\AI Workspace\Apex\src\components\competitors\competitor-comparison.tsx
+    4:8   warning  'Link' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+    9:3   warning  'MoreHorizontal' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+   11:3   warning  'Search' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+   14:3   warning  'Eye' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   15:3   warning  'EyeOff' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+   16:3   warning  'ExternalLink' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   18:3   warning  'Sparkles' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   19:3   warning  'Settings' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   20:3   warning  'ArrowRight' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+   96:23  warning  'setCompetitors' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+  184:20  error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Jarvis\AI Workspace\Apex\src\components\competitors\competitor-comparison.tsx:184:20
+  182 |                 <div className="flex items-center gap-1">
+  183 |                   GEO Score
+> 184 |                   <SortIcon column="geoScore" />
+      |                    ^^^^^^^^ This component is created during render
+  185 |                 </div>
+  186 |               </th>
+  187 |               <th
+
+C:\Jarvis\AI Workspace\Apex\src\components\competitors\competitor-comparison.tsx:120:20
+  118 |   };
+  119 |
+> 120 |   const SortIcon = ({ column }: { column: typeof sortBy }) => {
+      |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 121 |     if (sortBy !== column) return null;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 122 |     return sortDirection === "desc" ? (
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 123 |       <ChevronDown className="w-3.5 h-3.5" />
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 124 |     ) : (
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 125 |       <ChevronUp className="w-3.5 h-3.5" />
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 126 |     );
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 127 |   };
+      | ^^^^ The component is created during render here
+  128 |
+  129 |   // Show empty state if no data
+  130 |   if (!hasData) {                                                                                                         react-hooks/static-components
+  193:20  error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Jarvis\AI Workspace\Apex\src\components\competitors\competitor-comparison.tsx:193:20
+  191 |                 <div className="flex items-center gap-1">
+  192 |                   Mentions
+> 193 |                   <SortIcon column="mentions" />
+      |                    ^^^^^^^^ This component is created during render
+  194 |                 </div>
+  195 |               </th>
+  196 |               <th
+
+C:\Jarvis\AI Workspace\Apex\src\components\competitors\competitor-comparison.tsx:120:20
+  118 |   };
+  119 |
+> 120 |   const SortIcon = ({ column }: { column: typeof sortBy }) => {
+      |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 121 |     if (sortBy !== column) return null;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 122 |     return sortDirection === "desc" ? (
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 123 |       <ChevronDown className="w-3.5 h-3.5" />
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 124 |     ) : (
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 125 |       <ChevronUp className="w-3.5 h-3.5" />
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 126 |     );
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 127 |   };
+      | ^^^^ The component is created during render here
+  128 |
+  129 |   // Show empty state if no data
+  130 |   if (!hasData) {                                                                                                          react-hooks/static-components
+  202:20  error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Jarvis\AI Workspace\Apex\src\components\competitors\competitor-comparison.tsx:202:20
+  200 |                 <div className="flex items-center gap-1">
+  201 |                   Visibility
+> 202 |                   <SortIcon column="visibility" />
+      |                    ^^^^^^^^ This component is created during render
+  203 |                 </div>
+  204 |               </th>
+  205 |               <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+
+C:\Jarvis\AI Workspace\Apex\src\components\competitors\competitor-comparison.tsx:120:20
+  118 |   };
+  119 |
+> 120 |   const SortIcon = ({ column }: { column: typeof sortBy }) => {
+      |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 121 |     if (sortBy !== column) return null;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 122 |     return sortDirection === "desc" ? (
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 123 |       <ChevronDown className="w-3.5 h-3.5" />
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 124 |     ) : (
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 125 |       <ChevronUp className="w-3.5 h-3.5" />
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 126 |     );
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 127 |   };
+      | ^^^^ The component is created during render here
+  128 |
+  129 |   // Show empty state if no data
+  130 |   if (!hasData) {  react-hooks/static-components
+  212:49  warning  'index' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\create\content-brief-builder.tsx
+  14:3  warning  'Check' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\create\content-preview-modal.tsx
+  4:10  warning  'X' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\dashboard\geo-score-trend.tsx
+   13:3  warning  'ReferenceArea' is defined but never used                                                                                                                                                           @typescript-eslint/no-unused-vars
+   14:3  warning  'ReferenceDot' is defined but never used                                                                                                                                                            @typescript-eslint/no-unused-vars
+  107:9  warning  The 'trendData' logical expression could make the dependencies of useMemo Hook (at line 117) change on every render. To fix this, wrap the initialization of 'trendData' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+C:\Jarvis\AI Workspace\Apex\src\components\dashboard\score-trend.tsx
+   13:3   warning  'Legend' is defined but never used                                                                                                                                                                  @typescript-eslint/no-unused-vars
+   15:30  warning  'Calendar' is defined but never used                                                                                                                                                                @typescript-eslint/no-unused-vars
+  131:9   warning  The 'trendData' logical expression could make the dependencies of useMemo Hook (at line 142) change on every render. To fix this, wrap the initialization of 'trendData' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+C:\Jarvis\AI Workspace\Apex\src\components\feedback\fix-deployed-card.tsx
+  42:3  warning  'onViewSchema' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\forms\form-wrapper.tsx
+  7:8  warning  'UseFormReturn' is defined but never used  @typescript-eslint/no-unused-vars
+  8:8  warning  'FieldValues' is defined but never used    @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\landing\dashboard-preview.tsx
+  6:3  warning  'CheckCircle2' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\layout\brand-selector.tsx
+    4:29  warning  'Building2' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+  101:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  147:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Jarvis\AI Workspace\Apex\src\components\locations\location-card.tsx
+   11:3  warning  'Star' is defined but never used    @typescript-eslint/no-unused-vars
+  182:3  warning  'onEdit' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\locations\locations-section.tsx
+  37:11  warning  'LocationsApiResponse' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\locations\reviews-summary.tsx
+   86:10  warning  'getSentimentColor' is defined but never used                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  240:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Jarvis\AI Workspace\Apex\src\components\monitor\prompt-performance-table.tsx
+  171:20  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Jarvis\AI Workspace\Apex\src\components\monitor\prompt-performance-table.tsx:171:20
+  169 |                 >
+  170 |                   Search Prompt
+> 171 |                   <SortIcon field="promptText" />
+      |                    ^^^^^^^^ This component is created during render
+  172 |                 </button>
+  173 |               </th>
+  174 |               <th className="text-left p-4 font-medium">Platforms</th>
+
+C:\Jarvis\AI Workspace\Apex\src\components\monitor\prompt-performance-table.tsx:108:20
+  106 |   };
+  107 |
+> 108 |   const SortIcon = ({ field }: { field: SortField }) => {
+      |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 109 |     if (sortField !== field) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 110 |       return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 111 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 112 |     return sortDirection === "asc" ? (
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 113 |       <ArrowUp className="h-4 w-4 text-primary" />
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 114 |     ) : (
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 115 |       <ArrowDown className="h-4 w-4 text-primary" />
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 116 |     );
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 117 |   };
+      | ^^^^ The component is created during render here
+  118 |
+  119 |   const TrendIcon = ({ trend, value }: { trend: "up" | "down" | "stable"; value: number }) => {
+  120 |     if (trend === "up") {  react-hooks/static-components
+  181:20  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Jarvis\AI Workspace\Apex\src\components\monitor\prompt-performance-table.tsx:181:20
+  179 |                 >
+  180 |                   Frequency
+> 181 |                   <SortIcon field="frequency" />
+      |                    ^^^^^^^^ This component is created during render
+  182 |                 </button>
+  183 |               </th>
+  184 |               <th className="text-left p-4 font-medium">Trend</th>
+
+C:\Jarvis\AI Workspace\Apex\src\components\monitor\prompt-performance-table.tsx:108:20
+  106 |   };
+  107 |
+> 108 |   const SortIcon = ({ field }: { field: SortField }) => {
+      |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 109 |     if (sortField !== field) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 110 |       return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 111 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 112 |     return sortDirection === "asc" ? (
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 113 |       <ArrowUp className="h-4 w-4 text-primary" />
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 114 |     ) : (
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 115 |       <ArrowDown className="h-4 w-4 text-primary" />
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 116 |     );
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 117 |   };
+      | ^^^^ The component is created during render here
+  118 |
+  119 |   const TrendIcon = ({ trend, value }: { trend: "up" | "down" | "stable"; value: number }) => {
+  120 |     if (trend === "up") {           react-hooks/static-components
+  191:20  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Jarvis\AI Workspace\Apex\src\components\monitor\prompt-performance-table.tsx:191:20
+  189 |                 >
+  190 |                   Sentiment
+> 191 |                   <SortIcon field="sentiment" />
+      |                    ^^^^^^^^ This component is created during render
+  192 |                 </button>
+  193 |               </th>
+  194 |               <th className="text-left p-4 font-medium">
+
+C:\Jarvis\AI Workspace\Apex\src\components\monitor\prompt-performance-table.tsx:108:20
+  106 |   };
+  107 |
+> 108 |   const SortIcon = ({ field }: { field: SortField }) => {
+      |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 109 |     if (sortField !== field) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 110 |       return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 111 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 112 |     return sortDirection === "asc" ? (
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 113 |       <ArrowUp className="h-4 w-4 text-primary" />
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 114 |     ) : (
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 115 |       <ArrowDown className="h-4 w-4 text-primary" />
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 116 |     );
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 117 |   };
+      | ^^^^ The component is created during render here
+  118 |
+  119 |   const TrendIcon = ({ trend, value }: { trend: "up" | "down" | "stable"; value: number }) => {
+  120 |     if (trend === "up") {                     react-hooks/static-components
+  200:20  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Jarvis\AI Workspace\Apex\src\components\monitor\prompt-performance-table.tsx:200:20
+  198 |                 >
+  199 |                   Last Seen
+> 200 |                   <SortIcon field="lastSeen" />
+      |                    ^^^^^^^^ This component is created during render
+  201 |                 </button>
+  202 |               </th>
+  203 |             </tr>
+
+C:\Jarvis\AI Workspace\Apex\src\components\monitor\prompt-performance-table.tsx:108:20
+  106 |   };
+  107 |
+> 108 |   const SortIcon = ({ field }: { field: SortField }) => {
+      |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 109 |     if (sortField !== field) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 110 |       return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 111 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 112 |     return sortDirection === "asc" ? (
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 113 |       <ArrowUp className="h-4 w-4 text-primary" />
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 114 |     ) : (
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 115 |       <ArrowDown className="h-4 w-4 text-primary" />
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 116 |     );
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 117 |   };
+      | ^^^^ The component is created during render here
+  118 |
+  119 |   const TrendIcon = ({ trend, value }: { trend: "up" | "down" | "stable"; value: number }) => {
+  120 |     if (trend === "up") {                                                             react-hooks/static-components
+
+C:\Jarvis\AI Workspace\Apex\src\components\notifications\notifications-bell.tsx
+   8:3  warning  'Check' is defined but never used           @typescript-eslint/no-unused-vars
+   9:3  warning  'AlertTriangle' is defined but never used   @typescript-eslint/no-unused-vars
+  10:3  warning  'TrendingUp' is defined but never used      @typescript-eslint/no-unused-vars
+  11:3  warning  'TrendingDown' is defined but never used    @typescript-eslint/no-unused-vars
+  12:3  warning  'Sparkles' is defined but never used        @typescript-eslint/no-unused-vars
+  13:3  warning  'Zap' is defined but never used             @typescript-eslint/no-unused-vars
+  14:3  warning  'CheckCircle2' is defined but never used    @typescript-eslint/no-unused-vars
+  16:3  warning  'MoreHorizontal' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\onboarding\onboarding-checklist.tsx
+  11:3  warning  'Building2' is defined but never used  @typescript-eslint/no-unused-vars
+  12:3  warning  'Globe' is defined but never used      @typescript-eslint/no-unused-vars
+  13:3  warning  'FileText' is defined but never used   @typescript-eslint/no-unused-vars
+  14:3  warning  'Zap' is defined but never used        @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\people\career-timeline.tsx
+  280:3  warning  'isFirst' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\people\enriched-profile-card.tsx
+   35:3   warning  'Phone' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+   36:3   warning  'MapPin' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   39:3   warning  'ExternalLink' is defined but never used                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+   47:3   warning  'X' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  219:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  270:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  369:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Jarvis\AI Workspace\Apex\src\components\people\influence-score-badge.tsx
+  18:3  warning  'TrendingUp' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\people\opportunity-matches.tsx
+  21:3  warning  'Tooltip' is defined but never used          @typescript-eslint/no-unused-vars
+  22:3  warning  'TooltipContent' is defined but never used   @typescript-eslint/no-unused-vars
+  23:3  warning  'TooltipProvider' is defined but never used  @typescript-eslint/no-unused-vars
+  24:3  warning  'TooltipTrigger' is defined but never used   @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\settings\connectivity-settings.tsx
+   10:3   warning  'Battery' is defined but never used                       @typescript-eslint/no-unused-vars
+   14:3   warning  'Image' is defined but never used                         @typescript-eslint/no-unused-vars
+  376:28  warning  'setLoadsheddingMode' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  377:28  warning  'setLowBandwidthMode' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\skeletons.tsx
+  151:28  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Jarvis\AI Workspace\Apex\src\components\skeletons.tsx:151:28
+  149 |               className="w-4 bg-muted/20 rounded-t"
+  150 |               style={{
+> 151 |                 height: `${Math.random() * 60 + 20}%`,
+      |                            ^^^^^^^^^^^^^ Cannot call impure function
+  152 |               }}
+  153 |             />
+  154 |           ))}  react-hooks/purity
+
+C:\Jarvis\AI Workspace\Apex\src\components\social\platform-metrics-card.tsx
+  10:10  warning  'useState' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\components\ui\textarea.tsx
+  4:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+C:\Jarvis\AI Workspace\Apex\src\hooks\useExport.ts
+  293:7  warning  'auditId' is defined but never used        @typescript-eslint/no-unused-vars
+  321:7  warning  'sections' is defined but never used       @typescript-eslint/no-unused-vars
+  347:7  warning  'competitorIds' is defined but never used  @typescript-eslint/no-unused-vars
+  531:7  warning  'sheets' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\hooks\useGamification.ts
+  226:3   warning  'timeframe' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  601:24  warning  '_challengeId' is defined but never used        @typescript-eslint/no-unused-vars
+  668:24  warning  '_badgeId' is defined but never used            @typescript-eslint/no-unused-vars
+  697:15  warning  '_amount' is defined but never used             @typescript-eslint/no-unused-vars
+  698:15  warning  '_reason' is defined but never used             @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\ai\router.ts
+   6:42  warning  'sendClaudeMessage' is defined but never used   @typescript-eslint/no-unused-vars
+   8:3   warning  'getOpenAIClient' is defined but never used     @typescript-eslint/no-unused-vars
+  64:9   warning  'startTime' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\ai\streaming.ts
+  6:8  warning  'Anthropic' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\ai\token-tracker.ts
+  8:29  warning  'sql' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\api\public-api.ts
+  527:5  warning  '_rateLimit' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\api\rate-limiter.ts
+  210:11  warning  'now' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\billing\local-payments.ts
+  244:17  warning  '_' is defined but never used       @typescript-eslint/no-unused-vars
+  792:5   warning  'reason' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\billing\stripe.ts
+  308:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  364:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  469:16  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  517:16  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  669:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  703:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\competitive\benchmarking.ts
+   21:8   warning  'Brand' is defined but never used                       @typescript-eslint/no-unused-vars
+   23:30  warning  'sql' is defined but never used                         @typescript-eslint/no-unused-vars
+   23:35  warning  'count' is defined but never used                       @typescript-eslint/no-unused-vars
+   88:30  warning  'includeHistorical' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  483:15  warning  '_' is defined but never used                           @typescript-eslint/no-unused-vars
+  484:12  warning  'key' is defined but never used                         @typescript-eslint/no-unused-vars
+  491:15  warning  '_' is defined but never used                           @typescript-eslint/no-unused-vars
+  492:12  warning  'key' is defined but never used                         @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\competitive\discovery.ts
+  24:34  warning  'sql' is defined but never used      @typescript-eslint/no-unused-vars
+  24:39  warning  'inArray' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\competitive\gap-analyzer.ts
+   15:25  warning  'sql' is defined but never used                   @typescript-eslint/no-unused-vars
+   15:30  warning  'isNull' is defined but never used                @typescript-eslint/no-unused-vars
+   98:9   warning  'competitors' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  521:3   warning  'brandName' is defined but never used             @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\competitive\share-of-voice.ts
+  15:34  warning  'desc' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\competitive\snapshot-service.ts
+   16:8   warning  'Brand' is defined but never used            @typescript-eslint/no-unused-vars
+   18:35  warning  'count' is defined but never used            @typescript-eslint/no-unused-vars
+  141:3   warning  'snapshotDate' is defined but never used     @typescript-eslint/no-unused-vars
+  426:9   warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\competitive\tracker.ts
+   12:3   warning  'competitorMentions' is defined but never used  @typescript-eslint/no-unused-vars
+   13:3   warning  'shareOfVoice' is defined but never used        @typescript-eslint/no-unused-vars
+   14:3   warning  'competitiveGaps' is defined but never used     @typescript-eslint/no-unused-vars
+   17:8   warning  'BrandMention' is defined but never used        @typescript-eslint/no-unused-vars
+   19:35  warning  'sql' is defined but never used                 @typescript-eslint/no-unused-vars
+   19:40  warning  'count' is defined but never used               @typescript-eslint/no-unused-vars
+  447:5   warning  'competitors' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\content\citation-optimizer.ts
+  316:3  warning  'content' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\db\schema\brands.ts
+  7:3  warning  'integer' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\gamification\index.ts
+  814:5  warning  'metadata' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\graphql\schema.ts
+  577:33  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  587:41  warning  'domain' is defined but never used        @typescript-eslint/no-unused-vars
+  594:35  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  606:36  warning  'brandId' is defined but never used       @typescript-eslint/no-unused-vars
+  611:43  warning  'brandId' is defined but never used       @typescript-eslint/no-unused-vars
+  611:52  warning  'days' is defined but never used          @typescript-eslint/no-unused-vars
+  618:42  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  630:33  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  635:34  warning  'brandId' is defined but never used       @typescript-eslint/no-unused-vars
+  635:43  warning  'first' is defined but never used         @typescript-eslint/no-unused-vars
+  642:35  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  668:39  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  675:37  warning  'brandId' is defined but never used       @typescript-eslint/no-unused-vars
+  688:44  warning  'brandId' is defined but never used       @typescript-eslint/no-unused-vars
+  693:46  warning  'brandId' is defined but never used       @typescript-eslint/no-unused-vars
+  721:39  warning  'input' is defined but never used         @typescript-eslint/no-unused-vars
+  726:39  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  726:43  warning  'input' is defined but never used         @typescript-eslint/no-unused-vars
+  731:39  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  738:43  warning  'brandId' is defined but never used       @typescript-eslint/no-unused-vars
+  738:52  warning  'platforms' is defined but never used     @typescript-eslint/no-unused-vars
+  743:47  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  750:45  warning  'brandId' is defined but never used       @typescript-eslint/no-unused-vars
+  757:54  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  757:58  warning  'status' is defined but never used        @typescript-eslint/no-unused-vars
+  762:48  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  762:52  warning  'userId' is defined but never used        @typescript-eslint/no-unused-vars
+  767:56  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  767:60  warning  'input' is defined but never used         @typescript-eslint/no-unused-vars
+  772:51  warning  'brandId' is defined but never used       @typescript-eslint/no-unused-vars
+  779:38  warning  'brandId' is defined but never used       @typescript-eslint/no-unused-vars
+  779:47  warning  'url' is defined but never used           @typescript-eslint/no-unused-vars
+  784:39  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  791:41  warning  'input' is defined but never used         @typescript-eslint/no-unused-vars
+  796:41  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  796:45  warning  'input' is defined but never used         @typescript-eslint/no-unused-vars
+  801:41  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  806:43  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  811:42  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  818:49  warning  'planId' is defined but never used        @typescript-eslint/no-unused-vars
+  818:57  warning  'billingCycle' is defined but never used  @typescript-eslint/no-unused-vars
+  823:38  warning  'planId' is defined but never used        @typescript-eslint/no-unused-vars
+  828:46  warning  'immediately' is defined but never used   @typescript-eslint/no-unused-vars
+  835:46  warning  'type' is defined but never used          @typescript-eslint/no-unused-vars
+  835:52  warning  'config' is defined but never used        @typescript-eslint/no-unused-vars
+  840:49  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  845:43  warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  854:22  warning  'parent' is defined but never used        @typescript-eslint/no-unused-vars
+  856:29  warning  'parent' is defined but never used        @typescript-eslint/no-unused-vars
+  858:20  warning  'parent' is defined but never used        @typescript-eslint/no-unused-vars
+  860:22  warning  'parent' is defined but never used        @typescript-eslint/no-unused-vars
+  862:19  warning  'parent' is defined but never used        @typescript-eslint/no-unused-vars
+  867:19  warning  'parent' is defined but never used        @typescript-eslint/no-unused-vars
+  872:19  warning  'parent' is defined but never used        @typescript-eslint/no-unused-vars
+  878:19  warning  'parent' is defined but never used        @typescript-eslint/no-unused-vars
+  883:19  warning  'parent' is defined but never used        @typescript-eslint/no-unused-vars
+  888:21  warning  'parent' is defined but never used        @typescript-eslint/no-unused-vars
+  888:52  warning  'days' is defined but never used          @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\i18n\context.tsx
+  7:3  warning  'translations' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\monitoring\sentry.ts
+  271:15  warning  'duration' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  274:14  warning  'key' is defined but never used                @typescript-eslint/no-unused-vars
+  274:19  warning  'value' is defined but never used              @typescript-eslint/no-unused-vars
+  277:15  warning  'key' is defined but never used                @typescript-eslint/no-unused-vars
+  277:20  warning  'value' is defined but never used              @typescript-eslint/no-unused-vars
+  297:15  warning  'duration' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  308:29  warning  'timeout' is defined but never used            @typescript-eslint/no-unused-vars
+  316:29  warning  'timeout' is defined but never used            @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\notifications\crisis.ts
+    8:10  warning  'webhookManager' is defined but never used    @typescript-eslint/no-unused-vars
+  216:17  warning  'brandId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  231:17  warning  'brandId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\notifications\whatsapp.ts
+  429:14  warning  '_' is defined but never used      @typescript-eslint/no-unused-vars
+  500:16  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  543:16  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  582:16  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\oauth\providers\linkedin.ts
+  504:9  warning  'email' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\oauth\sync-service.ts
+  432:9  warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\oauth\token-service.ts
+  67:7  warning  'SALT_LENGTH' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\onboarding\initialize.ts
+  7:41  warning  'recommendations' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\osint\google-places.ts
+  317:9  warning  'words' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\people\discovery.ts
+  438:3  warning  '_brandId' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\query\client.ts
+  8:10  warning  'ReactNode' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\queue\scheduler.ts
+  15:10  warning  'brands' is defined but never used         @typescript-eslint/no-unused-vars
+  15:18  warning  'organizations' is defined but never used  @typescript-eslint/no-unused-vars
+  16:14  warning  'and' is defined but never used            @typescript-eslint/no-unused-vars
+  16:19  warning  'lte' is defined but never used            @typescript-eslint/no-unused-vars
+  16:24  warning  'isNull' is defined but never used         @typescript-eslint/no-unused-vars
+  16:32  warning  'or' is defined but never used             @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\recommendations\ml-priority.ts
+  323:38  warning  'data' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\recommendations\qa-converter.ts
+   6:10  warning  'createId' is defined but never used                    @typescript-eslint/no-unused-vars
+  10:7   warning  'QUESTION_PATTERNS' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\redis.ts
+  199:17  warning  '_channel' is defined but never used  @typescript-eslint/no-unused-vars
+  199:35  warning  '_message' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\scoring\social-score.ts
+  193:5  warning  'totalEngagements' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  373:5  warning  'totalPosts' is assigned a value but never used        @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\scraping\browserless.ts
+  267:21  warning  'fn' is defined but never used                                  @typescript-eslint/no-unused-vars
+  297:9   warning  'timeout' is assigned a value but never used                    @typescript-eslint/no-unused-vars
+  340:1   warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+C:\Jarvis\AI Workspace\Apex\src\lib\scraping\chatgpt-scraper.ts
+  13:29  warning  'browserlessFunction' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\scraping\deepseek-scraper.ts
+  241:27  warning  'html' is defined but never used   @typescript-eslint/no-unused-vars
+  241:41  warning  'query' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\scraping\gemini-scraper.ts
+  235:27  warning  'html' is defined but never used   @typescript-eslint/no-unused-vars
+  235:41  warning  'query' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\scraping\grok-scraper.ts
+  137:27  warning  'html' is defined but never used   @typescript-eslint/no-unused-vars
+  137:41  warning  'query' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\scraping\perplexity-scraper.ts
+  139:27  warning  'html' is defined but never used   @typescript-eslint/no-unused-vars
+  139:41  warning  'query' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\security\index.ts
+  206:5  warning  Unused eslint-disable directive (no problems were reported from 'no-control-regex')
+  209:5  warning  Unused eslint-disable directive (no problems were reported from 'no-control-regex')
+
+C:\Jarvis\AI Workspace\Apex\src\lib\services\logo-extractor.ts
+  182:47  warning  'baseUrl' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\social-scanner\platforms\twitter-scanner.ts
+  516:32  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\social-scanner\platforms\youtube-scanner.ts
+  22:3  warning  'RateLimitInfo' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\lib\social-scanner\scanner-base.ts
+  61:29  warning  '_platform' is defined but never used  @typescript-eslint/no-unused-vars
+  61:57  warning  '_endpoint' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\middleware.ts
+  10:10  warning  'matchesPattern' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Jarvis\AI Workspace\Apex\src\stores\ui-store.ts
+  127:11  warning  'get' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 362 problems (17 errors, 345 warnings)
+  0 errors and 2 warnings potentially fixable with the `--fix` option.
+

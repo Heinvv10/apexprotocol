@@ -13,6 +13,7 @@ import {
   formatMessageResponse,
   type WhatsAppProvider,
   type WhatsAppNotificationType,
+  type WhatsAppRecipient,
 } from "@/lib/notifications/whatsapp";
 
 const VALID_PROVIDERS: WhatsAppProvider[] = ["meta", "twilio", "messagebird"];
@@ -321,7 +322,10 @@ function handleUpdateRecipient(body: unknown) {
 
   const { recipientId, ...updates } = schema.parse(body);
 
-  const recipient = whatsappManager.updateRecipient(recipientId, updates as any);
+  const recipient = whatsappManager.updateRecipient(
+    recipientId,
+    updates as Partial<Omit<WhatsAppRecipient, "id" | "brandId" | "createdAt">>
+  );
 
   if (!recipient) {
     return NextResponse.json(

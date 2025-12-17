@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     const { brands, organizations } = await import("@/lib/db/schema");
     const { eq } = await import("drizzle-orm");
 
-    let org = await db.query.organizations.findFirst({
+    const org = await db.query.organizations.findFirst({
       where: eq(organizations.id, orgId),
     });
 

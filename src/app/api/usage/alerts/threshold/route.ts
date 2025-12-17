@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const data = schema.parse(body);
 
     // Get or create threshold settings for org
-    let thresholds = thresholdStore.get(organizationId) || [];
+    const thresholds = thresholdStore.get(organizationId) || [];
 
     // Update or add threshold
     const existingIndex = thresholds.findIndex((t) => t.metric === data.metric);

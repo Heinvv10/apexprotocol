@@ -323,7 +323,7 @@ export class PDFReportGenerator {
   generateHTML(): string {
     const theme = this.options.theme === "dark" ? darkThemeCSS : lightThemeCSS;
 
-    let html = `
+    const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>

@@ -12,6 +12,7 @@ import {
   formatWebhookResponse,
   formatDeliveryResponse,
   type WebhookEventType,
+  type WebhookConfig,
 } from "@/lib/notifications/webhooks";
 
 const VALID_EVENTS: WebhookEventType[] = [
@@ -282,7 +283,10 @@ function handleUpdateWebhook(body: unknown) {
 
   const { webhookId, ...updates } = schema.parse(body);
 
-  const webhook = webhookManager.updateWebhook(webhookId, updates as any);
+  const webhook = webhookManager.updateWebhook(
+    webhookId,
+    updates as Partial<Omit<WebhookConfig, "id" | "brandId" | "createdAt">>
+  );
 
   if (!webhook) {
     return NextResponse.json(

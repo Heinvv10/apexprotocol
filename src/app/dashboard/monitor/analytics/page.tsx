@@ -208,7 +208,7 @@ export default function AnalyticsPage() {
         };
       })
       .sort((a, b) => b.total - a.total);
-  }, [filteredData, stats.total]);
+  }, [filteredData, stats, platformConfig]);
 
   // Sentiment data - TODO: Fetch from database
   // Currently returns empty placeholders until sentiment analysis is implemented

@@ -74,7 +74,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
             Something went wrong
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
-            This component encountered an error and couldn't render properly.
+            This component encountered an error and couldn&apos;t render properly.
           </p>
 
           {/* Error message in development */}

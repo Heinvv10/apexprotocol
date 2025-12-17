@@ -155,7 +155,7 @@ export default function AuditPage() {
   const auditHistory: AuditHistoryItem[] = React.useMemo(() => {
     if (!auditsResponse?.audits) return [];
     return auditsResponse.audits.map(auditToHistoryItem);
-  }, [auditsResponse?.audits]);
+  }, [auditsResponse]);
 
   const [url, setUrl] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
