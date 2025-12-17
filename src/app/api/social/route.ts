@@ -7,10 +7,15 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { socialAccounts, socialMentions, socialMetrics, socialScores } from "@/lib/db/schema";
-import { eq, desc, and, gte, sql } from "drizzle-orm";
+import { socialAccounts, socialMentions, socialMetrics, socialScores, serviceScanResults } from "@/lib/db/schema";
+import { eq, desc, and, gte } from "drizzle-orm";
 import { getOrganizationId } from "@/lib/auth";
-import { calculateSMOScore, type SMOScoreInput } from "@/lib/scoring/social-score";
+import {
+  calculateSMOScore,
+  calculateSMOFromServiceScan,
+  type SMOScoreInput,
+  type ServiceScanData,
+} from "@/lib/scoring/social-score";
 
 export async function GET(req: NextRequest) {
   try {
@@ -49,7 +54,14 @@ export async function GET(req: NextRequest) {
 }
 
 async function getSocialSummary(brandId: string) {
-  // Get connected accounts
+  // PRIORITY 1: Check for service scan results (no OAuth required)
+  const scanResults = await db
+    .select()
+    .from(serviceScanResults)
+    .where(eq(serviceScanResults.brandId, brandId))
+    .orderBy(desc(serviceScanResults.scannedAt));
+
+  // PRIORITY 2: Get OAuth-connected accounts
   const accounts = await db
     .select()
     .from(socialAccounts)
@@ -69,7 +81,7 @@ async function getSocialSummary(brandId: string) {
       )
     );
 
-  // Get latest social score
+  // Get latest stored social score
   const latestScore = await db
     .select()
     .from(socialScores)
@@ -77,59 +89,141 @@ async function getSocialSummary(brandId: string) {
     .orderBy(desc(socialScores.date))
     .limit(1);
 
-  // Calculate aggregates
-  const totalFollowers = accounts.reduce((sum, acc) => sum + (acc.followersCount || 0), 0);
-  const totalEngagements = mentions.reduce(
-    (sum, m) => sum + (m.engagementLikes || 0) + (m.engagementShares || 0) + (m.engagementComments || 0),
-    0
-  );
+  // Initialize variables
+  let smoScore = 0;
+  let breakdown = {
+    reach: 0,
+    engagement: 0,
+    sentiment: 50,
+    growth: 50,
+    consistency: 0,
+  };
+  let totalFollowers = 0;
+  let totalEngagements = 0;
+  let avgEngagementRate = 0;
+  let avgSentiment = 0;
+  let connectedAccounts = 0;
+  let positiveMentions = 0;
+  let negativeMentions = 0;
+  let neutralMentions = 0;
+  let dataSource: "service_scan" | "oauth" | "stored" | "calculated" = "calculated";
 
-  // Calculate average engagement rate
-  const engagementRates = accounts.filter((a) => a.followersCount && a.followersCount > 0);
-  const avgEngagementRate =
-    engagementRates.length > 0
+  // USE SERVICE SCAN DATA IF AVAILABLE (Phase 8.6 Integration)
+  if (scanResults.length > 0) {
+    // Convert database results to ServiceScanData format
+    const serviceScanData: ServiceScanData[] = scanResults.map((r) => ({
+      platform: r.platform,
+      handle: r.targetHandle,
+      followerCount: r.followerCount || 0,
+      followingCount: r.followingCount || 0,
+      postCount: r.postCount || 0,
+      engagementRate: r.engagementRate || 0,
+      avgLikes: r.avgLikes || 0,
+      avgComments: r.avgComments || 0,
+      avgShares: r.avgShares || 0,
+      avgViews: r.avgViews || 0,
+      postFrequency: r.postFrequency || 0,
+      mentionsCount: r.mentionsCount || 0,
+      sentimentPositive: r.sentimentPositive || 0,
+      sentimentNeutral: r.sentimentNeutral || 0,
+      sentimentNegative: r.sentimentNegative || 0,
+      scannedAt: r.scannedAt || new Date(),
+    }));
+
+    // Calculate SMO score from service scan data
+    const result = calculateSMOFromServiceScan(serviceScanData);
+    smoScore = result.score;
+    breakdown = result.breakdown;
+
+    // Aggregate metrics from service scan
+    totalFollowers = serviceScanData.reduce((sum, s) => sum + s.followerCount, 0);
+    totalEngagements = serviceScanData.reduce(
+      (sum, s) => sum + (s.avgLikes + s.avgComments + s.avgShares) * s.postCount,
+      0
+    );
+    avgEngagementRate = totalFollowers > 0
+      ? serviceScanData.reduce((sum, s) => sum + s.engagementRate * s.followerCount, 0) / totalFollowers
+      : 0;
+
+    // Aggregate sentiment from service scan
+    positiveMentions = serviceScanData.reduce((sum, s) => sum + s.sentimentPositive, 0);
+    negativeMentions = serviceScanData.reduce((sum, s) => sum + s.sentimentNegative, 0);
+    neutralMentions = serviceScanData.reduce((sum, s) => sum + s.sentimentNeutral, 0);
+
+    const totalSentiment = positiveMentions + neutralMentions + negativeMentions;
+    avgSentiment = totalSentiment > 0 ? (positiveMentions - negativeMentions) / totalSentiment : 0;
+
+    connectedAccounts = serviceScanData.length;
+    dataSource = "service_scan";
+  }
+  // FALL BACK TO STORED SCORE
+  else if (latestScore[0]) {
+    smoScore = latestScore[0].overallScore || 0;
+    breakdown = {
+      reach: latestScore[0].reachScore || 0,
+      engagement: latestScore[0].engagementScore || 0,
+      sentiment: latestScore[0].sentimentScore || 50,
+      growth: latestScore[0].growthScore || 50,
+      consistency: latestScore[0].consistencyScore || 0,
+    };
+    dataSource = "stored";
+
+    // Calculate aggregates from OAuth accounts
+    totalFollowers = accounts.reduce((sum, acc) => sum + (acc.followersCount || 0), 0);
+    totalEngagements = mentions.reduce(
+      (sum, m) => sum + (m.engagementLikes || 0) + (m.engagementShares || 0) + (m.engagementComments || 0),
+      0
+    );
+    connectedAccounts = accounts.length;
+
+    // Sentiment from mentions
+    positiveMentions = mentions.filter((m) => m.sentiment === "positive").length;
+    negativeMentions = mentions.filter((m) => m.sentiment === "negative").length;
+    neutralMentions = mentions.filter((m) => m.sentiment === "neutral").length;
+  }
+  // FALL BACK TO OAUTH DATA AND CALCULATE
+  else if (accounts.length > 0) {
+    totalFollowers = accounts.reduce((sum, acc) => sum + (acc.followersCount || 0), 0);
+    totalEngagements = mentions.reduce(
+      (sum, m) => sum + (m.engagementLikes || 0) + (m.engagementShares || 0) + (m.engagementComments || 0),
+      0
+    );
+
+    // Calculate average engagement rate
+    avgEngagementRate = totalFollowers > 0
       ? mentions.reduce((sum, m) => {
           const total = (m.engagementLikes || 0) + (m.engagementShares || 0) + (m.engagementComments || 0);
           return sum + total;
-        }, 0) / (totalFollowers || 1)
+        }, 0) / totalFollowers
       : 0;
 
-  // Calculate sentiment distribution
-  const positiveMentions = mentions.filter((m) => m.sentiment === "positive").length;
-  const negativeMentions = mentions.filter((m) => m.sentiment === "negative").length;
-  const neutralMentions = mentions.filter((m) => m.sentiment === "neutral").length;
+    // Sentiment from mentions
+    positiveMentions = mentions.filter((m) => m.sentiment === "positive").length;
+    negativeMentions = mentions.filter((m) => m.sentiment === "negative").length;
+    neutralMentions = mentions.filter((m) => m.sentiment === "neutral").length;
 
-  // Calculate average sentiment score
-  const sentimentScores = mentions.filter((m) => m.sentimentScore !== null);
-  const avgSentiment =
-    sentimentScores.length > 0
+    // Calculate average sentiment
+    const sentimentScores = mentions.filter((m) => m.sentimentScore !== null);
+    avgSentiment = sentimentScores.length > 0
       ? sentimentScores.reduce((sum, m) => sum + (m.sentimentScore || 0), 0) / sentimentScores.length
       : 0;
 
-  // Calculate SMO score if no stored score
-  let smoScore = latestScore[0]?.overallScore || 0;
-  let breakdown = {
-    reach: latestScore[0]?.reachScore || 0,
-    engagement: latestScore[0]?.engagementScore || 0,
-    sentiment: latestScore[0]?.sentimentScore || 50,
-    growth: latestScore[0]?.growthScore || 50,
-    consistency: latestScore[0]?.consistencyScore || 0,
-  };
+    connectedAccounts = accounts.length;
 
-  // If no stored score, calculate it
-  if (!latestScore[0]) {
+    // Calculate SMO score
     const input: SMOScoreInput = {
       totalFollowers,
       totalEngagements,
       avgEngagementRate,
       avgSentiment,
-      connectedAccounts: accounts.length,
-      followerGrowth30d: 0, // Would need historical data
-      postsLast30d: mentions.length, // Using mentions as proxy
+      connectedAccounts,
+      followerGrowth30d: 0,
+      postsLast30d: mentions.length,
     };
     const result = calculateSMOScore(input);
     smoScore = result.score;
     breakdown = result.breakdown;
+    dataSource = "oauth";
   }
 
   // Determine trend (would need historical data for real trend)
@@ -137,7 +231,7 @@ async function getSocialSummary(brandId: string) {
 
   return NextResponse.json({
     brandId,
-    brandName: "", // Would need to fetch from brands table
+    brandName: "",
     summary: {
       smoScore,
       smoTrend,
@@ -145,12 +239,13 @@ async function getSocialSummary(brandId: string) {
       totalEngagements,
       avgEngagementRate,
       avgSentiment,
-      connectedAccounts: accounts.length,
+      connectedAccounts,
       positiveMentions,
       negativeMentions,
       neutralMentions,
     },
     breakdown,
+    dataSource,
     lastUpdated: new Date().toISOString(),
   });
 }

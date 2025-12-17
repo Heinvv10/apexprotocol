@@ -563,6 +563,150 @@ export const socialPosts = pgTable(
 );
 
 // ============================================================================
+// Phase 8.5/8.6: Service Scan Results Table (Enhanced)
+// ============================================================================
+
+export const scanStatusEnum = pgEnum("scan_status", [
+  "pending",
+  "scanning",
+  "success",
+  "partial",
+  "failed",
+]);
+
+// Service-level scan results (using Apex's API credentials, not user OAuth)
+export const serviceScanResults = pgTable("service_scan_results", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  organizationId: text("organization_id").notNull(),
+  brandId: text("brand_id")
+    .notNull()
+    .references(() => brands.id, { onDelete: "cascade" }),
+
+  // Platform info
+  platform: socialPlatformEnum("platform").notNull(),
+  platformAccountId: text("platform_account_id"), // Platform's ID for the account
+  targetHandle: text("target_handle").notNull(), // The handle/username scanned
+
+  // Raw results (JSONB for full data)
+  profileData: jsonb("profile_data").$type<{
+    platformId: string;
+    handle: string;
+    displayName: string;
+    bio?: string;
+    followerCount: number;
+    followingCount: number;
+    postCount: number;
+    isVerified: boolean;
+    profileUrl: string;
+    avatarUrl?: string;
+    platformSpecific?: Record<string, unknown>;
+  }>(),
+  postsData: jsonb("posts_data").$type<Array<{
+    postId: string;
+    content: string;
+    postType: string;
+    publishedAt: string;
+    engagement: {
+      likes: number;
+      comments: number;
+      shares: number;
+      views?: number;
+    };
+    postUrl: string;
+  }>>(),
+  mentionsData: jsonb("mentions_data").$type<Array<{
+    postId: string;
+    authorHandle: string;
+    content: string;
+    sentiment?: string;
+    sentimentScore?: number;
+    engagement: {
+      likes: number;
+      comments: number;
+      shares: number;
+    };
+    mentionedAt: string;
+    postUrl: string;
+  }>>(),
+
+  // Aggregated metrics (for quick queries without parsing JSONB)
+  followerCount: integer("follower_count").default(0),
+  followingCount: integer("following_count").default(0),
+  postCount: integer("post_count").default(0),
+  engagementRate: real("engagement_rate").default(0), // 0-100
+  avgLikes: integer("avg_likes").default(0),
+  avgComments: integer("avg_comments").default(0),
+  avgShares: integer("avg_shares").default(0),
+  avgViews: integer("avg_views").default(0),
+  postFrequency: real("post_frequency").default(0), // posts per day
+  mentionsCount: integer("mentions_count").default(0),
+  sentimentPositive: integer("sentiment_positive").default(0),
+  sentimentNeutral: integer("sentiment_neutral").default(0),
+  sentimentNegative: integer("sentiment_negative").default(0),
+
+  // Status
+  scanStatus: scanStatusEnum("scan_status").default("pending"),
+  errorCode: text("error_code"),
+  errorMessage: text("error_message"),
+
+  // Scheduling
+  scannedAt: timestamp("scanned_at", { withTimezone: true }),
+  nextScanAt: timestamp("next_scan_at", { withTimezone: true }),
+
+  // Timestamps
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  uniqueBrandPlatformHandle: unique().on(table.brandId, table.platform, table.targetHandle),
+}));
+
+// ============================================================================
+// Phase 8.6: Scan Job Queue Table
+// ============================================================================
+
+export const scanJobPriorityEnum = pgEnum("scan_job_priority", [
+  "high",
+  "normal",
+  "low",
+]);
+
+// Background scan job queue
+export const scanJobQueue = pgTable("scan_job_queue", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  organizationId: text("organization_id").notNull(),
+  brandId: text("brand_id")
+    .notNull()
+    .references(() => brands.id, { onDelete: "cascade" }),
+
+  // Job config
+  platforms: jsonb("platforms").$type<string[]>().default([]),
+  handles: jsonb("handles").$type<Record<string, string>>().default({}), // { twitter: "handle", youtube: "channel" }
+
+  // Job status
+  status: syncJobStatusEnum("status").default("pending"),
+  priority: scanJobPriorityEnum("priority").default("normal"),
+  attempts: integer("attempts").default(0),
+  maxAttempts: integer("max_attempts").default(3),
+
+  // Results tracking
+  completedPlatforms: jsonb("completed_platforms").$type<string[]>().default([]),
+  failedPlatforms: jsonb("failed_platforms").$type<Record<string, string>>().default({}), // { platform: errorMessage }
+
+  // Timing
+  scheduledFor: timestamp("scheduled_for", { withTimezone: true }).defaultNow(),
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+
+  // Timestamps
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ============================================================================
 // Phase 8: Relations for New Tables
 // ============================================================================
 
@@ -617,3 +761,9 @@ export type SocialSyncJob = typeof socialSyncJobs.$inferSelect;
 export type NewSocialSyncJob = typeof socialSyncJobs.$inferInsert;
 export type SocialPost = typeof socialPosts.$inferSelect;
 export type NewSocialPost = typeof socialPosts.$inferInsert;
+
+// Phase 8.5/8.6 types
+export type ServiceScanResult = typeof serviceScanResults.$inferSelect;
+export type NewServiceScanResult = typeof serviceScanResults.$inferInsert;
+export type ScanJob = typeof scanJobQueue.$inferSelect;
+export type NewScanJob = typeof scanJobQueue.$inferInsert;

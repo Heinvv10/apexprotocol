@@ -33,8 +33,12 @@ export {
   calculateSMOScore,
   getSMOScoreStatus,
   getRecommendedPostingFrequency,
+  // Service Scan Integration (Phase 8.6)
+  serviceScanToSMOInput,
+  calculateSMOFromServiceScan,
   type SMOScoreInput,
   type SMOScoreResult,
+  type ServiceScanData,
 } from "./social-score";
 
 // PPO Score (People Presence Optimization) - Phase 7.3

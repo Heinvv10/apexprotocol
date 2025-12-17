@@ -199,6 +199,15 @@ export {
   type NewSocialSyncJob,
   type SocialPost,
   type NewSocialPost,
+  // Phase 8.5/8.6: Service Scanner
+  serviceScanResults,
+  scanJobQueue,
+  scanStatusEnum,
+  scanJobPriorityEnum,
+  type ServiceScanResult,
+  type NewServiceScanResult,
+  type ScanJob,
+  type NewScanJob,
 } from "./social";
 
 export {

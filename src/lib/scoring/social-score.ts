@@ -312,3 +312,135 @@ export function getRecommendedPostingFrequency(platform: string): {
 
   return frequencies[platform.toLowerCase()] || { minimum: 3, optimal: 7, unit: "per week" };
 }
+
+// ============================================================================
+// Service Scan Data Integration (Phase 8.6)
+// ============================================================================
+
+/**
+ * Service scan result from database
+ */
+export interface ServiceScanData {
+  platform: string;
+  handle: string;
+  followerCount: number;
+  followingCount: number;
+  postCount: number;
+  engagementRate: number;
+  avgLikes: number;
+  avgComments: number;
+  avgShares: number;
+  avgViews: number;
+  postFrequency: number;
+  mentionsCount: number;
+  sentimentPositive: number;
+  sentimentNeutral: number;
+  sentimentNegative: number;
+  scannedAt: Date | string;
+}
+
+/**
+ * Convert service scan results to SMO score input
+ *
+ * @param scanResults - Array of service scan results from database
+ * @returns SMOScoreInput ready for score calculation
+ */
+export function serviceScanToSMOInput(scanResults: ServiceScanData[]): SMOScoreInput {
+  if (!scanResults || scanResults.length === 0) {
+    return {
+      totalFollowers: 0,
+      totalEngagements: 0,
+      avgEngagementRate: 0,
+      avgSentiment: 0,
+      connectedAccounts: 0,
+    };
+  }
+
+  // Aggregate metrics across all platforms
+  let totalFollowers = 0;
+  let totalEngagements = 0;
+  let totalPosts = 0;
+  let weightedEngagementRate = 0;
+  let positiveCount = 0;
+  let neutralCount = 0;
+  let negativeCount = 0;
+  let totalPostFrequency = 0;
+
+  const platformBreakdown: SocialPlatformBreakdown[] = [];
+
+  for (const result of scanResults) {
+    totalFollowers += result.followerCount || 0;
+    totalPosts += result.postCount || 0;
+    totalPostFrequency += result.postFrequency || 0;
+
+    // Calculate engagements from averages
+    const platformEngagements =
+      ((result.avgLikes || 0) + (result.avgComments || 0) + (result.avgShares || 0)) *
+      (result.postCount || 0);
+    totalEngagements += platformEngagements;
+
+    // Weighted engagement rate by followers
+    if (result.followerCount > 0) {
+      weightedEngagementRate += (result.engagementRate || 0) * result.followerCount;
+    }
+
+    // Sentiment counts
+    positiveCount += result.sentimentPositive || 0;
+    neutralCount += result.sentimentNeutral || 0;
+    negativeCount += result.sentimentNegative || 0;
+
+    // Platform breakdown
+    const totalSentimentCount =
+      (result.sentimentPositive || 0) +
+      (result.sentimentNeutral || 0) +
+      (result.sentimentNegative || 0);
+
+    // Calculate sentiment score: -1 to 1 based on positive vs negative ratio
+    let sentimentScore = 0;
+    if (totalSentimentCount > 0) {
+      sentimentScore =
+        ((result.sentimentPositive || 0) - (result.sentimentNegative || 0)) / totalSentimentCount;
+    }
+
+    platformBreakdown.push({
+      platform: result.platform,
+      score: 0, // Will be calculated later
+      followers: result.followerCount || 0,
+      engagementRate: result.engagementRate || 0,
+      sentimentScore,
+      reachScore: calculateReachScore(result.followerCount || 0),
+    });
+  }
+
+  // Calculate averages
+  const avgEngagementRate = totalFollowers > 0 ? weightedEngagementRate / totalFollowers : 0;
+
+  // Calculate overall sentiment (-1 to 1)
+  const totalSentiment = positiveCount + neutralCount + negativeCount;
+  const avgSentiment =
+    totalSentiment > 0 ? (positiveCount - negativeCount) / totalSentiment : 0;
+
+  // Estimate posts in last 30 days from post frequency
+  const postsLast30d = Math.round(totalPostFrequency * 30);
+
+  return {
+    totalFollowers,
+    totalEngagements,
+    avgEngagementRate,
+    avgSentiment,
+    connectedAccounts: scanResults.length,
+    postsLast30d,
+    platformBreakdown,
+  };
+}
+
+/**
+ * Calculate SMO score from service scan results
+ *
+ * @param scanResults - Array of service scan results from database
+ * @returns Complete SMO score result
+ */
+export function calculateSMOFromServiceScan(scanResults: ServiceScanData[]): SMOScoreResult {
+  const input = serviceScanToSMOInput(scanResults);
+  return calculateSMOScore(input);
+}
