@@ -192,8 +192,9 @@ describe("Recommendations Page - Brand Integration", () => {
 
       // The page should use the selected brand to fetch recommendations
       await waitFor(() => {
-        // Should show the Smart Recommendations heading (not empty state)
-        expect(screen.getByText("Smart Recommendations")).toBeInTheDocument();
+        // Should show recommendation titles (not empty state which shows "No Recommendations Yet")
+        // "Smart Recommendations" badge only appears in empty state
+        expect(screen.getByText("Add FAQ Schema to Homepage")).toBeInTheDocument();
       });
     });
 
