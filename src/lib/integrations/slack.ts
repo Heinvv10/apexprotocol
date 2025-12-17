@@ -235,14 +235,14 @@ export class SlackManager {
       throw new Error(`Failed to get channels: ${data.error}`);
     }
 
-    return data.channels.map((c: any) => ({
+    return data.channels.map((c: Record<string, unknown>) => ({
       id: c.id,
       name: c.name,
       isPrivate: c.is_private,
       isArchived: c.is_archived,
       isMember: c.is_member,
-      topic: c.topic?.value,
-      purpose: c.purpose?.value,
+      topic: (c.topic as { value?: string } | undefined)?.value,
+      purpose: (c.purpose as { value?: string } | undefined)?.value,
       numMembers: c.num_members,
     }));
   }

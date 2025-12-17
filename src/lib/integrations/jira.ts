@@ -92,6 +92,52 @@ export interface CreateIssueParams {
   customFields?: Record<string, unknown>;
 }
 
+// Internal type for Jira API response
+interface JiraIssueApiResponse {
+  id: string;
+  key: string;
+  fields: {
+    summary: string;
+    description?: {
+      content?: Array<{
+        content?: Array<{ text?: string }>;
+      }>;
+    };
+    status: {
+      id: string;
+      name: string;
+      statusCategory: {
+        id: number;
+        key: string;
+        name: string;
+      };
+    };
+    priority?: {
+      id: string;
+      name: string;
+      iconUrl?: string;
+    };
+    issuetype: { name: string };
+    project: { id: string; key: string };
+    assignee?: {
+      accountId: string;
+      displayName: string;
+      emailAddress?: string;
+      avatarUrls?: Record<string, string>;
+    };
+    reporter?: {
+      accountId: string;
+      displayName: string;
+      emailAddress?: string;
+      avatarUrls?: Record<string, string>;
+    };
+    labels?: string[];
+    created: string;
+    updated: string;
+    resolutiondate?: string;
+  };
+}
+
 // Jira OAuth configuration
 const JIRA_OAUTH_CONFIG = {
   authorizationUrl: "https://auth.atlassian.com/authorize",
@@ -327,12 +373,12 @@ export class JiraManager {
     }
 
     const data = await response.json();
-    return data.values.map((p: any) => ({
-      id: p.id,
-      key: p.key,
-      name: p.name,
-      projectTypeKey: p.projectTypeKey,
-      avatarUrl: p.avatarUrls?.["48x48"],
+    return data.values.map((p: Record<string, unknown>) => ({
+      id: p.id as string,
+      key: p.key as string,
+      name: p.name as string,
+      projectTypeKey: p.projectTypeKey as string,
+      avatarUrl: (p.avatarUrls as Record<string, string> | undefined)?.["48x48"],
     }));
   }
 
@@ -463,7 +509,7 @@ export class JiraManager {
       throw new Error(`Failed to get issue: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as JiraIssueApiResponse;
     return this.mapIssueResponse(data);
   }
 
@@ -525,8 +571,17 @@ export class JiraManager {
    */
   processWebhookEvent(event: {
     webhookEvent: string;
-    issue: any;
-    changelog?: any;
+    issue: {
+      key?: string;
+      fields?: {
+        status?: {
+          statusCategory?: { key?: string };
+        };
+      };
+    };
+    changelog?: {
+      items?: Array<{ field?: string; toString?: string }>;
+    };
   }): {
     type: "created" | "updated" | "deleted" | "status_changed";
     issueKey: string;
@@ -553,11 +608,11 @@ export class JiraManager {
       case "jira:issue_updated":
         // Check if status changed
         const statusChange = event.changelog?.items?.find(
-          (item: any) => item.field === "status"
+          (item) => item.field === "status"
         );
 
         if (statusChange) {
-          const newStatus = statusChange.toString;
+          const newStatus = statusChange.toString || "";
           const statusCategory = event.issue.fields?.status?.statusCategory?.key;
           const isCompleted = statusCategory === "done";
 
@@ -616,7 +671,7 @@ export class JiraManager {
   /**
    * Map Jira API response to our type
    */
-  private mapIssueResponse(data: any): JiraIssue {
+  private mapIssueResponse(data: JiraIssueApiResponse): JiraIssue {
     return {
       id: data.id,
       key: data.key,
@@ -628,7 +683,7 @@ export class JiraManager {
         statusCategory: data.fields.status.statusCategory,
       },
       priority: {
-        id: data.fields.priority?.id,
+        id: data.fields.priority?.id || "",
         name: data.fields.priority?.name || "Medium",
         iconUrl: data.fields.priority?.iconUrl,
       },

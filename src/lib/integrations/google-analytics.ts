@@ -68,6 +68,15 @@ export interface GAPagePerformance {
   exits: number;
 }
 
+// Internal type for GA report response
+interface GAReportResponse {
+  rows?: Array<{
+    dimensionValues?: Array<{ value: string }>;
+    metricValues?: Array<{ value: string }>;
+  }>;
+  error?: { message: string };
+}
+
 // GA OAuth configuration
 const GA_OAUTH_CONFIG = {
   authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth",
@@ -195,11 +204,11 @@ export class GoogleAnalyticsManager {
       throw new Error(`Failed to get accounts: ${data.error.message}`);
     }
 
-    return (data.accounts || []).map((a: any) => ({
-      id: a.name.split("/").pop(),
-      name: a.displayName,
-      createTime: a.createTime,
-      updateTime: a.updateTime,
+    return (data.accounts || []).map((a: Record<string, unknown>) => ({
+      id: (a.name as string).split("/").pop(),
+      name: a.displayName as string,
+      createTime: a.createTime as string,
+      updateTime: a.updateTime as string,
     }));
   }
 
@@ -222,15 +231,15 @@ export class GoogleAnalyticsManager {
       throw new Error(`Failed to get properties: ${data.error.message}`);
     }
 
-    return (data.properties || []).map((p: any) => ({
-      id: p.name.split("/").pop(),
-      name: p.name,
-      displayName: p.displayName,
-      createTime: p.createTime,
-      updateTime: p.updateTime,
-      industryCategory: p.industryCategory,
-      timeZone: p.timeZone,
-      currencyCode: p.currencyCode,
+    return (data.properties || []).map((p: Record<string, unknown>) => ({
+      id: (p.name as string).split("/").pop(),
+      name: p.name as string,
+      displayName: p.displayName as string,
+      createTime: p.createTime as string,
+      updateTime: p.updateTime as string,
+      industryCategory: p.industryCategory as string | undefined,
+      timeZone: p.timeZone as string,
+      currencyCode: p.currencyCode as string,
     }));
   }
 
@@ -322,7 +331,7 @@ export class GoogleAnalyticsManager {
       metrics: string[];
       limit?: number;
     }
-  ): Promise<any> {
+  ): Promise<GAReportResponse> {
     const connection = await this.getValidConnection(brandId);
 
     const body = {
@@ -404,13 +413,13 @@ export class GoogleAnalyticsManager {
       limit,
     });
 
-    return (data.rows || []).map((row: any) => ({
-      source: row.dimensionValues[0]?.value || "(direct)",
-      medium: row.dimensionValues[1]?.value || "(none)",
-      sessions: parseInt(row.metricValues[0]?.value || "0"),
-      users: parseInt(row.metricValues[1]?.value || "0"),
-      newUsers: parseInt(row.metricValues[2]?.value || "0"),
-      engagementRate: parseFloat(row.metricValues[3]?.value || "0"),
+    return (data.rows || []).map((row: Record<string, unknown>) => ({
+      source: (row.dimensionValues as Record<string, unknown>[])?.[0]?.value as string || "(direct)",
+      medium: (row.dimensionValues as Record<string, unknown>[])?.[1]?.value as string || "(none)",
+      sessions: parseInt((row.metricValues as Record<string, unknown>[])?.[0]?.value as string || "0"),
+      users: parseInt((row.metricValues as Record<string, unknown>[])?.[1]?.value as string || "0"),
+      newUsers: parseInt((row.metricValues as Record<string, unknown>[])?.[2]?.value as string || "0"),
+      engagementRate: parseFloat((row.metricValues as Record<string, unknown>[])?.[3]?.value as string || "0"),
     }));
   }
 
@@ -437,14 +446,14 @@ export class GoogleAnalyticsManager {
       limit,
     });
 
-    return (data.rows || []).map((row: any) => ({
-      pagePath: row.dimensionValues[0]?.value || "/",
-      pageTitle: row.dimensionValues[1]?.value || "",
-      pageViews: parseInt(row.metricValues[0]?.value || "0"),
-      avgTimeOnPage: parseFloat(row.metricValues[1]?.value || "0"),
-      bounceRate: parseFloat(row.metricValues[2]?.value || "0"),
-      entrances: parseInt(row.metricValues[3]?.value || "0"),
-      exits: parseInt(row.metricValues[4]?.value || "0"),
+    return (data.rows || []).map((row: Record<string, unknown>) => ({
+      pagePath: (row.dimensionValues as Record<string, unknown>[])?.[0]?.value as string || "/",
+      pageTitle: (row.dimensionValues as Record<string, unknown>[])?.[1]?.value as string || "",
+      pageViews: parseInt((row.metricValues as Record<string, unknown>[])?.[0]?.value as string || "0"),
+      avgTimeOnPage: parseFloat((row.metricValues as Record<string, unknown>[])?.[1]?.value as string || "0"),
+      bounceRate: parseFloat((row.metricValues as Record<string, unknown>[])?.[2]?.value as string || "0"),
+      entrances: parseInt((row.metricValues as Record<string, unknown>[])?.[3]?.value as string || "0"),
+      exits: parseInt((row.metricValues as Record<string, unknown>[])?.[4]?.value as string || "0"),
     }));
   }
 
@@ -477,17 +486,18 @@ export class GoogleAnalyticsManager {
     ];
 
     return (data.rows || [])
-      .filter((row: any) => {
-        const source = (row.dimensionValues[0]?.value || "").toLowerCase();
+      .filter((row: Record<string, unknown>) => {
+        const dimValues = row.dimensionValues as Record<string, unknown>[];
+        const source = ((dimValues?.[0]?.value as string) || "").toLowerCase();
         return aiSources.some((ai) => source.includes(ai));
       })
-      .map((row: any) => ({
-        source: row.dimensionValues[0]?.value || "(direct)",
-        medium: row.dimensionValues[1]?.value || "(none)",
-        sessions: parseInt(row.metricValues[0]?.value || "0"),
-        users: parseInt(row.metricValues[1]?.value || "0"),
-        newUsers: parseInt(row.metricValues[2]?.value || "0"),
-        engagementRate: parseFloat(row.metricValues[3]?.value || "0"),
+      .map((row: Record<string, unknown>) => ({
+        source: (row.dimensionValues as Record<string, unknown>[])?.[0]?.value as string || "(direct)",
+        medium: (row.dimensionValues as Record<string, unknown>[])?.[1]?.value as string || "(none)",
+        sessions: parseInt((row.metricValues as Record<string, unknown>[])?.[0]?.value as string || "0"),
+        users: parseInt((row.metricValues as Record<string, unknown>[])?.[1]?.value as string || "0"),
+        newUsers: parseInt((row.metricValues as Record<string, unknown>[])?.[2]?.value as string || "0"),
+        engagementRate: parseFloat((row.metricValues as Record<string, unknown>[])?.[3]?.value as string || "0"),
       }));
   }
 }

@@ -42,6 +42,11 @@ export const users = pgTable("users", {
   isActive: boolean("is_active").default(true).notNull(),
   lastActiveAt: timestamp("last_active_at", { withTimezone: true }),
 
+  // Super Admin (system-wide access)
+  isSuperAdmin: boolean("is_super_admin").default(false).notNull(),
+  superAdminGrantedAt: timestamp("super_admin_granted_at", { withTimezone: true }),
+  superAdminGrantedBy: text("super_admin_granted_by"),
+
   // Timestamps
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

@@ -15,6 +15,13 @@
       "when": 1765895931419,
       "tag": "0001_awesome_darkhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1765977351821,
+      "tag": "0002_reflective_garia",
+      "breakpoints": true
     }
   ]
 }

@@ -186,14 +186,14 @@ export class TrelloManager {
     }
 
     const data = await response.json();
-    return data.map((b: any) => ({
+    return data.map((b: Record<string, unknown>) => ({
       id: b.id,
       name: b.name,
       desc: b.desc,
       closed: b.closed,
       url: b.url,
       prefs: {
-        backgroundColor: b.prefs?.backgroundColor,
+        backgroundColor: (b.prefs as { backgroundColor?: string } | undefined)?.backgroundColor,
       },
     }));
   }
@@ -233,7 +233,7 @@ export class TrelloManager {
     }
 
     const data = await response.json();
-    return data.map((l: any) => ({
+    return data.map((l: Record<string, unknown>) => ({
       id: l.id,
       name: l.name,
       closed: l.closed,
@@ -265,7 +265,7 @@ export class TrelloManager {
       throw new Error("No list selected");
     }
 
-    const body: Record<string, any> = {
+    const body: Record<string, unknown> = {
       idList: connection.selectedListId,
       name: params.name,
       desc: params.desc || "",

@@ -92,6 +92,28 @@ export interface CreateTaskParams {
   tags?: string[];
 }
 
+// Internal type for Asana API task response
+interface AsanaTaskApiResponse {
+  gid: string;
+  name: string;
+  notes?: string;
+  html_notes?: string;
+  completed: boolean;
+  due_on?: string;
+  due_at?: string;
+  start_on?: string;
+  assignee?: { gid: string; name: string };
+  projects?: Array<{ gid: string; name: string }>;
+  memberships?: Array<{
+    project?: { gid: string; name: string };
+    section?: { gid: string; name: string };
+  }>;
+  tags?: Array<{ gid: string; name: string; color?: string }>;
+  permalink_url: string;
+  created_at: string;
+  modified_at: string;
+}
+
 // Asana OAuth configuration
 const ASANA_CONFIG = {
   authUrl: "https://app.asana.com/-/oauth_authorize",
@@ -314,7 +336,7 @@ export class AsanaManager {
   async getWorkspaces(brandId: string): Promise<AsanaWorkspace[]> {
     const connection = await this.getValidConnection(brandId);
 
-    const workspaces = await this.apiRequest<any[]>(
+    const workspaces = await this.apiRequest<Array<{ gid: string; name: string; is_organization: boolean }>>(
       connection.accessToken,
       "/workspaces"
     );
@@ -354,7 +376,7 @@ export class AsanaManager {
       throw new Error("No workspace selected");
     }
 
-    const projects = await this.apiRequest<any[]>(
+    const projects = await this.apiRequest<Array<{ gid: string; name: string; color?: string; archived: boolean; public: boolean }>>(
       connection.accessToken,
       `/workspaces/${connection.selectedWorkspaceId}/projects?opt_fields=name,color,archived,public`
     );
@@ -394,7 +416,7 @@ export class AsanaManager {
       throw new Error("No project selected");
     }
 
-    const sections = await this.apiRequest<any[]>(
+    const sections = await this.apiRequest<Array<{ gid: string; name: string }>>(
       connection.accessToken,
       `/projects/${connection.selectedProjectId}/sections`
     );
@@ -429,7 +451,7 @@ export class AsanaManager {
       throw new Error("No workspace selected");
     }
 
-    const users = await this.apiRequest<any[]>(
+    const users = await this.apiRequest<Array<{ gid: string; name: string; email: string }>>(
       connection.accessToken,
       `/workspaces/${connection.selectedWorkspaceId}/users?opt_fields=name,email`
     );
@@ -450,7 +472,7 @@ export class AsanaManager {
       throw new Error("No workspace selected");
     }
 
-    const tags = await this.apiRequest<any[]>(
+    const tags = await this.apiRequest<Array<{ gid: string; name: string; color?: string }>>(
       connection.accessToken,
       `/workspaces/${connection.selectedWorkspaceId}/tags?opt_fields=name,color`
     );
@@ -494,7 +516,7 @@ export class AsanaManager {
       ];
     }
 
-    const task = await this.apiRequest<any>(
+    const task = await this.apiRequest<AsanaTaskApiResponse>(
       connection.accessToken,
       `/tasks?opt_fields=gid,name,notes,html_notes,completed,due_on,due_at,start_on,assignee.name,projects.name,memberships.project.name,memberships.section.name,tags.name,tags.color,permalink_url,created_at,modified_at`,
       "POST",
@@ -507,7 +529,7 @@ export class AsanaManager {
   /**
    * Format task response
    */
-  private formatTask(task: any): AsanaTask {
+  private formatTask(task: AsanaTaskApiResponse): AsanaTask {
     return {
       gid: task.gid,
       name: task.name,
@@ -520,17 +542,17 @@ export class AsanaManager {
       assignee: task.assignee
         ? { gid: task.assignee.gid, name: task.assignee.name }
         : undefined,
-      projects: (task.projects || []).map((p: any) => ({
+      projects: (task.projects || []).map((p) => ({
         gid: p.gid,
         name: p.name,
       })),
-      memberships: (task.memberships || []).map((m: any) => ({
-        project: { gid: m.project?.gid, name: m.project?.name },
+      memberships: (task.memberships || []).map((m) => ({
+        project: { gid: m.project?.gid || "", name: m.project?.name || "" },
         section: m.section
           ? { gid: m.section.gid, name: m.section.name }
           : undefined,
       })),
-      tags: (task.tags || []).map((t: any) => ({
+      tags: (task.tags || []).map((t) => ({
         gid: t.gid,
         name: t.name,
         color: t.color,

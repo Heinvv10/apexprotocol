@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
+import Stripe from "stripe";
 import {
   stripeBillingManager,
   formatSubscriptionResponse,
@@ -576,7 +577,7 @@ async function handleWebhook(body: unknown) {
 
   const event = schema.parse(body);
 
-  const result = await stripeBillingManager.handleWebhook(event as any);
+  const result = await stripeBillingManager.handleWebhook(event as unknown as Stripe.Event);
 
   return NextResponse.json({
     success: true,

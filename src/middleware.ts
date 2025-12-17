@@ -37,8 +37,25 @@ const publicRoutes = [
 ];
 
 // Development mode middleware (when Clerk is not configured)
-async function devMiddleware(_request: NextRequest) {
-  // Allow all routes in dev mode without Clerk
+async function devMiddleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Check if this is a super-admin route
+  const isSuperAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
+
+  if (isSuperAdminRoute) {
+    // In dev mode, require DEV_SUPER_ADMIN=true for admin routes
+    const devSuperAdmin = process.env.DEV_SUPER_ADMIN === "true";
+
+    if (!devSuperAdmin) {
+      const url = new URL("/dashboard", request.url);
+      url.searchParams.set("error", "super_admin_required");
+      url.searchParams.set("message", "Set DEV_SUPER_ADMIN=true in .env to access admin panel");
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // Allow all other routes in dev mode
   return NextResponse.next();
 }
 
@@ -67,9 +84,14 @@ async function productionMiddleware(request: NextRequest) {
     "/api/reports(.*)",
   ]);
 
-  const isAdminRoute = createRouteMatcher([
+  // Super-admin routes (system-wide admin panel)
+  const isSuperAdminRoute = createRouteMatcher([
     "/admin(.*)",
     "/api/admin(.*)",
+  ]);
+
+  // Org-admin routes (organization-level settings)
+  const isOrgAdminRoute = createRouteMatcher([
     "/settings/organization(.*)",
     "/settings/billing(.*)",
     "/settings/api-keys(.*)",
@@ -92,8 +114,24 @@ async function productionMiddleware(request: NextRequest) {
       }
     }
 
-    // For admin routes, check for admin role
-    if (isAdminRoute(req)) {
+    // For super-admin routes, check for super-admin status via publicMetadata
+    if (isSuperAdminRoute(req)) {
+      const { sessionClaims } = await auth();
+      const publicMetadata = sessionClaims?.publicMetadata as { isSuperAdmin?: boolean } | undefined;
+      const isSuperAdmin = publicMetadata?.isSuperAdmin === true;
+
+      // In development, allow access if DEV_SUPER_ADMIN is set
+      const devSuperAdmin = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
+
+      if (!isSuperAdmin && !devSuperAdmin) {
+        const url = new URL("/dashboard", req.url);
+        url.searchParams.set("error", "super_admin_required");
+        return Response.redirect(url);
+      }
+    }
+
+    // For org-admin routes, check for org:admin role
+    if (isOrgAdminRoute(req)) {
       const { orgRole } = await auth();
       if (orgRole !== "org:admin") {
         const url = new URL("/dashboard", req.url);

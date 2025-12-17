@@ -205,7 +205,7 @@ export class LinearManager {
       }
     `;
 
-    const data = await this.graphql<{ viewer: any }>(accessToken, query);
+    const data = await this.graphql<{ viewer: { id: string; name: string; email: string; organization: { id: string; name: string } } }>(accessToken, query);
     return data.viewer;
   }
 
@@ -280,7 +280,7 @@ export class LinearManager {
       }
     `;
 
-    const data = await this.graphql<{ teams: { nodes: any[] } }>(connection.accessToken, query);
+    const data = await this.graphql<{ teams: { nodes: Array<{ id: string; name: string; key: string; description?: string; icon?: string; color?: string }> } }>(connection.accessToken, query);
     return data.teams.nodes.map((t) => ({
       id: t.id,
       name: t.name,
@@ -335,7 +335,7 @@ export class LinearManager {
       }
     `;
 
-    const data = await this.graphql<{ team: { projects: { nodes: any[] } } }>(
+    const data = await this.graphql<{ team: { projects: { nodes: Array<{ id: string; name: string; description?: string; icon?: string; color?: string; state: string; progress: number }> } } }>(
       connection.accessToken,
       query,
       { teamId: connection.selectedTeamId }
@@ -391,7 +391,7 @@ export class LinearManager {
       }
     `;
 
-    const data = await this.graphql<{ team: { states: { nodes: any[] } } }>(
+    const data = await this.graphql<{ team: { states: { nodes: Array<{ id: string; name: string; color: string; type: "backlog" | "unstarted" | "started" | "completed" | "canceled" }> } } }>(
       connection.accessToken,
       query,
       { teamId: connection.selectedTeamId }
@@ -428,7 +428,7 @@ export class LinearManager {
       }
     `;
 
-    const data = await this.graphql<{ team: { labels: { nodes: any[] } } }>(
+    const data = await this.graphql<{ team: { labels: { nodes: Array<{ id: string; name: string; color: string }> } } }>(
       connection.accessToken,
       query,
       { teamId: connection.selectedTeamId }
@@ -497,7 +497,26 @@ export class LinearManager {
     if (params.assigneeId) input.assigneeId = params.assigneeId;
     if (params.dueDate) input.dueDate = params.dueDate;
 
-    const data = await this.graphql<{ issueCreate: { success: boolean; issue: any } }>(
+    interface IssueCreateResponse {
+      issueCreate: {
+        success: boolean;
+        issue: {
+          id: string;
+          identifier: string;
+          title: string;
+          description?: string;
+          url: string;
+          priority: number;
+          priorityLabel: string;
+          state: { id: string; name: string; color: string; type: string };
+          labels: { nodes: Array<{ id: string; name: string; color: string }> };
+          createdAt: string;
+          updatedAt: string;
+        };
+      };
+    }
+
+    const data = await this.graphql<IssueCreateResponse>(
       connection.accessToken,
       mutation,
       { input }
@@ -522,7 +541,7 @@ export class LinearManager {
         color: issue.state.color,
         type: issue.state.type,
       },
-      labels: (issue.labels?.nodes || []).map((l: any) => ({
+      labels: (issue.labels?.nodes || []).map((l) => ({
         id: l.id,
         name: l.name,
         color: l.color,
