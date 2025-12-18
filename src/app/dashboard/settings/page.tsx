@@ -2,8 +2,10 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ChevronDown, Trash2, User, Puzzle, Bell, Users, CreditCard, Key, Loader2, Check, AlertCircle, X, Upload } from "lucide-react";
+import Image from "next/image";
+import { ChevronDown, Trash2, User, Puzzle, Bell, Users, CreditCard, Key, Loader2, Check, AlertCircle, X, Upload, ExternalLink } from "lucide-react";
 import { ApiKeysSection, IntegrationsSection, NotificationsSection } from "@/components/settings/settings-sections";
+import { useUser } from "@clerk/nextjs";
 
 // Available languages
 const LANGUAGES = [
@@ -112,6 +114,7 @@ function DecorativeStar() {
 }
 
 export default function SettingsPage() {
+  const { user, isLoaded: isUserLoaded } = useUser();
   const [activeSection, setActiveSection] = React.useState("general");
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
@@ -300,22 +303,58 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Left Column */}
               <div className="space-y-6">
-                {/* Profile Section - TODO: Integrate with Clerk user data */}
+                {/* Profile Section - Integrated with Clerk */}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/30 to-accent-purple/30 flex items-center justify-center border border-white/10">
-                      <User className="w-6 h-6 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <h3 className="text-foreground font-medium">No profile configured</h3>
-                      <p className="text-sm text-muted-foreground">Connect your account to view profile</p>
-                    </div>
+                    {isUserLoaded && user ? (
+                      <>
+                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/30 to-accent-purple/30 flex items-center justify-center border border-white/10 overflow-hidden">
+                          {user.imageUrl ? (
+                            <Image
+                              src={user.imageUrl}
+                              alt={user.fullName || "Profile"}
+                              width={56}
+                              height={56}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User className="w-6 h-6 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="text-foreground font-medium">
+                            {user.fullName || user.firstName || "User"}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {user.primaryEmailAddress?.emailAddress || "No email"}
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/30 to-accent-purple/30 flex items-center justify-center border border-white/10 animate-pulse">
+                          <User className="w-6 h-6 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <div className="h-5 w-32 bg-white/10 rounded animate-pulse" />
+                          <div className="h-4 w-48 bg-white/5 rounded mt-1 animate-pulse" />
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <button className="settings-edit-btn">Edit Profile</button>
+                  <Link
+                    href="/user-profile"
+                    className="settings-edit-btn flex items-center gap-1.5"
+                  >
+                    <span>Edit Profile</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
 
                 <p className="text-xs text-muted-foreground/70">
-                  Configure your profile settings and preferences below.
+                  {isUserLoaded && user
+                    ? `Signed in since ${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}`
+                    : "Loading profile information..."}
                 </p>
 
                 {/* Brand Name */}

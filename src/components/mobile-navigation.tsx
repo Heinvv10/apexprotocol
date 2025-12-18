@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   Home,
@@ -19,6 +20,7 @@ import {
   FolderKanban,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUser } from "@clerk/nextjs";
 
 // Bottom navigation items (5 icons)
 const bottomNavItems = [
@@ -109,6 +111,7 @@ export function MobileSidebarDrawer({
   onClose: () => void;
 }) {
   const pathname = usePathname();
+  const { user, isLoaded: isUserLoaded } = useUser();
 
   // Close on route change
   React.useEffect(() => {
@@ -198,17 +201,45 @@ export function MobileSidebarDrawer({
           })}
         </nav>
 
-        {/* Footer - TODO: Integrate with Clerk user data */}
+        {/* Footer - Integrated with Clerk */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
-          <div className="flex items-center gap-3 px-4 py-2">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-              <User className="w-4 h-4 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">Not signed in</p>
-              <p className="text-xs text-muted-foreground truncate">Sign in to continue</p>
-            </div>
-          </div>
+          <Link href="/user-profile" className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-white/5 transition-colors">
+            {isUserLoaded && user ? (
+              <>
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+                  {user.imageUrl ? (
+                    <Image
+                      src={user.imageUrl}
+                      alt={user.fullName || "Profile"}
+                      width={32}
+                      height={32}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-4 h-4 text-primary" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {user.fullName || user.firstName || "User"}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {user.primaryEmailAddress?.emailAddress || "View profile"}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                  <User className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">Loading...</p>
+                  <p className="text-xs text-muted-foreground truncate">Please wait</p>
+                </div>
+              </>
+            )}
+          </Link>
         </div>
       </div>
     </>
