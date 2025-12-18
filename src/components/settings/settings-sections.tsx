@@ -1,9 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Check, Copy, Eye, EyeOff, Upload, Trash2 } from "lucide-react";
+import { useUser, useClerk } from "@clerk/nextjs";
+import { Check, Copy, Eye, EyeOff, Upload, Trash2, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAPIKeys, useCreateAPIKey, useRevokeAPIKey } from "@/hooks/useSettings";
 
 // Export interface for API integration
 export interface UserProfile {
@@ -18,21 +20,56 @@ interface ProfileSectionProps {
   profile?: UserProfile;
 }
 
-// Profile Section
+// Profile Section - Wired to Clerk for user data
 export function ProfileSection({ profile }: ProfileSectionProps) {
+  const { user, isLoaded: userLoaded } = useUser();
+  const { openUserProfile } = useClerk();
+  const { data: apiKeysData, isLoading: apiKeysLoading } = useAPIKeys();
+
   const [showApiKey, setShowApiKey] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
 
-  // TODO: Fetch profile from API endpoint
-  // const { data: profile } = useQuery(['userProfile'], fetchUserProfile);
-  const apiKey = profile?.apiKey || ""; // Empty string - no mock data
+  // Get user data from Clerk (with prop fallback)
+  const firstName = profile?.firstName ?? user?.firstName ?? "";
+  const lastName = profile?.lastName ?? user?.lastName ?? "";
+  const email = profile?.email ?? user?.primaryEmailAddress?.emailAddress ?? "";
+  const avatarUrl = user?.imageUrl;
+  const avatarInitials = profile?.avatarInitials ??
+    (firstName && lastName ? `${firstName[0]}${lastName[0]}`.toUpperCase() : "");
+
+  // Get primary API key for display (use first active key)
+  const primaryApiKey = profile?.apiKey ??
+    apiKeysData?.find(k => k.status === "active")?.keyPrefix ?? "";
 
   const copyToClipboard = () => {
-    if (!apiKey) return;
-    navigator.clipboard.writeText(apiKey);
+    if (!primaryApiKey) return;
+    navigator.clipboard.writeText(primaryApiKey);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  // Handle opening Clerk's profile management
+  const handleManageProfile = () => {
+    openUserProfile();
+  };
+
+  // Loading state
+  if (!userLoaded && !profile) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Profile</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage your personal information and preferences
+          </p>
+        </div>
+        <div className="card-tertiary flex items-center justify-center py-12">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <span className="ml-2 text-sm text-muted-foreground">Loading profile...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -47,25 +84,41 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
       <div className="card-tertiary">
         <h3 className="text-sm font-medium text-foreground mb-4">Profile Photo</h3>
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xl font-bold">
-            JD
-          </div>
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={`${firstName} ${lastName}`}
+              className="w-16 h-16 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xl font-bold">
+              {avatarInitials || "?"}
+            </div>
+          )}
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleManageProfile}>
               <Upload className="w-4 h-4 mr-2" />
-              Upload
+              Change Photo
             </Button>
-            <Button variant="ghost" size="sm" className="text-error hover:text-error">
-              <Trash2 className="w-4 h-4 mr-2" />
-              Remove
-            </Button>
+            {avatarUrl && (
+              <Button variant="ghost" size="sm" className="text-error hover:text-error" onClick={handleManageProfile}>
+                <Trash2 className="w-4 h-4 mr-2" />
+                Remove
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Personal Info */}
       <div className="card-tertiary">
-        <h3 className="text-sm font-medium text-foreground mb-4">Personal Information</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-medium text-foreground">Personal Information</h3>
+          <Button variant="ghost" size="sm" onClick={handleManageProfile} className="text-xs">
+            <ExternalLink className="w-3 h-3 mr-1" />
+            Edit in Clerk
+          </Button>
+        </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <label className="text-xs font-medium text-muted-foreground block mb-1.5">
@@ -73,9 +126,9 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
             </label>
             <input
               type="text"
-              defaultValue=""
-              placeholder="Enter first name"
-              className="w-full h-9 px-3 rounded-lg bg-muted/30 border border-border/50 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+              value={firstName}
+              readOnly
+              className="w-full h-9 px-3 rounded-lg bg-muted/30 border border-border/50 text-sm focus:outline-none cursor-not-allowed opacity-70"
             />
           </div>
           <div>
@@ -84,9 +137,9 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
             </label>
             <input
               type="text"
-              defaultValue=""
-              placeholder="Enter last name"
-              className="w-full h-9 px-3 rounded-lg bg-muted/30 border border-border/50 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+              value={lastName}
+              readOnly
+              className="w-full h-9 px-3 rounded-lg bg-muted/30 border border-border/50 text-sm focus:outline-none cursor-not-allowed opacity-70"
             />
           </div>
           <div className="md:col-span-2">
@@ -95,12 +148,15 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
             </label>
             <input
               type="email"
-              defaultValue=""
-              placeholder="Enter email address"
-              className="w-full h-9 px-3 rounded-lg bg-muted/30 border border-border/50 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+              value={email}
+              readOnly
+              className="w-full h-9 px-3 rounded-lg bg-muted/30 border border-border/50 text-sm focus:outline-none cursor-not-allowed opacity-70"
             />
           </div>
         </div>
+        <p className="text-xs text-muted-foreground/70 mt-3">
+          Profile information is managed through Clerk. Click &quot;Edit in Clerk&quot; to make changes.
+        </p>
       </div>
 
       {/* API Key */}
@@ -108,14 +164,19 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
         <h3 className="text-sm font-medium text-foreground mb-4">API Key</h3>
         <div className="flex items-center gap-2">
           <div className="flex-1 h-9 px-3 rounded-lg bg-muted/30 border border-border/50 flex items-center">
-            <code className="text-sm text-foreground font-mono">
-              {apiKey ? (showApiKey ? apiKey : "•".repeat(apiKey.length)) : "No API key configured"}
-            </code>
+            {apiKeysLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            ) : (
+              <code className="text-sm text-foreground font-mono">
+                {primaryApiKey ? (showApiKey ? `${primaryApiKey}...` : "•".repeat(12) + "...") : "No API key configured"}
+              </code>
+            )}
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setShowApiKey(!showApiKey)}
+            disabled={!primaryApiKey}
           >
             {showApiKey ? (
               <EyeOff className="w-4 h-4" />
@@ -123,7 +184,7 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
               <Eye className="w-4 h-4" />
             )}
           </Button>
-          <Button variant="ghost" size="icon" onClick={copyToClipboard}>
+          <Button variant="ghost" size="icon" onClick={copyToClipboard} disabled={!primaryApiKey}>
             {copied ? (
               <Check className="w-4 h-4 text-success" />
             ) : (
@@ -132,13 +193,18 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          Use this key to authenticate API requests. Keep it secret!
+          {primaryApiKey
+            ? "Use this key to authenticate API requests. Keep it secret!"
+            : "Create an API key in the API Keys section to enable programmatic access."}
         </p>
       </div>
 
-      {/* Save Button */}
+      {/* Manage Profile Button */}
       <div className="flex justify-end">
-        <Button className="gradient-primary text-white">Save Changes</Button>
+        <Button className="gradient-primary text-white" onClick={handleManageProfile}>
+          <ExternalLink className="w-4 h-4 mr-2" />
+          Manage Profile
+        </Button>
       </div>
     </div>
   );
@@ -324,14 +390,32 @@ interface ApiKeysSectionProps {
   apiKeys?: ApiKeyData[];
 }
 
-// API Keys Section
-export function ApiKeysSection({ apiKeys }: ApiKeysSectionProps) {
+// API Keys Section - Wired to API hooks
+export function ApiKeysSection({ apiKeys: propKeys }: ApiKeysSectionProps) {
+  const { data: apiKeysData, isLoading } = useAPIKeys();
+  const createKeyMutation = useCreateAPIKey();
+  const revokeKeyMutation = useRevokeAPIKey();
+
   const [showKeys, setShowKeys] = React.useState<Record<string, boolean>>({});
   const [copiedKey, setCopiedKey] = React.useState<string | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = React.useState(false);
+  const [newKeyName, setNewKeyName] = React.useState("");
+  const [newlyCreatedKey, setNewlyCreatedKey] = React.useState<string | null>(null);
 
-  // TODO: Fetch API keys from API endpoint
-  // const { data: apiKeysData } = useQuery(['apiKeys'], fetchApiKeys);
-  const keys = apiKeys || []; // Empty array - no mock data
+  // Transform API data to component format (with prop fallback)
+  const keys: ApiKeyData[] = React.useMemo(() => {
+    if (propKeys) return propKeys;
+    if (!apiKeysData) return [];
+    return apiKeysData.map(key => ({
+      id: key.id,
+      name: key.name,
+      key: key.keyPrefix + "..." + "••••••••", // Only prefix available, full key shown once on creation
+      created: key.createdAt ? new Date(key.createdAt).toLocaleDateString() : "Unknown",
+      lastUsed: key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : "Never",
+      status: key.status === "active" ? "active" : "inactive",
+    }));
+  }, [propKeys, apiKeysData]);
+
   const hasKeys = keys.length > 0;
 
   const toggleKeyVisibility = (keyId: string) => {
@@ -345,9 +429,56 @@ export function ApiKeysSection({ apiKeys }: ApiKeysSectionProps) {
   };
 
   const maskKey = (key: string): string => {
-    // Show first 12 chars, mask the rest
-    return key.substring(0, 12) + "•".repeat(key.length - 16) + key.substring(key.length - 4);
+    if (key.length < 16) return "•".repeat(key.length);
+    return key.substring(0, 12) + "•".repeat(Math.max(0, key.length - 16)) + key.substring(key.length - 4);
   };
+
+  const handleCreateKey = async () => {
+    if (!newKeyName.trim()) return;
+    try {
+      const result = await createKeyMutation.mutateAsync({
+        name: newKeyName,
+        permissions: ["read", "write"],
+        expiresIn: "90d",
+      });
+      // Show the newly created key (only shown once!)
+      setNewlyCreatedKey(result.key);
+      setNewKeyName("");
+    } catch {
+      // Error is handled by mutation state
+    }
+  };
+
+  const handleRevokeKey = async (keyId: string) => {
+    if (!confirm("Are you sure you want to revoke this API key? This action cannot be undone.")) {
+      return;
+    }
+    try {
+      await revokeKeyMutation.mutateAsync(keyId);
+    } catch {
+      // Error is handled by mutation state
+    }
+  };
+
+  // Loading state
+  if (isLoading && !propKeys) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">API Keys</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage your API keys for programmatic access to APEX
+            </p>
+          </div>
+        </div>
+        <div className="card-tertiary flex items-center justify-center py-12">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <span className="ml-2 text-sm text-muted-foreground">Loading API keys...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -358,11 +489,97 @@ export function ApiKeysSection({ apiKeys }: ApiKeysSectionProps) {
             Manage your API keys for programmatic access to APEX
           </p>
         </div>
-        <Button className="gradient-primary text-white">
-          <span className="mr-2">+</span>
+        <Button
+          className="gradient-primary text-white"
+          onClick={() => setShowCreateDialog(true)}
+          disabled={createKeyMutation.isPending}
+        >
+          {createKeyMutation.isPending ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <span className="mr-2">+</span>
+          )}
           Create New Key
         </Button>
       </div>
+
+      {/* Create Key Dialog */}
+      {showCreateDialog && (
+        <div className="card-tertiary border-l-4 border-l-primary">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <h3 className="text-sm font-medium text-foreground">Create New API Key</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Give your key a descriptive name to identify it later.
+              </p>
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => {
+              setShowCreateDialog(false);
+              setNewKeyName("");
+              setNewlyCreatedKey(null);
+            }} className="h-8 w-8">
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+          {newlyCreatedKey ? (
+            <div className="space-y-3">
+              <div className="p-3 rounded-lg bg-success/10 border border-success/30">
+                <p className="text-sm font-medium text-success mb-2">API Key Created!</p>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Copy this key now. You won&apos;t be able to see it again!
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 p-2 rounded bg-muted/30 text-xs font-mono break-all">
+                    {newlyCreatedKey}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(newlyCreatedKey);
+                      setCopiedKey("new");
+                      setTimeout(() => setCopiedKey(null), 2000);
+                    }}
+                  >
+                    {copiedKey === "new" ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowCreateDialog(false);
+                  setNewlyCreatedKey(null);
+                }}
+              >
+                Done
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newKeyName}
+                onChange={(e) => setNewKeyName(e.target.value)}
+                placeholder="e.g., Production Server, Development"
+                className="flex-1 h-9 px-3 rounded-lg bg-muted/30 border border-border/50 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+              />
+              <Button
+                onClick={handleCreateKey}
+                disabled={!newKeyName.trim() || createKeyMutation.isPending}
+                className="gradient-primary text-white"
+              >
+                {createKeyMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Create"
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Security Notice */}
       <div className="card-tertiary border-l-4 border-l-warning">
@@ -451,8 +668,14 @@ export function ApiKeysSection({ apiKeys }: ApiKeysSectionProps) {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-error hover:text-error hover:bg-error/10"
+                  onClick={() => handleRevokeKey(apiKey.id)}
+                  disabled={revokeKeyMutation.isPending || apiKey.status === "inactive"}
                 >
-                  <Trash2 className="w-4 h-4" />
+                  {revokeKeyMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
             </div>

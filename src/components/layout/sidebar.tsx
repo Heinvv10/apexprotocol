@@ -33,12 +33,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSidebarBadges } from "@/hooks/useDashboard";
+import { useSelectedBrand } from "@/stores";
 
 interface NavItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
+  badgeKey?: "monitor" | "feedback" | "recommendations";
 }
 
 const mainNavItems: NavItem[] = [
@@ -61,7 +64,7 @@ const mainNavItems: NavItem[] = [
     title: "Monitor",
     href: "/dashboard/monitor",
     icon: Eye,
-    // TODO: Badge count should come from actual monitoring data
+    badgeKey: "monitor",
   },
   {
     title: "Competitive",
@@ -87,7 +90,7 @@ const mainNavItems: NavItem[] = [
     title: "Feedback",
     href: "/dashboard/feedback",
     icon: MessageSquare,
-    // TODO: Badge count should come from unread feedback count
+    badgeKey: "feedback",
   },
   {
     title: "Create",
@@ -103,7 +106,7 @@ const mainNavItems: NavItem[] = [
     title: "Recommendations",
     href: "/dashboard/recommendations",
     icon: Lightbulb,
-    // TODO: Badge count should come from pending recommendations count
+    badgeKey: "recommendations",
   },
 ];
 
@@ -127,10 +130,22 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed = false, onCollapsedChange }: SidebarProps) {
   const pathname = usePathname();
+  const selectedBrand = useSelectedBrand();
+  const { badges, formatBadge } = useSidebarBadges(selectedBrand?.id);
+
+  // Get badge for nav item (either static or dynamic from API)
+  const getBadge = (item: NavItem): string | undefined => {
+    if (item.badge) return item.badge;
+    if (item.badgeKey) {
+      return formatBadge(badges[item.badgeKey]);
+    }
+    return undefined;
+  };
 
   const NavLink = ({ item }: { item: NavItem }) => {
     const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
     const Icon = item.icon;
+    const badge = getBadge(item);
 
     const linkContent = (
       <Link
@@ -144,8 +159,8 @@ export function Sidebar({ collapsed = false, onCollapsedChange }: SidebarProps) 
         {!collapsed && (
           <>
             <span className="flex-1">{item.title}</span>
-            {item.badge && (
-              <span className="badge-primary text-[10px]">{item.badge}</span>
+            {badge && (
+              <span className="badge-primary text-[10px]">{badge}</span>
             )}
           </>
         )}
@@ -165,8 +180,8 @@ export function Sidebar({ collapsed = false, onCollapsedChange }: SidebarProps) 
           <TooltipContent side="right" className="glass-tooltip">
             <div className="flex items-center gap-2">
               {item.title}
-              {item.badge && (
-                <span className="badge-primary text-[10px]">{item.badge}</span>
+              {badge && (
+                <span className="badge-primary text-[10px]">{badge}</span>
               )}
             </div>
           </TooltipContent>

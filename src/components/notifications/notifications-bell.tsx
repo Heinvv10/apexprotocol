@@ -16,8 +16,10 @@ import {
   MoreHorizontal,
   Settings,
   BellOff,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNotificationBell, useArchiveNotification } from "@/hooks/useNotifications";
 
 // Notification types
 type NotificationType = "success" | "warning" | "info" | "alert" | "insight";
@@ -40,14 +42,72 @@ interface NotificationsBellProps {
   initialNotifications?: Notification[];
 }
 
+// Map API notification types to component types
+function mapNotificationType(apiType: string): NotificationType {
+  switch (apiType) {
+    case "audit_completed":
+    case "content_published":
+    case "achievement_unlocked":
+      return "success";
+    case "usage_warning":
+    case "billing_alert":
+      return "warning";
+    case "crisis_alert":
+    case "audit_failed":
+      return "alert";
+    case "recommendation_generated":
+    case "mention_detected":
+      return "insight";
+    default:
+      return "info";
+  }
+}
+
+// Format timestamp for display
+function formatTimestamp(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffHours < 1) return "Just now";
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 export function NotificationsBell({ initialNotifications }: NotificationsBellProps) {
   const [isOpen, setIsOpen] = React.useState(false);
-  // TODO: Fetch notifications from API endpoint
-  // const { data: notificationsData } = useQuery(['notifications'], fetchNotifications);
-  const [notifications, setNotifications] = React.useState<Notification[]>(initialNotifications || []); // Empty array - no mock data
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // Fetch notifications from API
+  const {
+    unreadCount,
+    recentNotifications,
+    markAsRead,
+    markAllAsRead: markAllReadAPI,
+    isMarkingAllAsRead,
+  } = useNotificationBell();
+  const archiveNotification = useArchiveNotification();
+
+  // Transform API notifications to component format
+  const notifications: Notification[] = React.useMemo(() => {
+    if (initialNotifications && initialNotifications.length > 0) {
+      return initialNotifications;
+    }
+
+    return recentNotifications.map((n) => ({
+      id: n.id,
+      type: mapNotificationType(n.type),
+      title: n.title,
+      message: n.message,
+      timestamp: formatTimestamp(n.createdAt),
+      read: n.status === "read",
+      href: n.actionUrl,
+    }));
+  }, [initialNotifications, recentNotifications]);
 
   // Close on outside click
   React.useEffect(() => {
@@ -74,18 +134,17 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen]);
 
-  const markAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
+  // Use API hooks - markAsRead and markAllReadAPI come from useNotificationBell
+  const handleMarkAsRead = (id: string) => {
+    markAsRead(id);
   };
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const handleMarkAllAsRead = () => {
+    markAllReadAPI();
   };
 
-  const clearNotification = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  const handleClearNotification = (id: string) => {
+    archiveNotification.mutate(id);
   };
 
   const getTypeStyles = (type: NotificationType) => {
@@ -146,10 +205,11 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
             <div className="flex items-center gap-1">
               {unreadCount > 0 && (
                 <button
-                  onClick={markAllAsRead}
-                  className="p-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={handleMarkAllAsRead}
+                  disabled={isMarkingAllAsRead}
+                  className="p-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                 >
-                  Mark all read
+                  {isMarkingAllAsRead ? "Marking..." : "Mark all read"}
                 </button>
               )}
               <button
@@ -184,7 +244,7 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
                     <Link
                       href={notification.href || "#"}
                       onClick={() => {
-                        markAsRead(notification.id);
+                        handleMarkAsRead(notification.id);
                         setIsOpen(false);
                       }}
                       className="flex items-start gap-3 px-4 py-3 hover:bg-white/5 transition-colors"
@@ -234,7 +294,7 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          clearNotification(notification.id);
+                          handleClearNotification(notification.id);
                         }}
                         className="p-1 rounded hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
                         title="Dismiss"

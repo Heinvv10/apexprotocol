@@ -1,19 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { Sparkles, Check, X, RefreshCw, Lightbulb, Zap } from "lucide-react";
+import { Sparkles, Check, X, RefreshCw, Lightbulb, Zap, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  useAISuggestions,
+  type AISuggestion as AISuggestionType,
+  type GenerateSuggestionsInput,
+} from "@/hooks/useContent";
 
-// Export interface for API integration
-export interface AISuggestion {
-  id: string;
-  type: "improvement" | "addition" | "structure" | "seo";
-  title: string;
-  preview: string;
-  fullContent: string;
-  confidence: number;
-}
+// Export interface for API integration (re-export from hook)
+export type AISuggestion = AISuggestionType;
 
 const typeConfig = {
   improvement: { icon: Lightbulb, color: "text-warning", bgColor: "bg-warning/10" },
@@ -84,35 +82,62 @@ interface AISuggestionsPanelProps {
   onRefresh?: () => Promise<AISuggestion[]>;
   data?: AISuggestion[];
   className?: string;
+  /** Input for generating suggestions (used when no data/onRefresh provided) */
+  suggestionsInput?: GenerateSuggestionsInput;
 }
 
-export function AISuggestionsPanel({ onInsertSuggestion, onRefresh, data, className }: AISuggestionsPanelProps) {
-  // TODO: Fetch suggestions from API endpoint
-  // const { data: suggestions } = useQuery(['aiSuggestions'], fetchAISuggestions);
-  const [suggestions, setSuggestions] = React.useState<AISuggestion[]>(data || []); // Empty array - no mock data
-  const [acceptedIds, setAcceptedIds] = React.useState<Set<string>>(new Set());
-  const [isGenerating, setIsGenerating] = React.useState(false);
+export function AISuggestionsPanel({
+  onInsertSuggestion,
+  onRefresh,
+  data,
+  className,
+  suggestionsInput,
+}: AISuggestionsPanelProps) {
+  // Use hook for API-driven suggestions
+  const aiSuggestions = useAISuggestions(suggestionsInput);
+
+  // Local state for callback-driven mode
+  const [localSuggestions, setLocalSuggestions] = React.useState<AISuggestion[]>(data || []);
+  const [localAcceptedIds, setLocalAcceptedIds] = React.useState<Set<string>>(new Set());
+  const [localIsGenerating, setLocalIsGenerating] = React.useState(false);
+
+  // Determine which mode we're in
+  const isCallbackMode = !!onRefresh || !!data;
+
+  // Get the effective values based on mode
+  const suggestions = isCallbackMode ? localSuggestions : aiSuggestions.suggestions;
+  const acceptedIds = isCallbackMode ? localAcceptedIds : aiSuggestions.acceptedIds;
+  const isGenerating = isCallbackMode ? localIsGenerating : aiSuggestions.isLoading;
 
   const handleAccept = (suggestion: AISuggestion) => {
-    setAcceptedIds((prev) => new Set([...prev, suggestion.id]));
+    if (isCallbackMode) {
+      setLocalAcceptedIds((prev) => new Set([...prev, suggestion.id]));
+    } else {
+      aiSuggestions.accept(suggestion.id);
+    }
     onInsertSuggestion?.(suggestion.fullContent);
   };
 
   const handleReject = (id: string) => {
-    setSuggestions((prev) => prev.filter((s) => s.id !== id));
+    if (isCallbackMode) {
+      setLocalSuggestions((prev) => prev.filter((s) => s.id !== id));
+    } else {
+      aiSuggestions.dismiss(id);
+    }
   };
 
   const handleRefresh = async () => {
-    setIsGenerating(true);
-    try {
-      // Call API to generate new suggestions
-      if (onRefresh) {
+    if (isCallbackMode && onRefresh) {
+      setLocalIsGenerating(true);
+      try {
         const newSuggestions = await onRefresh();
-        setSuggestions(newSuggestions);
-        setAcceptedIds(new Set());
+        setLocalSuggestions(newSuggestions);
+        setLocalAcceptedIds(new Set());
+      } finally {
+        setLocalIsGenerating(false);
       }
-    } finally {
-      setIsGenerating(false);
+    } else {
+      await aiSuggestions.refresh();
     }
   };
 
@@ -157,19 +182,30 @@ export function AISuggestionsPanel({ onInsertSuggestion, onRefresh, data, classN
           ))
         ) : (
           <div className="text-center py-6">
-            <Sparkles className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">
-              No suggestions available
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-3"
-              onClick={handleRefresh}
-              disabled={isGenerating}
-            >
-              Generate Suggestions
-            </Button>
+            {isGenerating ? (
+              <>
+                <Loader2 className="h-8 w-8 mx-auto text-primary animate-spin mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Generating suggestions...
+                </p>
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  No suggestions available
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={handleRefresh}
+                  disabled={isGenerating}
+                >
+                  Generate Suggestions
+                </Button>
+              </>
+            )}
           </div>
         )}
       </div>

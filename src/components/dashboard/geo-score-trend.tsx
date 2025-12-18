@@ -13,8 +13,10 @@ import {
   ReferenceArea,
   ReferenceDot,
 } from "recharts";
-import { TrendingUp, Target, Sparkles } from "lucide-react";
+import { TrendingUp, Target, Sparkles, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUnifiedScore } from "@/hooks/useDashboard";
+import { useSelectedBrand } from "@/stores";
 
 // Export interface for API integration
 export interface TrendDataPoint {
@@ -28,6 +30,7 @@ export interface TrendDataPoint {
 
 interface GeoScoreTrendProps {
   data?: TrendDataPoint[];
+  brandId?: string;
   targetScore?: number;
   showAnnotations?: boolean;
   height?: number;
@@ -97,14 +100,32 @@ function CustomTooltip({
 
 export function GeoScoreTrend({
   data,
+  brandId,
   targetScore,
   showAnnotations = true,
   height = 300,
   className,
 }: GeoScoreTrendProps) {
-  // TODO: Fetch trend data from API endpoint
-  // const { data: trendData } = useQuery(['geoScoreTrend'], fetchGeoScoreTrend);
-  const trendData = data || []; // Empty array - no mock data
+  // Get brand from store if not provided via props
+  const selectedBrand = useSelectedBrand();
+  const effectiveBrandId = brandId || selectedBrand?.id;
+
+  // Fetch unified score data when no data prop is provided
+  const { data: scoreData, isLoading } = useUnifiedScore(effectiveBrandId || "", {
+    enabled: !data && !!effectiveBrandId,
+  });
+
+  // Transform API data to TrendDataPoint format
+  const trendData = React.useMemo(() => {
+    if (data) return data;
+    if (!scoreData?.history) return [];
+
+    return scoreData.history.map((h) => ({
+      month: h.label,
+      score: h.unified,
+    }));
+  }, [data, scoreData?.history]);
+
   const hasData = trendData.length > 0;
 
   // Calculate improvement stats
@@ -125,6 +146,31 @@ export function GeoScoreTrend({
   };
 
   const lineColor = getScoreColor(stats.currentScore);
+
+  // Loading state
+  if (isLoading && !data) {
+    return (
+      <div className={cn("card-secondary", className)}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              GEO Score Trend
+            </h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              3-month score progression
+            </p>
+          </div>
+        </div>
+        <div style={{ height }} className="w-full flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 mx-auto text-primary animate-spin mb-3" />
+            <p className="text-sm text-muted-foreground">Loading trend data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Empty state
   if (!hasData) {

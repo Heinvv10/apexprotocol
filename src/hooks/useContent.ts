@@ -3,6 +3,7 @@
  * Wire Content List to Content CRUD API
  */
 
+import * as React from "react";
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { queryKeys, invalidateQueries } from "@/lib/query/client";
 import { useOrganizationId } from "@/stores/auth";
@@ -477,6 +478,91 @@ export function useAnalyzeContentSEO() {
       return response.json();
     },
   });
+}
+
+// =============================================================================
+// AI Suggestions Hooks
+// =============================================================================
+
+export interface AISuggestion {
+  id: string;
+  type: "improvement" | "addition" | "structure" | "seo";
+  title: string;
+  preview: string;
+  fullContent: string;
+  confidence: number;
+}
+
+export interface GenerateSuggestionsInput {
+  contentId?: string;
+  content?: string;
+  type?: ContentType;
+  brandId?: string;
+  context?: string;
+}
+
+async function generateSuggestions(input: GenerateSuggestionsInput): Promise<AISuggestion[]> {
+  const response = await fetch("/api/content/suggestions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    // Return empty array on error instead of throwing
+    return [];
+  }
+  const data = await response.json();
+  return data.suggestions || [];
+}
+
+/**
+ * Hook to generate AI suggestions for content
+ */
+export function useGenerateSuggestions() {
+  return useMutation({
+    mutationFn: generateSuggestions,
+  });
+}
+
+/**
+ * Hook to manage AI suggestions state with refresh capability
+ */
+export function useAISuggestions(initialInput?: GenerateSuggestionsInput) {
+  const generateMutation = useGenerateSuggestions();
+  const [suggestions, setSuggestions] = React.useState<AISuggestion[]>([]);
+  const [acceptedIds, setAcceptedIds] = React.useState<Set<string>>(new Set());
+
+  const refresh = React.useCallback(async (input?: GenerateSuggestionsInput) => {
+    const result = await generateMutation.mutateAsync(input || initialInput || {});
+    setSuggestions(result);
+    setAcceptedIds(new Set());
+    return result;
+  }, [generateMutation, initialInput]);
+
+  const accept = React.useCallback((id: string) => {
+    setAcceptedIds((prev) => new Set([...prev, id]));
+  }, []);
+
+  const dismiss = React.useCallback((id: string) => {
+    setSuggestions((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
+  const clear = React.useCallback(() => {
+    setSuggestions([]);
+    setAcceptedIds(new Set());
+  }, []);
+
+  return {
+    suggestions,
+    acceptedIds,
+    isLoading: generateMutation.isPending,
+    error: generateMutation.error,
+    refresh,
+    accept,
+    dismiss,
+    clear,
+    pendingCount: suggestions.filter((s) => !acceptedIds.has(s.id)).length,
+  };
 }
 
 // =============================================================================

@@ -340,3 +340,40 @@ export function useAchievements() {
     staleTime: 1000 * 60 * 5,
   });
 }
+
+// =============================================================================
+// Sidebar Badge Hooks
+// =============================================================================
+
+export interface SidebarBadges {
+  monitor: number;      // New mentions count
+  feedback: number;     // Negative mentions/hallucinations count
+  recommendations: number; // Pending recommendations count
+}
+
+/**
+ * Hook to fetch sidebar badge counts from dashboard metrics
+ * Returns counts for Monitor, Feedback, and Recommendations nav items
+ */
+export function useSidebarBadges(brandId?: string) {
+  const { data: metrics, isLoading } = useDashboardMetrics(brandId);
+
+  const badges: SidebarBadges = {
+    // New mentions (assuming new = positive + neutral + negative recent mentions)
+    monitor: metrics?.mentions?.total ?? 0,
+    // Negative mentions or hallucinations needing attention
+    feedback: metrics?.mentions?.negative ?? 0,
+    // Pending recommendations
+    recommendations: metrics?.recommendations?.pending ?? 0,
+  };
+
+  return {
+    badges,
+    isLoading,
+    // Format badge for display (show nothing if 0, "9+" if > 9)
+    formatBadge: (count: number) => {
+      if (count === 0) return undefined;
+      return count > 9 ? "9+" : String(count);
+    },
+  };
+}

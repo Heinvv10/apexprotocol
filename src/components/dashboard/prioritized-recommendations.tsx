@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { ChevronRight, Zap, Clock, AlertTriangle, CheckCircle2, Lightbulb } from "lucide-react";
+import { ChevronRight, Zap, Clock, AlertTriangle, CheckCircle2, Lightbulb, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useRecommendations } from "@/hooks/useRecommendations";
+import { useSelectedBrand } from "@/stores";
 
 // Export interface for API integration
 export interface Recommendation {
@@ -18,6 +20,8 @@ export interface Recommendation {
 
 interface PrioritizedRecommendationsProps {
   recommendations?: Recommendation[];
+  brandId?: string;
+  limit?: number;
   className?: string;
   onViewAll?: () => void;
 }
@@ -51,15 +55,67 @@ const effortLabels = {
   long: "Long Term",
 };
 
+// Map API effort to component effort
+const effortMap: Record<string, "quick" | "medium" | "long"> = {
+  low: "quick",
+  medium: "medium",
+  high: "long",
+};
+
 export function PrioritizedRecommendations({
   recommendations,
+  brandId,
+  limit = 4,
   className,
   onViewAll,
 }: PrioritizedRecommendationsProps) {
-  // TODO: Fetch recommendations from API endpoint
-  // const { data: recommendations } = useQuery(['prioritizedRecommendations'], fetchPrioritizedRecommendations);
-  const items = recommendations || []; // Empty array - no mock data
+  // Get brand from store if not provided via props
+  const selectedBrand = useSelectedBrand();
+  const effectiveBrandId = brandId || selectedBrand?.id;
+
+  // Fetch recommendations from API when no data prop is provided
+  const { data: recData, isLoading } = useRecommendations(
+    { brandId: effectiveBrandId, limit: limit + 2, status: "pending" as const },
+    { enabled: !recommendations && !!effectiveBrandId }
+  );
+
+  // Transform API data to component format
+  const items: Recommendation[] = React.useMemo(() => {
+    if (recommendations) return recommendations;
+    if (!recData?.recommendations) return [];
+
+    return recData.recommendations.map((rec) => ({
+      id: rec.id,
+      title: rec.title,
+      description: rec.description,
+      priority: rec.priority,
+      impact: rec.impact * 10, // Convert 1-10 to percentage
+      effort: effortMap[rec.effort] || "medium",
+      category: rec.category,
+      status: rec.status === "dismissed" ? "pending" : rec.status,
+    }));
+  }, [recommendations, recData?.recommendations]);
+
   const hasData = items.length > 0;
+
+  // Loading state
+  if (isLoading && !recommendations) {
+    return (
+      <div className={cn("card-secondary", className)}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-medium text-muted-foreground">
+            Prioritized Recommendations
+          </h3>
+        </div>
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <Loader2 className="h-6 w-6 mx-auto text-primary animate-spin mb-2" />
+            <p className="text-xs text-muted-foreground">Loading recommendations...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Empty state
   if (!hasData) {

@@ -14,8 +14,50 @@ import {
   Zap,
   ArrowRight,
   X,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  useOnboardingStatus,
+  useUpdateOnboardingStatus,
+  useDismissOnboarding,
+} from "@/hooks/useOnboarding";
+
+// Default checklist item definitions
+const defaultChecklistItems: Omit<ChecklistItem, "completed">[] = [
+  {
+    id: "brandAdded",
+    title: "Add your first brand",
+    description: "Set up a brand to start monitoring AI visibility",
+    href: "/dashboard/brands/new",
+    icon: Building2,
+    timeEstimate: "2 min",
+  },
+  {
+    id: "monitoringConfigured",
+    title: "Configure monitoring",
+    description: "Set up AI platform monitoring for your brand",
+    href: "/dashboard/monitor/configure",
+    icon: Globe,
+    timeEstimate: "3 min",
+  },
+  {
+    id: "auditRun",
+    title: "Run your first audit",
+    description: "Analyze your site for AI visibility optimization",
+    href: "/dashboard/audit",
+    icon: FileText,
+    timeEstimate: "5 min",
+  },
+  {
+    id: "recommendationsReviewed",
+    title: "Review recommendations",
+    description: "See personalized recommendations to improve your GEO score",
+    href: "/dashboard/recommendations",
+    icon: Zap,
+    timeEstimate: "3 min",
+  },
+];
 
 // Export interface for API integration
 export interface ChecklistItem {
@@ -41,30 +83,59 @@ export function OnboardingChecklist({
   showDismiss = true,
   checklistItems,
 }: OnboardingChecklistProps) {
-  // TODO: Fetch checklist items from API endpoint
-  // const { data: checklistData } = useQuery(['onboardingChecklist'], fetchOnboardingChecklist);
-  const [items, setItems] = React.useState<ChecklistItem[]>(checklistItems || []); // Empty array - no mock data
   const [isExpanded, setIsExpanded] = React.useState(true);
-  const [isDismissed, setIsDismissed] = React.useState(false);
+
+  // Fetch onboarding status from API
+  const { data: statusData, isLoading } = useOnboardingStatus();
+  const updateStatus = useUpdateOnboardingStatus();
+  const { dismissOnboarding, isPending: isDismissing } = useDismissOnboarding();
+
+  // Transform API status to checklist items
+  const items: ChecklistItem[] = React.useMemo(() => {
+    if (checklistItems) return checklistItems;
+    if (!statusData?.status) return [];
+
+    const status = statusData.status;
+    return defaultChecklistItems.map((item) => ({
+      ...item,
+      completed: status[item.id as keyof typeof status] as boolean ?? false,
+    }));
+  }, [checklistItems, statusData?.status]);
 
   const completedCount = items.filter((item) => item.completed).length;
-  const progress = (completedCount / items.length) * 100;
-  const isComplete = completedCount === items.length;
+  const progress = items.length > 0 ? (completedCount / items.length) * 100 : 0;
+  const isComplete = items.length > 0 && completedCount === items.length;
 
   const handleComplete = (itemId: string) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, completed: !item.completed } : item
-      )
-    );
+    // Toggle the status via API
+    const currentStatus = statusData?.status?.[itemId as keyof typeof statusData.status];
+    updateStatus.mutate({ [itemId]: !currentStatus });
   };
 
   const handleDismiss = () => {
-    setIsDismissed(true);
+    dismissOnboarding();
     onDismiss?.();
   };
 
-  if (isDismissed) {
+  // Don't show if dismissed
+  if (statusData?.status?.dismissedAt) {
+    return null;
+  }
+
+  // Loading state
+  if (isLoading && !checklistItems) {
+    return (
+      <div className={cn("card-secondary overflow-hidden", className)}>
+        <div className="p-4 flex items-center justify-center">
+          <Loader2 className="w-5 h-5 animate-spin text-primary" />
+          <span className="ml-2 text-sm text-muted-foreground">Loading checklist...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't show if no items
+  if (items.length === 0) {
     return null;
   }
 
@@ -226,9 +297,29 @@ export function OnboardingChecklistCompact({
   className,
   checklistItems,
 }: OnboardingChecklistCompactProps) {
-  // TODO: Fetch checklist items from API endpoint
-  // const { data: checklistData } = useQuery(['onboardingChecklist'], fetchOnboardingChecklist);
-  const items = checklistItems || []; // Empty array - no mock data
+  // Fetch onboarding status from API
+  const { data: statusData, isLoading } = useOnboardingStatus();
+
+  // Transform API status to checklist items
+  const items: ChecklistItem[] = React.useMemo(() => {
+    if (checklistItems) return checklistItems;
+    if (!statusData?.status) return [];
+
+    const status = statusData.status;
+    return defaultChecklistItems.map((item) => ({
+      ...item,
+      completed: status[item.id as keyof typeof status] as boolean ?? false,
+    }));
+  }, [checklistItems, statusData?.status]);
+
+  // Don't show if loading or dismissed
+  if (isLoading && !checklistItems) {
+    return null;
+  }
+
+  if (statusData?.status?.dismissedAt) {
+    return null;
+  }
 
   if (items.length === 0) {
     return null;
