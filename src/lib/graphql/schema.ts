@@ -925,7 +925,7 @@ const resolvers = {
         usage: null,
         features: [],
         limits: {
-          brands: org.plan === "enterprise" ? 999 : org.plan === "pro" ? 10 : org.plan === "starter" ? 3 : 1,
+          brands: org.plan === "enterprise" ? 999 : org.plan === "professional" ? 10 : org.plan === "starter" ? 3 : 1,
           platforms: 7,
           mentionsPerMonth: 10000,
           auditsPerMonth: 50,
@@ -983,15 +983,14 @@ const resolvers = {
       },
     ],
 
-    // Integration resolvers - SELECT * FROM integrations WHERE org_id = $1
+    // Integration resolvers - SELECT * FROM integrations (system-wide config)
     integrations: async (_: unknown, __: unknown, context: GraphQLContext) => {
-      const user = context.requireAuth();
-      const orgId = user.orgId || user.userId;
-      const results = await db.select().from(schema.apiIntegrations).where(eq(schema.apiIntegrations.organizationId, orgId));
+      context.requireAuth();
+      const results = await db.select().from(schema.apiIntegrations);
       return results.map(int => ({
         ...int,
         type: int.category,
-        isConnected: int.status === "active",
+        isConnected: int.status === "configured",
       }));
     },
 
@@ -1004,7 +1003,7 @@ const resolvers = {
       return {
         ...int,
         type: int.category,
-        isConnected: int.status === "active",
+        isConnected: int.status === "configured",
       };
     },
 
@@ -1101,7 +1100,7 @@ const resolvers = {
       const orgId = user.orgId || user.userId;
 
       // Try to get user from database
-      const userResult = await db.select().from(schema.users).where(eq(schema.users.clerkId, user.userId)).limit(1);
+      const userResult = await db.select().from(schema.users).where(eq(schema.users.clerkUserId, user.userId)).limit(1);
 
       if (userResult[0]) {
         return {
@@ -1426,7 +1425,7 @@ const resolvers = {
       const orgId = user.orgId || user.userId;
 
       // Update organization plan
-      await db.update(schema.organizations).set({ plan: planId as "free" | "starter" | "pro" | "enterprise" }).where(eq(schema.organizations.id, orgId));
+      await db.update(schema.organizations).set({ plan: planId as "starter" | "professional" | "enterprise" }).where(eq(schema.organizations.id, orgId));
 
       // Return updated subscription info
       const result = await db.select().from(schema.organizations).where(eq(schema.organizations.id, orgId)).limit(1);
@@ -1452,7 +1451,7 @@ const resolvers = {
       const orgId = user.orgId || user.userId;
 
       if (immediately) {
-        await db.update(schema.organizations).set({ plan: "free" }).where(eq(schema.organizations.id, orgId));
+        await db.update(schema.organizations).set({ plan: "starter" }).where(eq(schema.organizations.id, orgId));
       }
 
       const result = await db.select().from(schema.organizations).where(eq(schema.organizations.id, orgId)).limit(1);
@@ -1461,7 +1460,7 @@ const resolvers = {
       return {
         id: org?.id || orgId,
         organizationId: orgId,
-        tier: immediately ? "free" : (org?.plan || "free"),
+        tier: immediately ? "starter" : (org?.plan || "starter"),
         status: "active",
         billingCycle: "monthly",
         currentPeriodStart: new Date().toISOString(),
@@ -1475,15 +1474,14 @@ const resolvers = {
 
     // Integration mutations
     connectIntegration: async (_: unknown, { type, config }: { type: string; config: Record<string, unknown> }, context: GraphQLContext) => {
-      const user = context.requireAuth();
-      const orgId = user.orgId || user.userId;
+      context.requireAuth();
 
       const [integration] = await db.insert(schema.apiIntegrations).values({
-        organizationId: orgId,
-        name: type,
-        category: type as "communication" | "analytics" | "project_management" | "social_media" | "seo_tools" | "custom",
-        status: "active",
-        config: config,
+        serviceName: type,
+        provider: type,
+        category: "ai_models" as "ai_models" | "search_apis" | "analytics",
+        status: "configured",
+        config: config as { apiKey?: string; endpoint?: string; model?: string; maxTokens?: number; [key: string]: unknown },
       }).returning();
 
       return {
@@ -1504,13 +1502,13 @@ const resolvers = {
       const result = await db.select().from(schema.apiIntegrations).where(eq(schema.apiIntegrations.id, id)).limit(1);
       if (!result[0]) throw new Error("Integration not found");
 
-      // Update last synced timestamp
-      const [integration] = await db.update(schema.apiIntegrations).set({ lastSyncedAt: new Date() }).where(eq(schema.apiIntegrations.id, id)).returning();
+      // Update last verified timestamp
+      const [integration] = await db.update(schema.apiIntegrations).set({ lastVerified: new Date() }).where(eq(schema.apiIntegrations.id, id)).returning();
 
       return {
         ...integration,
         type: integration.category,
-        isConnected: integration.status === "active",
+        isConnected: integration.status === "configured",
       };
     },
   },
@@ -1528,7 +1526,7 @@ const resolvers = {
 
       const mentions = await db.select().from(schema.brandMentions)
         .where(whereClause)
-        .orderBy(desc(schema.brandMentions.detectedAt))
+        .orderBy(desc(schema.brandMentions.timestamp))
         .limit(limit + 1);
 
       const hasNextPage = mentions.length > limit;
@@ -1536,8 +1534,8 @@ const resolvers = {
         cursor: Buffer.from(m.id).toString("base64"),
         node: {
           ...m,
-          mentionDate: m.detectedAt?.toISOString() || new Date().toISOString(),
-          url: m.sourceUrl || "",
+          mentionDate: m.timestamp?.toISOString() || new Date().toISOString(),
+          url: m.citationUrl || "",
           context: m.response || "",
           position: m.position || 0,
         },
