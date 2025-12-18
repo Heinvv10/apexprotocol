@@ -20,10 +20,13 @@ import {
   Settings,
   ArrowRight,
   ClipboardList,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GeoScoreGauge } from "@/components/dashboard/geo-score-gauge";
 import { cn } from "@/lib/utils";
+import { useAuditsByBrand, useAuditIssues, Audit, AuditIssue } from "@/hooks/useAudit";
+import { useSelectedBrand } from "@/stores";
 
 // Audit result data interfaces
 export interface SubScore {
@@ -53,6 +56,76 @@ export interface AuditResult {
     high: Issue[];
     medium: Issue[];
     low: Issue[];
+  };
+}
+
+// Loading state component
+function ResultsLoadingState() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center space-y-4">
+        <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
+        <p className="text-muted-foreground">Loading audit results...</p>
+      </div>
+    </div>
+  );
+}
+
+// Transform API audit to UI format
+function transformAuditToResult(audit: Audit, issues: AuditIssue[]): AuditResult {
+  // Group issues by severity
+  const groupedIssues = {
+    critical: [] as Issue[],
+    high: [] as Issue[],
+    medium: [] as Issue[],
+    low: [] as Issue[],
+  };
+
+  issues.forEach((issue) => {
+    const transformedIssue: Issue = {
+      id: issue.id,
+      title: issue.title,
+      description: issue.description,
+      affectedPages: issue.url ? [issue.url] : [],
+    };
+
+    if (issue.severity === "critical") {
+      groupedIssues.critical.push(transformedIssue);
+    } else if (issue.severity === "high") {
+      groupedIssues.high.push(transformedIssue);
+    } else if (issue.severity === "medium") {
+      groupedIssues.medium.push(transformedIssue);
+    } else {
+      groupedIssues.low.push(transformedIssue);
+    }
+  });
+
+  return {
+    url: audit.url,
+    auditDate: new Date(audit.startedAt).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    }),
+    overallScore: audit.overallScore ?? 0,
+    subScores: {
+      schemaQuality: {
+        score: audit.technicalScore ?? Math.round((audit.overallScore ?? 0) * 0.33),
+        max: 100,
+        label: "Schema Quality",
+      },
+      contentCompleteness: {
+        score: audit.contentScore ?? Math.round((audit.overallScore ?? 0) * 0.33),
+        max: 100,
+        label: "Content Completeness",
+      },
+      aiVisibility: {
+        score: audit.aiReadinessScore ?? Math.round((audit.overallScore ?? 0) * 0.34),
+        max: 100,
+        label: "AI Visibility",
+      },
+    },
+    issues: groupedIssues,
   };
 }
 
@@ -235,11 +308,30 @@ function SubScoreCard({
 
 export default function AuditResultsPage() {
   const [expandedSections, setExpandedSections] = React.useState<IssueSeverity[]>(["critical", "high"]);
+  const selectedBrand = useSelectedBrand();
 
-  // TODO: Fetch audit result from API endpoint
-  // const { data: auditResult } = useQuery(['auditResult'], fetchAuditResult);
-  const [auditResult] = React.useState<AuditResult | null>(null); // No initial data - loaded from API
+  // Fetch audits for the brand - get the most recent completed audit
+  const { data: auditsData, isLoading: isLoadingAudits } = useAuditsByBrand(
+    selectedBrand?.id || "",
+    { limit: 1, status: "completed" }
+  );
 
+  // Get the most recent audit
+  const latestAudit = auditsData?.audits?.[0];
+
+  // Fetch issues for the latest audit
+  const { data: issuesData, isLoading: isLoadingIssues } = useAuditIssues(
+    latestAudit?.id || "",
+    { enabled: !!latestAudit?.id }
+  );
+
+  // Transform to UI format
+  const auditResult = React.useMemo<AuditResult | null>(() => {
+    if (!latestAudit) return null;
+    return transformAuditToResult(latestAudit, issuesData || []);
+  }, [latestAudit, issuesData]);
+
+  const isLoading = isLoadingAudits || (latestAudit && isLoadingIssues);
   const hasData = auditResult !== null;
 
   const toggleSection = (severity: IssueSeverity) => {
@@ -251,6 +343,32 @@ export default function AuditResultsPage() {
   };
 
   const severityOrder: IssueSeverity[] = ["critical", "high", "medium", "low"];
+
+  // Show loading state while fetching
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/audit">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+            </Link>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Audit Results</h2>
+              <p className="text-muted-foreground text-sm">
+                View detailed analysis and recommendations for your site
+              </p>
+            </div>
+          </div>
+        </div>
+        <ResultsLoadingState />
+      </div>
+    );
+  }
 
   // Show empty state if no data
   if (!hasData) {

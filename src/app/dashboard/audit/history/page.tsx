@@ -13,6 +13,7 @@ import {
   Settings,
   ArrowRight,
   BarChart3,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +29,20 @@ import {
   AreaChart,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { useAuditsByBrand, Audit } from "@/hooks/useAudit";
+import { useSelectedBrand } from "@/stores";
+
+// Loading state component
+function HistoryLoadingState() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center space-y-4">
+        <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
+        <p className="text-muted-foreground">Loading audit history...</p>
+      </div>
+    </div>
+  );
+}
 
 // Audit data interfaces
 export interface HistoricalDataPoint {
@@ -115,11 +130,72 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   return null;
 }
 
+// Transform audit data to chart-friendly format
+function transformToHistoricalData(audits: Audit[]): HistoricalDataPoint[] {
+  // Sort by date (oldest first for chart display)
+  const sortedAudits = [...audits]
+    .filter((a) => a.status === "completed" && a.overallScore !== undefined)
+    .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
+
+  return sortedAudits.map((audit) => ({
+    date: new Date(audit.startedAt).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }),
+    overallScore: audit.overallScore ?? 0,
+    // Map audit sub-scores to chart categories
+    schemaQuality: audit.technicalScore ?? audit.overallScore ?? 0,
+    contentCompleteness: audit.contentScore ?? audit.overallScore ?? 0,
+    aiVisibility: audit.aiReadinessScore ?? audit.overallScore ?? 0,
+  }));
+}
+
+// Transform audit data to history list format
+function transformToAuditHistory(audits: Audit[]): AuditHistoryItem[] {
+  // Sort by date (newest first for list display)
+  const sortedAudits = [...audits]
+    .filter((a) => a.status === "completed" && a.overallScore !== undefined)
+    .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+
+  return sortedAudits.map((audit, index) => {
+    const currentScore = audit.overallScore ?? 0;
+    const previousAudit = sortedAudits[index + 1];
+    const previousScore = previousAudit?.overallScore ?? 0;
+    const change = index === sortedAudits.length - 1 ? 0 : currentScore - previousScore;
+
+    return {
+      id: audit.id,
+      date: new Date(audit.startedAt).toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      }),
+      score: currentScore,
+      change,
+    };
+  });
+}
+
 export default function AuditHistoryPage() {
-  // TODO: Fetch history from API endpoint
-  // const { data: historyData } = useQuery(['auditHistory'], fetchAuditHistory);
-  const [historicalData] = React.useState<HistoricalDataPoint[]>([]); // Empty array - no mock data
-  const [auditHistory] = React.useState<AuditHistoryItem[]>([]); // Empty array - no mock data
+  const selectedBrand = useSelectedBrand();
+
+  // Fetch audits from API
+  const { data: auditsData, isLoading } = useAuditsByBrand(selectedBrand?.id || "", {
+    limit: 100,
+    status: "completed",
+  });
+
+  // Transform API data to UI formats
+  const historicalData = React.useMemo(() => {
+    if (!auditsData?.audits) return [];
+    return transformToHistoricalData(auditsData.audits);
+  }, [auditsData]);
+
+  const auditHistory = React.useMemo(() => {
+    if (!auditsData?.audits) return [];
+    return transformToAuditHistory(auditsData.audits);
+  }, [auditsData]);
 
   const hasData = historicalData.length > 0;
 
@@ -128,6 +204,32 @@ export default function AuditHistoryPage() {
   const previousScore = historicalData.length >= 2 ? historicalData[historicalData.length - 2].overallScore : 0;
   const firstScore = hasData ? historicalData[0].overallScore : 0;
   const totalChange = currentScore - firstScore;
+
+  // Show loading state while fetching
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/audit">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+            </Link>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Score History</h2>
+              <p className="text-muted-foreground text-sm">
+                Track your site&apos;s GEO score improvements over time
+              </p>
+            </div>
+          </div>
+        </div>
+        <HistoryLoadingState />
+      </div>
+    );
+  }
 
   // Show empty state if no data
   if (!hasData) {
