@@ -387,8 +387,6 @@ export async function enrichPersonSocialProfiles(
           url: person.twitterUrl,
           handle: extractHandleFromUrl(person.twitterUrl, "twitter") || undefined,
           followers: metrics.followers,
-          following: metrics.following,
-          posts: metrics.posts,
           lastUpdated: now,
         };
         result.twitterFollowers = metrics.followers;
@@ -407,8 +405,6 @@ export async function enrichPersonSocialProfiles(
         result.updatedProfiles.instagram = {
           ...result.updatedProfiles.instagram,
           followers: metrics.followers,
-          following: metrics.following,
-          posts: metrics.posts,
           lastUpdated: now,
         };
         result.totalFollowers += metrics.followers;
