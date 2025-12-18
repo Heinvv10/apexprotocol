@@ -459,6 +459,20 @@ export async function sanitizeRequestBody<T>(
   }
 }
 
+// Re-export encryption utilities
+export {
+  encrypt,
+  decrypt,
+  hash,
+  verifyHash,
+  generateEncryptionKey,
+  maskApiKey,
+  encryptConfigApiKey,
+  decryptConfigApiKey,
+  maskConfigApiKey,
+  encryption,
+} from "./encryption";
+
 // Export all security utilities
 export const security = {
   headers: {

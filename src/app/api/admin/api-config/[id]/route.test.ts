@@ -128,7 +128,8 @@ describe("GET /api/admin/api-config/:id - Integration Details (FR-5)", () => {
     const data = await response.json();
 
     const apiKey = data.integration.config.apiKey;
-    expect(apiKey).toMatch(/\*\*\*\*/); // Should contain masked characters
+    // New mask format: shows first 4 and last 4 chars with ... in between, e.g., "sk-a...1234"
+    expect(apiKey).toMatch(/^.{4}\.\.\..{4}$/); // Should match pattern: xxxx...yyyy
   });
 
   it("should include usage statistics (AC-5.3)", async () => {

@@ -13,14 +13,7 @@ import { apiIntegrations } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
 import { createAuditLog } from "@/lib/audit-logger";
-
-// Helper function to mask API key (show only last 4 characters)
-function maskApiKey(apiKey: string): string {
-  if (!apiKey || apiKey.length < 4) {
-    return "****";
-  }
-  return "****-****-" + apiKey.slice(-4);
-}
+import { encryptConfigApiKey, maskConfigApiKey } from "@/lib/security";
 
 export async function GET(
   request: NextRequest,
@@ -90,12 +83,7 @@ export async function GET(
     // AC-5.2: Mask API key except last 4 characters
     const maskedIntegration = {
       ...integration,
-      config: {
-        ...integration.config,
-        apiKey: integration.config.apiKey
-          ? maskApiKey(integration.config.apiKey)
-          : undefined,
-      },
+      config: integration.config ? maskConfigApiKey(integration.config) : null,
     };
 
     // Create success audit log
@@ -227,10 +215,10 @@ export async function PATCH(
       updatedBy: currentUserId,
     };
 
-    // FR-2: Update configuration
+    // FR-2: Update configuration with encrypted API key
     if (config) {
-      updateData.config = config;
-      // TODO: Encrypt API key before storage in production
+      // Encrypt API key before storage
+      updateData.config = config.apiKey ? encryptConfigApiKey(config) : config;
     }
 
     // FR-4: Enable/Disable integration
@@ -260,7 +248,7 @@ export async function PATCH(
       );
     }
 
-    // Create success audit log
+    // Create success audit log (mask API keys in audit log)
     await createAuditLog(
       {
         actorId,
@@ -276,12 +264,12 @@ export async function PATCH(
           before: {
             status: targetIntegration.status,
             isEnabled: targetIntegration.isEnabled,
-            config: targetIntegration.config,
+            config: targetIntegration.config ? maskConfigApiKey(targetIntegration.config) : null,
           },
           after: {
             status: updated.status,
             isEnabled: updated.isEnabled,
-            config: updated.config,
+            config: updated.config ? maskConfigApiKey(updated.config) : null,
           },
         },
         status: "success",
@@ -289,9 +277,13 @@ export async function PATCH(
       request
     );
 
+    // Return with masked API key
     return NextResponse.json({
       success: true,
-      integration: updated,
+      integration: {
+        ...updated,
+        config: updated.config ? maskConfigApiKey(updated.config) : null,
+      },
     });
   } catch (error) {
     console.error("Admin api-config PATCH error:", error);

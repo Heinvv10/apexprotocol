@@ -12,6 +12,7 @@ import { apiIntegrations } from "@/lib/db/schema";
 import { eq, ilike, or, desc, and } from "drizzle-orm";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
 import { createAuditLog } from "@/lib/audit-logger";
+import { encryptConfigApiKey, maskConfigApiKey } from "@/lib/security";
 
 export async function GET(request: NextRequest) {
   // Declare actor variables at function scope for audit logging
@@ -129,9 +130,15 @@ export async function GET(request: NextRequest) {
       request
     );
 
+    // Mask API keys in integrations before returning
+    const maskedIntegrations = integrationsList.map((integration) => ({
+      ...integration,
+      config: integration.config ? maskConfigApiKey(integration.config) : null,
+    }));
+
     return NextResponse.json({
       success: true,
-      integrations: integrationsList,
+      integrations: maskedIntegrations,
       categories,
     });
   } catch (error) {
@@ -253,7 +260,9 @@ export async function POST(request: NextRequest) {
     }
 
     // FR-2: Create new integration
-    // AC-2.7: API keys should be encrypted (TODO: implement encryption in production)
+    // AC-2.7: API keys are encrypted before storage
+    const encryptedConfig = encryptConfigApiKey(config);
+
     const [newIntegration] = await db
       .insert(apiIntegrations)
       .values({
@@ -263,7 +272,7 @@ export async function POST(request: NextRequest) {
         description: description || null,
         status: "configured", // Set status to configured when API key is provided
         isEnabled: true,
-        config,
+        config: encryptedConfig,
         createdBy: currentUserId,
         updatedBy: currentUserId,
       })
@@ -295,9 +304,13 @@ export async function POST(request: NextRequest) {
       request
     );
 
+    // Return with masked API key
     return NextResponse.json({
       success: true,
-      integration: newIntegration,
+      integration: {
+        ...newIntegration,
+        config: newIntegration.config ? maskConfigApiKey(newIntegration.config) : null,
+      },
     });
   } catch (error) {
     console.error("Admin api-config POST error:", error);
