@@ -13,8 +13,9 @@ import { isSuperAdmin } from "@/lib/auth/super-admin";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     // In dev mode, allow access if DEV_SUPER_ADMIN is set
     const devSuperAdmin = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
@@ -61,7 +62,7 @@ export async function POST(
     const [integration] = await db
       .select()
       .from(apiIntegrations)
-      .where(eq(apiIntegrations.id, params.id))
+      .where(eq(apiIntegrations.id, id))
       .limit(1);
 
     if (!integration) {

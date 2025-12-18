@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Check super-admin authorization
-      const isAdmin = await isSuperAdmin(session.userId);
+      const isAdmin = await isSuperAdmin();
       if (!isAdmin) {
         return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
       }

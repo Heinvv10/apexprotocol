@@ -24,8 +24,9 @@ function maskApiKey(apiKey: string): string {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   // Declare actor variables at function scope for audit logging
   let actorId: string | null = null;
   let actorName: string | null = null;
@@ -76,7 +77,7 @@ export async function GET(
     const [integration] = await db
       .select()
       .from(apiIntegrations)
-      .where(eq(apiIntegrations.id, params.id))
+      .where(eq(apiIntegrations.id, id))
       .limit(1);
 
     if (!integration) {
@@ -107,7 +108,7 @@ export async function GET(
         actionType: "access",
         description: `Super-admin viewed API integration ${integration.serviceName}`,
         targetType: "api_integration",
-        targetId: params.id,
+        targetId: id,
         targetName: integration.serviceName,
         status: "success",
       },
@@ -131,7 +132,7 @@ export async function GET(
         actionType: "access",
         description: "Failed to view API integration",
         targetType: "api_integration",
-        targetId: params.id,
+        targetId: id,
         status: "failure",
         errorMessage: error instanceof Error ? error.message : "Unknown error",
         errorStack: error instanceof Error ? error.stack : null,
@@ -151,8 +152,9 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   // Declare actor variables at function scope for audit logging
   let actorId: string | null = null;
   let actorName: string | null = null;
@@ -209,7 +211,7 @@ export async function PATCH(
     const [targetIntegration] = await db
       .select()
       .from(apiIntegrations)
-      .where(eq(apiIntegrations.id, params.id))
+      .where(eq(apiIntegrations.id, id))
       .limit(1);
 
     if (!targetIntegration) {
@@ -248,7 +250,7 @@ export async function PATCH(
     const [updated] = await db
       .update(apiIntegrations)
       .set(updateData)
-      .where(eq(apiIntegrations.id, params.id))
+      .where(eq(apiIntegrations.id, id))
       .returning();
 
     if (!updated) {
@@ -268,7 +270,7 @@ export async function PATCH(
         actionType: "update",
         description: `Super-admin updated API integration ${targetIntegration.serviceName}`,
         targetType: "api_integration",
-        targetId: params.id,
+        targetId: id,
         targetName: targetIntegration.serviceName,
         changes: {
           before: {
@@ -304,7 +306,7 @@ export async function PATCH(
         actionType: "update",
         description: "Failed to update API integration",
         targetType: "api_integration",
-        targetId: params.id,
+        targetId: id,
         status: "failure",
         errorMessage: error instanceof Error ? error.message : "Unknown error",
         errorStack: error instanceof Error ? error.stack : null,
@@ -324,8 +326,9 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   // Declare actor variables at function scope for audit logging
   let actorId: string | null = null;
   let actorName: string | null = null;
@@ -375,7 +378,7 @@ export async function DELETE(
     // FR-6: Delete integration
     const [deleted] = await db
       .delete(apiIntegrations)
-      .where(eq(apiIntegrations.id, params.id))
+      .where(eq(apiIntegrations.id, id))
       .returning();
 
     if (!deleted) {
@@ -395,7 +398,7 @@ export async function DELETE(
         actionType: "delete",
         description: `Super-admin deleted API integration ${deleted.serviceName}`,
         targetType: "api_integration",
-        targetId: params.id,
+        targetId: id,
         targetName: deleted.serviceName,
         changes: {
           before: {
@@ -428,7 +431,7 @@ export async function DELETE(
         actionType: "delete",
         description: "Failed to delete API integration",
         targetType: "api_integration",
-        targetId: params.id,
+        targetId: id,
         status: "failure",
         errorMessage: error instanceof Error ? error.message : "Unknown error",
         errorStack: error instanceof Error ? error.stack : null,

@@ -234,7 +234,7 @@ export default function AdminUsersPage() {
                       <div className="flex items-center gap-2">
                         <div className="font-semibold text-white">{user.name}</div>
                         {user.isSuperAdmin && (
-                          <Shield className="w-4 h-4 text-red-400" title="Super Admin" />
+                          <span title="Super Admin"><Shield className="w-4 h-4 text-red-400" aria-label="Super Admin" /></span>
                         )}
                       </div>
                     </td>
@@ -391,7 +391,7 @@ export default function AdminUsersPage() {
               <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                 {selectedUser.name}
                 {selectedUser.isSuperAdmin && (
-                  <Shield className="w-6 h-6 text-red-400" title="Super Admin" />
+                  <span title="Super Admin"><Shield className="w-6 h-6 text-red-400" aria-label="Super Admin" /></span>
                 )}
               </h2>
               <button

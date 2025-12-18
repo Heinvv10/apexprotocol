@@ -26,8 +26,9 @@ import { eq, and, or, desc } from "drizzle-orm";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: logId } = await params;
   try {
     // Check authentication
     const session = await auth();
@@ -41,13 +42,11 @@ export async function GET(
       }
 
       // Check super-admin authorization
-      const isAdmin = await isSuperAdmin(session.userId);
+      const isAdmin = await isSuperAdmin();
       if (!isAdmin) {
         return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
       }
     }
-
-    const logId = params.id;
 
     // Get the log entry
     const logs = await db
@@ -68,70 +67,18 @@ export async function GET(
 
     const log = logs[0];
 
-    // Find related logs
-    // Related logs are defined as:
-    // 1. Same session ID (if available)
-    // 2. Same target (targetType + targetId)
-    // 3. Same actor within 30 minutes before/after
-    const relatedConditions = [];
-
-    // Same session
-    if (log.metadata && typeof log.metadata === "object" && "sessionId" in log.metadata) {
-      const sessionId = (log.metadata as { sessionId?: string }).sessionId;
-      if (sessionId) {
-        relatedConditions.push(
-          eq(
-            db
-              .select({ sessionId: systemAuditLogs.metadata })
-              .from(systemAuditLogs)
-              .limit(1)[0]?.sessionId,
-            sessionId
-          )
-        );
-      }
+    // Find related logs (same target or same actor within 30 minutes)
+    interface RelatedLog {
+      id: string;
+      timestamp: Date;
+      action: string;
+      actionType: string;
+      description: string | null;
     }
-
-    // Same target
-    if (log.targetType && log.targetId) {
-      relatedConditions.push(
-        and(
-          eq(systemAuditLogs.targetType, log.targetType),
-          eq(systemAuditLogs.targetId, log.targetId)
-        )
-      );
-    }
-
-    // Same actor within 30 minutes
-    if (log.actorId && log.timestamp) {
-      const timeWindowStart = new Date(log.timestamp.getTime() - 30 * 60 * 1000);
-      const timeWindowEnd = new Date(log.timestamp.getTime() + 30 * 60 * 1000);
-
-      relatedConditions.push(
-        and(
-          eq(systemAuditLogs.actorId, log.actorId),
-          // Note: Drizzle doesn't have gte/lte directly in WHERE with complex conditions
-          // We'll use a simpler approach and filter in memory if needed
-        )
-      );
-    }
-
-    // Fetch related logs
-    // For simplicity, we'll get logs from same session, same target, or same actor
-    // and exclude the current log
-    let relatedLogs: typeof logs = [];
+    let relatedLogs: RelatedLog[] = [];
 
     try {
       const conditions = [];
-
-      // Same session
-      if (log.metadata && typeof log.metadata === "object" && "sessionId" in log.metadata) {
-        const sessionId = (log.metadata as { sessionId?: string }).sessionId;
-        if (sessionId) {
-          // We need a way to query JSONB fields - using raw SQL for now
-          // This is a limitation of Drizzle ORM with JSONB queries
-          // For production, consider using a dedicated session tracking column
-        }
-      }
 
       // Same target
       if (log.targetType && log.targetId) {
@@ -162,14 +109,11 @@ export async function GET(
           .orderBy(desc(systemAuditLogs.timestamp))
           .limit(10);
 
-        // Ensure result is an array
-        const logsArray = Array.isArray(result) ? result : [];
-
         // Filter out the current log and logs outside time window
         const timeWindowStart = new Date(log.timestamp.getTime() - 30 * 60 * 1000);
         const timeWindowEnd = new Date(log.timestamp.getTime() + 30 * 60 * 1000);
 
-        relatedLogs = logsArray.filter((relatedLog) => {
+        relatedLogs = result.filter((relatedLog) => {
           // Exclude current log
           if (relatedLog.id === logId) {
             return false;
