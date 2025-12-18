@@ -3,4 +3,4 @@
  * GraphQL schema, resolvers, and Yoga server configuration
  */
 
-export { schema, yoga } from "./schema";
+export { graphqlSchema, yoga } from "./schema";

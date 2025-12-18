@@ -1770,14 +1770,14 @@ async function createContext(): Promise<Partial<GraphQLContext>> {
 }
 
 // Create schema
-export const schema = createSchema({
+export const graphqlSchema = createSchema({
   typeDefs,
   resolvers,
 });
 
 // Create Yoga instance
 export const yoga = createYoga({
-  schema,
+  schema: graphqlSchema,
   context: createContext,
   graphqlEndpoint: "/api/graphql",
   fetchAPI: { Response },
