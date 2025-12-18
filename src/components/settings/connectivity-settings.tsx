@@ -1,23 +1,23 @@
 "use client";
 
 import * as React from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Zap,
   ZapOff,
   Wifi,
   WifiOff,
   AlertTriangle,
-  Battery,
   BatteryLow,
   Cloud,
   CloudOff,
-  Image,
   ImageOff,
   RefreshCw,
   Clock,
   Bell,
   Info,
   Check,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,38 +29,136 @@ export interface LoadsheddingSchedule {
   area: string;
 }
 
-interface ConnectivitySettingsProps {
-  className?: string;
-  schedule?: LoadsheddingSchedule[];
+interface ConnectivitySettings {
+  loadsheddingMode: boolean;
+  lowBandwidthMode: boolean;
+  autoDetectConnection: boolean;
 }
 
-export function ConnectivitySettings({ className, schedule }: ConnectivitySettingsProps) {
+// Fetch connectivity settings from API
+async function fetchConnectivitySettings(): Promise<ConnectivitySettings> {
+  const response = await fetch("/api/settings/connectivity");
+  if (!response.ok) {
+    throw new Error("Failed to fetch connectivity settings");
+  }
+  const json = await response.json();
+  return json.data;
+}
+
+// Update connectivity settings via API
+async function updateConnectivitySettings(
+  settings: Partial<ConnectivitySettings>
+): Promise<ConnectivitySettings> {
+  const response = await fetch("/api/settings/connectivity", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(settings),
+  });
+  if (!response.ok) {
+    throw new Error("Failed to update connectivity settings");
+  }
+  const json = await response.json();
+  return json.data;
+}
+
+// Fetch loadshedding schedule from API
+async function fetchLoadsheddingSchedule(): Promise<{
+  currentStage: number;
+  schedule: LoadsheddingSchedule[];
+}> {
+  const response = await fetch("/api/loadshedding/schedule");
+  if (!response.ok) {
+    throw new Error("Failed to fetch loadshedding schedule");
+  }
+  const json = await response.json();
+  return json.data;
+}
+
+interface ConnectivitySettingsProps {
+  className?: string;
+}
+
+export function ConnectivitySettings({ className }: ConnectivitySettingsProps) {
+  const queryClient = useQueryClient();
+
+  // Fetch settings from API
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["connectivity-settings"],
+    queryFn: fetchConnectivitySettings,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch loadshedding schedule
+  const { data: loadsheddingData } = useQuery({
+    queryKey: ["loadshedding-schedule"],
+    queryFn: fetchLoadsheddingSchedule,
+    staleTime: 5 * 60 * 1000,
+    enabled: settings?.loadsheddingMode ?? false,
+  });
+
+  // Mutation for updating settings
+  const mutation = useMutation({
+    mutationFn: updateConnectivitySettings,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["connectivity-settings"] });
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className={cn("space-y-6", className)}>
+        <div className="card-secondary p-6 flex items-center justify-center min-h-[200px]">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("space-y-6", className)}>
-      <LoadsheddingModeSection schedule={schedule} />
-      <LowBandwidthModeSection />
-      <DataSaverSection />
+      <LoadsheddingModeSection
+        isEnabled={settings?.loadsheddingMode ?? false}
+        onToggle={(enabled) => mutation.mutate({ loadsheddingMode: enabled })}
+        schedule={loadsheddingData?.schedule || []}
+        isUpdating={mutation.isPending}
+      />
+      <LowBandwidthModeSection
+        isEnabled={settings?.lowBandwidthMode ?? false}
+        onToggle={(enabled) => mutation.mutate({ lowBandwidthMode: enabled })}
+        isUpdating={mutation.isPending}
+      />
+      <DataSaverSection
+        isEnabled={settings?.autoDetectConnection ?? true}
+        onToggle={(enabled) => mutation.mutate({ autoDetectConnection: enabled })}
+        isUpdating={mutation.isPending}
+      />
     </div>
   );
 }
 
 interface LoadsheddingModeSectionProps {
+  isEnabled: boolean;
+  onToggle: (enabled: boolean) => void;
   schedule?: LoadsheddingSchedule[];
+  isUpdating?: boolean;
 }
 
 // F051 - Loadshedding Mode Toggle
-export function LoadsheddingModeSection({ schedule }: LoadsheddingModeSectionProps) {
-  // TODO: Fetch loadshedding schedule from API endpoint
-  // const { data: scheduleData } = useQuery(['loadsheddingSchedule'], fetchLoadsheddingSchedule);
-  const scheduleData = schedule || []; // Empty array - no mock data
-  const [isEnabled, setIsEnabled] = React.useState(false);
+export function LoadsheddingModeSection({
+  isEnabled,
+  onToggle,
+  schedule = [],
+  isUpdating,
+}: LoadsheddingModeSectionProps) {
   const [showNotification, setShowNotification] = React.useState(false);
 
   const handleToggle = () => {
-    setIsEnabled(!isEnabled);
+    onToggle(!isEnabled);
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 3000);
   };
+
+  const scheduleData = schedule;
 
   return (
     <div className="card-secondary p-6">
@@ -89,7 +187,7 @@ export function LoadsheddingModeSection({ schedule }: LoadsheddingModeSectionPro
         </div>
 
         {/* Toggle Switch */}
-        <ToggleSwitch checked={isEnabled} onChange={handleToggle} />
+        <ToggleSwitch checked={isEnabled} onChange={handleToggle} disabled={isUpdating} />
       </div>
 
       {/* Features enabled in loadshedding mode */}
@@ -172,13 +270,22 @@ export function LoadsheddingModeSection({ schedule }: LoadsheddingModeSectionPro
   );
 }
 
+interface LowBandwidthModeSectionProps {
+  isEnabled: boolean;
+  onToggle: (enabled: boolean) => void;
+  isUpdating?: boolean;
+}
+
 // F052 - Low-bandwidth Mode Toggle
-export function LowBandwidthModeSection() {
-  const [isEnabled, setIsEnabled] = React.useState(false);
+export function LowBandwidthModeSection({
+  isEnabled,
+  onToggle,
+  isUpdating,
+}: LowBandwidthModeSectionProps) {
   const [showNotification, setShowNotification] = React.useState(false);
 
   const handleToggle = () => {
-    setIsEnabled(!isEnabled);
+    onToggle(!isEnabled);
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 3000);
   };
@@ -209,7 +316,7 @@ export function LowBandwidthModeSection() {
           </div>
         </div>
 
-        <ToggleSwitch checked={isEnabled} onChange={handleToggle} />
+        <ToggleSwitch checked={isEnabled} onChange={handleToggle} disabled={isUpdating} />
       </div>
 
       <div className="space-y-3">
@@ -281,9 +388,13 @@ export function LowBandwidthModeSection() {
   );
 }
 
-function DataSaverSection() {
-  const [autoDetect, setAutoDetect] = React.useState(true);
+interface DataSaverSectionProps {
+  isEnabled: boolean;
+  onToggle: (enabled: boolean) => void;
+  isUpdating?: boolean;
+}
 
+function DataSaverSection({ isEnabled, onToggle, isUpdating }: DataSaverSectionProps) {
   return (
     <div className="card-tertiary p-4">
       <div className="flex items-center justify-between">
@@ -292,9 +403,10 @@ function DataSaverSection() {
           <span className="text-sm text-foreground">Auto-detect connection</span>
         </div>
         <ToggleSwitch
-          checked={autoDetect}
-          onChange={() => setAutoDetect(!autoDetect)}
+          checked={isEnabled}
+          onChange={() => onToggle(!isEnabled)}
           size="sm"
+          disabled={isUpdating}
         />
       </div>
       <p className="text-xs text-muted-foreground mt-2 ml-6">
@@ -342,9 +454,10 @@ interface ToggleSwitchProps {
   checked: boolean;
   onChange: () => void;
   size?: "sm" | "md";
+  disabled?: boolean;
 }
 
-function ToggleSwitch({ checked, onChange, size = "md" }: ToggleSwitchProps) {
+function ToggleSwitch({ checked, onChange, size = "md", disabled }: ToggleSwitchProps) {
   const dimensions = size === "sm" ? "w-9 h-5" : "w-11 h-6";
   const thumbSize = size === "sm" ? "w-4 h-4" : "w-5 h-5";
   const thumbTranslate = size === "sm" ? "translate-x-4" : "translate-x-5";
@@ -354,10 +467,12 @@ function ToggleSwitch({ checked, onChange, size = "md" }: ToggleSwitchProps) {
       role="switch"
       aria-checked={checked}
       onClick={onChange}
+      disabled={disabled}
       className={cn(
         "relative rounded-full transition-colors",
         dimensions,
-        checked ? "bg-primary" : "bg-muted/40"
+        checked ? "bg-primary" : "bg-muted/40",
+        disabled && "opacity-50 cursor-not-allowed"
       )}
     >
       <span
@@ -373,8 +488,14 @@ function ToggleSwitch({ checked, onChange, size = "md" }: ToggleSwitchProps) {
 
 // Compact indicator for header/navbar
 export function ConnectivityIndicator({ className }: { className?: string }) {
-  const [loadsheddingMode, setLoadsheddingMode] = React.useState(false);
-  const [lowBandwidthMode, setLowBandwidthMode] = React.useState(false);
+  const { data: settings } = useQuery({
+    queryKey: ["connectivity-settings"],
+    queryFn: fetchConnectivitySettings,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const loadsheddingMode = settings?.loadsheddingMode ?? false;
+  const lowBandwidthMode = settings?.lowBandwidthMode ?? false;
 
   if (!loadsheddingMode && !lowBandwidthMode) return null;
 

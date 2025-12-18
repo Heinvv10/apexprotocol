@@ -60,6 +60,10 @@ export interface UserPreferences {
   weeklyDigest: boolean;
   mentionAlerts: boolean;
   auditAlerts: boolean;
+  // Connectivity settings (South Africa specific)
+  loadsheddingMode?: boolean;
+  lowBandwidthMode?: boolean;
+  autoDetectConnection?: boolean;
 }
 
 // Relations
