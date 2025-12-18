@@ -269,7 +269,7 @@ function UsageBreakdown() {
 
   // Calculate breakdown percentages from feature data
   const breakdown = React.useMemo(() => {
-    // Return empty array when no data available - TODO: Connect to database
+    // Return empty array when no data available
     if (!breakdownData?.byFeature) {
       return [];
     }
@@ -286,7 +286,7 @@ function UsageBreakdown() {
       0
     );
 
-    // Return empty array when total is zero - TODO: Connect to database
+    // Return empty array when total is zero
     if (total === 0) {
       return [];
     }

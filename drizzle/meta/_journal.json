@@ -29,6 +29,13 @@
       "when": 1765987454099,
       "tag": "0003_marvelous_rumiko_fujikawa",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1766060674721,
+      "tag": "0004_handy_mauler",
+      "breakpoints": true
     }
   ]
 }

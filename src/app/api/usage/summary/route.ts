@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { aiUsage, audits, content, brandMentions, users } from "@/lib/db/schema";
+import { aiUsage, audits, content, brandMentions, users, apiCallTracking } from "@/lib/db/schema";
 import { eq, and, gte, sql, count, sum, inArray } from "drizzle-orm";
 import { brands } from "@/lib/db/schema";
 import { stripeBillingManager, SUBSCRIPTION_PLANS } from "@/lib/billing/stripe";
@@ -97,13 +97,24 @@ export async function GET(request: NextRequest) {
       .from(users)
       .where(eq(users.organizationId, queryOrgId));
 
+    // Query API calls this month
+    const apiCallsResult = await db
+      .select({ count: count() })
+      .from(apiCallTracking)
+      .where(
+        and(
+          eq(apiCallTracking.organizationId, queryOrgId),
+          gte(apiCallTracking.createdAt, periodStart)
+        )
+      );
+
     // Build usage object from database queries
     const usage = {
       ai_tokens: Number(aiTokensResult[0]?.total) || 0,
       audits: auditsResult[0]?.count || 0,
       content_pieces: contentResult[0]?.count || 0,
       mentions: mentionsResult[0]?.count || 0,
-      api_calls: 0, // TODO: Add API call tracking
+      api_calls: apiCallsResult[0]?.count || 0,
       team_members: teamResult[0]?.count || 1,
     };
 

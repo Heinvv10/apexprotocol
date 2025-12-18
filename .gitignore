@@ -45,3 +45,6 @@ next-env.d.ts
 # temp files
 temp.json
 nul
+
+# MCP configuration (may contain tokens)
+.mcp.json

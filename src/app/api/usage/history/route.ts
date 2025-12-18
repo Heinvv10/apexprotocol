@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { aiUsage, audits, content, brandMentions, users } from "@/lib/db/schema";
+import { aiUsage, audits, content, brandMentions, users, apiCallTracking, storageTracking } from "@/lib/db/schema";
 import { eq, and, gte, sql, count, inArray } from "drizzle-orm";
 import { brands } from "@/lib/db/schema";
 import type { UsageHistory, UsageMetricType } from "@/hooks/useUsage";
@@ -100,6 +100,36 @@ export async function GET(request: NextRequest) {
       .where(gte(brandMentions.createdAt, startDate))
       .groupBy(sql`DATE(${brandMentions.createdAt})`);
 
+    // Query API calls per day
+    const apiCallsData = await db
+      .select({
+        date: sql<string>`DATE(${apiCallTracking.createdAt})`.as("date"),
+        count: count(),
+      })
+      .from(apiCallTracking)
+      .where(
+        and(
+          eq(apiCallTracking.organizationId, organizationId),
+          gte(apiCallTracking.createdAt, startDate)
+        )
+      )
+      .groupBy(sql`DATE(${apiCallTracking.createdAt})`);
+
+    // Query storage usage per day (aggregated by date)
+    const storageData = await db
+      .select({
+        date: sql<string>`DATE(${storageTracking.createdAt})`.as("date"),
+        totalBytes: sql<number>`SUM(${storageTracking.sizeBytes})`.as("total_bytes"),
+      })
+      .from(storageTracking)
+      .where(
+        and(
+          eq(storageTracking.organizationId, organizationId),
+          gte(storageTracking.createdAt, startDate)
+        )
+      )
+      .groupBy(sql`DATE(${storageTracking.createdAt})`);
+
     // Get team member count
     const teamCount = await db
       .select({ count: count() })
@@ -113,6 +143,8 @@ export async function GET(request: NextRequest) {
     const auditLookup = new Map(auditData.map((d) => [d.date, d.count || 0]));
     const contentLookup = new Map(contentData.map((d) => [d.date, d.count || 0]));
     const mentionsLookup = new Map(mentionsData.map((d) => [d.date, d.count || 0]));
+    const apiCallsLookup = new Map(apiCallsData.map((d) => [d.date, d.count || 0]));
+    const storageLookup = new Map(storageData.map((d) => [d.date, Math.round((d.totalBytes || 0) / (1024 * 1024))]));
 
     // Build history data for each day
     const data: Array<{
@@ -129,12 +161,12 @@ export async function GET(request: NextRequest) {
         date: dateStr,
         metrics: {
           ai_tokens: aiLookup.get(dateStr) || 0,
-          api_calls: Math.floor(Math.random() * 100), // TODO: Add API call tracking table
+          api_calls: apiCallsLookup.get(dateStr) || 0,
           scans: mentionsLookup.get(dateStr) || 0,
           audits: auditLookup.get(dateStr) || 0,
           content_generations: contentLookup.get(dateStr) || 0,
           mentions_tracked: mentionsLookup.get(dateStr) || 0,
-          storage_mb: 0, // TODO: Add storage tracking
+          storage_mb: storageLookup.get(dateStr) || 0,
           team_members: teamMembers,
         } as Record<UsageMetricType, number>,
       });

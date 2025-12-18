@@ -63,7 +63,15 @@
       "Bash(timeout 30 npm test -- src/app/api/admin/users/route.test.ts --run)",
       "Bash(npm run:*)",
       "Bash(bun:*)",
-      "Bash(node C:/Users/HeinvanVuuren/.claude/hooks/auto-generate-project-knowledge.ts)"
+      "Bash(node C:/Users/HeinvanVuuren/.claude/hooks/auto-generate-project-knowledge.ts)",
+      "Bash(timeout:*)",
+      "Bash(ping:*)",
+      "SlashCommand(/pai-status)",
+      "SlashCommand(/pai-knowledge)",
+      "Bash(xargs:*)",
+      "Bash(for f in src/app/api/admin/audit-logs/[id]/route.test.ts src/app/api/admin/audit-logs/route.test.ts src/app/api/admin/audit-logs/export/route.test.ts src/app/api/admin/users/route.test.ts src/lib/audit-logger.test.ts)",
+      "Bash(do)",
+      "Bash(if ! head -1 \"$f\")"
     ]
   }
 }
