@@ -21,6 +21,8 @@ import {
   type ApiKey,
   type ApiPermission,
 } from "@/lib/api/public-api";
+import { db, schema } from "@/lib/db";
+import { eq, and, desc, sql, count } from "drizzle-orm";
 
 // Extract API key from request
 function extractApiKey(request: NextRequest): string | null {
@@ -126,40 +128,307 @@ function checkPermission(
   return { allowed: true };
 }
 
-// Database query functions - TODO: Implement with Drizzle ORM
-// These return empty results until database is connected
+// Database query functions - Wired to Drizzle ORM
 
-async function getBrands(_page: number, _pageSize: number) {
-  // TODO: Implement database query
-  // SELECT * FROM brands WHERE organization_id = $orgId LIMIT $pageSize OFFSET $offset
+async function getBrands(organizationId: string, page: number, pageSize: number) {
+  const offset = (page - 1) * pageSize;
+
+  const [items, totalResult] = await Promise.all([
+    db
+      .select()
+      .from(schema.brands)
+      .where(eq(schema.brands.organizationId, organizationId))
+      .limit(pageSize)
+      .offset(offset)
+      .orderBy(desc(schema.brands.createdAt)),
+    db
+      .select({ count: count() })
+      .from(schema.brands)
+      .where(eq(schema.brands.organizationId, organizationId)),
+  ]);
+
   return {
-    items: [],
-    total: 0,
+    items: items.map((brand) => ({
+      id: brand.id,
+      name: brand.name,
+      domain: brand.domain,
+      description: brand.description,
+      industry: brand.industry,
+      logoUrl: brand.logoUrl,
+      keywords: brand.keywords,
+      monitoringEnabled: brand.monitoringEnabled,
+      isActive: brand.isActive,
+      createdAt: brand.createdAt?.toISOString(),
+      updatedAt: brand.updatedAt?.toISOString(),
+    })),
+    total: Number(totalResult[0]?.count || 0),
   };
 }
 
-async function getMentions(_brandId: string | null, _page: number, _pageSize: number) {
-  // TODO: Implement database query
-  // SELECT * FROM mentions WHERE brand_id = $brandId LIMIT $pageSize OFFSET $offset
+async function getMentions(
+  organizationId: string,
+  brandId: string | null,
+  page: number,
+  pageSize: number
+) {
+  const offset = (page - 1) * pageSize;
+
+  // If brandId provided, verify it belongs to the organization
+  if (brandId) {
+    const brand = await db
+      .select({ id: schema.brands.id })
+      .from(schema.brands)
+      .where(
+        and(
+          eq(schema.brands.id, brandId),
+          eq(schema.brands.organizationId, organizationId)
+        )
+      )
+      .limit(1);
+
+    if (brand.length === 0) {
+      return { items: [], total: 0, error: "Brand not found or access denied" };
+    }
+  }
+
+  // Get brand IDs for this organization if no specific brandId
+  const orgBrandIds = brandId
+    ? [brandId]
+    : (
+        await db
+          .select({ id: schema.brands.id })
+          .from(schema.brands)
+          .where(eq(schema.brands.organizationId, organizationId))
+      ).map((b) => b.id);
+
+  if (orgBrandIds.length === 0) {
+    return { items: [], total: 0 };
+  }
+
+  // Build where clause for mentions
+  const whereClause = brandId
+    ? eq(schema.brandMentions.brandId, brandId)
+    : sql`${schema.brandMentions.brandId} IN (${sql.join(
+        orgBrandIds.map((id) => sql`${id}`),
+        sql`, `
+      )})`;
+
+  const [items, totalResult] = await Promise.all([
+    db
+      .select()
+      .from(schema.brandMentions)
+      .where(whereClause)
+      .limit(pageSize)
+      .offset(offset)
+      .orderBy(desc(schema.brandMentions.timestamp)),
+    db
+      .select({ count: count() })
+      .from(schema.brandMentions)
+      .where(whereClause),
+  ]);
+
   return {
-    items: [],
-    total: 0,
+    items: items.map((mention) => ({
+      id: mention.id,
+      brandId: mention.brandId,
+      platform: mention.platform,
+      query: mention.query,
+      response: mention.response,
+      sentiment: mention.sentiment,
+      position: mention.position,
+      citationUrl: mention.citationUrl,
+      promptCategory: mention.promptCategory,
+      topics: mention.topics,
+      timestamp: mention.timestamp?.toISOString(),
+    })),
+    total: Number(totalResult[0]?.count || 0),
   };
 }
 
-async function getRecommendations(_brandId: string | null, _page: number, _pageSize: number) {
-  // TODO: Implement database query
-  // SELECT * FROM recommendations WHERE brand_id = $brandId LIMIT $pageSize OFFSET $offset
+async function getRecommendations(
+  organizationId: string,
+  brandId: string | null,
+  page: number,
+  pageSize: number
+) {
+  const offset = (page - 1) * pageSize;
+
+  // If brandId provided, verify it belongs to the organization
+  if (brandId) {
+    const brand = await db
+      .select({ id: schema.brands.id })
+      .from(schema.brands)
+      .where(
+        and(
+          eq(schema.brands.id, brandId),
+          eq(schema.brands.organizationId, organizationId)
+        )
+      )
+      .limit(1);
+
+    if (brand.length === 0) {
+      return { items: [], total: 0, error: "Brand not found or access denied" };
+    }
+  }
+
+  // Get brand IDs for this organization if no specific brandId
+  const orgBrandIds = brandId
+    ? [brandId]
+    : (
+        await db
+          .select({ id: schema.brands.id })
+          .from(schema.brands)
+          .where(eq(schema.brands.organizationId, organizationId))
+      ).map((b) => b.id);
+
+  if (orgBrandIds.length === 0) {
+    return { items: [], total: 0 };
+  }
+
+  // Build where clause for recommendations
+  const whereClause = brandId
+    ? eq(schema.recommendations.brandId, brandId)
+    : sql`${schema.recommendations.brandId} IN (${sql.join(
+        orgBrandIds.map((id) => sql`${id}`),
+        sql`, `
+      )})`;
+
+  const [items, totalResult] = await Promise.all([
+    db
+      .select()
+      .from(schema.recommendations)
+      .where(whereClause)
+      .limit(pageSize)
+      .offset(offset)
+      .orderBy(desc(schema.recommendations.createdAt)),
+    db
+      .select({ count: count() })
+      .from(schema.recommendations)
+      .where(whereClause),
+  ]);
+
   return {
-    items: [],
-    total: 0,
+    items: items.map((rec) => ({
+      id: rec.id,
+      brandId: rec.brandId,
+      title: rec.title,
+      description: rec.description,
+      category: rec.category,
+      priority: rec.priority,
+      status: rec.status,
+      effort: rec.effort,
+      impact: rec.impact,
+      estimatedTime: rec.estimatedTime,
+      source: rec.source,
+      steps: rec.steps,
+      notes: rec.notes,
+      dueDate: rec.dueDate?.toISOString(),
+      completedAt: rec.completedAt?.toISOString(),
+      createdAt: rec.createdAt?.toISOString(),
+    })),
+    total: Number(totalResult[0]?.count || 0),
   };
 }
 
-async function getAnalytics(_brandId: string) {
-  // TODO: Implement database query
-  // Aggregate analytics data from mentions, recommendations, geo_scores tables
-  return null;
+async function getAnalytics(organizationId: string, brandId: string) {
+  // Verify brand belongs to organization
+  const brand = await db
+    .select()
+    .from(schema.brands)
+    .where(
+      and(
+        eq(schema.brands.id, brandId),
+        eq(schema.brands.organizationId, organizationId)
+      )
+    )
+    .limit(1);
+
+  if (brand.length === 0) {
+    return null;
+  }
+
+  // Get mention stats
+  const mentionStats = await db
+    .select({
+      totalMentions: count(),
+      positiveMentions: sql<number>`COUNT(*) FILTER (WHERE ${schema.brandMentions.sentiment} = 'positive')`,
+      neutralMentions: sql<number>`COUNT(*) FILTER (WHERE ${schema.brandMentions.sentiment} = 'neutral')`,
+      negativeMentions: sql<number>`COUNT(*) FILTER (WHERE ${schema.brandMentions.sentiment} = 'negative')`,
+      avgPosition: sql<number>`AVG(${schema.brandMentions.position}) FILTER (WHERE ${schema.brandMentions.position} IS NOT NULL)`,
+    })
+    .from(schema.brandMentions)
+    .where(eq(schema.brandMentions.brandId, brandId));
+
+  // Get recommendation stats
+  const recommendationStats = await db
+    .select({
+      total: count(),
+      pending: sql<number>`COUNT(*) FILTER (WHERE ${schema.recommendations.status} = 'pending')`,
+      inProgress: sql<number>`COUNT(*) FILTER (WHERE ${schema.recommendations.status} = 'in_progress')`,
+      completed: sql<number>`COUNT(*) FILTER (WHERE ${schema.recommendations.status} = 'completed')`,
+      dismissed: sql<number>`COUNT(*) FILTER (WHERE ${schema.recommendations.status} = 'dismissed')`,
+    })
+    .from(schema.recommendations)
+    .where(eq(schema.recommendations.brandId, brandId));
+
+  // Get platform distribution
+  const platformDistribution = await db
+    .select({
+      platform: schema.brandMentions.platform,
+      count: count(),
+    })
+    .from(schema.brandMentions)
+    .where(eq(schema.brandMentions.brandId, brandId))
+    .groupBy(schema.brandMentions.platform);
+
+  const stats = mentionStats[0] || {
+    totalMentions: 0,
+    positiveMentions: 0,
+    neutralMentions: 0,
+    negativeMentions: 0,
+    avgPosition: null,
+  };
+
+  const recStats = recommendationStats[0] || {
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    completed: 0,
+    dismissed: 0,
+  };
+
+  return {
+    brandId,
+    brandName: brand[0].name,
+    mentions: {
+      total: Number(stats.totalMentions),
+      bysentiment: {
+        positive: Number(stats.positiveMentions),
+        neutral: Number(stats.neutralMentions),
+        negative: Number(stats.negativeMentions),
+      },
+      averagePosition: stats.avgPosition ? Number(stats.avgPosition.toFixed(2)) : null,
+      byPlatform: platformDistribution.reduce(
+        (acc, p) => {
+          acc[p.platform] = Number(p.count);
+          return acc;
+        },
+        {} as Record<string, number>
+      ),
+    },
+    recommendations: {
+      total: Number(recStats.total),
+      pending: Number(recStats.pending),
+      inProgress: Number(recStats.inProgress),
+      completed: Number(recStats.completed),
+      dismissed: Number(recStats.dismissed),
+      completionRate:
+        recStats.total > 0
+          ? Number(((Number(recStats.completed) / Number(recStats.total)) * 100).toFixed(1))
+          : 0,
+    },
+    generatedAt: new Date().toISOString(),
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -214,7 +483,7 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        const data = await getBrands(page, pageSize);
+        const data = await getBrands(apiKey.organizationId, page, pageSize);
         return NextResponse.json(
           createSuccessResponse(data.items, {
             requestId,
@@ -233,7 +502,13 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        const data = await getMentions(brandId, page, pageSize);
+        const data = await getMentions(apiKey.organizationId, brandId, page, pageSize);
+        if ("error" in data && data.error) {
+          return NextResponse.json(
+            createErrorResponse(API_ERROR_CODES.RESOURCE_NOT_FOUND, data.error, undefined, requestId),
+            { status: 404, headers: rateLimit.headers }
+          );
+        }
         return NextResponse.json(
           createSuccessResponse(data.items, {
             requestId,
@@ -252,7 +527,13 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        const data = await getRecommendations(brandId, page, pageSize);
+        const data = await getRecommendations(apiKey.organizationId, brandId, page, pageSize);
+        if ("error" in data && data.error) {
+          return NextResponse.json(
+            createErrorResponse(API_ERROR_CODES.RESOURCE_NOT_FOUND, data.error, undefined, requestId),
+            { status: 404, headers: rateLimit.headers }
+          );
+        }
         return NextResponse.json(
           createSuccessResponse(data.items, {
             requestId,
@@ -283,12 +564,12 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        const data = await getAnalytics(brandId);
+        const data = await getAnalytics(apiKey.organizationId, brandId);
         if (!data) {
           return NextResponse.json(
             createErrorResponse(
               API_ERROR_CODES.RESOURCE_NOT_FOUND,
-              "No analytics data available. Database connection required.",
+              "Brand not found or access denied",
               undefined,
               requestId
             ),
