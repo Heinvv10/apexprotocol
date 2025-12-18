@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { brandPeople } from "@/lib/db/schema";
+import { brandPeople, type PersonSocialProfiles } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import {
   enrichPersonSocialProfiles,
@@ -65,8 +65,6 @@ export async function GET(
         url: person.linkedinUrl || socialProfiles.linkedin?.url,
         handle: socialProfiles.linkedin?.handle || null,
         followers: socialProfiles.linkedin?.followers || 0,
-        following: socialProfiles.linkedin?.following || 0,
-        posts: socialProfiles.linkedin?.posts || 0,
         lastUpdated: socialProfiles.linkedin?.lastUpdated || null,
         connected: !!socialProfiles.linkedin?.lastUpdated,
       });
@@ -78,8 +76,6 @@ export async function GET(
         url: person.twitterUrl || socialProfiles.twitter?.url,
         handle: socialProfiles.twitter?.handle || null,
         followers: socialProfiles.twitter?.followers || 0,
-        following: socialProfiles.twitter?.following || 0,
-        posts: socialProfiles.twitter?.posts || 0,
         lastUpdated: socialProfiles.twitter?.lastUpdated || null,
         connected: !!socialProfiles.twitter?.lastUpdated,
       });
@@ -91,8 +87,6 @@ export async function GET(
         url: socialProfiles.instagram.url,
         handle: socialProfiles.instagram.handle || null,
         followers: socialProfiles.instagram.followers || 0,
-        following: socialProfiles.instagram.following || 0,
-        posts: socialProfiles.instagram.posts || 0,
         lastUpdated: socialProfiles.instagram.lastUpdated || null,
         connected: !!socialProfiles.instagram.lastUpdated,
       });
@@ -104,8 +98,6 @@ export async function GET(
         url: socialProfiles.github.url,
         handle: socialProfiles.github.handle || null,
         followers: socialProfiles.github.followers || 0,
-        following: socialProfiles.github.following || 0,
-        posts: socialProfiles.github.posts || 0, // repos
         lastUpdated: socialProfiles.github.lastUpdated || null,
         connected: !!socialProfiles.github.lastUpdated,
       });
@@ -117,8 +109,6 @@ export async function GET(
         url: socialProfiles.youtube.url,
         handle: socialProfiles.youtube.handle || null,
         followers: socialProfiles.youtube.subscribers || 0,
-        following: 0,
-        posts: socialProfiles.youtube.videoCount || 0,
         lastUpdated: socialProfiles.youtube.lastUpdated || null,
         connected: !!socialProfiles.youtube.lastUpdated,
       });
@@ -237,19 +227,28 @@ export async function POST(
 // Helper Functions
 // ============================================================================
 
-function getLatestUpdateTime(
-  profiles: Record<string, { lastUpdated?: string } | undefined>
-): string | null {
-  let latest: Date | null = null;
+function getLatestUpdateTime(profiles: PersonSocialProfiles): string | null {
+  const timestamps: Date[] = [];
 
-  for (const profile of Object.values(profiles)) {
+  const addTimestamp = (profile: { lastUpdated?: string } | undefined) => {
     if (profile?.lastUpdated) {
-      const time = new Date(profile.lastUpdated);
-      if (!latest || time > latest) {
-        latest = time;
-      }
+      timestamps.push(new Date(profile.lastUpdated));
     }
+  };
+
+  addTimestamp(profiles.linkedin);
+  addTimestamp(profiles.twitter);
+  addTimestamp(profiles.instagram);
+  addTimestamp(profiles.youtube);
+  addTimestamp(profiles.tiktok);
+  addTimestamp(profiles.github);
+  addTimestamp(profiles.medium);
+  addTimestamp(profiles.personalWebsite);
+
+  if (timestamps.length === 0) {
+    return null;
   }
 
-  return latest?.toISOString() || null;
+  const latest = timestamps.reduce((a, b) => (a > b ? a : b));
+  return latest.toISOString();
 }
