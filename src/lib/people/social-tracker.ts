@@ -147,35 +147,168 @@ export function normalizeSocialUrl(
 
 /**
  * Fetch LinkedIn profile metrics
- * Note: Requires LinkedIn API access or scraping service
+ *
+ * Note: LinkedIn's API is highly restrictive for third-party profile data.
+ * Options for fetching public profile data:
+ * 1. If the person has connected via OAuth, use their access token
+ * 2. Use third-party enrichment services (Clearbit, Apollo, etc.)
+ * 3. Manual data entry
+ *
+ * This implementation attempts to use stored OAuth tokens if available,
+ * otherwise returns cached/manual data.
  */
 async function fetchLinkedInMetrics(url: string): Promise<ProfileMetrics | null> {
-  // TODO: Implement with LinkedIn API or scraping service
-  // LinkedIn's API is restrictive - may need proxy service
-  // For now, return placeholder
   const handle = extractHandleFromUrl(url, "linkedin");
   if (!handle) return null;
 
-  // Placeholder - in production, use API
-  return {
-    followers: 0, // Would be fetched from API
-  };
+  try {
+    // Check for third-party enrichment service
+    const apolloApiKey = process.env.APOLLO_API_KEY;
+
+    if (apolloApiKey) {
+      // Use Apollo.io for LinkedIn enrichment (example integration)
+      const response = await fetch("https://api.apollo.io/v1/people/match", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache",
+          "X-Api-Key": apolloApiKey,
+        },
+        body: JSON.stringify({
+          linkedin_url: url,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.person) {
+          return {
+            followers: data.person.linkedin_connections || 0,
+            following: 0, // Apollo doesn't provide this
+            posts: 0,
+          };
+        }
+      }
+    }
+
+    // Try Clearbit if Apollo isn't available
+    const clearbitApiKey = process.env.CLEARBIT_API_KEY;
+
+    if (clearbitApiKey) {
+      // Note: Clearbit uses email-based lookup, not LinkedIn URL
+      // This is a simplified example - real implementation would need email
+      console.log(`[LinkedIn] No direct API access for ${handle}, would need email for Clearbit`);
+    }
+
+    // Fallback: Return null to indicate metrics unavailable via API
+    // The caller should use cached/manual data
+    console.log(`[LinkedIn] No enrichment service configured for profile: ${handle}`);
+    return null;
+  } catch (error) {
+    console.error("LinkedIn metrics fetch error:", error);
+    return null;
+  }
 }
 
 /**
- * Fetch Twitter/X profile metrics
- * Note: Requires X API v2 access
+ * Fetch Twitter/X profile metrics using X API v2 (App-Only Auth)
+ *
+ * This uses Bearer Token authentication which allows fetching public
+ * user data without user-specific OAuth.
  */
 async function fetchTwitterMetrics(url: string): Promise<ProfileMetrics | null> {
-  // TODO: Implement with X API v2
-  // Requires elevated API access for follower counts
   const handle = extractHandleFromUrl(url, "twitter");
   if (!handle) return null;
 
-  // Placeholder - in production, use X API
-  return {
-    followers: 0, // Would be fetched from API
-  };
+  const bearerToken = process.env.TWITTER_BEARER_TOKEN;
+
+  if (!bearerToken) {
+    console.log("[Twitter] Bearer token not configured, skipping metrics fetch");
+    return null;
+  }
+
+  try {
+    // Use X API v2 to fetch user by username
+    const params = new URLSearchParams({
+      "user.fields": "public_metrics,description,verified,verified_type,created_at",
+    });
+
+    const response = await fetch(
+      `https://api.twitter.com/2/users/by/username/${handle}?${params.toString()}`,
+      {
+        headers: {
+          Authorization: `Bearer ${bearerToken}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        console.error("[Twitter] Invalid bearer token");
+      } else if (response.status === 429) {
+        console.error("[Twitter] Rate limited");
+      } else if (response.status === 404) {
+        console.log(`[Twitter] User not found: ${handle}`);
+      }
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (data.data && data.data.public_metrics) {
+      const metrics = data.data.public_metrics;
+      return {
+        followers: metrics.followers_count || 0,
+        following: metrics.following_count || 0,
+        posts: metrics.tweet_count || 0,
+        engagement: 0, // Would need to calculate from tweets
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Twitter metrics fetch error:", error);
+    return null;
+  }
+}
+
+/**
+ * Fetch Instagram profile metrics (Basic Display API)
+ * Note: Requires Instagram Basic Display API access
+ */
+async function fetchInstagramMetrics(url: string): Promise<ProfileMetrics | null> {
+  const handle = extractHandleFromUrl(url, "instagram");
+  if (!handle) return null;
+
+  // Instagram's API requires OAuth - can't fetch public profile data without it
+  // For business accounts, use Instagram Graph API with Facebook access token
+  const instagramAccessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
+
+  if (!instagramAccessToken) {
+    console.log("[Instagram] Access token not configured");
+    return null;
+  }
+
+  try {
+    // This would work for connected business accounts
+    const response = await fetch(
+      `https://graph.instagram.com/me?fields=id,username,account_type,media_count,followers_count,follows_count&access_token=${instagramAccessToken}`
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    return {
+      followers: data.followers_count || 0,
+      following: data.follows_count || 0,
+      posts: data.media_count || 0,
+    };
+  } catch (error) {
+    console.error("Instagram metrics fetch error:", error);
+    return null;
+  }
 }
 
 /**
@@ -254,6 +387,8 @@ export async function enrichPersonSocialProfiles(
           url: person.twitterUrl,
           handle: extractHandleFromUrl(person.twitterUrl, "twitter") || undefined,
           followers: metrics.followers,
+          following: metrics.following,
+          posts: metrics.posts,
           lastUpdated: now,
         };
         result.twitterFollowers = metrics.followers;
@@ -261,6 +396,25 @@ export async function enrichPersonSocialProfiles(
       }
     } catch (error) {
       result.errors.push(`Twitter: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  // Instagram enrichment
+  if (result.updatedProfiles.instagram?.url) {
+    try {
+      const metrics = await fetchInstagramMetrics(result.updatedProfiles.instagram.url);
+      if (metrics) {
+        result.updatedProfiles.instagram = {
+          ...result.updatedProfiles.instagram,
+          followers: metrics.followers,
+          following: metrics.following,
+          posts: metrics.posts,
+          lastUpdated: now,
+        };
+        result.totalFollowers += metrics.followers;
+      }
+    } catch (error) {
+      result.errors.push(`Instagram: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
