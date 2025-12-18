@@ -18,6 +18,7 @@ import type {
   PersonSocialProfiles,
   PersonExtractionMetadata,
 } from "@/lib/db/schema";
+import { routeMessage } from "@/lib/ai/router";
 
 // ============================================================================
 // Types
@@ -431,19 +432,207 @@ function calculateDiscoveryConfidence(result: DiscoveryResult): number {
 
 /**
  * Refine discovered people using AI
- * This is a placeholder - implement with actual AI call
+ * Uses LLM to verify names, improve classifications, and extract relationships
  */
 async function refineWithAI(
   people: DiscoveredPerson[],
-  _brandId: string
+  brandId: string
 ): Promise<DiscoveredPerson[]> {
-  // TODO: Implement AI refinement
-  // - Verify names are actual people names
-  // - Improve role classification
-  // - Extract additional context from bios
-  // - Identify relationships between people
+  if (people.length === 0) {
+    return people;
+  }
 
-  return people;
+  const systemPrompt = `You are an expert at analyzing organizational team member data extracted from company websites.
+Your job is to refine and validate extracted team member information.
+
+You will receive a JSON array of team members and should:
+1. Verify each name is an actual person name (not a company name, job title, or placeholder)
+2. Improve role classification based on title/bio analysis
+3. Extract key skills/expertise from bios
+4. Identify potential reporting relationships based on roles
+5. Flag any entries that don't appear to be real people
+
+Valid role categories: c_suite, founder, board, key_employee, ambassador, advisor, investor
+
+Respond with a JSON object in this exact format:
+{
+  "refinedPeople": [
+    {
+      "originalIndex": 0,
+      "isValid": true,
+      "name": "Corrected Name if needed",
+      "title": "Standardized Title",
+      "roleCategory": "c_suite",
+      "confidenceAdjustment": 0.1,
+      "extractedSkills": ["skill1", "skill2"],
+      "reportsTo": "Name of manager if detectable",
+      "notes": "Any additional context"
+    }
+  ],
+  "invalidEntries": [0, 2],
+  "organizationalInsights": {
+    "companySize": "small|medium|large",
+    "leadershipStyle": "flat|hierarchical",
+    "keyThemes": ["theme1", "theme2"]
+  }
+}`;
+
+  const userMessage = `Analyze and refine these team members extracted from a company website:
+
+Brand ID: ${brandId}
+
+Team Members:
+${JSON.stringify(
+  people.map((p, i) => ({
+    index: i,
+    name: p.name,
+    title: p.title || "Unknown",
+    roleCategory: p.roleCategory || "unknown",
+    bio: p.bio ? p.bio.substring(0, 500) : "No bio available",
+    confidence: p.confidence,
+    sourceUrl: p.sourceUrl,
+  })),
+  null,
+  2
+)}
+
+Please analyze each person and provide the refined data.`;
+
+  try {
+    const response = await routeMessage(systemPrompt, userMessage, {
+      temperature: 0.3,
+      maxTokens: 4096,
+    });
+
+    // Parse the AI response
+    const parsed = parseAIRefinementResponse(response.content);
+
+    if (!parsed || !parsed.refinedPeople) {
+      // Fallback: return original if parsing fails
+      console.warn("AI refinement parsing failed, returning original data");
+      return people;
+    }
+
+    // Apply refinements to people array
+    const refinedPeople: DiscoveredPerson[] = [];
+    const invalidIndices = new Set(parsed.invalidEntries || []);
+
+    for (const refined of parsed.refinedPeople) {
+      const originalIndex = refined.originalIndex;
+
+      // Skip invalid entries
+      if (invalidIndices.has(originalIndex)) {
+        continue;
+      }
+
+      if (originalIndex < 0 || originalIndex >= people.length) {
+        continue;
+      }
+
+      const original = people[originalIndex];
+
+      // Merge refined data with original
+      const mergedPerson: DiscoveredPerson = {
+        ...original,
+        name: refined.name || original.name,
+        title: refined.title || original.title,
+        roleCategory: isValidRoleCategory(refined.roleCategory)
+          ? refined.roleCategory
+          : original.roleCategory,
+        confidence: Math.min(
+          1,
+          Math.max(0, original.confidence + (refined.confidenceAdjustment || 0))
+        ),
+        // Store extracted skills and relationships in socialProfiles metadata
+        socialProfiles: {
+          ...original.socialProfiles,
+          _aiRefinement: {
+            extractedSkills: refined.extractedSkills || [],
+            reportsTo: refined.reportsTo || null,
+            notes: refined.notes || null,
+            refinedAt: new Date().toISOString(),
+          },
+        } as PersonSocialProfiles,
+      };
+
+      refinedPeople.push(mergedPerson);
+    }
+
+    // Add any people that weren't in the refinement response (keep originals)
+    const refinedIndices = new Set(
+      parsed.refinedPeople.map((r: { originalIndex: number }) => r.originalIndex)
+    );
+    for (let i = 0; i < people.length; i++) {
+      if (!refinedIndices.has(i) && !invalidIndices.has(i)) {
+        refinedPeople.push(people[i]);
+      }
+    }
+
+    return refinedPeople;
+  } catch (error) {
+    console.error("AI refinement failed:", error);
+    // Return original data on error
+    return people;
+  }
+}
+
+/**
+ * Parse AI refinement response from LLM
+ */
+function parseAIRefinementResponse(content: string): AIRefinementResult | null {
+  try {
+    // Try to extract JSON from the response
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return null;
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    return parsed as AIRefinementResult;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Validate role category value
+ */
+function isValidRoleCategory(
+  category: string | undefined
+): category is DiscoveredPerson["roleCategory"] {
+  const validCategories = [
+    "c_suite",
+    "founder",
+    "board",
+    "key_employee",
+    "ambassador",
+    "advisor",
+    "investor",
+  ];
+  return category !== undefined && validCategories.includes(category);
+}
+
+/**
+ * AI Refinement result structure
+ */
+interface AIRefinementResult {
+  refinedPeople: Array<{
+    originalIndex: number;
+    isValid: boolean;
+    name?: string;
+    title?: string;
+    roleCategory?: string;
+    confidenceAdjustment?: number;
+    extractedSkills?: string[];
+    reportsTo?: string;
+    notes?: string;
+  }>;
+  invalidEntries?: number[];
+  organizationalInsights?: {
+    companySize?: "small" | "medium" | "large";
+    leadershipStyle?: "flat" | "hierarchical";
+    keyThemes?: string[];
+  };
 }
 
 // ============================================================================
