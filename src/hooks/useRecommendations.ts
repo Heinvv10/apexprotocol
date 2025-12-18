@@ -88,7 +88,25 @@ async function fetchRecommendations(
   if (!response.ok) {
     throw new Error("Failed to fetch recommendations");
   }
-  return response.json();
+
+  const json = await response.json();
+
+  // Transform API response format to expected format
+  const recommendations = json.data || json.recommendations || [];
+  const total = json.meta?.total ?? json.total ?? recommendations.length;
+  const limit = json.meta?.limit ?? json.limit ?? filters.limit ?? 50;
+  const offset = json.meta?.offset ?? 0;
+  const page = Math.floor(offset / limit) + 1;
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    recommendations,
+    total,
+    page,
+    limit,
+    totalPages,
+    stats: json.stats,
+  };
 }
 
 async function fetchRecommendation(id: string): Promise<Recommendation> {

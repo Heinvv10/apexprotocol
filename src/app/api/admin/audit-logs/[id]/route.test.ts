@@ -186,13 +186,13 @@ describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
     // Reset and configure limit mock for this test
     let limitCallCount = 0;
     vi.mocked((db as any).limit).mockReset();
-    vi.mocked((db as any).limit).mockImplementation((arg?: any) => {
+    vi.mocked((db as any).limit).mockImplementation((arg?: number) => {
       limitCallCount++;
-      if (limitCallCount === 1) {
-        // First call: main log query
+      if (limitCallCount === 1 && arg === 1) {
+        // First call: main log query with limit(1)
         return Promise.resolve([mockLog]) as any;
-      } else if (limitCallCount === 3 && arg === 10) {
-        // Third call with arg 10: related logs query
+      } else if (limitCallCount === 2 && arg === 10) {
+        // Second call: related logs query with limit(10)
         return Promise.resolve(mockRelatedLogs) as any;
       }
       return Promise.resolve([]) as any;
