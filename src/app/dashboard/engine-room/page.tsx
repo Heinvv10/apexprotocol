@@ -2,11 +2,13 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ChevronDown, Bot, Sparkles, Settings, ArrowRight, Cpu } from "lucide-react";
+import { ChevronDown, Bot, Sparkles, Settings, ArrowRight, Cpu, Loader2 } from "lucide-react";
 import {
   CompetitiveRadar,
   type RadarDataPoint,
 } from "@/components/engine-room";
+import { useEngineRoom } from "@/hooks/useEngineRoom";
+import { useSelectedBrand } from "@/stores";
 
 // Types for engine room data
 export interface Platform {
@@ -40,6 +42,18 @@ export interface FilterGroup {
 export interface PlatformData {
   model: string;
   perception: string;
+}
+
+// Loading state component
+function EngineRoomLoadingState() {
+  return (
+    <div className="flex-1 flex items-center justify-center min-h-[400px]">
+      <div className="text-center space-y-4">
+        <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
+        <p className="text-muted-foreground">Loading engine room data...</p>
+      </div>
+    </div>
+  );
 }
 
 // Empty state component for Engine Room
@@ -196,19 +210,28 @@ function DecorativeStar() {
 }
 
 export default function EngineRoomPage() {
-  // TODO: Fetch engine room data from API endpoints
-  // const { data: platforms } = useQuery(['platforms'], fetchPlatforms);
-  // const { data: radarData } = useQuery(['radarData'], fetchRadarData);
-  // const { data: perceptionBubbles } = useQuery(['perceptionBubbles'], fetchPerceptionBubbles);
-  const platforms: Platform[] = []; // Empty array - no mock data
-  const metricBadges: MetricBadge[] = []; // Empty array - no mock data
-  const radarData: RadarDataPoint[] = []; // Empty array - no mock data
-  const perceptionBubbles: PerceptionBubble[] = []; // Empty array - no mock data
-  const filterGroups: FilterGroup[] = []; // Empty array - no mock data
-  const platformData: Record<string, PlatformData> = {}; // Empty object - no mock data
+  const selectedBrand = useSelectedBrand();
+
+  // Fetch engine room data from API
+  const { data: engineData, isLoading } = useEngineRoom(selectedBrand?.id);
+
+  // Extract data from API response
+  const platforms = engineData?.platforms || [];
+  const metricBadges = engineData?.metricBadges || [];
+  const radarData = engineData?.radarData || [];
+  const perceptionBubbles = engineData?.perceptionBubbles || [];
+  const filterGroups = engineData?.filterGroups || [];
+  const platformData = engineData?.platformData || {};
 
   const [activePlatform, setActivePlatform] = React.useState("");
   const [expandedGroups, setExpandedGroups] = React.useState<Record<string, boolean>>({});
+
+  // Set initial active platform when data loads
+  React.useEffect(() => {
+    if (platforms.length > 0 && !activePlatform) {
+      setActivePlatform(platforms[0].id);
+    }
+  }, [platforms, activePlatform]);
 
   const toggleGroup = (groupId: string) => {
     setExpandedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
@@ -219,6 +242,17 @@ export default function EngineRoomPage() {
 
   const currentPlatform = platforms.find((p) => p.id === activePlatform) || platforms[0];
   const currentData = platformData[activePlatform] || { model: "", perception: "" };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6 relative">
+        <PageHeader />
+        <EngineRoomLoadingState />
+        <DecorativeStar />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 relative">

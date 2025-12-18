@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { MoreHorizontal, MessageSquare, Sparkles, ArrowRight, Settings, Radar, Shield, CheckCircle2 } from "lucide-react";
+import { MoreHorizontal, MessageSquare, Sparkles, ArrowRight, Settings, Radar, Shield, CheckCircle2, Loader2 } from "lucide-react";
 import {
   HallucinationCard,
   FixDeployedCard,
@@ -11,6 +11,8 @@ import {
   type FixDeployedData,
   type VerifiedData,
 } from "@/components/feedback";
+import { useFeedback } from "@/hooks/useFeedback";
+import { useSelectedBrand } from "@/stores";
 
 // Page Header Component
 function PageHeader() {
@@ -60,6 +62,18 @@ function DecorativeStar() {
           </linearGradient>
         </defs>
       </svg>
+    </div>
+  );
+}
+
+// Loading state component
+function FeedbackLoadingState() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center space-y-4">
+        <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
+        <p className="text-muted-foreground">Loading feedback data...</p>
+      </div>
     </div>
   );
 }
@@ -143,16 +157,32 @@ function FeedbackEmptyState() {
 }
 
 export default function FeedbackPage() {
-  // TODO: Fetch feedback data from API endpoint
-  // const { data: hallucinations } = useQuery(['hallucinations'], fetchHallucinations);
-  // const { data: fixesDeployed } = useQuery(['fixes'], fetchFixes);
-  // const { data: verified } = useQuery(['verified'], fetchVerified);
-  const hallucinations: HallucinationData[] = []; // Empty array - no mock data
-  const fixesDeployed: FixDeployedData[] = []; // Empty array - no mock data
-  const verified: VerifiedData[] = []; // Empty array - no mock data
+  const selectedBrand = useSelectedBrand();
+
+  // Fetch feedback data from API
+  const { data: feedbackData, isLoading } = useFeedback(selectedBrand?.id, 30);
+
+  // Extract data from API response
+  const hallucinations = feedbackData?.hallucinations || [];
+  const fixesDeployed = feedbackData?.fixesDeployed || [];
+  const verified = feedbackData?.verified || [];
 
   // Check if there's any data
   const hasData = hallucinations.length > 0 || fixesDeployed.length > 0 || verified.length > 0;
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6 relative">
+        <PageHeader />
+        <h1 className="text-2xl font-semibold text-foreground">
+          Knowledge Graph Corrections
+        </h1>
+        <FeedbackLoadingState />
+        <DecorativeStar />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 relative">
