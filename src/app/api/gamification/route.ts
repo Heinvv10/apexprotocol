@@ -1,9 +1,19 @@
 /**
  * Gamification API Route (F151)
  * XP calculation, level progression, achievement tracking
+ * Now with database persistence for leaderboard and progress
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { desc, eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import {
+  userGamification,
+  userAchievements,
+  users,
+  type StreakData,
+  type UserStats,
+} from "@/lib/db/schema";
 import {
   gamificationEngine,
   createInitialProgress,
@@ -14,8 +24,109 @@ import {
   type UserProgress,
 } from "@/lib/gamification";
 
-// In-memory storage for demo (in production, use database)
-const userProgressStore = new Map<string, UserProgress>();
+/**
+ * Helper to convert database record to UserProgress type
+ */
+function dbToUserProgress(
+  dbRecord: typeof userGamification.$inferSelect,
+  achievements: typeof userAchievements.$inferSelect[]
+): UserProgress {
+  return {
+    userId: dbRecord.userId,
+    organizationId: dbRecord.organizationId || "",
+    currentXP: dbRecord.currentXP,
+    totalXP: dbRecord.totalXP,
+    level: dbRecord.level,
+    streaks: (dbRecord.streaks as StreakData) || {
+      currentDaily: 0,
+      longestDaily: 0,
+      currentWeekly: 0,
+      longestWeekly: 0,
+      lastLoginDate: "",
+      lastWeekStartDate: "",
+    },
+    stats: (dbRecord.stats as UserStats) || {
+      totalAudits: 0,
+      totalMentions: 0,
+      totalContent: 0,
+      totalRecommendations: 0,
+      recommendationsCompleted: 0,
+      brandsCreated: 0,
+      reportsGenerated: 0,
+      integrationsConnected: 0,
+      teamMembersInvited: 0,
+      crisesResolved: 0,
+      geoScoreImprovements: 0,
+    },
+    achievements: achievements.map((a) => ({
+      achievementId: a.achievementId,
+      unlockedAt: a.unlockedAt,
+      xpAwarded: a.xpAwarded,
+    })),
+    actionHistory: [], // Action history not stored in DB, managed in-memory per session
+    createdAt: dbRecord.createdAt,
+    updatedAt: dbRecord.updatedAt,
+  };
+}
+
+/**
+ * Get or create user gamification record from database
+ */
+async function getOrCreateUserProgress(
+  userId: string,
+  organizationId: string
+): Promise<UserProgress> {
+  // Try to get existing record
+  const existingRecords = await db
+    .select()
+    .from(userGamification)
+    .where(eq(userGamification.userId, userId))
+    .limit(1);
+
+  if (existingRecords.length > 0) {
+    // Get achievements for this user
+    const achievements = await db
+      .select()
+      .from(userAchievements)
+      .where(eq(userAchievements.userId, userId));
+
+    return dbToUserProgress(existingRecords[0], achievements);
+  }
+
+  // Create new record
+  const initialProgress = createInitialProgress(userId, organizationId);
+  const [newRecord] = await db
+    .insert(userGamification)
+    .values({
+      userId,
+      organizationId,
+      currentXP: initialProgress.currentXP,
+      totalXP: initialProgress.totalXP,
+      level: initialProgress.level,
+      streaks: initialProgress.streaks,
+      stats: initialProgress.stats,
+    })
+    .returning();
+
+  return dbToUserProgress(newRecord, []);
+}
+
+/**
+ * Save user progress to database
+ */
+async function saveUserProgress(progress: UserProgress): Promise<void> {
+  await db
+    .update(userGamification)
+    .set({
+      currentXP: progress.currentXP,
+      totalXP: progress.totalXP,
+      level: progress.level,
+      streaks: progress.streaks,
+      stats: progress.stats,
+      updatedAt: new Date(),
+    })
+    .where(eq(userGamification.userId, progress.userId));
+}
 
 /**
  * GET /api/gamification
@@ -30,12 +141,8 @@ export async function GET(request: NextRequest) {
   try {
     switch (action) {
       case "progress": {
-        // Get or create user progress
-        let progress = userProgressStore.get(userId);
-        if (!progress) {
-          progress = createInitialProgress(userId, organizationId);
-          userProgressStore.set(userId, progress);
-        }
+        // Get or create user progress from database
+        const progress = await getOrCreateUserProgress(userId, organizationId);
 
         const level = gamificationEngine.getLevelForXP(progress.totalXP);
         const levelProgress = gamificationEngine.getLevelProgress(progress.totalXP);
@@ -55,10 +162,7 @@ export async function GET(request: NextRequest) {
       }
 
       case "achievements": {
-        let progress = userProgressStore.get(userId);
-        if (!progress) {
-          progress = createInitialProgress(userId, organizationId);
-        }
+        const progress = await getOrCreateUserProgress(userId, organizationId);
 
         const achievements = gamificationEngine.getAchievementsWithStatus(progress);
 
@@ -106,22 +210,53 @@ export async function GET(request: NextRequest) {
       }
 
       case "leaderboard": {
-        // TODO: Implement database query
-        // SELECT user_id, username, level, total_xp FROM user_progress
-        // ORDER BY total_xp DESC LIMIT 10
-        // Returns empty array until database is connected
+        // Query database for top users by XP
+        const leaderboardData = await db
+          .select({
+            rank: userGamification.id, // Will calculate rank client-side
+            userId: userGamification.userId,
+            totalXP: userGamification.totalXP,
+            level: userGamification.level,
+            streaks: userGamification.streaks,
+          })
+          .from(userGamification)
+          .orderBy(desc(userGamification.totalXP))
+          .limit(10);
+
+        // Join with users to get display names
+        const leaderboardWithNames = await Promise.all(
+          leaderboardData.map(async (entry, index) => {
+            const userRecords = await db
+              .select({ name: users.name, email: users.email })
+              .from(users)
+              .where(eq(users.clerkUserId, entry.userId))
+              .limit(1);
+
+            const user = userRecords[0];
+            const levelInfo = gamificationEngine.getLevelForXP(entry.totalXP);
+            const streakData = entry.streaks as StreakData | null;
+
+            return {
+              rank: index + 1,
+              userId: entry.userId,
+              username: user?.name || user?.email?.split("@")[0] || "Anonymous",
+              totalXP: entry.totalXP,
+              level: entry.level,
+              levelName: levelInfo.name,
+              levelBadge: levelInfo.badge,
+              currentStreak: streakData?.currentDaily || 0,
+            };
+          })
+        );
+
         return NextResponse.json({
           success: true,
-          leaderboard: [],
-          message: "Database connection required for leaderboard data",
+          leaderboard: leaderboardWithNames,
         });
       }
 
       case "stats": {
-        let progress = userProgressStore.get(userId);
-        if (!progress) {
-          progress = createInitialProgress(userId, organizationId);
-        }
+        const progress = await getOrCreateUserProgress(userId, organizationId);
 
         return NextResponse.json({
           success: true,
@@ -180,11 +315,8 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Get or create user progress
-        let progress = userProgressStore.get(finalUserId);
-        if (!progress) {
-          progress = createInitialProgress(finalUserId, finalOrgId);
-        }
+        // Get or create user progress from database
+        const progress = await getOrCreateUserProgress(finalUserId, finalOrgId);
 
         // Process the action
         const { updatedProgress, result } = gamificationEngine.processAction(
@@ -193,8 +325,8 @@ export async function POST(request: NextRequest) {
           metadata
         );
 
-        // Save updated progress
-        userProgressStore.set(finalUserId, updatedProgress);
+        // Save updated progress to database
+        await saveUserProgress(updatedProgress);
 
         // Get updated level info
         const level = gamificationEngine.getLevelForXP(updatedProgress.totalXP);
@@ -216,11 +348,8 @@ export async function POST(request: NextRequest) {
       }
 
       case "login": {
-        // Record daily login and update streak
-        let progress = userProgressStore.get(finalUserId);
-        if (!progress) {
-          progress = createInitialProgress(finalUserId, finalOrgId);
-        }
+        // Record daily login and update streak from database
+        const progress = await getOrCreateUserProgress(finalUserId, finalOrgId);
 
         // Update streak
         const updatedProgress = gamificationEngine.updateDailyStreak(progress);
@@ -238,8 +367,8 @@ export async function POST(request: NextRequest) {
           weeklyResult = wr;
         }
 
-        // Save progress
-        userProgressStore.set(finalUserId, finalProgress);
+        // Save progress to database
+        await saveUserProgress(finalProgress);
 
         return NextResponse.json({
           success: true,
@@ -272,11 +401,8 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Get user progress
-        let progress = userProgressStore.get(finalUserId);
-        if (!progress) {
-          progress = createInitialProgress(finalUserId, finalOrgId);
-        }
+        // Get user progress from database
+        const progress = await getOrCreateUserProgress(finalUserId, finalOrgId);
 
         // Check if already unlocked
         if (progress.achievements.some((a) => a.achievementId === achievementId)) {
@@ -286,28 +412,27 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        // Unlock achievement
-        const updatedProgress: UserProgress = {
-          ...progress,
-          achievements: [
-            ...progress.achievements,
-            {
-              achievementId,
-              unlockedAt: new Date(),
-              xpAwarded: achievement.xpReward,
-            },
-          ],
-          totalXP: progress.totalXP + achievement.xpReward,
-          currentXP: progress.currentXP + achievement.xpReward,
-          updatedAt: new Date(),
-        };
+        // Insert achievement record
+        await db.insert(userAchievements).values({
+          userId: finalUserId,
+          achievementId,
+          xpAwarded: achievement.xpReward,
+        });
 
-        // Recalculate level
-        const newLevel = gamificationEngine.getLevelForXP(updatedProgress.totalXP);
-        updatedProgress.level = newLevel.level;
+        // Update user XP and level
+        const newTotalXP = progress.totalXP + achievement.xpReward;
+        const newCurrentXP = progress.currentXP + achievement.xpReward;
+        const newLevel = gamificationEngine.getLevelForXP(newTotalXP);
 
-        // Save progress
-        userProgressStore.set(finalUserId, updatedProgress);
+        await db
+          .update(userGamification)
+          .set({
+            totalXP: newTotalXP,
+            currentXP: newCurrentXP,
+            level: newLevel.level,
+            updatedAt: new Date(),
+          })
+          .where(eq(userGamification.userId, finalUserId));
 
         return NextResponse.json({
           success: true,
@@ -315,17 +440,19 @@ export async function POST(request: NextRequest) {
           xpAwarded: achievement.xpReward,
           newLevel: newLevel.level !== progress.level ? newLevel : null,
           progress: {
-            currentXP: updatedProgress.currentXP,
-            totalXP: updatedProgress.totalXP,
-            level: updatedProgress.level,
+            currentXP: newCurrentXP,
+            totalXP: newTotalXP,
+            level: newLevel.level,
           },
         });
       }
 
       case "reset": {
-        // Reset user progress (for testing)
-        const newProgress = createInitialProgress(finalUserId, finalOrgId);
-        userProgressStore.set(finalUserId, newProgress);
+        // Reset user progress (for testing) - delete and recreate
+        await db.delete(userAchievements).where(eq(userAchievements.userId, finalUserId));
+        await db.delete(userGamification).where(eq(userGamification.userId, finalUserId));
+
+        const newProgress = await getOrCreateUserProgress(finalUserId, finalOrgId);
 
         return NextResponse.json({
           success: true,

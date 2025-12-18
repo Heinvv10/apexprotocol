@@ -335,3 +335,17 @@ export {
   type SystemAuditLog,
   type NewSystemAuditLog,
 } from "./system-audit-logs";
+
+// Gamification (F151)
+export {
+  userGamification,
+  userAchievements,
+  userGamificationRelations,
+  userAchievementsRelations,
+  type UserGamification,
+  type NewUserGamification,
+  type UserAchievement,
+  type NewUserAchievement,
+  type StreakData,
+  type UserStats,
+} from "./gamification";
