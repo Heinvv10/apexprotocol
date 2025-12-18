@@ -1,23 +1,16 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import {
   TrendingUp,
   TrendingDown,
   Minus,
-  MoreHorizontal,
   Plus,
-  Search,
   ChevronDown,
   ChevronUp,
-  Eye,
-  EyeOff,
-  ExternalLink,
   Users,
-  Sparkles,
-  Settings,
-  ArrowRight,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -105,18 +98,39 @@ function SortIcon({
 
 interface CompetitorComparisonProps {
   className?: string;
+  brandId?: string;
   data?: CompetitorData[];
 }
 
-export function CompetitorComparison({ className, data }: CompetitorComparisonProps) {
-  // TODO: Fetch competitors from API endpoint
-  // const { data: competitors } = useQuery(['competitors'], fetchCompetitors);
-  const [competitors, setCompetitors] = React.useState<CompetitorData[]>(data || []); // Empty array - no mock data
+// Fetch competitor comparison data from API
+async function fetchCompetitorComparison(brandId: string): Promise<CompetitorData[]> {
+  const response = await fetch(`/api/competitive/comparison?brandId=${brandId}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch competitor comparison");
+  }
+  const json = await response.json();
+  return json.data || [];
+}
+
+export function CompetitorComparison({ className, brandId, data }: CompetitorComparisonProps) {
+  // Fetch competitors from API if brandId is provided
+  const { data: apiData, isLoading, error } = useQuery({
+    queryKey: ["competitor-comparison", brandId],
+    queryFn: () => fetchCompetitorComparison(brandId!),
+    enabled: !!brandId && !data,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // All hooks must be called before any conditional returns
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [sortBy, setSortBy] = React.useState<"geoScore" | "mentions" | "visibility">("geoScore");
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("desc");
 
-  const hasData = competitors.length > 0;
+  // Use provided data or API data - memoize to prevent unnecessary re-renders
+  const competitors = React.useMemo(
+    () => data || apiData || [],
+    [data, apiData]
+  );
 
   const sortedCompetitors = React.useMemo(() => {
     return [...competitors].sort((a, b) => {
@@ -126,14 +140,43 @@ export function CompetitorComparison({ className, data }: CompetitorComparisonPr
     });
   }, [competitors, sortBy, sortDirection]);
 
-  const toggleSort = (column: typeof sortBy) => {
+  const hasData = competitors.length > 0;
+
+  const toggleSort = React.useCallback((column: typeof sortBy) => {
     if (sortBy === column) {
       setSortDirection((d) => (d === "desc" ? "asc" : "desc"));
     } else {
       setSortBy(column);
       setSortDirection("desc");
     }
-  };
+  }, [sortBy]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className={cn("card-secondary overflow-hidden", className)}>
+        <div className="flex items-center justify-center min-h-[300px]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className={cn("card-secondary overflow-hidden", className)}>
+        <div className="flex items-center justify-center min-h-[300px]">
+          <div className="text-center space-y-2">
+            <p className="text-error">Failed to load competitor data</p>
+            <p className="text-sm text-muted-foreground">
+              {error instanceof Error ? error.message : "Unknown error"}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Show empty state if no data
   if (!hasData) {
@@ -218,7 +261,7 @@ export function CompetitorComparison({ className, data }: CompetitorComparisonPr
             </tr>
           </thead>
           <tbody className="divide-y divide-border/20">
-            {sortedCompetitors.map((competitor, index) => (
+            {sortedCompetitors.map((competitor) => (
               <React.Fragment key={competitor.id}>
                 <tr
                   className={cn(
