@@ -17,9 +17,12 @@ import {
   Settings,
   ArrowRight,
   LayoutGrid,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useRecommendations, useUpdateRecommendationStatus, RecommendationStatus } from "@/hooks/useRecommendations";
+import { useSelectedBrand } from "@/stores";
 
 // Types (matching main recommendations page)
 export type Priority = "critical" | "high" | "medium" | "low";
@@ -247,11 +250,72 @@ function KanbanColumn({
   );
 }
 
+// Loading state component
+function KanbanLoadingState() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center space-y-4">
+        <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
+        <p className="text-muted-foreground">Loading recommendations...</p>
+      </div>
+    </div>
+  );
+}
+
+// Transform API recommendation to UI format
+function transformRecommendation(apiRec: {
+  id: string;
+  title: string;
+  description: string;
+  priority: string;
+  category: string;
+  status: string;
+  impact: number;
+  effort: string;
+}): Recommendation {
+  // Map API effort to numeric value
+  const effortMap: Record<string, number> = { low: 3, medium: 5, high: 8 };
+
+  // Map category to type
+  const categoryToType: Record<string, RecommendationType> = {
+    technical: "technical",
+    content: "content",
+    authority: "schema",
+    ai_readiness: "ai-visibility",
+  };
+
+  return {
+    id: apiRec.id,
+    title: apiRec.title,
+    description: apiRec.description,
+    priority: apiRec.priority as Priority,
+    type: categoryToType[apiRec.category] || "technical",
+    status: apiRec.status as Status,
+    impact: apiRec.impact,
+    effort: effortMap[apiRec.effort] || 5,
+    confidence: 80,
+    affectedPages: [],
+    suggestedAction: apiRec.description,
+  };
+}
+
 export default function KanbanPage() {
-  // TODO: Fetch recommendations from API endpoint
-  // const { data: recommendations } = useQuery(['recommendations'], fetchRecommendations);
-  const [recommendations, setRecommendations] = React.useState<Recommendation[]>([]); // Empty array - no mock data
+  const selectedBrand = useSelectedBrand();
   const [draggingId, setDraggingId] = React.useState<string | null>(null);
+
+  // Fetch recommendations from API
+  const { data: apiData, isLoading } = useRecommendations(
+    selectedBrand?.id ? { brandId: selectedBrand.id, limit: 100 } : { limit: 100 }
+  );
+
+  // Mutation hook for status updates
+  const updateStatus = useUpdateRecommendationStatus();
+
+  // Transform API data to UI format
+  const recommendations: Recommendation[] = React.useMemo(() => {
+    if (!apiData?.recommendations) return [];
+    return apiData.recommendations.map(transformRecommendation);
+  }, [apiData]);
 
   const hasData = recommendations.length > 0;
 
@@ -275,11 +339,11 @@ export default function KanbanPage() {
     e.preventDefault();
     const id = e.dataTransfer.getData("text/plain");
 
-    setRecommendations((prev) =>
-      prev.map((rec) =>
-        rec.id === id ? { ...rec, status: newStatus } : rec
-      )
-    );
+    // Call API to update status
+    updateStatus.mutate({
+      id,
+      status: newStatus as RecommendationStatus,
+    });
     setDraggingId(null);
   };
 
@@ -294,6 +358,35 @@ export default function KanbanPage() {
     inProgress: recommendations.filter((r) => r.status === "in_progress").length,
     completed: recommendations.filter((r) => r.status === "completed").length,
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/recommendations">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to List
+              </Button>
+            </Link>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                <Lightbulb className="h-6 w-6 text-primary" />
+                Kanban Board
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                Drag and drop to change recommendation status
+              </p>
+            </div>
+          </div>
+        </div>
+        <KanbanLoadingState />
+      </div>
+    );
+  }
 
   // Show empty state if no data
   if (!hasData) {

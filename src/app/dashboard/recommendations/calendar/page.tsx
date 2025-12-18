@@ -14,9 +14,12 @@ import {
   Calendar,
   Settings,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useRecommendations } from "@/hooks/useRecommendations";
+import { useSelectedBrand } from "@/stores";
 
 // Types (exported for API integration)
 export type Priority = "critical" | "high" | "medium" | "low";
@@ -30,6 +33,18 @@ export interface CalendarRecommendation {
   type: RecommendationType;
   status: Status;
   dueDate: Date;
+}
+
+// Loading state component
+function CalendarLoadingState() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center space-y-4">
+        <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
+        <p className="text-muted-foreground">Loading recommendations...</p>
+      </div>
+    </div>
+  );
 }
 
 // Empty state component
@@ -111,6 +126,49 @@ const monthNames = [
 // Day names
 const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+// Transform API recommendation to calendar format with synthetic due date
+function transformCalendarRecommendation(
+  apiRec: {
+    id: string;
+    title: string;
+    priority: string;
+    category: string;
+    status: string;
+  },
+  index: number
+): CalendarRecommendation {
+  // Map category to type
+  const categoryToType: Record<string, RecommendationType> = {
+    technical: "technical",
+    content: "content",
+    authority: "schema",
+    ai_readiness: "ai-visibility",
+  };
+
+  // Generate synthetic due date based on priority
+  // Critical: 1-3 days, High: 4-7 days, Medium: 8-14 days, Low: 15-30 days
+  const priorityDaysOffset: Record<string, [number, number]> = {
+    critical: [1, 3],
+    high: [4, 7],
+    medium: [8, 14],
+    low: [15, 30],
+  };
+
+  const [minDays, maxDays] = priorityDaysOffset[apiRec.priority] || [8, 14];
+  const daysOffset = minDays + (index % (maxDays - minDays + 1));
+  const dueDate = new Date();
+  dueDate.setDate(dueDate.getDate() + daysOffset);
+
+  return {
+    id: apiRec.id,
+    title: apiRec.title,
+    priority: apiRec.priority as Priority,
+    type: categoryToType[apiRec.category] || "technical",
+    status: apiRec.status as Status,
+    dueDate,
+  };
+}
+
 // Calendar Day Component
 function CalendarDay({
   day,
@@ -181,10 +239,18 @@ export default function CalendarPage() {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = React.useState(today.getMonth());
   const [currentYear, setCurrentYear] = React.useState(today.getFullYear());
+  const selectedBrand = useSelectedBrand();
 
-  // TODO: Fetch recommendations from API endpoint
-  // const { data: recommendations } = useQuery(['calendarRecommendations'], fetchCalendarRecommendations);
-  const [recommendations] = React.useState<CalendarRecommendation[]>([]); // Empty array - no mock data
+  // Fetch recommendations from API
+  const { data: apiData, isLoading } = useRecommendations(
+    selectedBrand?.id ? { brandId: selectedBrand.id, limit: 100 } : { limit: 100 }
+  );
+
+  // Transform API data to calendar format
+  const recommendations: CalendarRecommendation[] = React.useMemo(() => {
+    if (!apiData?.recommendations) return [];
+    return apiData.recommendations.map((rec, index) => transformCalendarRecommendation(rec, index));
+  }, [apiData]);
 
   const hasData = recommendations.length > 0;
 
@@ -269,6 +335,35 @@ export default function CalendarPage() {
       (r) => r.status === "pending" && r.dueDate < today
     ).length,
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/recommendations">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to List
+              </Button>
+            </Link>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                <Lightbulb className="h-6 w-6 text-primary" />
+                Calendar View
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                View recommendations by due date
+              </p>
+            </div>
+          </div>
+        </div>
+        <CalendarLoadingState />
+      </div>
+    );
+  }
 
   // Show empty state if no data
   if (!hasData) {
