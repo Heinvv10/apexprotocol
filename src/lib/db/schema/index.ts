@@ -349,3 +349,16 @@ export {
   type StreakData,
   type UserStats,
 } from "./gamification";
+
+// Feedback & GEO Score History (GraphQL Support)
+export {
+  recommendationFeedback,
+  geoScoreHistory,
+  recommendationFeedbackRelations,
+  geoScoreHistoryRelations,
+  type RecommendationFeedback,
+  type NewRecommendationFeedback,
+  type GeoScoreHistory,
+  type NewGeoScoreHistory,
+  type PlatformScoreBreakdown,
+} from "./feedback";

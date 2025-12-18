@@ -669,7 +669,7 @@ const resolvers = {
       context.requireAuth();
       const limit = args.first || 50;
 
-      let whereConditions = [];
+      const whereConditions = [];
       if (args.brandId) {
         whereConditions.push(eq(schema.brandMentions.brandId, args.brandId));
       }
@@ -743,10 +743,34 @@ const resolvers = {
       };
     },
 
-    // GEO Score history (returns empty for now - requires historical data)
+    // GEO Score history - query for direct access
     geoScoreHistory: async (_: unknown, { brandId, days }: { brandId: string; days?: number }, context: GraphQLContext) => {
       context.requireAuth();
-      return [];
+      const limit = days || 30;
+      const startDate = new Date(Date.now() - limit * 24 * 60 * 60 * 1000);
+
+      const historyData = await db
+        .select()
+        .from(schema.geoScoreHistory)
+        .where(
+          and(
+            eq(schema.geoScoreHistory.brandId, brandId),
+            sql`${schema.geoScoreHistory.calculatedAt} >= ${startDate}`
+          )
+        )
+        .orderBy(desc(schema.geoScoreHistory.calculatedAt))
+        .limit(limit);
+
+      return historyData.map((h) => ({
+        date: h.calculatedAt.toISOString(),
+        score: h.overallScore,
+        components: {
+          visibility: h.visibilityScore,
+          sentiment: h.sentimentScore,
+          recommendation: h.recommendationScore,
+          competitorGap: h.competitorGapScore,
+        },
+      }));
     },
 
     // Recommendation resolvers - SELECT * FROM recommendations WHERE id = $1
@@ -771,7 +795,7 @@ const resolvers = {
       context.requireAuth();
       const limit = args.first || 50;
 
-      let whereConditions = [];
+      const whereConditions = [];
       if (args.brandId) {
         whereConditions.push(eq(schema.recommendations.brandId, args.brandId));
       }
@@ -868,7 +892,7 @@ const resolvers = {
       context.requireAuth();
       const limit = args.first || 50;
 
-      let whereConditions = [];
+      const whereConditions = [];
       if (args.brandId) {
         whereConditions.push(eq(schema.content.brandId, args.brandId));
       }
@@ -1190,9 +1214,10 @@ const resolvers = {
     },
 
     // Mention mutations - trigger monitoring refresh
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     refreshMentions: async (_: unknown, { brandId, platforms }: { brandId: string; platforms?: string[] }, context: GraphQLContext) => {
       context.requireAuth();
-      // This would trigger a background job to scrape mentions
+      // This would trigger a background job to scrape mentions for brandId
       // For now, return success with 0 mentions found
       return {
         success: true,
@@ -1214,19 +1239,68 @@ const resolvers = {
       };
     },
 
-    // GEO Score calculation
+    // GEO Score calculation - calculates and stores in history
     calculateGeoScore: async (_: unknown, { brandId }: { brandId: string }, context: GraphQLContext) => {
       context.requireAuth();
-      // Return calculated GEO score (same as query)
+
+      // Get mention counts
       const mentionsResult = await db.select({ count: count() }).from(schema.brandMentions).where(eq(schema.brandMentions.brandId, brandId));
       const mentionCount = mentionsResult[0]?.count || 0;
+
+      // Get sentiment breakdown
+      const positiveResult = await db.select({ count: count() }).from(schema.brandMentions)
+        .where(and(eq(schema.brandMentions.brandId, brandId), eq(schema.brandMentions.sentiment, "positive")));
+      const negativeResult = await db.select({ count: count() }).from(schema.brandMentions)
+        .where(and(eq(schema.brandMentions.brandId, brandId), eq(schema.brandMentions.sentiment, "negative")));
+      const positiveCount = positiveResult[0]?.count || 0;
+      const negativeCount = negativeResult[0]?.count || 0;
+      const neutralCount = mentionCount - positiveCount - negativeCount;
+
+      // Get recommendation counts
       const recsResult = await db.select({ count: count() }).from(schema.recommendations).where(eq(schema.recommendations.brandId, brandId));
       const recCount = recsResult[0]?.count || 0;
 
+      const completedRecsResult = await db.select({ count: count() }).from(schema.recommendations)
+        .where(and(eq(schema.recommendations.brandId, brandId), eq(schema.recommendations.status, "completed")));
+      const completedRecs = completedRecsResult[0]?.count || 0;
+
+      // Calculate scores
       const visibilityScore = Math.min(100, mentionCount * 5);
-      const sentimentScore = 70;
-      const recommendationScore = Math.max(0, 100 - recCount * 5);
+      const sentimentScore = mentionCount > 0 ? Math.round((positiveCount / mentionCount) * 100) : 50;
+      const recommendationScore = recCount > 0 ? Math.round((completedRecs / recCount) * 100) : 100;
+      const competitorGapScore = 50; // Would need competitor analysis
       const overallScore = Math.round((visibilityScore * 0.4 + sentimentScore * 0.3 + recommendationScore * 0.3));
+
+      // Get previous score for trend calculation
+      const previousScoreResult = await db
+        .select({ overallScore: schema.geoScoreHistory.overallScore })
+        .from(schema.geoScoreHistory)
+        .where(eq(schema.geoScoreHistory.brandId, brandId))
+        .orderBy(desc(schema.geoScoreHistory.calculatedAt))
+        .limit(1);
+      const previousScore = previousScoreResult[0]?.overallScore || null;
+      const scoreChange = previousScore ? overallScore - previousScore : 0;
+      const trend: "up" | "down" | "stable" = scoreChange > 1 ? "up" : scoreChange < -1 ? "down" : "stable";
+
+      // Store in history table
+      await db.insert(schema.geoScoreHistory).values({
+        brandId,
+        overallScore,
+        visibilityScore,
+        sentimentScore,
+        recommendationScore,
+        competitorGapScore,
+        platformScores: {},
+        previousScore,
+        scoreChange,
+        trend,
+        mentionCount,
+        positiveMentions: positiveCount,
+        negativeMentions: negativeCount,
+        neutralMentions: neutralCount,
+        recommendationCount: recCount,
+        completedRecommendations: completedRecs,
+      });
 
       return {
         id: `geo_${brandId}`,
@@ -1235,10 +1309,10 @@ const resolvers = {
         visibilityScore,
         sentimentScore,
         recommendationScore,
-        competitorGapScore: 50,
+        competitorGapScore,
         platformScores: {},
-        previousScore: null,
-        trend: 0,
+        previousScore,
+        trend: scoreChange,
         calculatedAt: new Date().toISOString(),
       };
     },
@@ -1284,17 +1358,33 @@ const resolvers = {
       };
     },
 
-    // Submit recommendation feedback (stored in notes for now)
-    submitRecommendationFeedback: async (_: unknown, { id, input }: { id: string; input: { rating: number; wasHelpful: boolean; comment?: string } }, context: GraphQLContext) => {
-      context.requireAuth();
+    // Submit recommendation feedback - stores in recommendation_feedback table
+    submitRecommendationFeedback: async (_: unknown, { id, input }: { id: string; input: { rating: number; wasHelpful: boolean; comment?: string; actualImpact?: number } }, context: GraphQLContext) => {
+      const user = context.requireAuth();
 
       const existing = await db.select().from(schema.recommendations).where(eq(schema.recommendations.id, id)).limit(1);
       if (!existing[0]) throw new Error("Recommendation not found");
 
-      const feedbackNote = `Feedback: Rating ${input.rating}/5, Helpful: ${input.wasHelpful}${input.comment ? `, Comment: ${input.comment}` : ""}`;
-      const notes = existing[0].notes ? `${existing[0].notes}\n${feedbackNote}` : feedbackNote;
+      // Insert feedback into the recommendation_feedback table
+      await db.insert(schema.recommendationFeedback).values({
+        recommendationId: id,
+        userId: user.userId,
+        rating: input.rating,
+        wasHelpful: input.wasHelpful,
+        comment: input.comment || null,
+        actualImpact: input.actualImpact || null,
+        expectedImpact: existing[0].impact === "high" ? 80 : existing[0].impact === "medium" ? 50 : 30,
+      });
 
-      const [rec] = await db.update(schema.recommendations).set({ notes, updatedAt: new Date() }).where(eq(schema.recommendations.id, id)).returning();
+      // Update recommendation's updatedAt timestamp
+      const [rec] = await db.update(schema.recommendations).set({ updatedAt: new Date() }).where(eq(schema.recommendations.id, id)).returning();
+
+      // Fetch the updated feedback list
+      const feedbackList = await db
+        .select()
+        .from(schema.recommendationFeedback)
+        .where(eq(schema.recommendationFeedback.recommendationId, id))
+        .orderBy(desc(schema.recommendationFeedback.createdAt));
 
       return {
         ...rec,
@@ -1303,14 +1393,23 @@ const resolvers = {
         dependencies: [],
         evidence: {},
         aiExplanation: null,
-        feedback: [],
+        feedback: feedbackList.map((f) => ({
+          id: f.id,
+          userId: f.userId,
+          rating: f.rating,
+          wasHelpful: f.wasHelpful,
+          comment: f.comment,
+          actualImpact: f.actualImpact,
+          createdAt: f.createdAt.toISOString(),
+        })),
       };
     },
 
     // Generate recommendations (placeholder - would use AI)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     generateRecommendations: async (_: unknown, { brandId }: { brandId: string }, context: GraphQLContext) => {
       context.requireAuth();
-      // Return empty array - AI generation would be implemented separately
+      // Return empty array - AI generation for brandId would be implemented separately
       return [];
     },
 
@@ -1683,9 +1782,22 @@ const resolvers = {
       };
     },
     feedback: async (parent: { id: string }) => {
-      // Feedback would be stored in a separate table - return empty for now
-      // TODO: Add recommendation_feedback table if needed
-      return [];
+      // Fetch feedback from recommendation_feedback table
+      const feedbackList = await db
+        .select()
+        .from(schema.recommendationFeedback)
+        .where(eq(schema.recommendationFeedback.recommendationId, parent.id))
+        .orderBy(desc(schema.recommendationFeedback.createdAt));
+
+      return feedbackList.map((f) => ({
+        id: f.id,
+        userId: f.userId,
+        rating: f.rating,
+        wasHelpful: f.wasHelpful,
+        comment: f.comment,
+        actualImpact: f.actualImpact,
+        createdAt: f.createdAt.toISOString(),
+      }));
     },
   },
 
@@ -1719,13 +1831,33 @@ const resolvers = {
 
   GEOScore: {
     history: async (parent: { brandId: string }, { days }: { days?: number }) => {
-      // Generate historical data based on current mentions over time
       const limit = days || 30;
-      const history: Array<{ date: string; score: number; visibilityScore: number; sentimentScore: number; recommendationScore: number }> = [];
+      const startDate = new Date(Date.now() - limit * 24 * 60 * 60 * 1000);
 
-      // For now return empty - would need a geo_score_history table for real historical data
-      // TODO: Add geo_score_history table for tracking score changes over time
-      return history;
+      // Fetch historical GEO scores from geo_score_history table
+      const historyData = await db
+        .select()
+        .from(schema.geoScoreHistory)
+        .where(
+          and(
+            eq(schema.geoScoreHistory.brandId, parent.brandId),
+            sql`${schema.geoScoreHistory.calculatedAt} >= ${startDate}`
+          )
+        )
+        .orderBy(desc(schema.geoScoreHistory.calculatedAt))
+        .limit(limit);
+
+      return historyData.map((h) => ({
+        date: h.calculatedAt.toISOString(),
+        score: h.overallScore,
+        components: {
+          visibility: h.visibilityScore,
+          sentiment: h.sentimentScore,
+          recommendation: h.recommendationScore,
+          competitorGap: h.competitorGapScore,
+          platformScores: h.platformScores,
+        },
+      }));
     },
   },
 
