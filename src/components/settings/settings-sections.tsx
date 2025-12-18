@@ -2,10 +2,27 @@
 
 import * as React from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
+import { useQuery } from "@tanstack/react-query";
 import { Check, Copy, Eye, EyeOff, Upload, Trash2, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAPIKeys, useCreateAPIKey, useRevokeAPIKey } from "@/hooks/useSettings";
+
+// Fetch API usage stats
+interface ApiUsageStats {
+  totalRequests: number;
+  successRate: number;
+  avgLatencyMs: number | null;
+}
+
+async function fetchApiUsageStats(): Promise<ApiUsageStats> {
+  const response = await fetch("/api/usage/api-stats");
+  if (!response.ok) {
+    throw new Error("Failed to fetch API usage stats");
+  }
+  const json = await response.json();
+  return json.data;
+}
 
 // Export interface for API integration
 export interface UserProfile {
@@ -396,6 +413,13 @@ export function ApiKeysSection({ apiKeys: propKeys }: ApiKeysSectionProps) {
   const createKeyMutation = useCreateAPIKey();
   const revokeKeyMutation = useRevokeAPIKey();
 
+  // Fetch API usage stats
+  const { data: apiStats, isLoading: statsLoading } = useQuery({
+    queryKey: ["api-usage-stats"],
+    queryFn: fetchApiUsageStats,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
   const [showKeys, setShowKeys] = React.useState<Record<string, boolean>>({});
   const [copiedKey, setCopiedKey] = React.useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = React.useState(false);
@@ -692,26 +716,50 @@ export function ApiKeysSection({ apiKeys: propKeys }: ApiKeysSectionProps) {
         ))}
       </div>
 
-      {/* Usage Stats - TODO: Fetch from API usage tracking */}
+      {/* Usage Stats - Wired to API */}
       <div className="card-tertiary">
         <h3 className="text-sm font-medium text-foreground mb-4">API Usage This Month</h3>
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
-            <p className="text-2xl font-bold text-primary">--</p>
+            {statsLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" />
+            ) : (
+              <p className="text-2xl font-bold text-primary">
+                {apiStats?.totalRequests?.toLocaleString() ?? "--"}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">Total Requests</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-success">--</p>
+            {statsLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin text-success mx-auto" />
+            ) : (
+              <p className="text-2xl font-bold text-success">
+                {apiStats?.successRate != null ? `${apiStats.successRate}%` : "--"}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">Success Rate</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-warning">--</p>
+            {statsLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin text-warning mx-auto" />
+            ) : (
+              <p className="text-2xl font-bold text-warning">
+                {apiStats?.avgLatencyMs != null ? `${apiStats.avgLatencyMs}ms` : "N/A"}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">Avg Latency</p>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground/60 text-center mt-3">
-          Usage data will appear once API keys are active
-        </p>
+        {hasKeys ? (
+          <p className="text-xs text-muted-foreground/60 text-center mt-3">
+            Usage data is updated in real-time
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground/60 text-center mt-3">
+            Create an API key to start tracking usage
+          </p>
+        )}
       </div>
     </div>
   );
