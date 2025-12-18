@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown, Trash2, User, Puzzle, Bell, Users, CreditCard, Key, Loader2, Check, AlertCircle, X, Upload, ExternalLink } from "lucide-react";
 import { ApiKeysSection, IntegrationsSection, NotificationsSection } from "@/components/settings/settings-sections";
 import { useUser } from "@clerk/nextjs";
@@ -115,7 +116,12 @@ function DecorativeStar() {
 
 export default function SettingsPage() {
   const { user, isLoaded: isUserLoaded } = useUser();
-  const [activeSection, setActiveSection] = React.useState("general");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Read tab from URL query parameter, default to "general"
+  const tabParam = searchParams.get("tab");
+  const [activeSection, setActiveSection] = React.useState(tabParam || "general");
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
   const [saveStatus, setSaveStatus] = React.useState<"idle" | "success" | "error">("idle");
@@ -144,6 +150,19 @@ export default function SettingsPage() {
   const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = React.useState(false);
   const logoInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Sync activeSection with URL when tab param changes
+  React.useEffect(() => {
+    if (tabParam && tabParam !== activeSection) {
+      setActiveSection(tabParam);
+    }
+  }, [tabParam]);
+
+  // Update URL when activeSection changes
+  const handleSectionChange = (section: string) => {
+    setActiveSection(section);
+    router.replace(`/dashboard/settings?tab=${section}`, { scroll: false });
+  };
 
   // Fetch organization settings on mount
   React.useEffect(() => {
@@ -275,7 +294,7 @@ export default function SettingsPage() {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setActiveSection(item.id)}
+                    onClick={() => handleSectionChange(item.id)}
                     className={`settings-nav-item ${isActive ? "active" : ""}`}
                   >
                     <Icon className="w-4 h-4" />

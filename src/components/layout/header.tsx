@@ -102,11 +102,11 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
                 <User className="mr-2 h-4 w-4" />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/dashboard/settings/billing")} className="cursor-pointer">
+              <DropdownMenuItem onClick={() => router.push("/dashboard/settings?tab=billing")} className="cursor-pointer">
                 <CreditCard className="mr-2 h-4 w-4" />
                 Billing
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/dashboard/settings/team")} className="cursor-pointer">
+              <DropdownMenuItem onClick={() => router.push("/dashboard/settings?tab=team")} className="cursor-pointer">
                 <Users className="mr-2 h-4 w-4" />
                 Team
               </DropdownMenuItem>
