@@ -1,10 +1,38 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, Search, TrendingUp, BarChart3, AlertCircle, Sparkles, Settings, ArrowRight } from "lucide-react";
+import { ArrowLeft, Search, TrendingUp, BarChart3, AlertCircle, Sparkles, Settings, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { PromptPerformanceTable, SearchPrompt, PlatformId } from "@/components/monitor";
 import { Button } from "@/components/ui/button";
+import { usePrompts, SearchPromptResponse } from "@/hooks/useMonitor";
+import { useSelectedBrand } from "@/stores";
+
+// Loading state component
+function PromptsLoadingState() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center space-y-4">
+        <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
+        <p className="text-muted-foreground">Loading prompt data...</p>
+      </div>
+    </div>
+  );
+}
+
+// Transform API response to UI format
+function transformPrompt(apiPrompt: SearchPromptResponse): SearchPrompt {
+  return {
+    id: apiPrompt.id,
+    promptText: apiPrompt.promptText,
+    platforms: apiPrompt.platforms as PlatformId[],
+    frequency: apiPrompt.frequency,
+    trend: apiPrompt.trend,
+    trendValue: apiPrompt.trendValue,
+    sentiment: apiPrompt.sentiment,
+    lastSeen: apiPrompt.lastSeen,
+  };
+}
 
 // Empty state component
 function PromptsEmptyState() {
@@ -51,9 +79,16 @@ function PromptsEmptyState() {
 }
 
 export default function PromptsPage() {
-  // TODO: Fetch prompts from API endpoint
-  // const { data: promptsData } = useQuery(['prompts'], fetchPrompts);
-  const [prompts] = React.useState<SearchPrompt[]>([]); // Empty array - no mock data
+  const selectedBrand = useSelectedBrand();
+
+  // Fetch prompts from API
+  const { data: promptsData, isLoading } = usePrompts(selectedBrand?.id);
+
+  // Transform API data to UI format
+  const prompts: SearchPrompt[] = React.useMemo(() => {
+    if (!promptsData?.prompts) return [];
+    return promptsData.prompts.map(transformPrompt);
+  }, [promptsData]);
 
   const hasData = prompts.length > 0;
 
@@ -86,6 +121,29 @@ export default function PromptsPage() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/monitor">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Search Prompt Performance</h2>
+            <p className="text-muted-foreground">
+              Track which search queries trigger your brand mentions across AI platforms
+            </p>
+          </div>
+        </div>
+        <PromptsLoadingState />
+      </div>
+    );
+  }
 
   // Show empty state if no data
   if (!hasData) {

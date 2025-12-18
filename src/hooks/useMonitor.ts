@@ -479,22 +479,177 @@ export function useRefreshMentions() {
   });
 }
 
+// Analytics response types
+export interface AnalyticsDataPoint {
+  date: string;
+  displayDate: string;
+  chatgpt: number;
+  claude: number;
+  perplexity: number;
+  gemini: number;
+  grok: number;
+  deepseek: number;
+  copilot: number;
+  total: number;
+}
+
+export interface SentimentStats {
+  total: number;
+  positive: number;
+  neutral: number;
+  negative: number;
+}
+
+export interface AnalyticsResponse {
+  success: boolean;
+  data: AnalyticsDataPoint[];
+  sentiment: SentimentStats;
+  platforms: Record<string, number>;
+  meta: {
+    range: string;
+    startDate: string;
+    endDate: string;
+    totalMentions: number;
+  };
+}
+
 /**
  * Hook to fetch mention analytics
  */
-export function useMentionAnalytics(brandId: string, range: "7d" | "30d" | "90d" = "30d") {
-  return useQuery({
-    queryKey: queryKeys.mentions.analytics(brandId, range),
+export function useMentionAnalytics(
+  brandId?: string,
+  range: "7d" | "14d" | "30d" | "90d" = "30d"
+) {
+  const orgId = useOrganizationId();
+
+  return useQuery<AnalyticsResponse>({
+    queryKey: queryKeys.mentions.analytics(brandId || "all", range),
     queryFn: async () => {
-      const response = await fetch(
-        `/api/monitor/mentions/analytics?brandId=${brandId}&range=${range}`
-      );
+      const params = new URLSearchParams({ range });
+      if (brandId) {
+        params.append("brandId", brandId);
+      }
+      const response = await fetch(`/api/monitor/mentions/analytics?${params}`);
       if (!response.ok) {
         throw new Error("Failed to fetch mention analytics");
       }
       return response.json();
     },
     staleTime: 1000 * 60 * 5,
-    enabled: !!brandId,
+    enabled: !!orgId,
+  });
+}
+
+// =============================================================================
+// Prompts/Queries Hooks
+// =============================================================================
+
+export interface SearchPromptResponse {
+  id: string;
+  promptText: string;
+  platforms: string[];
+  frequency: number;
+  trend: "up" | "down" | "stable";
+  trendValue: number;
+  sentiment: "positive" | "neutral" | "negative";
+  lastSeen: string;
+}
+
+export interface PromptsResponse {
+  success: boolean;
+  prompts: SearchPromptResponse[];
+  total: number;
+  meta: {
+    range: string;
+    startDate: string;
+    endDate: string;
+  };
+}
+
+/**
+ * Hook to fetch search prompts/queries
+ */
+export function usePrompts(
+  brandId?: string,
+  range: "7d" | "14d" | "30d" | "90d" = "30d",
+  limit: number = 50
+) {
+  const orgId = useOrganizationId();
+
+  return useQuery<PromptsResponse>({
+    queryKey: ["monitor", "prompts", brandId || "all", range, limit],
+    queryFn: async () => {
+      const params = new URLSearchParams({ range, limit: String(limit) });
+      if (brandId) {
+        params.append("brandId", brandId);
+      }
+      const response = await fetch(`/api/monitor/prompts?${params}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch prompts");
+      }
+      return response.json();
+    },
+    staleTime: 1000 * 60 * 2,
+    enabled: !!orgId,
+  });
+}
+
+// =============================================================================
+// Citations Hooks
+// =============================================================================
+
+export interface CitationData {
+  id: string;
+  url: string;
+  title: string;
+  citations: number;
+  lastCited: string;
+  platforms: Record<string, number>;
+  context: string;
+}
+
+export interface CitationTrendPoint {
+  date: string;
+  citations: number;
+}
+
+export interface CitationsResponse {
+  success: boolean;
+  citations: CitationData[];
+  trendData: CitationTrendPoint[];
+  total: number;
+  meta: {
+    range: string;
+    startDate: string;
+    endDate: string;
+    totalCitations: number;
+  };
+}
+
+/**
+ * Hook to fetch citations data
+ */
+export function useCitations(
+  brandId?: string,
+  range: "7d" | "14d" | "30d" | "90d" = "30d",
+  limit: number = 20
+) {
+  const orgId = useOrganizationId();
+
+  return useQuery<CitationsResponse>({
+    queryKey: ["monitor", "citations", brandId || "all", range, limit],
+    queryFn: async () => {
+      const params = new URLSearchParams({ range, limit: String(limit) });
+      if (brandId) {
+        params.append("brandId", brandId);
+      }
+      const response = await fetch(`/api/monitor/citations?${params}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch citations");
+      }
+      return response.json();
+    },
+    staleTime: 1000 * 60 * 5,
+    enabled: !!orgId,
   });
 }

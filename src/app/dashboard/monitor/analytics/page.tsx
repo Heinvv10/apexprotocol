@@ -28,19 +28,11 @@ import {
   Sparkles,
   Settings,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-// Analytics data point interface
-export interface AnalyticsDataPoint {
-  date: string;
-  displayDate: string;
-  chatgpt: number;
-  claude: number;
-  perplexity: number;
-  gemini: number;
-  total: number;
-}
+import { useMentionAnalytics } from "@/hooks/useMonitor";
+import { useSelectedBrand } from "@/stores";
 
 // Deterministic number formatting (avoids hydration issues)
 function formatNumber(num: number): string {
@@ -136,13 +128,32 @@ const timeRangeLabels: Record<TimeRange, string> = {
   "90d": "90 Days",
 };
 
+// Loading state component
+function AnalyticsLoadingState() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center space-y-4">
+        <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
+        <p className="text-muted-foreground">Loading analytics...</p>
+      </div>
+    </div>
+  );
+}
+
 export default function AnalyticsPage() {
-  // TODO: Fetch analytics data from API endpoint
-  // const { data: analyticsData } = useQuery(['analytics'], fetchAnalytics);
-  const [data] = React.useState<AnalyticsDataPoint[]>([]); // Empty array - no mock data
+  const selectedBrand = useSelectedBrand();
   const [timeRange, setTimeRange] = React.useState<TimeRange>("30d");
 
-  const hasData = data.length > 0;
+  // Fetch analytics data from API
+  const { data: analyticsResponse, isLoading, error } = useMentionAnalytics(
+    selectedBrand?.id,
+    timeRange
+  );
+
+  const data = analyticsResponse?.data || [];
+  const sentimentStats = analyticsResponse?.sentiment || { total: 0, positive: 0, neutral: 0, negative: 0 };
+  const platformStats = analyticsResponse?.platforms || {};
+  const hasData = data.length > 0 && sentimentStats.total > 0;
 
   // Filter data based on time range
   const filteredData = React.useMemo(() => {
@@ -210,31 +221,59 @@ export default function AnalyticsPage() {
       .sort((a, b) => b.total - a.total);
   }, [filteredData, stats, platformConfig]);
 
-  // Sentiment data - TODO: Fetch from database
-  // Currently returns empty placeholders until sentiment analysis is implemented
+  // Sentiment data from API
   const sentimentData = React.useMemo(() => {
-    // Return empty sentiment data - will be populated from database
+    const total = sentimentStats.total || 1; // Avoid division by zero
     return [
       {
         name: "Positive",
-        value: 0,
+        value: sentimentStats.positive,
         color: "hsl(160, 84%, 45%)", // Green
-        percentage: 0,
+        percentage: Math.round((sentimentStats.positive / total) * 100),
       },
       {
         name: "Neutral",
-        value: 0,
+        value: sentimentStats.neutral,
         color: "hsl(220, 15%, 50%)", // Grey
-        percentage: 0,
+        percentage: Math.round((sentimentStats.neutral / total) * 100),
       },
       {
         name: "Negative",
-        value: 0,
+        value: sentimentStats.negative,
         color: "hsl(0, 72%, 51%)", // Red
-        percentage: 0,
+        percentage: Math.round((sentimentStats.negative / total) * 100),
       },
     ];
-  }, []);
+  }, [sentimentStats]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/monitor">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Monitor
+              </Button>
+            </Link>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                <BarChart3 className="h-6 w-6 text-primary" />
+                Analytics
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                Track brand mention trends over time
+              </p>
+            </div>
+          </div>
+        </div>
+        <AnalyticsLoadingState />
+      </div>
+    );
+  }
 
   // Show empty state if no data
   if (!hasData) {

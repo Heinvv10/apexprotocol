@@ -26,8 +26,23 @@ import {
   Sparkles,
   Settings,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCitations, CitationData as APICitationData, CitationTrendPoint as APICitationTrendPoint } from "@/hooks/useMonitor";
+import { useSelectedBrand } from "@/stores";
+
+// Loading state component
+function CitationsLoadingState() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center space-y-4">
+        <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
+        <p className="text-muted-foreground">Loading citation data...</p>
+      </div>
+    </div>
+  );
+}
 
 // Citation data interfaces
 export interface CitationData {
@@ -118,11 +133,29 @@ function CitationsEmptyState() {
 export default function CitationsPage() {
   const [expandedRow, setExpandedRow] = React.useState<string | null>(null);
   const [sortBy, setSortBy] = React.useState<"citations" | "recent">("citations");
+  const selectedBrand = useSelectedBrand();
 
-  // TODO: Fetch citations from API endpoint
-  // const { data: citationsData } = useQuery(['citations'], fetchCitations);
-  const [citations] = React.useState<CitationData[]>([]); // Empty array - no mock data
-  const [citationTrendData] = React.useState<CitationTrendPoint[]>([]); // Empty array - no mock data
+  // Fetch citations from API
+  const { data: citationsData, isLoading } = useCitations(selectedBrand?.id);
+
+  // Transform API data to UI format
+  const citations: CitationData[] = React.useMemo(() => {
+    if (!citationsData?.citations) return [];
+    return citationsData.citations.map((c: APICitationData) => ({
+      id: c.id,
+      url: c.url,
+      title: c.title,
+      citations: c.citations,
+      lastCited: c.lastCited,
+      platforms: c.platforms as CitationData["platforms"],
+      context: c.context,
+    }));
+  }, [citationsData]);
+
+  const citationTrendData: CitationTrendPoint[] = React.useMemo(() => {
+    if (!citationsData?.trendData) return [];
+    return citationsData.trendData;
+  }, [citationsData]);
 
   // Compute platform comparison data from citations
   const platformComparisonData = React.useMemo((): PlatformComparisonPoint[] => {
@@ -153,6 +186,35 @@ export default function CitationsPage() {
 
   const totalCitations = citations.reduce((sum, c) => sum + c.citations, 0);
   const avgCitationsPerPage = hasData ? Math.round(totalCitations / citations.length) : 0;
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/monitor/analytics">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Analytics
+              </Button>
+            </Link>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                <Link2 className="h-6 w-6 text-primary" />
+                Citation Analysis
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                Track which AI platforms cite your content most frequently
+              </p>
+            </div>
+          </div>
+        </div>
+        <CitationsLoadingState />
+      </div>
+    );
+  }
 
   // Show empty state if no data
   if (!hasData) {
