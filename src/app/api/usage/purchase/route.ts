@@ -7,7 +7,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { stripeBillingManager } from "@/lib/billing/stripe";
-import type { UsageMetricType } from "@/hooks/useUsage";
 
 // Pricing per unit for additional usage
 const additionalUsagePricing: Record<string, number> = {

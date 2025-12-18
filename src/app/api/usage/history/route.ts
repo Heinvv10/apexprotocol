@@ -1,10 +1,15 @@
 /**
  * Usage History API (F176)
  * GET /api/usage/history - Get usage history over time
+ * Now queries from database for real AI token usage
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { db } from "@/lib/db";
+import { aiUsage, audits, content, brandMentions, users } from "@/lib/db/schema";
+import { eq, and, gte, sql, count, inArray } from "drizzle-orm";
+import { brands } from "@/lib/db/schema";
 import type { UsageHistory, UsageMetricType } from "@/hooks/useUsage";
 
 export async function GET(request: NextRequest) {
@@ -18,6 +23,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const organizationId = orgId || userId;
     const { searchParams } = new URL(request.url);
     const period = searchParams.get("period") || "30d";
 
@@ -28,41 +34,108 @@ export async function GET(request: NextRequest) {
     else if (period === "30d") days = 30;
     else if (period === "90d") days = 90;
 
-    // Generate history data
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    startDate.setHours(0, 0, 0, 0);
+
+    // Query AI token usage from database grouped by date
+    const aiUsageData = await db
+      .select({
+        date: sql<string>`DATE(${aiUsage.createdAt})`.as("date"),
+        totalTokens: sql<number>`SUM(${aiUsage.totalTokens})`.as("total_tokens"),
+      })
+      .from(aiUsage)
+      .where(
+        and(
+          eq(aiUsage.organizationId, organizationId),
+          gte(aiUsage.createdAt, startDate)
+        )
+      )
+      .groupBy(sql`DATE(${aiUsage.createdAt})`);
+
+    // Get brand IDs for this organization
+    const orgBrands = await db
+      .select({ id: brands.id })
+      .from(brands)
+      .where(eq(brands.organizationId, organizationId));
+    const brandIds = orgBrands.map((b) => b.id);
+
+    // Query audits per day (via brands)
+    const auditData = await db
+      .select({
+        date: sql<string>`DATE(${audits.createdAt})`.as("date"),
+        count: count(),
+      })
+      .from(audits)
+      .where(
+        and(
+          brandIds.length > 0 ? inArray(audits.brandId, brandIds) : sql`false`,
+          gte(audits.createdAt, startDate)
+        )
+      )
+      .groupBy(sql`DATE(${audits.createdAt})`);
+
+    // Query content generations per day (via brands)
+    const contentData = await db
+      .select({
+        date: sql<string>`DATE(${content.createdAt})`.as("date"),
+        count: count(),
+      })
+      .from(content)
+      .where(
+        and(
+          brandIds.length > 0 ? inArray(content.brandId, brandIds) : sql`false`,
+          gte(content.createdAt, startDate)
+        )
+      )
+      .groupBy(sql`DATE(${content.createdAt})`);
+
+    // Query mentions per day
+    const mentionsData = await db
+      .select({
+        date: sql<string>`DATE(${brandMentions.createdAt})`.as("date"),
+        count: count(),
+      })
+      .from(brandMentions)
+      .where(gte(brandMentions.createdAt, startDate))
+      .groupBy(sql`DATE(${brandMentions.createdAt})`);
+
+    // Get team member count
+    const teamCount = await db
+      .select({ count: count() })
+      .from(users)
+      .where(eq(users.organizationId, organizationId));
+
+    const teamMembers = teamCount[0]?.count || 1;
+
+    // Create lookup maps for quick access
+    const aiLookup = new Map(aiUsageData.map((d) => [d.date, d.totalTokens || 0]));
+    const auditLookup = new Map(auditData.map((d) => [d.date, d.count || 0]));
+    const contentLookup = new Map(contentData.map((d) => [d.date, d.count || 0]));
+    const mentionsLookup = new Map(mentionsData.map((d) => [d.date, d.count || 0]));
+
+    // Build history data for each day
     const data: Array<{
       date: string;
       metrics: Record<UsageMetricType, number>;
     }> = [];
 
-    const baseMetrics = {
-      ai_tokens: 2500,
-      api_calls: 80,
-      scans: 1,
-      audits: 0.3,
-      content_generations: 2,
-      mentions_tracked: 10,
-      storage_mb: 80,
-      team_members: 3,
-    };
-
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-
-      // Add some variance to make data look realistic
-      const variance = () => 0.7 + Math.random() * 0.6;
+      const dateStr = date.toISOString().split("T")[0];
 
       data.push({
-        date: date.toISOString().split("T")[0],
+        date: dateStr,
         metrics: {
-          ai_tokens: Math.round(baseMetrics.ai_tokens * variance()),
-          api_calls: Math.round(baseMetrics.api_calls * variance()),
-          scans: Math.round(baseMetrics.scans * variance()),
-          audits: Math.random() > 0.7 ? 1 : 0,
-          content_generations: Math.round(baseMetrics.content_generations * variance()),
-          mentions_tracked: Math.round(baseMetrics.mentions_tracked * variance()),
-          storage_mb: Math.round(baseMetrics.storage_mb * (1 + i * 0.01)),
-          team_members: 3,
+          ai_tokens: aiLookup.get(dateStr) || 0,
+          api_calls: Math.floor(Math.random() * 100), // TODO: Add API call tracking table
+          scans: mentionsLookup.get(dateStr) || 0,
+          audits: auditLookup.get(dateStr) || 0,
+          content_generations: contentLookup.get(dateStr) || 0,
+          mentions_tracked: mentionsLookup.get(dateStr) || 0,
+          storage_mb: 0, // TODO: Add storage tracking
+          team_members: teamMembers,
         } as Record<UsageMetricType, number>,
       });
     }

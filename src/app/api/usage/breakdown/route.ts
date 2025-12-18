@@ -61,43 +61,39 @@ export async function GET(request: NextRequest) {
       )
       .groupBy(schema.aiUsage.operation);
 
-    // Map feature names to metric types
-    const featureToMetric: Record<string, UsageMetricType> = {
-      sentiment: "ai_tokens",
-      content: "ai_tokens",
-      recommendation: "ai_tokens",
-      embedding: "ai_tokens",
-      analysis: "ai_tokens",
-    };
+    // Build breakdown response with all required metric types
+    const createMetrics = (overrides: Partial<Record<UsageMetricType, number>>): Record<UsageMetricType, number> => ({
+      ai_tokens: 0,
+      api_calls: 0,
+      scans: 0,
+      audits: 0,
+      content_generations: 0,
+      mentions_tracked: 0,
+      storage_mb: 0,
+      team_members: 0,
+      ...overrides,
+    });
 
-    // Build breakdown response
     const breakdown: UsageBreakdown = {
       byBrand: [], // Brand breakdown would require joining with brands table
       byUser: userAggregation.map((row) => ({
         userId: row.userId || "unknown",
         userName: row.userId || "Unknown User",
-        metrics: {
+        metrics: createMetrics({
           ai_tokens: Number(row.totalTokens),
-          audits: 0,
-          mentions: 0,
-          content_pieces: 0,
-          recommendations: 0,
           api_calls: Number(row.operations),
-          storage: 0,
-        } as Record<UsageMetricType, number>,
+        }),
       })),
       byFeature: featureAggregation.map((row) => ({
-        featureId: row.feature || "unknown",
-        featureName: (row.feature || "Unknown").charAt(0).toUpperCase() + (row.feature || "unknown").slice(1),
-        metrics: {
+        feature: (row.feature || "Unknown").charAt(0).toUpperCase() + (row.feature || "unknown").slice(1),
+        metrics: createMetrics({
           ai_tokens: Number(row.totalTokens),
           audits: row.feature === "audit" ? Number(row.operations) : 0,
-          mentions: row.feature === "mention" ? Number(row.operations) : 0,
-          content_pieces: row.feature === "content" ? Number(row.operations) : 0,
-          recommendations: row.feature === "recommendation" ? Number(row.operations) : 0,
+          scans: row.feature === "mention" ? Number(row.operations) : 0,
+          content_generations: row.feature === "content" ? Number(row.operations) : 0,
+          mentions_tracked: row.feature === "mention" ? Number(row.operations) : 0,
           api_calls: Number(row.operations),
-          storage: 0,
-        } as Record<UsageMetricType, number>,
+        }),
       })),
     };
 
