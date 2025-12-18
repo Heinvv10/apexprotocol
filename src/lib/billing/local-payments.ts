@@ -241,7 +241,7 @@ export class LocalPaymentManager {
    */
   getProvidersForCurrency(currency: Currency): LocalPaymentProvider[] {
     return (Object.entries(PROVIDER_CONFIGS) as [LocalPaymentProvider, typeof PROVIDER_CONFIGS[LocalPaymentProvider]][])
-      .filter(([_, config]) => config.supportedCurrencies.includes(currency))
+      .filter(([, config]) => config.supportedCurrencies.includes(currency))
       .map(([provider]) => provider);
   }
 
@@ -822,6 +822,16 @@ export class LocalPaymentManager {
       };
     }
 
+    // Check if already refunded
+    if (payment.status === "refunded") {
+      return {
+        success: false,
+        amount: 0,
+        status: "failed",
+        error: "Payment has already been refunded",
+      };
+    }
+
     // Provider-specific refund handling
     const config = this.config.get(payment.provider);
 
@@ -834,14 +844,275 @@ export class LocalPaymentManager {
       };
     }
 
-    // TODO: Implement real refund API calls for each provider
-    // For now, return not implemented error
-    return {
-      success: false,
-      amount: refundAmount,
-      status: "failed",
-      error: `Refund API not yet implemented for ${payment.provider}. Please process manually.`,
+    // Process refund based on provider
+    let result: RefundResult;
+
+    switch (payment.provider) {
+      case "snapscan":
+        result = await this.processSnapScanRefund(payment, refundAmount, reason, config);
+        break;
+      case "ozow":
+        result = await this.processOzowRefund(payment, refundAmount, reason, config);
+        break;
+      case "payfast":
+        result = await this.processPayFastRefund(payment, refundAmount, reason, config);
+        break;
+      case "eft":
+        result = await this.processEFTRefund(payment, refundAmount, reason);
+        break;
+      default:
+        return {
+          success: false,
+          amount: refundAmount,
+          status: "failed",
+          error: `Unknown provider: ${payment.provider}`,
+        };
+    }
+
+    // Update payment status if refund successful
+    if (result.success) {
+      payment.status = "refunded";
+      payment.updatedAt = new Date();
+      payment.metadata = {
+        ...payment.metadata,
+        refund: {
+          refundId: result.refundId,
+          amount: refundAmount,
+          reason: reason || "No reason provided",
+          refundedAt: new Date().toISOString(),
+        },
+      };
+    }
+
+    return result;
+  }
+
+  /**
+   * Process SnapScan refund
+   */
+  private async processSnapScanRefund(
+    payment: PaymentRequest,
+    amount: number,
+    reason: string | undefined,
+    config: LocalPaymentConfig
+  ): Promise<RefundResult> {
+    try {
+      const response = await fetch(
+        `https://api.snapscan.io/v1/payments/${payment.externalId}/refund`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${config.apiKey}`,
+          },
+          body: JSON.stringify({
+            amount: Math.round(amount * 100), // cents
+            reason: reason || "Customer requested refund",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `SnapScan refund failed: ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+
+      return {
+        success: true,
+        refundId: data.refundId || `ref_snapscan_${Date.now()}`,
+        amount,
+        status: "completed",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        amount,
+        status: "failed",
+        error: error instanceof Error ? error.message : "SnapScan refund failed",
+      };
+    }
+  }
+
+  /**
+   * Process Ozow refund
+   */
+  private async processOzowRefund(
+    payment: PaymentRequest,
+    amount: number,
+    reason: string | undefined,
+    config: LocalPaymentConfig
+  ): Promise<RefundResult> {
+    try {
+      const response = await fetch("https://api.ozow.com/refund", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ApiKey: config.apiKey,
+        },
+        body: JSON.stringify({
+          SiteCode: config.merchantId,
+          TransactionReference: payment.reference,
+          RefundAmount: amount.toFixed(2),
+          RefundReason: reason || "Customer requested refund",
+          IsTest: config.testMode,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.Message || `Ozow refund failed: ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+
+      return {
+        success: true,
+        refundId: data.RefundId || `ref_ozow_${Date.now()}`,
+        amount,
+        status: data.Status === "Complete" ? "completed" : "pending",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        amount,
+        status: "failed",
+        error: error instanceof Error ? error.message : "Ozow refund failed",
+      };
+    }
+  }
+
+  /**
+   * Process PayFast refund
+   */
+  private async processPayFastRefund(
+    payment: PaymentRequest,
+    amount: number,
+    reason: string | undefined,
+    config: LocalPaymentConfig
+  ): Promise<RefundResult> {
+    try {
+      // PayFast refunds require the original transaction ID
+      if (!payment.externalId) {
+        return {
+          success: false,
+          amount,
+          status: "failed",
+          error: "PayFast refund requires original transaction ID",
+        };
+      }
+
+      const baseUrl = config.testMode
+        ? "https://sandbox.payfast.co.za"
+        : "https://www.payfast.co.za";
+
+      const timestamp = new Date().toISOString().replace(/[^0-9]/g, "").slice(0, 14);
+      const signature = this.generatePayFastRefundSignature(
+        payment.externalId,
+        amount,
+        timestamp,
+        config
+      );
+
+      const response = await fetch(`${baseUrl}/eng/query/refund`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "merchant-id": config.merchantId,
+          version: "v1",
+          timestamp: timestamp,
+          signature: signature,
+        },
+        body: new URLSearchParams({
+          "pf-payment-id": payment.externalId,
+          amount: amount.toFixed(2),
+          reason: reason || "Customer requested refund",
+        }).toString(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || `PayFast refund failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        return {
+          success: true,
+          refundId: data.refund_id || `ref_payfast_${Date.now()}`,
+          amount,
+          status: "completed",
+        };
+      } else {
+        return {
+          success: false,
+          amount,
+          status: "failed",
+          error: data.message || "PayFast refund failed",
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        amount,
+        status: "failed",
+        error: error instanceof Error ? error.message : "PayFast refund failed",
+      };
+    }
+  }
+
+  /**
+   * Process EFT refund (manual process)
+   * EFT refunds require manual bank transfer
+   */
+  private async processEFTRefund(
+    payment: PaymentRequest,
+    amount: number,
+    reason: string | undefined
+  ): Promise<RefundResult> {
+    // EFT refunds cannot be automated - they require manual bank transfer
+    // Create a refund record that needs to be processed manually
+    const refundId = `ref_eft_${Date.now()}`;
+
+    // Store refund request in payment metadata for manual processing
+    payment.metadata = {
+      ...payment.metadata,
+      pendingRefund: {
+        refundId,
+        amount,
+        reason: reason || "Customer requested refund",
+        requestedAt: new Date().toISOString(),
+        status: "pending_manual_processing",
+        instructions:
+          "This EFT refund requires manual bank transfer. Please process through your bank.",
+      },
     };
+
+    return {
+      success: true,
+      refundId,
+      amount,
+      status: "pending",
+    };
+  }
+
+  /**
+   * Generate PayFast refund signature
+   */
+  private generatePayFastRefundSignature(
+    paymentId: string,
+    amount: number,
+    timestamp: string,
+    config: LocalPaymentConfig
+  ): string {
+    const signatureString = `${config.merchantId}|${paymentId}|${amount.toFixed(2)}|${timestamp}|${config.apiSecret || ""}`;
+    return Buffer.from(signatureString).toString("base64").slice(0, 32);
   }
 
   /**
