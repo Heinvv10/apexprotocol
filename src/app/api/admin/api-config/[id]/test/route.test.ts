@@ -82,7 +82,7 @@ describe("POST /api/admin/api-config/:id/test - Test Connection (FR-3)", () => {
       }),
     });
 
-    const response = await POST(request, { params: { id: "test-id" } });
+    const response = await POST(request, { params: Promise.resolve({ id: "test-id" }) });
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -102,7 +102,7 @@ describe("POST /api/admin/api-config/:id/test - Test Connection (FR-3)", () => {
       }),
     });
 
-    const response = await POST(request, { params: { id: "test-id" } });
+    const response = await POST(request, { params: Promise.resolve({ id: "test-id" }) });
     const data = await response.json();
 
     if (data.success) {
@@ -121,7 +121,7 @@ describe("POST /api/admin/api-config/:id/test - Test Connection (FR-3)", () => {
       }),
     });
 
-    const response = await POST(request, { params: { id: "test-id" } });
+    const response = await POST(request, { params: Promise.resolve({ id: "test-id" }) });
     const data = await response.json();
 
     // Should return either success: false or a 4xx status
@@ -143,7 +143,7 @@ describe("POST /api/admin/api-config/:id/test - Test Connection (FR-3)", () => {
       }),
     });
 
-    const response = await POST(request, { params: { id: "test-id" } });
+    const response = await POST(request, { params: Promise.resolve({ id: "test-id" }) });
     const data = await response.json();
 
     // Should handle service unavailable gracefully
@@ -165,7 +165,7 @@ describe("POST /api/admin/api-config/:id/test - Test Connection (FR-3)", () => {
       }),
     });
 
-    const response = await POST(request, { params: { id: "test-id" } });
+    const response = await POST(request, { params: Promise.resolve({ id: "test-id" }) });
 
     // Should complete within reasonable time or return timeout
     expect(response.status).toBeLessThan(600);
@@ -190,7 +190,7 @@ describe("POST /api/admin/api-config/:id/test - Test Connection (FR-3)", () => {
       }
     );
 
-    const response = await POST(request, { params: { id: "nonexistent" } });
+    const response = await POST(request, { params: Promise.resolve({ id: "nonexistent" }) });
 
     expect(response.status).toBe(404);
   });
@@ -208,7 +208,7 @@ describe("POST /api/admin/api-config/:id/test - Security (SR-1, SR-2, SR-5)", ()
       }),
     });
 
-    const response = await POST(request, { params: { id: "test-id" } });
+    const response = await POST(request, { params: Promise.resolve({ id: "test-id" }) });
 
     expect(response.status).toBe(401);
   });
@@ -224,7 +224,7 @@ describe("POST /api/admin/api-config/:id/test - Security (SR-1, SR-2, SR-5)", ()
       }),
     });
 
-    const response = await POST(request, { params: { id: "test-id" } });
+    const response = await POST(request, { params: Promise.resolve({ id: "test-id" }) });
 
     expect(response.status).toBe(403);
   });
@@ -241,7 +241,7 @@ describe("POST /api/admin/api-config/:id/test - Security (SR-1, SR-2, SR-5)", ()
       }),
     });
 
-    const response = await POST(request, { params: { id: "test-id" } });
+    const response = await POST(request, { params: Promise.resolve({ id: "test-id" }) });
 
     // Should return a valid response (not 500)
     expect(response.status).toBeLessThan(500);
@@ -255,7 +255,7 @@ describe("POST /api/admin/api-config/:id/test - Validation", () => {
       body: JSON.stringify({}),
     });
 
-    const response = await POST(request, { params: { id: "test-id" } });
+    const response = await POST(request, { params: Promise.resolve({ id: "test-id" }) });
 
     expect(response.status).toBe(400);
   });
@@ -270,7 +270,7 @@ describe("POST /api/admin/api-config/:id/test - Validation", () => {
       }),
     });
 
-    const response = await POST(request, { params: { id: "test-id" } });
+    const response = await POST(request, { params: Promise.resolve({ id: "test-id" }) });
 
     expect(response.status).toBe(400);
   });

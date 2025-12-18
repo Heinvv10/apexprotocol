@@ -109,7 +109,7 @@ describe("GET /api/admin/api-config/:id - Integration Details (FR-5)", () => {
 
   it("should return integration with full details (AC-5.1)", async () => {
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/test-id");
-    const response = await GET(request, { params: { id: "test-id" } });
+    const response = await GET(request, { params: Promise.resolve({ id: "test-id" }) });
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -124,7 +124,7 @@ describe("GET /api/admin/api-config/:id - Integration Details (FR-5)", () => {
 
   it("should mask API key except last 4 characters (AC-5.2)", async () => {
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/test-id");
-    const response = await GET(request, { params: { id: "test-id" } });
+    const response = await GET(request, { params: Promise.resolve({ id: "test-id" }) });
     const data = await response.json();
 
     const apiKey = data.integration.config.apiKey;
@@ -133,7 +133,7 @@ describe("GET /api/admin/api-config/:id - Integration Details (FR-5)", () => {
 
   it("should include usage statistics (AC-5.3)", async () => {
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/test-id");
-    const response = await GET(request, { params: { id: "test-id" } });
+    const response = await GET(request, { params: Promise.resolve({ id: "test-id" }) });
     const data = await response.json();
 
     expect(data.integration).toHaveProperty("usageThisMonth");
@@ -142,7 +142,7 @@ describe("GET /api/admin/api-config/:id - Integration Details (FR-5)", () => {
 
   it("should include lastVerified timestamp (AC-5.4)", async () => {
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/test-id");
-    const response = await GET(request, { params: { id: "test-id" } });
+    const response = await GET(request, { params: Promise.resolve({ id: "test-id" }) });
     const data = await response.json();
 
     expect(data.integration).toHaveProperty("lastVerified");
@@ -150,7 +150,7 @@ describe("GET /api/admin/api-config/:id - Integration Details (FR-5)", () => {
 
   it("should include lastError if present (AC-5.5)", async () => {
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/test-id");
-    const response = await GET(request, { params: { id: "test-id" } });
+    const response = await GET(request, { params: Promise.resolve({ id: "test-id" }) });
     const data = await response.json();
 
     expect(data.integration).toHaveProperty("lastError");
@@ -158,7 +158,7 @@ describe("GET /api/admin/api-config/:id - Integration Details (FR-5)", () => {
 
   it("should include rateLimit information (AC-5.6)", async () => {
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/test-id");
-    const response = await GET(request, { params: { id: "test-id" } });
+    const response = await GET(request, { params: Promise.resolve({ id: "test-id" }) });
     const data = await response.json();
 
     expect(data.integration).toHaveProperty("rateLimit");
@@ -172,7 +172,7 @@ describe("GET /api/admin/api-config/:id - Integration Details (FR-5)", () => {
     } as any);
 
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/nonexistent");
-    const response = await GET(request, { params: { id: "nonexistent" } });
+    const response = await GET(request, { params: Promise.resolve({ id: "nonexistent" }) });
 
     expect(response.status).toBe(404);
   });
@@ -194,7 +194,7 @@ describe("PATCH /api/admin/api-config/:id - Update Integration (FR-2, FR-4)", ()
       }),
     });
 
-    const response = await PATCH(request, { params: { id: "test-id" } });
+    const response = await PATCH(request, { params: Promise.resolve({ id: "test-id" }) });
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -210,7 +210,7 @@ describe("PATCH /api/admin/api-config/:id - Update Integration (FR-2, FR-4)", ()
       }),
     });
 
-    const response = await PATCH(request, { params: { id: "test-id" } });
+    const response = await PATCH(request, { params: Promise.resolve({ id: "test-id" }) });
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -225,7 +225,7 @@ describe("PATCH /api/admin/api-config/:id - Update Integration (FR-2, FR-4)", ()
       }),
     });
 
-    const response = await PATCH(request, { params: { id: "test-id" } });
+    const response = await PATCH(request, { params: Promise.resolve({ id: "test-id" }) });
     const data = await response.json();
 
     expect(data.integration).toHaveProperty("updatedBy");
@@ -239,7 +239,7 @@ describe("PATCH /api/admin/api-config/:id - Update Integration (FR-2, FR-4)", ()
       }),
     });
 
-    const response = await PATCH(request, { params: { id: "test-id" } });
+    const response = await PATCH(request, { params: Promise.resolve({ id: "test-id" }) });
     const data = await response.json();
 
     expect(data.integration).toHaveProperty("updatedAt");
@@ -265,7 +265,7 @@ describe("PATCH /api/admin/api-config/:id - Update Integration (FR-2, FR-4)", ()
       }),
     });
 
-    const response = await PATCH(request, { params: { id: "test-id" } });
+    const response = await PATCH(request, { params: Promise.resolve({ id: "test-id" }) });
     const data = await response.json();
 
     expect(data.integration.status).toBe("disabled");
@@ -285,7 +285,7 @@ describe("PATCH /api/admin/api-config/:id - Update Integration (FR-2, FR-4)", ()
       }),
     });
 
-    const response = await PATCH(request, { params: { id: "nonexistent" } });
+    const response = await PATCH(request, { params: Promise.resolve({ id: "nonexistent" }) });
 
     expect(response.status).toBe(404);
   });
@@ -301,7 +301,7 @@ describe("DELETE /api/admin/api-config/:id - Delete Integration (FR-6)", () => {
       method: "DELETE",
     });
 
-    const response = await DELETE(request, { params: { id: "test-id" } });
+    const response = await DELETE(request, { params: Promise.resolve({ id: "test-id" }) });
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -320,7 +320,7 @@ describe("DELETE /api/admin/api-config/:id - Delete Integration (FR-6)", () => {
       method: "DELETE",
     });
 
-    const response = await DELETE(request, { params: { id: "nonexistent" } });
+    const response = await DELETE(request, { params: Promise.resolve({ id: "nonexistent" }) });
 
     expect(response.status).toBe(404);
   });
@@ -332,7 +332,7 @@ describe("Security - All [id] Routes (SR-1, SR-2)", () => {
     vi.mocked(auth).mockResolvedValueOnce({ userId: null } as any);
 
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/test-id");
-    const response = await GET(request, { params: { id: "test-id" } });
+    const response = await GET(request, { params: Promise.resolve({ id: "test-id" }) });
 
     expect(response.status).toBe(401);
   });
@@ -342,7 +342,7 @@ describe("Security - All [id] Routes (SR-1, SR-2)", () => {
     vi.mocked(isSuperAdmin).mockResolvedValueOnce(false);
 
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/test-id");
-    const response = await GET(request, { params: { id: "test-id" } });
+    const response = await GET(request, { params: Promise.resolve({ id: "test-id" }) });
 
     expect(response.status).toBe(403);
   });
@@ -356,7 +356,7 @@ describe("Security - All [id] Routes (SR-1, SR-2)", () => {
       body: JSON.stringify({ config: { apiKey: "test" } }),
     });
 
-    const response = await PATCH(request, { params: { id: "test-id" } });
+    const response = await PATCH(request, { params: Promise.resolve({ id: "test-id" }) });
 
     expect(response.status).toBe(401);
   });
@@ -370,7 +370,7 @@ describe("Security - All [id] Routes (SR-1, SR-2)", () => {
       body: JSON.stringify({ config: { apiKey: "test" } }),
     });
 
-    const response = await PATCH(request, { params: { id: "test-id" } });
+    const response = await PATCH(request, { params: Promise.resolve({ id: "test-id" }) });
 
     expect(response.status).toBe(403);
   });
@@ -383,7 +383,7 @@ describe("Security - All [id] Routes (SR-1, SR-2)", () => {
       method: "DELETE",
     });
 
-    const response = await DELETE(request, { params: { id: "test-id" } });
+    const response = await DELETE(request, { params: Promise.resolve({ id: "test-id" }) });
 
     expect(response.status).toBe(401);
   });
@@ -396,7 +396,7 @@ describe("Security - All [id] Routes (SR-1, SR-2)", () => {
       method: "DELETE",
     });
 
-    const response = await DELETE(request, { params: { id: "test-id" } });
+    const response = await DELETE(request, { params: Promise.resolve({ id: "test-id" }) });
 
     expect(response.status).toBe(403);
   });

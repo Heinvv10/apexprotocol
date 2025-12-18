@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Plus,
@@ -190,7 +191,7 @@ function DecorativeStar() {
   );
 }
 
-export default function BrandsPage() {
+function BrandsPageContent() {
   const searchParams = useSearchParams();
   const brands = useBrands();
   const meta = useBrandMeta();
@@ -1482,5 +1483,18 @@ export default function BrandsPage() {
       {/* Decorative Star */}
       <DecorativeStar />
     </div>
+  );
+}
+
+// Wrapper with Suspense boundary for useSearchParams
+export default function BrandsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    }>
+      <BrandsPageContent />
+    </Suspense>
   );
 }

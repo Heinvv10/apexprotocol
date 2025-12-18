@@ -63,7 +63,7 @@ describe("POST /api/admin/audit-logs/export - Export Functionality (FR-5)", () =
       },
     ];
 
-    vi.mocked(db.limit).mockResolvedValue(mockLogs);
+    vi.mocked((db as any).limit).mockResolvedValue(mockLogs);
 
     const request = new NextRequest("http://localhost:3000/api/admin/audit-logs/export", {
       method: "POST",
@@ -104,7 +104,7 @@ describe("POST /api/admin/audit-logs/export - Export Functionality (FR-5)", () =
       },
     ];
 
-    vi.mocked(db.limit).mockResolvedValue(mockLogs);
+    vi.mocked((db as any).limit).mockResolvedValue(mockLogs);
 
     const request = new NextRequest("http://localhost:3000/api/admin/audit-logs/export", {
       method: "POST",
@@ -149,7 +149,7 @@ describe("POST /api/admin/audit-logs/export - Export Functionality (FR-5)", () =
       },
     ];
 
-    vi.mocked(db.limit).mockResolvedValue(mockLogs);
+    vi.mocked((db as any).limit).mockResolvedValue(mockLogs);
 
     const request = new NextRequest("http://localhost:3000/api/admin/audit-logs/export", {
       method: "POST",
@@ -192,7 +192,7 @@ describe("POST /api/admin/audit-logs/export - Export Functionality (FR-5)", () =
       createdAt: new Date(),
     }));
 
-    vi.mocked(db.limit).mockResolvedValue(mockLogs.slice(0, 10000));
+    vi.mocked((db as any).limit).mockResolvedValue(mockLogs.slice(0, 10000));
 
     const request = new NextRequest("http://localhost:3000/api/admin/audit-logs/export", {
       method: "POST",
@@ -211,7 +211,7 @@ describe("POST /api/admin/audit-logs/export - Export Functionality (FR-5)", () =
   });
 
   it("should generate filename with timestamp (AC-5.4)", async () => {
-    vi.mocked(db.limit).mockResolvedValue([]);
+    vi.mocked((db as any).limit).mockResolvedValue([]);
 
     const request = new NextRequest("http://localhost:3000/api/admin/audit-logs/export", {
       method: "POST",
@@ -279,7 +279,7 @@ describe("POST /api/admin/audit-logs/export - Export Functionality (FR-5)", () =
     process.env.NODE_ENV = "development";
     process.env.DEV_SUPER_ADMIN = "true";
 
-    vi.mocked(db.limit).mockResolvedValue([]);
+    vi.mocked((db as any).limit).mockResolvedValue([]);
 
     const request = new NextRequest("http://localhost:3000/api/admin/audit-logs/export", {
       method: "POST",
@@ -318,7 +318,7 @@ describe("POST /api/admin/audit-logs/export - Export Functionality (FR-5)", () =
       createdAt: new Date(),
     }));
 
-    vi.mocked(db.limit).mockResolvedValue(mockLogs);
+    vi.mocked((db as any).limit).mockResolvedValue(mockLogs);
 
     const request = new NextRequest("http://localhost:3000/api/admin/audit-logs/export", {
       method: "POST",

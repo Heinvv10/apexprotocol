@@ -6,10 +6,19 @@
 import { createId } from "@paralleldrive/cuid2";
 import Stripe from "stripe";
 
-// Initialize Stripe (will use STRIPE_SECRET_KEY from env)
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2025-11-17.clover",
-});
+// Initialize Stripe only if API key is available (prevents build errors)
+const stripeApiKey = process.env.STRIPE_SECRET_KEY;
+const stripe = stripeApiKey
+  ? new Stripe(stripeApiKey, { apiVersion: "2025-11-17.clover" })
+  : null;
+
+// Helper to get Stripe instance (throws if not configured)
+function requireStripe(): Stripe {
+  if (!stripe) {
+    throw new Error("Stripe is not configured. Set STRIPE_SECRET_KEY environment variable.");
+  }
+  return stripe;
+}
 
 // Billing types
 export interface SubscriptionPlan {
@@ -295,7 +304,7 @@ export class StripeBillingManager {
     }
   ): Promise<string> {
     try {
-      const customer = await stripe.customers.create({
+      const customer = await requireStripe().customers.create({
         email: data.email,
         name: data.name,
         metadata: {
@@ -336,7 +345,7 @@ export class StripeBillingManager {
         : plan.stripePriceIdMonthly;
 
     try {
-      const session = await stripe.checkout.sessions.create({
+      const session = await requireStripe().checkout.sessions.create({
         customer: options.customerId,
         mode: "subscription",
         line_items: [
@@ -459,12 +468,12 @@ export class StripeBillingManager {
 
     if (subscription.stripeSubscriptionId) {
       try {
-        await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        await requireStripe().subscriptions.update(subscription.stripeSubscriptionId, {
           cancel_at_period_end: !immediately,
         });
 
         if (immediately) {
-          await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
+          await requireStripe().subscriptions.cancel(subscription.stripeSubscriptionId);
         }
       } catch (error) {
         // Continue with local update
@@ -501,11 +510,11 @@ export class StripeBillingManager {
 
     if (subscription.stripeSubscriptionId && priceId) {
       try {
-        const stripeSubscription = await stripe.subscriptions.retrieve(
+        const stripeSubscription = await requireStripe().subscriptions.retrieve(
           subscription.stripeSubscriptionId
         );
 
-        await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        await requireStripe().subscriptions.update(subscription.stripeSubscriptionId, {
           items: [
             {
               id: stripeSubscription.items.data[0].id,
@@ -660,7 +669,7 @@ export class StripeBillingManager {
     returnUrl: string
   ): Promise<{ url: string }> {
     try {
-      const session = await stripe.billingPortal.sessions.create({
+      const session = await requireStripe().billingPortal.sessions.create({
         customer: customerId,
         return_url: returnUrl,
       });
@@ -680,7 +689,7 @@ export class StripeBillingManager {
     limit: number = 10
   ): Promise<Invoice[]> {
     try {
-      const stripeInvoices = await stripe.invoices.list({
+      const stripeInvoices = await requireStripe().invoices.list({
         customer: customerId,
         limit,
       });

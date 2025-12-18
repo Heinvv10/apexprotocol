@@ -89,8 +89,8 @@ describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
 
     // Reset and configure limit mock for this test
     let limitCallCount = 0;
-    vi.mocked(db.limit).mockReset();
-    vi.mocked(db.limit).mockImplementation((arg?: any) => {
+    vi.mocked((db as any).limit).mockReset();
+    vi.mocked((db as any).limit).mockImplementation((arg?: any) => {
       limitCallCount++;
       if (limitCallCount === 1) {
         // First call: main log query
@@ -103,7 +103,7 @@ describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
     });
 
     const request = new NextRequest(`http://localhost:3000/api/admin/audit-logs/${logId}`);
-    const response = await GET(request, { params: { id: logId } });
+    const response = await GET(request, { params: Promise.resolve({ id: logId }) });
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -134,11 +134,11 @@ describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
     const logId = "log_nonexistent";
 
     // Reset and configure limit mock for this test
-    vi.mocked(db.limit).mockReset();
-    vi.mocked(db.limit).mockResolvedValue([]);
+    vi.mocked((db as any).limit).mockReset();
+    vi.mocked((db as any).limit).mockResolvedValue([]);
 
     const request = new NextRequest(`http://localhost:3000/api/admin/audit-logs/${logId}`);
-    const response = await GET(request, { params: { id: logId } });
+    const response = await GET(request, { params: Promise.resolve({ id: logId }) });
 
     expect(response.status).toBe(404);
   });
@@ -185,8 +185,8 @@ describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
 
     // Reset and configure limit mock for this test
     let limitCallCount = 0;
-    vi.mocked(db.limit).mockReset();
-    vi.mocked(db.limit).mockImplementation((arg?: any) => {
+    vi.mocked((db as any).limit).mockReset();
+    vi.mocked((db as any).limit).mockImplementation((arg?: any) => {
       limitCallCount++;
       if (limitCallCount === 1) {
         // First call: main log query
@@ -199,7 +199,7 @@ describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
     });
 
     const request = new NextRequest(`http://localhost:3000/api/admin/audit-logs/${logId}`);
-    const response = await GET(request, { params: { id: logId } });
+    const response = await GET(request, { params: Promise.resolve({ id: logId }) });
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -213,7 +213,7 @@ describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
 
     const logId = "log_test123";
     const request = new NextRequest(`http://localhost:3000/api/admin/audit-logs/${logId}`);
-    const response = await GET(request, { params: { id: logId } });
+    const response = await GET(request, { params: Promise.resolve({ id: logId }) });
 
     expect(response.status).toBe(401);
   });
@@ -224,13 +224,13 @@ describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
 
     const logId = "log_test123";
     const request = new NextRequest(`http://localhost:3000/api/admin/audit-logs/${logId}`);
-    const response = await GET(request, { params: { id: logId } });
+    const response = await GET(request, { params: Promise.resolve({ id: logId }) });
 
     expect(response.status).toBe(403);
   });
 
   it("should allow access in dev mode when DEV_SUPER_ADMIN is set", async () => {
-    process.env.NODE_ENV = "development";
+    vi.stubEnv('NODE_ENV', 'development');
     process.env.DEV_SUPER_ADMIN = "true";
 
     const logId = "log_test123";
@@ -250,11 +250,11 @@ describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
       createdAt: new Date(),
     };
 
-    vi.mocked(db.limit).mockResolvedValueOnce([mockLog]);
-    vi.mocked(db.limit).mockResolvedValueOnce([]);
+    vi.mocked((db as any).limit).mockResolvedValueOnce([mockLog]);
+    vi.mocked((db as any).limit).mockResolvedValueOnce([]);
 
     const request = new NextRequest(`http://localhost:3000/api/admin/audit-logs/${logId}`);
-    const response = await GET(request, { params: { id: logId } });
+    const response = await GET(request, { params: Promise.resolve({ id: logId }) });
 
     expect(response.status).toBe(200);
 
