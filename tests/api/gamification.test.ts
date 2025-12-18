@@ -5,6 +5,146 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+// Mock database
+vi.mock("@/lib/db", () => {
+  const mockGamificationRecord = {
+    id: "user-gam-1",
+    userId: "demo-user",
+    organizationId: "demo-org",
+    currentXP: 500,
+    totalXP: 1500,
+    level: 2,
+    streaks: { currentDaily: 3, longestDaily: 5, currentWeekly: 1, longestWeekly: 2, lastLoginDate: "", lastWeekStartDate: "" },
+    stats: { totalAudits: 5, totalMentions: 10, totalContent: 3, totalRecommendations: 0, recommendationsCompleted: 0, brandsCreated: 1, reportsGenerated: 2, integrationsConnected: 0, teamMembersInvited: 0, crisesResolved: 0, geoScoreImprovements: 0 },
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const mockLeaderboardData = [
+    {
+      id: "user-gam-1",
+      userId: "demo-user",
+      totalXP: 1500,
+      level: 2,
+      streaks: { currentDaily: 3, longestDaily: 5 },
+    },
+    {
+      id: "user-gam-2",
+      userId: "user_2",
+      totalXP: 1200,
+      level: 2,
+      streaks: { currentDaily: 2, longestDaily: 4 },
+    },
+  ];
+
+  const mockUserData = [
+    { name: "Test User", email: "test@example.com" },
+  ];
+
+  const mockAchievements = [
+    {
+      id: "ach-1",
+      userId: "demo-user",
+      achievementId: "first_audit",
+      unlockedAt: new Date(),
+      xpAwarded: 100,
+    },
+  ];
+
+  const exports: Record<string, unknown> = {
+    db: {
+      select: vi.fn((fields?: unknown) => ({
+        from: vi.fn((table: unknown) => {
+          // Detect table by checking which mock table schema it is
+          const tableObj = table as Record<string, unknown>;
+
+          // Check if it's userAchievements table (has achievementId field)
+          const isAchievements = tableObj && "achievementId" in tableObj;
+          // Check if it's users table (has email/clerkUserId or name fields)
+          const isUsers = tableObj && ("email" in tableObj || "clerkUserId" in tableObj || "name" in tableObj);
+
+          return {
+            where: vi.fn((condition: unknown) => {
+              // Detect table type for where() responses
+              const tbl = table as Record<string, unknown>;
+              const isAch = tbl && "achievementId" in tbl;
+              const isUsr = tbl && ("email" in tbl || "clerkUserId" in tbl || "name" in tbl);
+
+              // Create thenable object that can be awaited directly OR chained with .limit()
+              const whereResult = {
+                limit: vi.fn(() => {
+                  if (isAch) return Promise.resolve(mockAchievements);
+                  if (isUsr) return Promise.resolve(mockUserData);
+                  return Promise.resolve([mockGamificationRecord]);
+                }),
+                // Make it thenable so it can be awaited directly
+                then: (resolve: (value: any) => void) => {
+                  if (isAch) return Promise.resolve(mockAchievements).then(resolve);
+                  if (isUsr) return Promise.resolve(mockUserData).then(resolve);
+                  return Promise.resolve([mockGamificationRecord]).then(resolve);
+                },
+              };
+
+              return whereResult;
+            }),
+            orderBy: vi.fn(() => ({
+              limit: vi.fn(() => Promise.resolve(mockLeaderboardData)),
+            })),
+            limit: vi.fn(() => {
+              // select().from(userGamification).limit(1) - for single user progress
+              return Promise.resolve([mockGamificationRecord]);
+            }),
+          };
+        }),
+      })),
+    insert: vi.fn(() => ({
+      values: vi.fn(() => ({
+        returning: vi.fn(() => Promise.resolve([mockGamificationRecord])),
+      })),
+    })),
+    update: vi.fn(() => ({
+      set: vi.fn(() => ({
+        where: vi.fn(() => Promise.resolve()),
+      })),
+    })),
+    delete: vi.fn((table: unknown) => ({
+      where: vi.fn(() => Promise.resolve()),
+    })),
+    },
+    userGamification: {
+    id: "id",
+    userId: "userId",
+    totalXP: "totalXP",
+    level: "level",
+    streaks: "streaks",
+  },
+  userAchievements: {
+    id: "id",
+    userId: "userId",
+    achievementId: "achievementId",
+    unlockedAt: "unlockedAt",
+    xpAwarded: "xpAwarded",
+  },
+  users: {
+    name: "name",
+    email: "email",
+    clerkUserId: "clerkUserId",
+  },
+  };
+
+  return exports;
+});
+
+// Mock Drizzle ORM helpers
+vi.mock("drizzle-orm", async () => {
+  const actual = await vi.importActual("drizzle-orm");
+  return {
+    ...actual,
+    eq: vi.fn(() => ({})),
+    desc: vi.fn(() => ({})),
+  };
+});
+
 // Mock gamification module
 vi.mock("@/lib/gamification", () => ({
   gamificationEngine: {
