@@ -1248,65 +1248,100 @@ const resolvers = {
       const user = context.requireAuth();
       const orgId = user.orgId || user.userId;
 
-      const [brand] = await db.insert(schema.brands).values({
-        organizationId: orgId,
-        name: input.name,
-        domain: input.domain || null,
-        industry: input.industry || null,
-        description: input.description || null,
-        keywords: input.keywords || [],
-        competitors: (input.competitors || []).map(name => ({ name, url: "", reason: "" })),
-        monitoringPlatforms: input.platforms,
-        isActive: true,
-      }).returning();
+      try {
+        const [brand] = await db.insert(schema.brands).values({
+          organizationId: orgId,
+          name: input.name,
+          domain: input.domain || null,
+          industry: input.industry || null,
+          description: input.description || null,
+          keywords: input.keywords || [],
+          competitors: (input.competitors || []).map(name => ({ name, url: "", reason: "" })),
+          monitoringPlatforms: input.platforms,
+          isActive: true,
+        }).returning();
 
-      return {
-        ...brand,
-        platforms: brand.monitoringPlatforms || [],
-        keywords: brand.keywords || [],
-        competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
-      };
+        return {
+          ...brand,
+          platforms: brand.monitoringPlatforms || [],
+          keywords: brand.keywords || [],
+          competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
+        };
+      } catch (error) {
+        console.error("Database error creating brand:", error);
+        // Handle unique constraint violations
+        if (error instanceof Error && error.message.includes("unique")) {
+          throw new Error("A brand with this name or domain already exists.");
+        }
+        throw new Error("Failed to create brand. Please try again later.");
+      }
     },
 
     // UPDATE brands SET ... WHERE id = $1
     updateBrand: async (_: unknown, { id, input }: { id: string; input: { name?: string; domain?: string; industry?: string; description?: string; competitors?: string[]; keywords?: string[]; platforms?: string[]; isActive?: boolean } }, context: GraphQLContext) => {
       const user = context.requireAuth();
 
-      // Verify ownership
-      const existing = await db.select().from(schema.brands).where(eq(schema.brands.id, id)).limit(1);
-      if (!existing[0]) throw new Error("Brand not found");
-      if (user.orgId && existing[0].organizationId !== user.orgId) throw new Error("Unauthorized");
+      try {
+        // Verify ownership
+        const existing = await db.select().from(schema.brands).where(eq(schema.brands.id, id)).limit(1);
+        if (!existing[0]) throw new Error("Brand not found");
+        if (user.orgId && existing[0].organizationId !== user.orgId) throw new Error("Unauthorized");
 
-      const updateData: Record<string, unknown> = { updatedAt: new Date() };
-      if (input.name !== undefined) updateData.name = input.name;
-      if (input.domain !== undefined) updateData.domain = input.domain;
-      if (input.industry !== undefined) updateData.industry = input.industry;
-      if (input.description !== undefined) updateData.description = input.description;
-      if (input.keywords !== undefined) updateData.keywords = input.keywords;
-      if (input.competitors !== undefined) updateData.competitors = input.competitors.map(name => ({ name, url: "", reason: "" }));
-      if (input.platforms !== undefined) updateData.monitoringPlatforms = input.platforms;
-      if (input.isActive !== undefined) updateData.isActive = input.isActive;
+        const updateData: Record<string, unknown> = { updatedAt: new Date() };
+        if (input.name !== undefined) updateData.name = input.name;
+        if (input.domain !== undefined) updateData.domain = input.domain;
+        if (input.industry !== undefined) updateData.industry = input.industry;
+        if (input.description !== undefined) updateData.description = input.description;
+        if (input.keywords !== undefined) updateData.keywords = input.keywords;
+        if (input.competitors !== undefined) updateData.competitors = input.competitors.map(name => ({ name, url: "", reason: "" }));
+        if (input.platforms !== undefined) updateData.monitoringPlatforms = input.platforms;
+        if (input.isActive !== undefined) updateData.isActive = input.isActive;
 
-      const [brand] = await db.update(schema.brands).set(updateData).where(eq(schema.brands.id, id)).returning();
+        const [brand] = await db.update(schema.brands).set(updateData).where(eq(schema.brands.id, id)).returning();
 
-      return {
-        ...brand,
-        platforms: brand.monitoringPlatforms || [],
-        keywords: brand.keywords || [],
-        competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
-      };
+        return {
+          ...brand,
+          platforms: brand.monitoringPlatforms || [],
+          keywords: brand.keywords || [],
+          competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
+        };
+      } catch (error) {
+        // Re-throw known errors
+        if (error instanceof Error && (error.message === "Brand not found" || error.message === "Unauthorized")) {
+          throw error;
+        }
+        console.error("Database error updating brand:", error);
+        // Handle unique constraint violations
+        if (error instanceof Error && error.message.includes("unique")) {
+          throw new Error("A brand with this name or domain already exists.");
+        }
+        throw new Error("Failed to update brand. Please try again later.");
+      }
     },
 
     // DELETE FROM brands WHERE id = $1
     deleteBrand: async (_: unknown, { id }: { id: string }, context: GraphQLContext) => {
       const user = context.requireAuth();
 
-      const existing = await db.select().from(schema.brands).where(eq(schema.brands.id, id)).limit(1);
-      if (!existing[0]) return false;
-      if (user.orgId && existing[0].organizationId !== user.orgId) throw new Error("Unauthorized");
+      try {
+        const existing = await db.select().from(schema.brands).where(eq(schema.brands.id, id)).limit(1);
+        if (!existing[0]) return false;
+        if (user.orgId && existing[0].organizationId !== user.orgId) throw new Error("Unauthorized");
 
-      await db.delete(schema.brands).where(eq(schema.brands.id, id));
-      return true;
+        await db.delete(schema.brands).where(eq(schema.brands.id, id));
+        return true;
+      } catch (error) {
+        // Re-throw Unauthorized error
+        if (error instanceof Error && error.message === "Unauthorized") {
+          throw error;
+        }
+        console.error("Database error deleting brand:", error);
+        // Handle foreign key constraint violations
+        if (error instanceof Error && error.message.includes("foreign key")) {
+          throw new Error("Cannot delete brand with associated mentions or recommendations. Please remove them first.");
+        }
+        throw new Error("Failed to delete brand. Please try again later.");
+      }
     },
 
     // Mention mutations - trigger monitoring refresh
@@ -1325,180 +1360,225 @@ const resolvers = {
     // Mark mention as reviewed (we don't have a reviewed field, but could add metadata)
     markMentionReviewed: async (_: unknown, { id }: { id: string }, context: GraphQLContext) => {
       context.requireAuth();
-      const result = await db.select().from(schema.brandMentions).where(eq(schema.brandMentions.id, id)).limit(1);
-      if (!result[0]) throw new Error("Mention not found");
-      return {
-        ...result[0],
-        sentimentScore: result[0].sentiment === "positive" ? 0.8 : result[0].sentiment === "negative" ? 0.2 : 0.5,
-        isRecommendation: result[0].promptCategory === "recommendation",
-        competitorMentioned: (result[0].competitors || []).length > 0,
-      };
+      try {
+        const result = await db.select().from(schema.brandMentions).where(eq(schema.brandMentions.id, id)).limit(1);
+        if (!result[0]) throw new Error("Mention not found");
+        return {
+          ...result[0],
+          sentimentScore: result[0].sentiment === "positive" ? 0.8 : result[0].sentiment === "negative" ? 0.2 : 0.5,
+          isRecommendation: result[0].promptCategory === "recommendation",
+          competitorMentioned: (result[0].competitors || []).length > 0,
+        };
+      } catch (error) {
+        if (error instanceof Error && error.message === "Mention not found") {
+          throw error;
+        }
+        console.error("Database error marking mention as reviewed:", error);
+        throw new Error("Failed to mark mention as reviewed. Please try again later.");
+      }
     },
 
     // GEO Score calculation - calculates and stores in history
     calculateGeoScore: async (_: unknown, { brandId }: { brandId: string }, context: GraphQLContext) => {
       context.requireAuth();
 
-      // Get mention counts
-      const mentionsResult = await db.select({ count: count() }).from(schema.brandMentions).where(eq(schema.brandMentions.brandId, brandId));
-      const mentionCount = mentionsResult[0]?.count || 0;
+      try {
+        // Get mention counts
+        const mentionsResult = await db.select({ count: count() }).from(schema.brandMentions).where(eq(schema.brandMentions.brandId, brandId));
+        const mentionCount = mentionsResult[0]?.count || 0;
 
-      // Get sentiment breakdown
-      const positiveResult = await db.select({ count: count() }).from(schema.brandMentions)
-        .where(and(eq(schema.brandMentions.brandId, brandId), eq(schema.brandMentions.sentiment, "positive")));
-      const negativeResult = await db.select({ count: count() }).from(schema.brandMentions)
-        .where(and(eq(schema.brandMentions.brandId, brandId), eq(schema.brandMentions.sentiment, "negative")));
-      const positiveCount = positiveResult[0]?.count || 0;
-      const negativeCount = negativeResult[0]?.count || 0;
-      const neutralCount = mentionCount - positiveCount - negativeCount;
+        // Get sentiment breakdown
+        const positiveResult = await db.select({ count: count() }).from(schema.brandMentions)
+          .where(and(eq(schema.brandMentions.brandId, brandId), eq(schema.brandMentions.sentiment, "positive")));
+        const negativeResult = await db.select({ count: count() }).from(schema.brandMentions)
+          .where(and(eq(schema.brandMentions.brandId, brandId), eq(schema.brandMentions.sentiment, "negative")));
+        const positiveCount = positiveResult[0]?.count || 0;
+        const negativeCount = negativeResult[0]?.count || 0;
+        const neutralCount = mentionCount - positiveCount - negativeCount;
 
-      // Get recommendation counts
-      const recsResult = await db.select({ count: count() }).from(schema.recommendations).where(eq(schema.recommendations.brandId, brandId));
-      const recCount = recsResult[0]?.count || 0;
+        // Get recommendation counts
+        const recsResult = await db.select({ count: count() }).from(schema.recommendations).where(eq(schema.recommendations.brandId, brandId));
+        const recCount = recsResult[0]?.count || 0;
 
-      const completedRecsResult = await db.select({ count: count() }).from(schema.recommendations)
-        .where(and(eq(schema.recommendations.brandId, brandId), eq(schema.recommendations.status, "completed")));
-      const completedRecs = completedRecsResult[0]?.count || 0;
+        const completedRecsResult = await db.select({ count: count() }).from(schema.recommendations)
+          .where(and(eq(schema.recommendations.brandId, brandId), eq(schema.recommendations.status, "completed")));
+        const completedRecs = completedRecsResult[0]?.count || 0;
 
-      // Calculate scores
-      const visibilityScore = Math.min(100, mentionCount * 5);
-      const sentimentScore = mentionCount > 0 ? Math.round((positiveCount / mentionCount) * 100) : 50;
-      const recommendationScore = recCount > 0 ? Math.round((completedRecs / recCount) * 100) : 100;
-      const competitorGapScore = 50; // Would need competitor analysis
-      const overallScore = Math.round((visibilityScore * 0.4 + sentimentScore * 0.3 + recommendationScore * 0.3));
+        // Calculate scores
+        const visibilityScore = Math.min(100, mentionCount * 5);
+        const sentimentScore = mentionCount > 0 ? Math.round((positiveCount / mentionCount) * 100) : 50;
+        const recommendationScore = recCount > 0 ? Math.round((completedRecs / recCount) * 100) : 100;
+        const competitorGapScore = 50; // Would need competitor analysis
+        const overallScore = Math.round((visibilityScore * 0.4 + sentimentScore * 0.3 + recommendationScore * 0.3));
 
-      // Get previous score for trend calculation
-      const previousScoreResult = await db
-        .select({ overallScore: schema.geoScoreHistory.overallScore })
-        .from(schema.geoScoreHistory)
-        .where(eq(schema.geoScoreHistory.brandId, brandId))
-        .orderBy(desc(schema.geoScoreHistory.calculatedAt))
-        .limit(1);
-      const previousScore = previousScoreResult[0]?.overallScore || null;
-      const scoreChange = previousScore ? overallScore - previousScore : 0;
-      const trend: "up" | "down" | "stable" = scoreChange > 1 ? "up" : scoreChange < -1 ? "down" : "stable";
+        // Get previous score for trend calculation
+        const previousScoreResult = await db
+          .select({ overallScore: schema.geoScoreHistory.overallScore })
+          .from(schema.geoScoreHistory)
+          .where(eq(schema.geoScoreHistory.brandId, brandId))
+          .orderBy(desc(schema.geoScoreHistory.calculatedAt))
+          .limit(1);
+        const previousScore = previousScoreResult[0]?.overallScore || null;
+        const scoreChange = previousScore ? overallScore - previousScore : 0;
+        const trend: "up" | "down" | "stable" = scoreChange > 1 ? "up" : scoreChange < -1 ? "down" : "stable";
 
-      // Store in history table
-      await db.insert(schema.geoScoreHistory).values({
-        brandId,
-        overallScore,
-        visibilityScore,
-        sentimentScore,
-        recommendationScore,
-        competitorGapScore,
-        platformScores: {},
-        previousScore,
-        scoreChange,
-        trend,
-        mentionCount,
-        positiveMentions: positiveCount,
-        negativeMentions: negativeCount,
-        neutralMentions: neutralCount,
-        recommendationCount: recCount,
-        completedRecommendations: completedRecs,
-      });
+        // Store in history table
+        await db.insert(schema.geoScoreHistory).values({
+          brandId,
+          overallScore,
+          visibilityScore,
+          sentimentScore,
+          recommendationScore,
+          competitorGapScore,
+          platformScores: {},
+          previousScore,
+          scoreChange,
+          trend,
+          mentionCount,
+          positiveMentions: positiveCount,
+          negativeMentions: negativeCount,
+          neutralMentions: neutralCount,
+          recommendationCount: recCount,
+          completedRecommendations: completedRecs,
+        });
 
-      return {
-        id: `geo_${brandId}`,
-        brandId,
-        overallScore,
-        visibilityScore,
-        sentimentScore,
-        recommendationScore,
-        competitorGapScore,
-        platformScores: {},
-        previousScore,
-        trend: scoreChange,
-        calculatedAt: new Date().toISOString(),
-      };
+        return {
+          id: `geo_${brandId}`,
+          brandId,
+          overallScore,
+          visibilityScore,
+          sentimentScore,
+          recommendationScore,
+          competitorGapScore,
+          platformScores: {},
+          previousScore,
+          trend: scoreChange,
+          calculatedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        console.error("Database error calculating GEO score:", error);
+        // Handle foreign key violations (brand doesn't exist)
+        if (error instanceof Error && error.message.includes("foreign key")) {
+          throw new Error("Brand not found. Cannot calculate GEO score for non-existent brand.");
+        }
+        throw new Error("Failed to calculate GEO score. Please try again later.");
+      }
     },
 
     // Recommendation mutations - UPDATE recommendations SET status = $2 WHERE id = $1
     updateRecommendationStatus: async (_: unknown, { id, status }: { id: string; status: "pending" | "in_progress" | "completed" | "dismissed" }, context: GraphQLContext) => {
       context.requireAuth();
 
-      const updateData: Record<string, unknown> = { status, updatedAt: new Date() };
-      if (status === "completed") updateData.completedAt = new Date();
-      if (status === "dismissed") updateData.dismissedAt = new Date();
+      try {
+        const updateData: Record<string, unknown> = { status, updatedAt: new Date() };
+        if (status === "completed") updateData.completedAt = new Date();
+        if (status === "dismissed") updateData.dismissedAt = new Date();
 
-      const [rec] = await db.update(schema.recommendations).set(updateData).where(eq(schema.recommendations.id, id)).returning();
-      if (!rec) throw new Error("Recommendation not found");
+        const [rec] = await db.update(schema.recommendations).set(updateData).where(eq(schema.recommendations.id, id)).returning();
+        if (!rec) throw new Error("Recommendation not found");
 
-      return {
-        ...rec,
-        type: rec.category,
-        estimatedImpact: rec.impact === "high" ? 0.8 : rec.impact === "medium" ? 0.5 : 0.3,
-        dependencies: [],
-        evidence: {},
-        aiExplanation: null,
-        feedback: [],
-      };
+        return {
+          ...rec,
+          type: rec.category,
+          estimatedImpact: rec.impact === "high" ? 0.8 : rec.impact === "medium" ? 0.5 : 0.3,
+          dependencies: [],
+          evidence: {},
+          aiExplanation: null,
+          feedback: [],
+        };
+      } catch (error) {
+        if (error instanceof Error && error.message === "Recommendation not found") {
+          throw error;
+        }
+        console.error("Database error updating recommendation status:", error);
+        throw new Error("Failed to update recommendation status. Please try again later.");
+      }
     },
 
     // UPDATE recommendations SET assigned_to = $2 WHERE id = $1
     assignRecommendation: async (_: unknown, { id, userId }: { id: string; userId: string }, context: GraphQLContext) => {
       context.requireAuth();
 
-      const [rec] = await db.update(schema.recommendations).set({ assignedToId: userId, updatedAt: new Date() }).where(eq(schema.recommendations.id, id)).returning();
-      if (!rec) throw new Error("Recommendation not found");
+      try {
+        const [rec] = await db.update(schema.recommendations).set({ assignedToId: userId, updatedAt: new Date() }).where(eq(schema.recommendations.id, id)).returning();
+        if (!rec) throw new Error("Recommendation not found");
 
-      return {
-        ...rec,
-        type: rec.category,
-        estimatedImpact: rec.impact === "high" ? 0.8 : rec.impact === "medium" ? 0.5 : 0.3,
-        dependencies: [],
-        evidence: {},
-        aiExplanation: null,
-        feedback: [],
-        assignedTo: userId,
-      };
+        return {
+          ...rec,
+          type: rec.category,
+          estimatedImpact: rec.impact === "high" ? 0.8 : rec.impact === "medium" ? 0.5 : 0.3,
+          dependencies: [],
+          evidence: {},
+          aiExplanation: null,
+          feedback: [],
+          assignedTo: userId,
+        };
+      } catch (error) {
+        if (error instanceof Error && error.message === "Recommendation not found") {
+          throw error;
+        }
+        console.error("Database error assigning recommendation:", error);
+        // Handle foreign key violations (user doesn't exist)
+        if (error instanceof Error && error.message.includes("foreign key")) {
+          throw new Error("User not found. Cannot assign recommendation to non-existent user.");
+        }
+        throw new Error("Failed to assign recommendation. Please try again later.");
+      }
     },
 
     // Submit recommendation feedback - stores in recommendation_feedback table
     submitRecommendationFeedback: async (_: unknown, { id, input }: { id: string; input: { rating: number; wasHelpful: boolean; comment?: string; actualImpact?: number } }, context: GraphQLContext) => {
       const user = context.requireAuth();
 
-      const existing = await db.select().from(schema.recommendations).where(eq(schema.recommendations.id, id)).limit(1);
-      if (!existing[0]) throw new Error("Recommendation not found");
+      try {
+        const existing = await db.select().from(schema.recommendations).where(eq(schema.recommendations.id, id)).limit(1);
+        if (!existing[0]) throw new Error("Recommendation not found");
 
-      // Insert feedback into the recommendation_feedback table
-      await db.insert(schema.recommendationFeedback).values({
-        recommendationId: id,
-        userId: user.userId,
-        rating: input.rating,
-        wasHelpful: input.wasHelpful,
-        comment: input.comment || null,
-        actualImpact: input.actualImpact || null,
-        expectedImpact: existing[0].impact === "high" ? 80 : existing[0].impact === "medium" ? 50 : 30,
-      });
+        // Insert feedback into the recommendation_feedback table
+        await db.insert(schema.recommendationFeedback).values({
+          recommendationId: id,
+          userId: user.userId,
+          rating: input.rating,
+          wasHelpful: input.wasHelpful,
+          comment: input.comment || null,
+          actualImpact: input.actualImpact || null,
+          expectedImpact: existing[0].impact === "high" ? 80 : existing[0].impact === "medium" ? 50 : 30,
+        });
 
-      // Update recommendation's updatedAt timestamp
-      const [rec] = await db.update(schema.recommendations).set({ updatedAt: new Date() }).where(eq(schema.recommendations.id, id)).returning();
+        // Update recommendation's updatedAt timestamp
+        const [rec] = await db.update(schema.recommendations).set({ updatedAt: new Date() }).where(eq(schema.recommendations.id, id)).returning();
 
-      // Fetch the updated feedback list
-      const feedbackList = await db
-        .select()
-        .from(schema.recommendationFeedback)
-        .where(eq(schema.recommendationFeedback.recommendationId, id))
-        .orderBy(desc(schema.recommendationFeedback.createdAt));
+        // Fetch the updated feedback list
+        const feedbackList = await db
+          .select()
+          .from(schema.recommendationFeedback)
+          .where(eq(schema.recommendationFeedback.recommendationId, id))
+          .orderBy(desc(schema.recommendationFeedback.createdAt));
 
-      return {
-        ...rec,
-        type: rec.category,
-        estimatedImpact: rec.impact === "high" ? 0.8 : rec.impact === "medium" ? 0.5 : 0.3,
-        dependencies: [],
-        evidence: {},
-        aiExplanation: null,
-        feedback: feedbackList.map((f) => ({
-          id: f.id,
-          userId: f.userId,
-          rating: f.rating,
-          wasHelpful: f.wasHelpful,
-          comment: f.comment,
-          actualImpact: f.actualImpact,
-          createdAt: f.createdAt.toISOString(),
-        })),
-      };
+        return {
+          ...rec,
+          type: rec.category,
+          estimatedImpact: rec.impact === "high" ? 0.8 : rec.impact === "medium" ? 0.5 : 0.3,
+          dependencies: [],
+          evidence: {},
+          aiExplanation: null,
+          feedback: feedbackList.map((f) => ({
+            id: f.id,
+            userId: f.userId,
+            rating: f.rating,
+            wasHelpful: f.wasHelpful,
+            comment: f.comment,
+            actualImpact: f.actualImpact,
+            createdAt: f.createdAt.toISOString(),
+          })),
+        };
+      } catch (error) {
+        if (error instanceof Error && error.message === "Recommendation not found") {
+          throw error;
+        }
+        console.error("Database error submitting recommendation feedback:", error);
+        throw new Error("Failed to submit feedback. Please try again later.");
+      }
     },
 
     // Generate recommendations (placeholder - would use AI)
@@ -1513,99 +1593,151 @@ const resolvers = {
     startAudit: async (_: unknown, { brandId, url }: { brandId: string; url: string }, context: GraphQLContext) => {
       const user = context.requireAuth();
 
-      const [audit] = await db.insert(schema.audits).values({
-        brandId,
-        url,
-        status: "pending",
-        triggeredById: user.userId,
-      }).returning();
+      try {
+        const [audit] = await db.insert(schema.audits).values({
+          brandId,
+          url,
+          status: "pending",
+          triggeredById: user.userId,
+        }).returning();
 
-      return {
-        ...audit,
-        categories: [],
-      };
+        return {
+          ...audit,
+          categories: [],
+        };
+      } catch (error) {
+        console.error("Database error starting audit:", error);
+        // Handle foreign key violations (brand doesn't exist)
+        if (error instanceof Error && error.message.includes("foreign key")) {
+          throw new Error("Brand not found. Cannot start audit for non-existent brand.");
+        }
+        throw new Error("Failed to start audit. Please try again later.");
+      }
     },
 
     // Cancel audit - UPDATE audits SET status = 'failed' WHERE id = $1
     cancelAudit: async (_: unknown, { id }: { id: string }, context: GraphQLContext) => {
       context.requireAuth();
-      await db.update(schema.audits).set({ status: "failed", errorMessage: "Cancelled by user" }).where(eq(schema.audits.id, id));
-      return true;
+      try {
+        await db.update(schema.audits).set({ status: "failed", errorMessage: "Cancelled by user" }).where(eq(schema.audits.id, id));
+        return true;
+      } catch (error) {
+        console.error("Database error cancelling audit:", error);
+        throw new Error("Failed to cancel audit. Please try again later.");
+      }
     },
 
     // Content mutations - INSERT INTO content
     createContent: async (_: unknown, { input }: { input: { brandId: string; title: string; type: string; content: string; metadata?: Record<string, unknown> } }, context: GraphQLContext) => {
       const user = context.requireAuth();
 
-      const [content] = await db.insert(schema.content).values({
-        brandId: input.brandId,
-        title: input.title,
-        type: input.type as "blog_post" | "social_post" | "product_description" | "faq" | "landing_page" | "email" | "ad_copy" | "press_release",
-        content: input.content,
-        status: "draft",
-        authorId: user.userId,
-      }).returning();
+      try {
+        const [content] = await db.insert(schema.content).values({
+          brandId: input.brandId,
+          title: input.title,
+          type: input.type as "blog_post" | "social_post" | "product_description" | "faq" | "landing_page" | "email" | "ad_copy" | "press_release",
+          content: input.content,
+          status: "draft",
+          authorId: user.userId,
+        }).returning();
 
-      return {
-        ...content,
-        seoScore: content.seoScore,
-        aiOptimizationScore: content.aiScore,
-        suggestions: [],
-      };
+        return {
+          ...content,
+          seoScore: content.seoScore,
+          aiOptimizationScore: content.aiScore,
+          suggestions: [],
+        };
+      } catch (error) {
+        console.error("Database error creating content:", error);
+        // Handle foreign key violations (brand doesn't exist)
+        if (error instanceof Error && error.message.includes("foreign key")) {
+          throw new Error("Brand not found. Cannot create content for non-existent brand.");
+        }
+        throw new Error("Failed to create content. Please try again later.");
+      }
     },
 
     // UPDATE content SET ... WHERE id = $1
     updateContent: async (_: unknown, { id, input }: { id: string; input: { title?: string; type?: string; content?: string; status?: string; metadata?: Record<string, unknown> } }, context: GraphQLContext) => {
       context.requireAuth();
 
-      const updateData: Record<string, unknown> = { updatedAt: new Date() };
-      if (input.title !== undefined) updateData.title = input.title;
-      if (input.type !== undefined) updateData.type = input.type;
-      if (input.content !== undefined) updateData.content = input.content;
-      if (input.status !== undefined) updateData.status = input.status;
+      try {
+        const updateData: Record<string, unknown> = { updatedAt: new Date() };
+        if (input.title !== undefined) updateData.title = input.title;
+        if (input.type !== undefined) updateData.type = input.type;
+        if (input.content !== undefined) updateData.content = input.content;
+        if (input.status !== undefined) updateData.status = input.status;
 
-      const [content] = await db.update(schema.content).set(updateData).where(eq(schema.content.id, id)).returning();
-      if (!content) throw new Error("Content not found");
+        const [content] = await db.update(schema.content).set(updateData).where(eq(schema.content.id, id)).returning();
+        if (!content) throw new Error("Content not found");
 
-      return {
-        ...content,
-        seoScore: content.seoScore,
-        aiOptimizationScore: content.aiScore,
-        suggestions: [],
-      };
+        return {
+          ...content,
+          seoScore: content.seoScore,
+          aiOptimizationScore: content.aiScore,
+          suggestions: [],
+        };
+      } catch (error) {
+        if (error instanceof Error && error.message === "Content not found") {
+          throw error;
+        }
+        console.error("Database error updating content:", error);
+        throw new Error("Failed to update content. Please try again later.");
+      }
     },
 
     // DELETE FROM content WHERE id = $1
     deleteContent: async (_: unknown, { id }: { id: string }, context: GraphQLContext) => {
       context.requireAuth();
-      await db.delete(schema.content).where(eq(schema.content.id, id));
-      return true;
+      try {
+        await db.delete(schema.content).where(eq(schema.content.id, id));
+        return true;
+      } catch (error) {
+        console.error("Database error deleting content:", error);
+        throw new Error("Failed to delete content. Please try again later.");
+      }
     },
 
     // AI content optimization (placeholder)
     optimizeContent: async (_: unknown, { id }: { id: string }, context: GraphQLContext) => {
       context.requireAuth();
-      const result = await db.select().from(schema.content).where(eq(schema.content.id, id)).limit(1);
-      if (!result[0]) throw new Error("Content not found");
-      return {
-        ...result[0],
-        seoScore: result[0].seoScore,
-        aiOptimizationScore: result[0].aiScore,
-        suggestions: ["Add more keywords", "Improve readability", "Add structured data"],
-      };
+      try {
+        const result = await db.select().from(schema.content).where(eq(schema.content.id, id)).limit(1);
+        if (!result[0]) throw new Error("Content not found");
+        return {
+          ...result[0],
+          seoScore: result[0].seoScore,
+          aiOptimizationScore: result[0].aiScore,
+          suggestions: ["Add more keywords", "Improve readability", "Add structured data"],
+        };
+      } catch (error) {
+        if (error instanceof Error && error.message === "Content not found") {
+          throw error;
+        }
+        console.error("Database error optimizing content:", error);
+        throw new Error("Failed to optimize content. Please try again later.");
+      }
     },
 
     // UPDATE content SET status = 'published' WHERE id = $1
     publishContent: async (_: unknown, { id }: { id: string }, context: GraphQLContext) => {
       context.requireAuth();
-      const [content] = await db.update(schema.content).set({ status: "published", publishedAt: new Date(), updatedAt: new Date() }).where(eq(schema.content.id, id)).returning();
-      if (!content) throw new Error("Content not found");
-      return {
-        ...content,
-        seoScore: content.seoScore,
-        aiOptimizationScore: content.aiScore,
-        suggestions: [],
-      };
+      try {
+        const [content] = await db.update(schema.content).set({ status: "published", publishedAt: new Date(), updatedAt: new Date() }).where(eq(schema.content.id, id)).returning();
+        if (!content) throw new Error("Content not found");
+        return {
+          ...content,
+          seoScore: content.seoScore,
+          aiOptimizationScore: content.aiScore,
+          suggestions: [],
+        };
+      } catch (error) {
+        if (error instanceof Error && error.message === "Content not found") {
+          throw error;
+        }
+        console.error("Database error publishing content:", error);
+        throw new Error("Failed to publish content. Please try again later.");
+      }
     },
 
     // Subscription mutations - these require Stripe integration
@@ -1619,92 +1751,124 @@ const resolvers = {
       const user = context.requireAuth();
       const orgId = user.orgId || user.userId;
 
-      // Update organization plan
-      await db.update(schema.organizations).set({ plan: planId as "starter" | "professional" | "enterprise" }).where(eq(schema.organizations.id, orgId));
+      try {
+        // Update organization plan
+        await db.update(schema.organizations).set({ plan: planId as "starter" | "professional" | "enterprise" }).where(eq(schema.organizations.id, orgId));
 
-      // Return updated subscription info
-      const result = await db.select().from(schema.organizations).where(eq(schema.organizations.id, orgId)).limit(1);
-      const org = result[0];
+        // Return updated subscription info
+        const result = await db.select().from(schema.organizations).where(eq(schema.organizations.id, orgId)).limit(1);
+        const org = result[0];
 
-      return {
-        id: org?.id || orgId,
-        organizationId: orgId,
-        tier: planId,
-        status: "active",
-        billingCycle: "monthly",
-        currentPeriodStart: new Date().toISOString(),
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        cancelAtPeriodEnd: false,
-        usage: null,
-        features: [],
-        limits: { brands: 10, platforms: 7, mentionsPerMonth: 10000, auditsPerMonth: 50, aiTokensPerMonth: 100000, contentPiecesPerMonth: 100 },
-      };
+        return {
+          id: org?.id || orgId,
+          organizationId: orgId,
+          tier: planId,
+          status: "active",
+          billingCycle: "monthly",
+          currentPeriodStart: new Date().toISOString(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          cancelAtPeriodEnd: false,
+          usage: null,
+          features: [],
+          limits: { brands: 10, platforms: 7, mentionsPerMonth: 10000, auditsPerMonth: 50, aiTokensPerMonth: 100000, contentPiecesPerMonth: 100 },
+        };
+      } catch (error) {
+        console.error("Database error changing plan:", error);
+        throw new Error("Failed to change subscription plan. Please try again later.");
+      }
     },
 
     cancelSubscription: async (_: unknown, { immediately }: { immediately?: boolean }, context: GraphQLContext) => {
       const user = context.requireAuth();
       const orgId = user.orgId || user.userId;
 
-      if (immediately) {
-        await db.update(schema.organizations).set({ plan: "starter" }).where(eq(schema.organizations.id, orgId));
+      try {
+        if (immediately) {
+          await db.update(schema.organizations).set({ plan: "starter" }).where(eq(schema.organizations.id, orgId));
+        }
+
+        const result = await db.select().from(schema.organizations).where(eq(schema.organizations.id, orgId)).limit(1);
+        const org = result[0];
+
+        return {
+          id: org?.id || orgId,
+          organizationId: orgId,
+          tier: immediately ? "starter" : (org?.plan || "starter"),
+          status: "active",
+          billingCycle: "monthly",
+          currentPeriodStart: new Date().toISOString(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          cancelAtPeriodEnd: !immediately,
+          usage: null,
+          features: [],
+          limits: { brands: 1, platforms: 3, mentionsPerMonth: 100, auditsPerMonth: 2, aiTokensPerMonth: 1000, contentPiecesPerMonth: 5 },
+        };
+      } catch (error) {
+        console.error("Database error cancelling subscription:", error);
+        throw new Error("Failed to cancel subscription. Please try again later.");
       }
-
-      const result = await db.select().from(schema.organizations).where(eq(schema.organizations.id, orgId)).limit(1);
-      const org = result[0];
-
-      return {
-        id: org?.id || orgId,
-        organizationId: orgId,
-        tier: immediately ? "starter" : (org?.plan || "starter"),
-        status: "active",
-        billingCycle: "monthly",
-        currentPeriodStart: new Date().toISOString(),
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        cancelAtPeriodEnd: !immediately,
-        usage: null,
-        features: [],
-        limits: { brands: 1, platforms: 3, mentionsPerMonth: 100, auditsPerMonth: 2, aiTokensPerMonth: 1000, contentPiecesPerMonth: 5 },
-      };
     },
 
     // Integration mutations
     connectIntegration: async (_: unknown, { type, config }: { type: string; config: Record<string, unknown> }, context: GraphQLContext) => {
       context.requireAuth();
 
-      const [integration] = await db.insert(schema.apiIntegrations).values({
-        serviceName: type,
-        provider: type,
-        category: "ai_models" as "ai_models" | "search_apis" | "analytics",
-        status: "configured",
-        config: config as { apiKey?: string; endpoint?: string; model?: string; maxTokens?: number; [key: string]: unknown },
-      }).returning();
+      try {
+        const [integration] = await db.insert(schema.apiIntegrations).values({
+          serviceName: type,
+          provider: type,
+          category: "ai_models" as "ai_models" | "search_apis" | "analytics",
+          status: "configured",
+          config: config as { apiKey?: string; endpoint?: string; model?: string; maxTokens?: number; [key: string]: unknown },
+        }).returning();
 
-      return {
-        ...integration,
-        type: integration.category,
-        isConnected: true,
-      };
+        return {
+          ...integration,
+          type: integration.category,
+          isConnected: true,
+        };
+      } catch (error) {
+        console.error("Database error connecting integration:", error);
+        // Handle unique constraint violations
+        if (error instanceof Error && error.message.includes("unique")) {
+          throw new Error("This integration is already connected.");
+        }
+        throw new Error("Failed to connect integration. Please try again later.");
+      }
     },
 
     disconnectIntegration: async (_: unknown, { id }: { id: string }, context: GraphQLContext) => {
       context.requireAuth();
-      await db.delete(schema.apiIntegrations).where(eq(schema.apiIntegrations.id, id));
-      return true;
+      try {
+        await db.delete(schema.apiIntegrations).where(eq(schema.apiIntegrations.id, id));
+        return true;
+      } catch (error) {
+        console.error("Database error disconnecting integration:", error);
+        throw new Error("Failed to disconnect integration. Please try again later.");
+      }
     },
 
     syncIntegration: async (_: unknown, { id }: { id: string }, context: GraphQLContext) => {
       context.requireAuth();
-      const result = await db.select().from(schema.apiIntegrations).where(eq(schema.apiIntegrations.id, id)).limit(1);
-      if (!result[0]) throw new Error("Integration not found");
+      try {
+        const result = await db.select().from(schema.apiIntegrations).where(eq(schema.apiIntegrations.id, id)).limit(1);
+        if (!result[0]) throw new Error("Integration not found");
 
-      // Update last verified timestamp
-      const [integration] = await db.update(schema.apiIntegrations).set({ lastVerified: new Date() }).where(eq(schema.apiIntegrations.id, id)).returning();
+        // Update last verified timestamp
+        const [integration] = await db.update(schema.apiIntegrations).set({ lastVerified: new Date() }).where(eq(schema.apiIntegrations.id, id)).returning();
 
-      return {
-        ...integration,
-        type: integration.category,
-        isConnected: integration.status === "configured",
-      };
+        return {
+          ...integration,
+          type: integration.category,
+          isConnected: integration.status === "configured",
+        };
+      } catch (error) {
+        if (error instanceof Error && error.message === "Integration not found") {
+          throw error;
+        }
+        console.error("Database error syncing integration:", error);
+        throw new Error("Failed to sync integration. Please try again later.");
+      }
     },
   },
 
