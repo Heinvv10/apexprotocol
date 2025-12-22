@@ -241,7 +241,7 @@
           "id": "3.4",
           "title": "Create GEO Score resolver tests",
           "description": "Test geoScore and geoScoreHistory queries and calculateGeoScore mutation",
-          "status": "pending",
+          "status": "completed",
           "priority": "high",
           "estimated_minutes": 45,
           "file": "tests/graphql/resolvers/geo-score.test.ts",
@@ -251,7 +251,8 @@
             "calculateGeoScore mutation creates history record",
             "Score calculation formula is correct"
           ],
-          "notes": "GEO score is a key business metric"
+          "notes": "GEO Score resolver unit tests implemented and verified (56 tests passing):\n\n**Query Tests (17 tests):**\n- `geoScore`: Calculate score from mention/recommendation counts, visibility/sentiment/recommendation score calculations, weighted formula, authentication, edge cases (zero mentions, high mentions)\n- `geoScoreHistory`: Fetch history by brandId, default 30-day limit, custom days parameter, date filtering, ordering by calculatedAt desc, data transformation\n\n**Mutation Tests (14 tests):**\n- `calculateGeoScore`: Visibility from mention count, sentiment from positive/negative ratio, recommendation from completed/total ratio, previous score lookup, trend calculation (up/down/stable), insert into geoScoreHistory, return structure, authentication\n\n**Field Resolver Tests (5 tests):**\n- `GEOScore.history`: Fetch history for parent.brandId, default/custom days, data transformation with platformScores\n\n**Additional Tests (20 tests):**\n- Score Calculation Formula: Weighted formula verification, rounding, edge cases\n- Error Handling: Connection errors, timeouts, error logging, user-friendly messages, foreign key violations\n- Date Range Filtering: 7/30/90 day ranges\n- Trend Analysis: Up/down/stable identification\n- Component Score Calculations: Visibility capping, sentiment percentage, recommendation completion\n\nCommit: 5c66cecf - Tests follow existing patterns from brands.test.ts and mentions.test.ts",
+          "updated_at": "2025-12-22T23:34:07.071677+00:00"
         },
         {
           "id": "3.5",
@@ -667,5 +668,5 @@
       "Connection pooling verified"
     ]
   },
-  "last_updated": "2025-12-22T23:27:11.297725+00:00"
+  "last_updated": "2025-12-22T23:34:07.071677+00:00"
 }
