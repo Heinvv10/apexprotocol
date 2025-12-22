@@ -577,355 +577,419 @@ const resolvers = {
     // Brand resolvers - SELECT * FROM brands WHERE id = $1
     brand: async (_: unknown, { id }: { id: string }, context: GraphQLContext) => {
       const user = context.requireAuth();
-      const result = await db.select().from(schema.brands).where(eq(schema.brands.id, id)).limit(1);
-      if (!result[0]) return null;
-      // Verify user has access to this brand's organization
-      const brand = result[0];
-      if (user.orgId && brand.organizationId !== user.orgId) return null;
-      return {
-        ...brand,
-        platforms: brand.monitoringPlatforms || [],
-        keywords: brand.keywords || [],
-        competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
-      };
+      try {
+        const result = await db.select().from(schema.brands).where(eq(schema.brands.id, id)).limit(1);
+        if (!result[0]) return null;
+        // Verify user has access to this brand's organization
+        const brand = result[0];
+        if (user.orgId && brand.organizationId !== user.orgId) return null;
+        return {
+          ...brand,
+          platforms: brand.monitoringPlatforms || [],
+          keywords: brand.keywords || [],
+          competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
+        };
+      } catch (error) {
+        console.error("Database error fetching brand:", error);
+        throw new Error("Failed to fetch brand. Please try again later.");
+      }
     },
 
     // SELECT * FROM brands WHERE org_id = $1 LIMIT $2
     brands: async (_: unknown, args: { first?: number; search?: string }, context: GraphQLContext) => {
       const user = context.requireAuth();
-      const orgId = user.orgId || user.userId;
-      const limit = args.first || 20;
+      try {
+        const orgId = user.orgId || user.userId;
+        const limit = args.first || 20;
 
-      let query = db.select().from(schema.brands).where(eq(schema.brands.organizationId, orgId));
-      if (args.search) {
-        query = db.select().from(schema.brands).where(
-          and(
-            eq(schema.brands.organizationId, orgId),
-            like(schema.brands.name, `%${args.search}%`)
-          )
-        );
-      }
+        let query = db.select().from(schema.brands).where(eq(schema.brands.organizationId, orgId));
+        if (args.search) {
+          query = db.select().from(schema.brands).where(
+            and(
+              eq(schema.brands.organizationId, orgId),
+              like(schema.brands.name, `%${args.search}%`)
+            )
+          );
+        }
 
-      const results = await query.orderBy(desc(schema.brands.createdAt)).limit(limit);
-      const totalResult = await db.select({ count: count() }).from(schema.brands).where(eq(schema.brands.organizationId, orgId));
-      const total = totalResult[0]?.count || 0;
+        const results = await query.orderBy(desc(schema.brands.createdAt)).limit(limit);
+        const totalResult = await db.select({ count: count() }).from(schema.brands).where(eq(schema.brands.organizationId, orgId));
+        const total = totalResult[0]?.count || 0;
 
-      return {
-        edges: results.map((brand, idx) => ({
-          node: {
-            ...brand,
-            platforms: brand.monitoringPlatforms || [],
-            keywords: brand.keywords || [],
-            competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
+        return {
+          edges: results.map((brand, idx) => ({
+            node: {
+              ...brand,
+              platforms: brand.monitoringPlatforms || [],
+              keywords: brand.keywords || [],
+              competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
+            },
+            cursor: Buffer.from(`brand:${idx}`).toString("base64"),
+          })),
+          pageInfo: {
+            hasNextPage: results.length === limit,
+            hasPreviousPage: false,
+            startCursor: results.length > 0 ? Buffer.from("brand:0").toString("base64") : null,
+            endCursor: results.length > 0 ? Buffer.from(`brand:${results.length - 1}`).toString("base64") : null,
+            total,
           },
-          cursor: Buffer.from(`brand:${idx}`).toString("base64"),
-        })),
-        pageInfo: {
-          hasNextPage: results.length === limit,
-          hasPreviousPage: false,
-          startCursor: results.length > 0 ? Buffer.from("brand:0").toString("base64") : null,
-          endCursor: results.length > 0 ? Buffer.from(`brand:${results.length - 1}`).toString("base64") : null,
-          total,
-        },
-      };
+        };
+      } catch (error) {
+        console.error("Database error fetching brands:", error);
+        throw new Error("Failed to fetch brands. Please try again later.");
+      }
     },
 
     // SELECT * FROM brands WHERE domain = $1
     brandByDomain: async (_: unknown, { domain }: { domain: string }, context: GraphQLContext) => {
       const user = context.requireAuth();
-      const orgId = user.orgId || user.userId;
-      const result = await db.select().from(schema.brands).where(
-        and(
-          eq(schema.brands.organizationId, orgId),
-          eq(schema.brands.domain, domain)
-        )
-      ).limit(1);
-      if (!result[0]) return null;
-      const brand = result[0];
-      return {
-        ...brand,
-        platforms: brand.monitoringPlatforms || [],
-        keywords: brand.keywords || [],
-        competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
-      };
+      try {
+        const orgId = user.orgId || user.userId;
+        const result = await db.select().from(schema.brands).where(
+          and(
+            eq(schema.brands.organizationId, orgId),
+            eq(schema.brands.domain, domain)
+          )
+        ).limit(1);
+        if (!result[0]) return null;
+        const brand = result[0];
+        return {
+          ...brand,
+          platforms: brand.monitoringPlatforms || [],
+          keywords: brand.keywords || [],
+          competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
+        };
+      } catch (error) {
+        console.error("Database error fetching brand by domain:", error);
+        throw new Error("Failed to fetch brand by domain. Please try again later.");
+      }
     },
 
     // Mention resolvers - SELECT * FROM mentions WHERE id = $1
     mention: async (_: unknown, { id }: { id: string }, context: GraphQLContext) => {
       context.requireAuth();
-      const result = await db.select().from(schema.brandMentions).where(eq(schema.brandMentions.id, id)).limit(1);
-      if (!result[0]) return null;
-      const mention = result[0];
-      return {
-        ...mention,
-        sentimentScore: mention.sentiment === "positive" ? 0.8 : mention.sentiment === "negative" ? 0.2 : 0.5,
-        isRecommendation: mention.promptCategory === "recommendation",
-        competitorMentioned: (mention.competitors || []).length > 0,
-      };
+      try {
+        const result = await db.select().from(schema.brandMentions).where(eq(schema.brandMentions.id, id)).limit(1);
+        if (!result[0]) return null;
+        const mention = result[0];
+        return {
+          ...mention,
+          sentimentScore: mention.sentiment === "positive" ? 0.8 : mention.sentiment === "negative" ? 0.2 : 0.5,
+          isRecommendation: mention.promptCategory === "recommendation",
+          competitorMentioned: (mention.competitors || []).length > 0,
+        };
+      } catch (error) {
+        console.error("Database error fetching mention:", error);
+        throw new Error("Failed to fetch mention. Please try again later.");
+      }
     },
 
     // SELECT * FROM mentions WHERE brand_id = $1
     mentions: async (_: unknown, args: { brandId?: string; first?: number; platform?: string; sentiment?: string }, context: GraphQLContext) => {
       context.requireAuth();
-      const limit = args.first || 50;
+      try {
+        const limit = args.first || 50;
 
-      const whereConditions = [];
-      if (args.brandId) {
-        whereConditions.push(eq(schema.brandMentions.brandId, args.brandId));
-      }
+        const whereConditions = [];
+        if (args.brandId) {
+          whereConditions.push(eq(schema.brandMentions.brandId, args.brandId));
+        }
 
-      const query = whereConditions.length > 0
-        ? db.select().from(schema.brandMentions).where(and(...whereConditions))
-        : db.select().from(schema.brandMentions);
+        const query = whereConditions.length > 0
+          ? db.select().from(schema.brandMentions).where(and(...whereConditions))
+          : db.select().from(schema.brandMentions);
 
-      const results = await query.orderBy(desc(schema.brandMentions.timestamp)).limit(limit);
-      const totalResult = args.brandId
-        ? await db.select({ count: count() }).from(schema.brandMentions).where(eq(schema.brandMentions.brandId, args.brandId))
-        : await db.select({ count: count() }).from(schema.brandMentions);
-      const total = totalResult[0]?.count || 0;
+        const results = await query.orderBy(desc(schema.brandMentions.timestamp)).limit(limit);
+        const totalResult = args.brandId
+          ? await db.select({ count: count() }).from(schema.brandMentions).where(eq(schema.brandMentions.brandId, args.brandId))
+          : await db.select({ count: count() }).from(schema.brandMentions);
+        const total = totalResult[0]?.count || 0;
 
-      return {
-        edges: results.map((mention, idx) => ({
-          node: {
-            ...mention,
-            sentimentScore: mention.sentiment === "positive" ? 0.8 : mention.sentiment === "negative" ? 0.2 : 0.5,
-            isRecommendation: mention.promptCategory === "recommendation",
-            competitorMentioned: (mention.competitors || []).length > 0,
+        return {
+          edges: results.map((mention, idx) => ({
+            node: {
+              ...mention,
+              sentimentScore: mention.sentiment === "positive" ? 0.8 : mention.sentiment === "negative" ? 0.2 : 0.5,
+              isRecommendation: mention.promptCategory === "recommendation",
+              competitorMentioned: (mention.competitors || []).length > 0,
+            },
+            cursor: Buffer.from(`mention:${idx}`).toString("base64"),
+          })),
+          pageInfo: {
+            hasNextPage: results.length === limit,
+            hasPreviousPage: false,
+            startCursor: results.length > 0 ? Buffer.from("mention:0").toString("base64") : null,
+            endCursor: results.length > 0 ? Buffer.from(`mention:${results.length - 1}`).toString("base64") : null,
+            total,
           },
-          cursor: Buffer.from(`mention:${idx}`).toString("base64"),
-        })),
-        pageInfo: {
-          hasNextPage: results.length === limit,
-          hasPreviousPage: false,
-          startCursor: results.length > 0 ? Buffer.from("mention:0").toString("base64") : null,
-          endCursor: results.length > 0 ? Buffer.from(`mention:${results.length - 1}`).toString("base64") : null,
-          total,
-        },
-        stats: {
-          total,
-          byPlatform: {},
-          bySentiment: {},
-          avgPosition: null,
-        },
-      };
+          stats: {
+            total,
+            byPlatform: {},
+            bySentiment: {},
+            avgPosition: null,
+          },
+        };
+      } catch (error) {
+        console.error("Database error fetching mentions:", error);
+        throw new Error("Failed to fetch mentions. Please try again later.");
+      }
     },
 
     // GEO Score - calculated from brand mentions and recommendations
     geoScore: async (_: unknown, { brandId }: { brandId: string }, context: GraphQLContext) => {
       context.requireAuth();
+      try {
+        // Get mention stats for the brand
+        const mentionsResult = await db.select({ count: count() }).from(schema.brandMentions).where(eq(schema.brandMentions.brandId, brandId));
+        const mentionCount = mentionsResult[0]?.count || 0;
 
-      // Get mention stats for the brand
-      const mentionsResult = await db.select({ count: count() }).from(schema.brandMentions).where(eq(schema.brandMentions.brandId, brandId));
-      const mentionCount = mentionsResult[0]?.count || 0;
+        // Get recommendation stats
+        const recsResult = await db.select({ count: count() }).from(schema.recommendations).where(eq(schema.recommendations.brandId, brandId));
+        const recCount = recsResult[0]?.count || 0;
 
-      // Get recommendation stats
-      const recsResult = await db.select({ count: count() }).from(schema.recommendations).where(eq(schema.recommendations.brandId, brandId));
-      const recCount = recsResult[0]?.count || 0;
+        // Calculate a simple GEO score based on available data
+        const visibilityScore = Math.min(100, mentionCount * 5);
+        const sentimentScore = 70; // Default until we analyze sentiment distribution
+        const recommendationScore = Math.max(0, 100 - recCount * 5);
+        const overallScore = Math.round((visibilityScore * 0.4 + sentimentScore * 0.3 + recommendationScore * 0.3));
 
-      // Calculate a simple GEO score based on available data
-      const visibilityScore = Math.min(100, mentionCount * 5);
-      const sentimentScore = 70; // Default until we analyze sentiment distribution
-      const recommendationScore = Math.max(0, 100 - recCount * 5);
-      const overallScore = Math.round((visibilityScore * 0.4 + sentimentScore * 0.3 + recommendationScore * 0.3));
-
-      return {
-        id: `geo_${brandId}`,
-        brandId,
-        overallScore,
-        visibilityScore,
-        sentimentScore,
-        recommendationScore,
-        competitorGapScore: 50,
-        platformScores: {},
-        previousScore: null,
-        trend: 0,
-        calculatedAt: new Date().toISOString(),
-      };
+        return {
+          id: `geo_${brandId}`,
+          brandId,
+          overallScore,
+          visibilityScore,
+          sentimentScore,
+          recommendationScore,
+          competitorGapScore: 50,
+          platformScores: {},
+          previousScore: null,
+          trend: 0,
+          calculatedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        console.error("Database error calculating GEO score:", error);
+        throw new Error("Failed to calculate GEO score. Please try again later.");
+      }
     },
 
     // GEO Score history - query for direct access
     geoScoreHistory: async (_: unknown, { brandId, days }: { brandId: string; days?: number }, context: GraphQLContext) => {
       context.requireAuth();
-      const limit = days || 30;
-      const startDate = new Date(Date.now() - limit * 24 * 60 * 60 * 1000);
+      try {
+        const limit = days || 30;
+        const startDate = new Date(Date.now() - limit * 24 * 60 * 60 * 1000);
 
-      const historyData = await db
-        .select()
-        .from(schema.geoScoreHistory)
-        .where(
-          and(
-            eq(schema.geoScoreHistory.brandId, brandId),
-            sql`${schema.geoScoreHistory.calculatedAt} >= ${startDate}`
+        const historyData = await db
+          .select()
+          .from(schema.geoScoreHistory)
+          .where(
+            and(
+              eq(schema.geoScoreHistory.brandId, brandId),
+              sql`${schema.geoScoreHistory.calculatedAt} >= ${startDate}`
+            )
           )
-        )
-        .orderBy(desc(schema.geoScoreHistory.calculatedAt))
-        .limit(limit);
+          .orderBy(desc(schema.geoScoreHistory.calculatedAt))
+          .limit(limit);
 
-      return historyData.map((h) => ({
-        date: h.calculatedAt.toISOString(),
-        score: h.overallScore,
-        components: {
-          visibility: h.visibilityScore,
-          sentiment: h.sentimentScore,
-          recommendation: h.recommendationScore,
-          competitorGap: h.competitorGapScore,
-        },
-      }));
+        return historyData.map((h) => ({
+          date: h.calculatedAt.toISOString(),
+          score: h.overallScore,
+          components: {
+            visibility: h.visibilityScore,
+            sentiment: h.sentimentScore,
+            recommendation: h.recommendationScore,
+            competitorGap: h.competitorGapScore,
+          },
+        }));
+      } catch (error) {
+        console.error("Database error fetching GEO score history:", error);
+        throw new Error("Failed to fetch GEO score history. Please try again later.");
+      }
     },
 
     // Recommendation resolvers - SELECT * FROM recommendations WHERE id = $1
     recommendation: async (_: unknown, { id }: { id: string }, context: GraphQLContext) => {
       context.requireAuth();
-      const result = await db.select().from(schema.recommendations).where(eq(schema.recommendations.id, id)).limit(1);
-      if (!result[0]) return null;
-      const rec = result[0];
-      return {
-        ...rec,
-        type: rec.category,
-        estimatedImpact: rec.impact === "high" ? 0.8 : rec.impact === "medium" ? 0.5 : 0.3,
-        dependencies: [],
-        evidence: {},
-        aiExplanation: null,
-        feedback: [],
-      };
+      try {
+        const result = await db.select().from(schema.recommendations).where(eq(schema.recommendations.id, id)).limit(1);
+        if (!result[0]) return null;
+        const rec = result[0];
+        return {
+          ...rec,
+          type: rec.category,
+          estimatedImpact: rec.impact === "high" ? 0.8 : rec.impact === "medium" ? 0.5 : 0.3,
+          dependencies: [],
+          evidence: {},
+          aiExplanation: null,
+          feedback: [],
+        };
+      } catch (error) {
+        console.error("Database error fetching recommendation:", error);
+        throw new Error("Failed to fetch recommendation. Please try again later.");
+      }
     },
 
     // SELECT * FROM recommendations WHERE brand_id = $1
     recommendations: async (_: unknown, args: { brandId?: string; first?: number; status?: string; priority?: string; category?: string }, context: GraphQLContext) => {
       context.requireAuth();
-      const limit = args.first || 50;
+      try {
+        const limit = args.first || 50;
 
-      const whereConditions = [];
-      if (args.brandId) {
-        whereConditions.push(eq(schema.recommendations.brandId, args.brandId));
-      }
+        const whereConditions = [];
+        if (args.brandId) {
+          whereConditions.push(eq(schema.recommendations.brandId, args.brandId));
+        }
 
-      const query = whereConditions.length > 0
-        ? db.select().from(schema.recommendations).where(and(...whereConditions))
-        : db.select().from(schema.recommendations);
+        const query = whereConditions.length > 0
+          ? db.select().from(schema.recommendations).where(and(...whereConditions))
+          : db.select().from(schema.recommendations);
 
-      const results = await query.orderBy(desc(schema.recommendations.createdAt)).limit(limit);
-      const totalResult = args.brandId
-        ? await db.select({ count: count() }).from(schema.recommendations).where(eq(schema.recommendations.brandId, args.brandId))
-        : await db.select({ count: count() }).from(schema.recommendations);
-      const total = totalResult[0]?.count || 0;
+        const results = await query.orderBy(desc(schema.recommendations.createdAt)).limit(limit);
+        const totalResult = args.brandId
+          ? await db.select({ count: count() }).from(schema.recommendations).where(eq(schema.recommendations.brandId, args.brandId))
+          : await db.select({ count: count() }).from(schema.recommendations);
+        const total = totalResult[0]?.count || 0;
 
-      return {
-        edges: results.map((rec, idx) => ({
-          node: {
-            ...rec,
-            type: rec.category,
-            estimatedImpact: rec.impact === "high" ? 0.8 : rec.impact === "medium" ? 0.5 : 0.3,
-            dependencies: [],
-            evidence: {},
-            aiExplanation: null,
-            feedback: [],
+        return {
+          edges: results.map((rec, idx) => ({
+            node: {
+              ...rec,
+              type: rec.category,
+              estimatedImpact: rec.impact === "high" ? 0.8 : rec.impact === "medium" ? 0.5 : 0.3,
+              dependencies: [],
+              evidence: {},
+              aiExplanation: null,
+              feedback: [],
+            },
+            cursor: Buffer.from(`rec:${idx}`).toString("base64"),
+          })),
+          pageInfo: {
+            hasNextPage: results.length === limit,
+            hasPreviousPage: false,
+            startCursor: results.length > 0 ? Buffer.from("rec:0").toString("base64") : null,
+            endCursor: results.length > 0 ? Buffer.from(`rec:${results.length - 1}`).toString("base64") : null,
+            total,
           },
-          cursor: Buffer.from(`rec:${idx}`).toString("base64"),
-        })),
-        pageInfo: {
-          hasNextPage: results.length === limit,
-          hasPreviousPage: false,
-          startCursor: results.length > 0 ? Buffer.from("rec:0").toString("base64") : null,
-          endCursor: results.length > 0 ? Buffer.from(`rec:${results.length - 1}`).toString("base64") : null,
-          total,
-        },
-      };
+        };
+      } catch (error) {
+        console.error("Database error fetching recommendations:", error);
+        throw new Error("Failed to fetch recommendations. Please try again later.");
+      }
     },
 
     // Audit resolvers - SELECT * FROM audits WHERE id = $1
     audit: async (_: unknown, { id }: { id: string }, context: GraphQLContext) => {
       context.requireAuth();
-      const result = await db.select().from(schema.audits).where(eq(schema.audits.id, id)).limit(1);
-      if (!result[0]) return null;
-      const audit = result[0];
-      return {
-        ...audit,
-        categories: audit.categoryScores?.map((cs: { category: string; score: number; maxScore: number; issues: number }) => ({
-          name: cs.category,
-          score: cs.score,
-          weight: 1,
-          issues: cs.issues,
-          passed: cs.maxScore - cs.issues,
-        })) || [],
-      };
+      try {
+        const result = await db.select().from(schema.audits).where(eq(schema.audits.id, id)).limit(1);
+        if (!result[0]) return null;
+        const audit = result[0];
+        return {
+          ...audit,
+          categories: audit.categoryScores?.map((cs: { category: string; score: number; maxScore: number; issues: number }) => ({
+            name: cs.category,
+            score: cs.score,
+            weight: 1,
+            issues: cs.issues,
+            passed: cs.maxScore - cs.issues,
+          })) || [],
+        };
+      } catch (error) {
+        console.error("Database error fetching audit:", error);
+        throw new Error("Failed to fetch audit. Please try again later.");
+      }
     },
 
     // SELECT * FROM audits WHERE brand_id = $1 LIMIT $2
     audits: async (_: unknown, { brandId, first }: { brandId: string; first?: number }, context: GraphQLContext) => {
       context.requireAuth();
-      const limit = first || 20;
-      const results = await db.select().from(schema.audits)
-        .where(eq(schema.audits.brandId, brandId))
-        .orderBy(desc(schema.audits.createdAt))
-        .limit(limit);
+      try {
+        const limit = first || 20;
+        const results = await db.select().from(schema.audits)
+          .where(eq(schema.audits.brandId, brandId))
+          .orderBy(desc(schema.audits.createdAt))
+          .limit(limit);
 
-      return results.map(audit => ({
-        ...audit,
-        categories: audit.categoryScores?.map((cs: { category: string; score: number; maxScore: number; issues: number }) => ({
-          name: cs.category,
-          score: cs.score,
-          weight: 1,
-          issues: cs.issues,
-          passed: cs.maxScore - cs.issues,
-        })) || [],
-      }));
+        return results.map(audit => ({
+          ...audit,
+          categories: audit.categoryScores?.map((cs: { category: string; score: number; maxScore: number; issues: number }) => ({
+            name: cs.category,
+            score: cs.score,
+            weight: 1,
+            issues: cs.issues,
+            passed: cs.maxScore - cs.issues,
+          })) || [],
+        }));
+      } catch (error) {
+        console.error("Database error fetching audits:", error);
+        throw new Error("Failed to fetch audits. Please try again later.");
+      }
     },
 
     // Content resolvers - SELECT * FROM content WHERE id = $1
     content: async (_: unknown, { id }: { id: string }, context: GraphQLContext) => {
       context.requireAuth();
-      const result = await db.select().from(schema.content).where(eq(schema.content.id, id)).limit(1);
-      if (!result[0]) return null;
-      const c = result[0];
-      return {
-        ...c,
-        type: c.type,
-        seoScore: c.seoScore,
-        aiOptimizationScore: c.aiScore,
-        suggestions: [],
-      };
+      try {
+        const result = await db.select().from(schema.content).where(eq(schema.content.id, id)).limit(1);
+        if (!result[0]) return null;
+        const c = result[0];
+        return {
+          ...c,
+          type: c.type,
+          seoScore: c.seoScore,
+          aiOptimizationScore: c.aiScore,
+          suggestions: [],
+        };
+      } catch (error) {
+        console.error("Database error fetching content:", error);
+        throw new Error("Failed to fetch content. Please try again later.");
+      }
     },
 
     // SELECT * FROM content WHERE brand_id = $1
     contents: async (_: unknown, args: { brandId?: string; first?: number; status?: string }, context: GraphQLContext) => {
       context.requireAuth();
-      const limit = args.first || 50;
+      try {
+        const limit = args.first || 50;
 
-      const whereConditions = [];
-      if (args.brandId) {
-        whereConditions.push(eq(schema.content.brandId, args.brandId));
-      }
+        const whereConditions = [];
+        if (args.brandId) {
+          whereConditions.push(eq(schema.content.brandId, args.brandId));
+        }
 
-      const query = whereConditions.length > 0
-        ? db.select().from(schema.content).where(and(...whereConditions))
-        : db.select().from(schema.content);
+        const query = whereConditions.length > 0
+          ? db.select().from(schema.content).where(and(...whereConditions))
+          : db.select().from(schema.content);
 
-      const results = await query.orderBy(desc(schema.content.createdAt)).limit(limit);
-      const totalResult = args.brandId
-        ? await db.select({ count: count() }).from(schema.content).where(eq(schema.content.brandId, args.brandId))
-        : await db.select({ count: count() }).from(schema.content);
-      const total = totalResult[0]?.count || 0;
+        const results = await query.orderBy(desc(schema.content.createdAt)).limit(limit);
+        const totalResult = args.brandId
+          ? await db.select({ count: count() }).from(schema.content).where(eq(schema.content.brandId, args.brandId))
+          : await db.select({ count: count() }).from(schema.content);
+        const total = totalResult[0]?.count || 0;
 
-      return {
-        edges: results.map((c, idx) => ({
-          node: {
-            ...c,
-            type: c.type,
-            seoScore: c.seoScore,
-            aiOptimizationScore: c.aiScore,
-            suggestions: [],
+        return {
+          edges: results.map((c, idx) => ({
+            node: {
+              ...c,
+              type: c.type,
+              seoScore: c.seoScore,
+              aiOptimizationScore: c.aiScore,
+              suggestions: [],
+            },
+            cursor: Buffer.from(`content:${idx}`).toString("base64"),
+          })),
+          pageInfo: {
+            hasNextPage: results.length === limit,
+            hasPreviousPage: false,
+            startCursor: results.length > 0 ? Buffer.from("content:0").toString("base64") : null,
+            endCursor: results.length > 0 ? Buffer.from(`content:${results.length - 1}`).toString("base64") : null,
+            total,
           },
-          cursor: Buffer.from(`content:${idx}`).toString("base64"),
-        })),
-        pageInfo: {
-          hasNextPage: results.length === limit,
-          hasPreviousPage: false,
-          startCursor: results.length > 0 ? Buffer.from("content:0").toString("base64") : null,
-          endCursor: results.length > 0 ? Buffer.from(`content:${results.length - 1}`).toString("base64") : null,
-          total,
-        },
-      };
+        };
+      } catch (error) {
+        console.error("Database error fetching contents:", error);
+        throw new Error("Failed to fetch contents. Please try again later.");
+      }
     },
 
     // Subscription/Billing resolvers - returns org data from organizations table
@@ -933,30 +997,35 @@ const resolvers = {
       const user = context.requireAuth();
       const orgId = user.orgId || user.userId;
 
-      const result = await db.select().from(schema.organizations).where(eq(schema.organizations.id, orgId)).limit(1);
-      if (!result[0]) return null;
+      try {
+        const result = await db.select().from(schema.organizations).where(eq(schema.organizations.id, orgId)).limit(1);
+        if (!result[0]) return null;
 
-      const org = result[0];
-      return {
-        id: org.id,
-        organizationId: org.id,
-        tier: org.plan || "free",
-        status: "active",
-        billingCycle: "monthly",
-        currentPeriodStart: new Date().toISOString(),
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        cancelAtPeriodEnd: false,
-        usage: null,
-        features: [],
-        limits: {
-          brands: org.plan === "enterprise" ? 999 : org.plan === "professional" ? 10 : org.plan === "starter" ? 3 : 1,
-          platforms: 7,
-          mentionsPerMonth: 10000,
-          auditsPerMonth: 50,
-          aiTokensPerMonth: 100000,
-          contentPiecesPerMonth: 100,
-        },
-      };
+        const org = result[0];
+        return {
+          id: org.id,
+          organizationId: org.id,
+          tier: org.plan || "free",
+          status: "active",
+          billingCycle: "monthly",
+          currentPeriodStart: new Date().toISOString(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          cancelAtPeriodEnd: false,
+          usage: null,
+          features: [],
+          limits: {
+            brands: org.plan === "enterprise" ? 999 : org.plan === "professional" ? 10 : org.plan === "starter" ? 3 : 1,
+            platforms: 7,
+            mentionsPerMonth: 10000,
+            auditsPerMonth: 50,
+            aiTokensPerMonth: 100000,
+            contentPiecesPerMonth: 100,
+          },
+        };
+      } catch (error) {
+        console.error("Database error fetching subscription:", error);
+        throw new Error("Failed to fetch subscription. Please try again later.");
+      }
     },
 
     // Subscription plans (static for now)
@@ -1010,105 +1079,127 @@ const resolvers = {
     // Integration resolvers - SELECT * FROM integrations (system-wide config)
     integrations: async (_: unknown, __: unknown, context: GraphQLContext) => {
       context.requireAuth();
-      const results = await db.select().from(schema.apiIntegrations);
-      return results.map(int => ({
-        ...int,
-        type: int.category,
-        isConnected: int.status === "configured",
-      }));
+      try {
+        const results = await db.select().from(schema.apiIntegrations);
+        return results.map(int => ({
+          ...int,
+          type: int.category,
+          isConnected: int.status === "configured",
+        }));
+      } catch (error) {
+        console.error("Database error fetching integrations:", error);
+        throw new Error("Failed to fetch integrations. Please try again later.");
+      }
     },
 
     // SELECT * FROM integrations WHERE id = $1
     integration: async (_: unknown, { id }: { id: string }, context: GraphQLContext) => {
       context.requireAuth();
-      const result = await db.select().from(schema.apiIntegrations).where(eq(schema.apiIntegrations.id, id)).limit(1);
-      if (!result[0]) return null;
-      const int = result[0];
-      return {
-        ...int,
-        type: int.category,
-        isConnected: int.status === "configured",
-      };
+      try {
+        const result = await db.select().from(schema.apiIntegrations).where(eq(schema.apiIntegrations.id, id)).limit(1);
+        if (!result[0]) return null;
+        const int = result[0];
+        return {
+          ...int,
+          type: int.category,
+          isConnected: int.status === "configured",
+        };
+      } catch (error) {
+        console.error("Database error fetching integration:", error);
+        throw new Error("Failed to fetch integration. Please try again later.");
+      }
     },
 
     // Analytics resolvers - aggregation queries
     analytics: async (_: unknown, { brandId, period }: { brandId: string; period?: string }, context: GraphQLContext) => {
       context.requireAuth();
+      try {
+        const periodDays = period === "30d" ? 30 : period === "90d" ? 90 : 7;
+        const startDate = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
 
-      const periodDays = period === "30d" ? 30 : period === "90d" ? 90 : 7;
-      const startDate = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
+        // Get mention counts
+        const mentionsResult = await db.select({ count: count() }).from(schema.brandMentions)
+          .where(eq(schema.brandMentions.brandId, brandId));
+        const mentionCount = mentionsResult[0]?.count || 0;
 
-      // Get mention counts
-      const mentionsResult = await db.select({ count: count() }).from(schema.brandMentions)
-        .where(eq(schema.brandMentions.brandId, brandId));
-      const mentionCount = mentionsResult[0]?.count || 0;
+        // Get recommendation counts
+        const recsResult = await db.select({ count: count() }).from(schema.recommendations)
+          .where(eq(schema.recommendations.brandId, brandId));
+        const recCount = recsResult[0]?.count || 0;
 
-      // Get recommendation counts
-      const recsResult = await db.select({ count: count() }).from(schema.recommendations)
-        .where(eq(schema.recommendations.brandId, brandId));
-      const recCount = recsResult[0]?.count || 0;
+        const completedRecsResult = await db.select({ count: count() }).from(schema.recommendations)
+          .where(and(eq(schema.recommendations.brandId, brandId), eq(schema.recommendations.status, "completed")));
+        const completedCount = completedRecsResult[0]?.count || 0;
 
-      const completedRecsResult = await db.select({ count: count() }).from(schema.recommendations)
-        .where(and(eq(schema.recommendations.brandId, brandId), eq(schema.recommendations.status, "completed")));
-      const completedCount = completedRecsResult[0]?.count || 0;
+        // Get content counts
+        const contentResult = await db.select({ count: count() }).from(schema.content)
+          .where(eq(schema.content.brandId, brandId));
+        const contentCount = contentResult[0]?.count || 0;
 
-      // Get content counts
-      const contentResult = await db.select({ count: count() }).from(schema.content)
-        .where(eq(schema.content.brandId, brandId));
-      const contentCount = contentResult[0]?.count || 0;
-
-      return {
-        period: period || "7d",
-        startDate: startDate.toISOString(),
-        endDate: new Date().toISOString(),
-        geoScore: { current: 72, previous: 68, change: 4, trend: "up" },
-        mentions: { total: mentionCount, change: 0, byPlatform: {}, bySentiment: {}, topQueries: [] },
-        recommendations: { total: recCount, completed: completedCount, inProgress: 0, pending: recCount - completedCount, avgImpact: 0.6 },
-        content: { total: contentCount, published: 0, avgSeoScore: 75, avgAiScore: 80 },
-      };
+        return {
+          period: period || "7d",
+          startDate: startDate.toISOString(),
+          endDate: new Date().toISOString(),
+          geoScore: { current: 72, previous: 68, change: 4, trend: "up" },
+          mentions: { total: mentionCount, change: 0, byPlatform: {}, bySentiment: {}, topQueries: [] },
+          recommendations: { total: recCount, completed: completedCount, inProgress: 0, pending: recCount - completedCount, avgImpact: 0.6 },
+          content: { total: contentCount, published: 0, avgSeoScore: 75, avgAiScore: 80 },
+        };
+      } catch (error) {
+        console.error("Database error fetching analytics:", error);
+        throw new Error("Failed to fetch analytics. Please try again later.");
+      }
     },
 
     // Platform comparison query
     comparePlatforms: async (_: unknown, { brandId }: { brandId: string }, context: GraphQLContext) => {
       context.requireAuth();
+      try {
+        // Get mentions grouped by platform
+        const mentions = await db.select().from(schema.brandMentions)
+          .where(eq(schema.brandMentions.brandId, brandId));
 
-      // Get mentions grouped by platform
-      const mentions = await db.select().from(schema.brandMentions)
-        .where(eq(schema.brandMentions.brandId, brandId));
+        const platformStats: Record<string, { count: number; positive: number; negative: number; neutral: number }> = {};
+        mentions.forEach(m => {
+          const platform = m.platform;
+          if (!platformStats[platform]) {
+            platformStats[platform] = { count: 0, positive: 0, negative: 0, neutral: 0 };
+          }
+          platformStats[platform].count++;
+          platformStats[platform][m.sentiment]++;
+        });
 
-      const platformStats: Record<string, { count: number; positive: number; negative: number; neutral: number }> = {};
-      mentions.forEach(m => {
-        const platform = m.platform;
-        if (!platformStats[platform]) {
-          platformStats[platform] = { count: 0, positive: 0, negative: 0, neutral: 0 };
-        }
-        platformStats[platform].count++;
-        platformStats[platform][m.sentiment]++;
-      });
-
-      return platformStats;
+        return platformStats;
+      } catch (error) {
+        console.error("Database error comparing platforms:", error);
+        throw new Error("Failed to compare platforms. Please try again later.");
+      }
     },
 
     // Competitor analysis query
     competitorAnalysis: async (_: unknown, { brandId }: { brandId: string }, context: GraphQLContext) => {
       context.requireAuth();
+      try {
+        const brandResult = await db.select().from(schema.brands).where(eq(schema.brands.id, brandId)).limit(1);
+        if (!brandResult[0]) return { competitors: [], yourBrand: null, opportunities: [] };
 
-      const brandResult = await db.select().from(schema.brands).where(eq(schema.brands.id, brandId)).limit(1);
-      if (!brandResult[0]) return { competitors: [], yourBrand: null, opportunities: [] };
+        const brand = brandResult[0];
+        const competitors = (brand.competitors || []).map((c: { name: string; url: string }) => ({
+          name: c.name,
+          url: c.url,
+          mentionCount: 0,
+          sentiment: "neutral",
+        }));
 
-      const brand = brandResult[0];
-      const competitors = (brand.competitors || []).map((c: { name: string; url: string }) => ({
-        name: c.name,
-        url: c.url,
-        mentionCount: 0,
-        sentiment: "neutral",
-      }));
-
-      return {
-        competitors,
-        yourBrand: { name: brand.name, mentionCount: 0, sentiment: "neutral" },
-        opportunities: [],
-      };
+        return {
+          competitors,
+          yourBrand: { name: brand.name, mentionCount: 0, sentiment: "neutral" },
+          opportunities: [],
+        };
+      } catch (error) {
+        console.error("Database error fetching competitor analysis:", error);
+        throw new Error("Failed to fetch competitor analysis. Please try again later.");
+      }
     },
 
     // System resolvers
@@ -1123,26 +1214,31 @@ const resolvers = {
       const user = context.requireAuth();
       const orgId = user.orgId || user.userId;
 
-      // Try to get user from database
-      const userResult = await db.select().from(schema.users).where(eq(schema.users.clerkUserId, user.userId)).limit(1);
+      try {
+        // Try to get user from database
+        const userResult = await db.select().from(schema.users).where(eq(schema.users.clerkUserId, user.userId)).limit(1);
 
-      if (userResult[0]) {
+        if (userResult[0]) {
+          return {
+            id: userResult[0].id,
+            email: userResult[0].email,
+            name: userResult[0].name,
+            organizationId: userResult[0].organizationId,
+            role: userResult[0].role,
+          };
+        }
+
         return {
-          id: userResult[0].id,
-          email: userResult[0].email,
-          name: userResult[0].name,
-          organizationId: userResult[0].organizationId,
-          role: userResult[0].role,
+          id: user.userId,
+          email: null,
+          name: null,
+          organizationId: orgId,
+          role: "user",
         };
+      } catch (error) {
+        console.error("Database error fetching user:", error);
+        throw new Error("Failed to fetch user profile. Please try again later.");
       }
-
-      return {
-        id: user.userId,
-        email: null,
-        name: null,
-        organizationId: orgId,
-        role: "user",
-      };
     },
   },
 
