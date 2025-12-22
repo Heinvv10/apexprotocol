@@ -1,9 +1,9 @@
 {
   "discovered_files": {
     "src/lib/graphql/schema.ts": {
-      "description": "Verified 54 GraphQL resolvers (22 Query, 23 Mutation, 11 Field resolvers) all use Drizzle ORM patterns. Query resolvers use db.select(), mutations use db.insert/update/delete with .returning(). Only intentional static data: subscriptionPlans (config) and health (status check). 5 mutation stubs exist for external services (Stripe, AI generation, background jobs).",
-      "category": "graphql",
-      "discovered_at": "2025-12-22T22:14:26.802680+00:00"
+      "description": "All 11 field resolvers now have try-catch error handling: Brand.mentions, Brand.recommendations, Brand.audits, Brand.geoScore, Brand.stats, Mention.brand, Recommendation.brand, Recommendation.feedback, Audit.brand, Content.brand, GEOScore.history. Pattern: wrap DB operations in try-catch, log with console.error, throw user-friendly Error messages. Total 51 catch blocks across all resolvers (Query, Mutation, and Field).",
+      "category": "error_handling",
+      "discovered_at": "2025-12-22T22:53:51.567017+00:00"
     },
     "src/lib/db/index.ts": {
       "description": "Database connection verified: Uses Neon serverless + Drizzle ORM with lazy initialization Proxy pattern. Dependencies: @neondatabase/serverless ^1.0.2, drizzle-orm ^0.45.0. Exports db (proxy), getDb(), and schema. isDatabaseConfigured() validates DATABASE_URL.",
@@ -16,10 +16,30 @@
       "discovered_at": "2025-12-22T22:18:07.503030+00:00"
     },
     ".auto-claude/specs/001-graphql-resolver-database-connections/build-progress.txt": {
-      "description": "Comprehensive resolver-to-schema mapping documentation created. Documents all 56 GraphQL resolvers (22 Query, 23 Mutation, 11 Field) with their corresponding Drizzle schema tables, DB operations, line numbers, and authentication status. 88% of resolvers are database-connected; 12% are external service stubs or static config. Key schema tables: brands, brandMentions, recommendations, audits, content, organizations, users, apiIntegrations, geoScoreHistory, recommendationFeedback.",
+      "description": "Comprehensive resolver-to-schema mapping documentation with 56 total resolvers (22 Query, 23 Mutation, 11 Field), including line number references, DB operations, auth requirements, and identified gaps (5 external service stubs, 2 static configs).",
       "category": "documentation",
-      "discovered_at": "2025-12-22T22:21:37.475626+00:00"
+      "discovered_at": "2025-12-22T22:23:15.000995+00:00"
+    },
+    "src/lib/graphql/db-error-handler.ts": {
+      "description": "Database error handling utility with 7 exported functions: handleDatabaseError, handleNotFound, handleConstraintViolation, isKnownError, classifyDatabaseError, withErrorHandling, logDatabaseOperation. Integrates with schema.ts for consistent error handling across Query/Mutation resolvers.",
+      "category": "utility",
+      "discovered_at": "2025-12-22T23:01:43.053697+00:00"
+    },
+    "tests/graphql/": {
+      "description": "GraphQL test infrastructure verified working: tests/graphql/mocks/db.ts (Drizzle mock with chainable queries, call tracking), tests/graphql/factories/index.ts (factory functions for all entity types), tests/graphql/setup.ts (setupGraphQLTest, DatabaseErrors, dbAssertions), tests/graphql/setup.test.ts (36 passing tests). Commit: 14133a9a",
+      "category": "testing",
+      "discovered_at": "2025-12-22T23:11:23.300963+00:00"
+    },
+    "tests/graphql/resolvers/brands.test.ts": {
+      "description": "Brand resolver unit tests with 46 test cases covering Query (brand, brands, brandByDomain) and Mutation (createBrand, updateBrand, deleteBrand) resolvers. Tests verify: database operations (SELECT, INSERT, UPDATE, DELETE with .returning()), organization access control, field transformations (monitoringPlatforms \u2192 platforms, competitors object \u2192 name array), error handling (unique/foreign key constraints, connection errors, timeouts), authentication (requireAuth, userId fallback), and pagination (cursor encoding, limits). Uses setupGraphQLTest() with mocked db and schema.",
+      "category": "testing",
+      "discovered_at": "2025-12-22T23:17:26.884297+00:00"
+    },
+    "tests/graphql/resolvers/mentions.test.ts": {
+      "description": "Mention resolver unit tests with 46 test cases covering Query (mention, mentions), Mutation (markMentionReviewed, refreshMentions), Field Resolver (Mention.brand). Tests verify computed fields (sentimentScore based on positive/negative/neutral = 0.8/0.2/0.5, isRecommendation from promptCategory, competitorMentioned from competitors array). Uses setupGraphQLTest() pattern with mocked db and schema. Pagination tested with cursor encoding (base64 \"mention:{idx}\"). Error handling tests for connection errors, timeouts, user-friendly messages.",
+      "category": "test",
+      "discovered_at": "2025-12-22T23:24:19.448716+00:00"
     }
   },
-  "last_updated": "2025-12-22T22:21:37.475626+00:00"
+  "last_updated": "2025-12-22T23:24:19.448716+00:00"
 }
