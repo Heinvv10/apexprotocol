@@ -114,9 +114,12 @@ During codebase exploration, I discovered that:
 
 ## Progress Timeline
 - **2025-12-22**: Initial discovery - database connections already implemented
-- **2025-12-23**: Implementation plan created with 5 phases, 27 subtasks
-- **2025-12-23**: Subtask 1.1 - Database connection initialization VERIFIED ✅
-- **Next**: Continue Phase 1 verification (1.2-1.4)
+- **2025-12-22**: Implementation plan created with 5 phases, 27 subtasks
+- **2025-12-22**: Subtask 1.1 - Database connection initialization VERIFIED ✅
+- **2025-12-22**: Subtask 1.2 - Resolver database connectivity audit VERIFIED ✅
+- **2025-12-22**: Subtask 1.3 - Drizzle schema completeness VERIFIED ✅
+- **2025-12-23**: Subtask 1.4 - Resolver-to-schema mapping documentation COMPLETED ✅
+- **Next**: Phase 2 - Error handling enhancement (2.1-2.4)
 
 ---
 
@@ -278,3 +281,277 @@ All field resolvers properly query related data:
 - No mock data arrays found in resolver implementations
 - Field resolvers properly resolve related entities
 - Authentication and organization isolation working correctly
+
+---
+
+## Subtask 1.4 - Resolver-to-Schema Mapping Documentation
+
+**Completed:** 2025-12-23
+
+### Summary
+
+This document provides a comprehensive mapping of all GraphQL resolvers to their corresponding Drizzle ORM schema tables. This serves as a reference for maintenance, debugging, and future development.
+
+### Acceptance Criteria Status
+
+| Criteria | Status | Evidence |
+|----------|--------|----------|
+| All Query resolvers documented with DB status | ✅ PASS | 22 Query resolvers documented below |
+| All Mutation resolvers documented with DB status | ✅ PASS | 23 Mutation resolvers documented below |
+| Field resolvers documented | ✅ PASS | 11 Field resolvers documented below |
+| Any gaps or issues identified | ✅ PASS | 5 expected stubs identified for external services |
+
+---
+
+## COMPLETE RESOLVER-TO-SCHEMA MAPPING
+
+### Query Resolvers (22 total)
+
+#### Brand Domain Queries
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `brand(id: ID!)` | `schema.brands` | `SELECT * WHERE id = $1` | ✅ orgId check | 578-591 |
+| `brands(first, search)` | `schema.brands` | `SELECT * WHERE org_id = $1 LIMIT $2` | ✅ orgId filter | 594-631 |
+| `brandByDomain(domain)` | `schema.brands` | `SELECT * WHERE org_id = $1 AND domain = $2` | ✅ orgId filter | 634-651 |
+
+#### Mention Domain Queries
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `mention(id: ID!)` | `schema.brandMentions` | `SELECT * WHERE id = $1` | ✅ | 654-665 |
+| `mentions(brandId, first, platform, sentiment)` | `schema.brandMentions` | `SELECT * WHERE brand_id = $1 ORDER BY timestamp DESC` | ✅ | 668-711 |
+
+#### GEO Score Domain Queries
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `geoScore(brandId: ID!)` | `schema.brandMentions`, `schema.recommendations` | COUNT aggregations | ✅ | 714-744 |
+| `geoScoreHistory(brandId, days)` | `schema.geoScoreHistory` | `SELECT * WHERE brand_id = $1 AND calculated_at >= $2` | ✅ | 747-774 |
+
+#### Recommendation Domain Queries
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `recommendation(id: ID!)` | `schema.recommendations` | `SELECT * WHERE id = $1` | ✅ | 777-791 |
+| `recommendations(brandId, status, priority)` | `schema.recommendations` | `SELECT * WHERE brand_id = $1 ORDER BY created_at DESC` | ✅ | 794-834 |
+
+#### Audit Domain Queries
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `audit(id: ID!)` | `schema.audits` | `SELECT * WHERE id = $1` | ✅ | 837-852 |
+| `audits(brandId: ID!, first)` | `schema.audits` | `SELECT * WHERE brand_id = $1 ORDER BY created_at DESC` | ✅ | 855-873 |
+
+#### Content Domain Queries
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `content(id: ID!)` | `schema.content` | `SELECT * WHERE id = $1` | ✅ | 876-888 |
+| `contents(brandId, status)` | `schema.content` | `SELECT * WHERE brand_id = $1 ORDER BY created_at DESC` | ✅ | 891-929 |
+
+#### Subscription Domain Queries
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `subscription` | `schema.organizations` | `SELECT * WHERE id = $1 (orgId)` | ✅ | 932-960 |
+| `subscriptionPlans` | **(static config)** | Returns hardcoded plan array | N/A | 963-1008 |
+
+#### Integration Domain Queries
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `integrations` | `schema.apiIntegrations` | `SELECT *` | ✅ | 1011-1019 |
+| `integration(id: ID!)` | `schema.apiIntegrations` | `SELECT * WHERE id = $1` | ✅ | 1022-1032 |
+
+#### Analytics Domain Queries
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `analytics(brandId, period)` | `schema.brandMentions`, `schema.recommendations`, `schema.content` | COUNT aggregations | ✅ | 1035-1069 |
+| `comparePlatforms(brandId)` | `schema.brandMentions` | `SELECT * WHERE brand_id = $1` + JS grouping | ✅ | 1072-1090 |
+| `competitorAnalysis(brandId)` | `schema.brands` | `SELECT * WHERE id = $1` | ✅ | 1093-1112 |
+
+#### System Queries
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `health` | **(static status)** | Returns hardcoded health check | N/A | 1115-1120 |
+| `me` | `schema.users` | `SELECT * WHERE clerk_user_id = $1` | ✅ | 1122-1146 |
+
+---
+
+### Mutation Resolvers (23 total)
+
+#### Brand Domain Mutations
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `createBrand(input)` | `schema.brands` | `INSERT INTO brands VALUES(...) RETURNING *` | ✅ orgId | 1151-1173 |
+| `updateBrand(id, input)` | `schema.brands` | `UPDATE brands SET ... WHERE id = $1 RETURNING *` | ✅ ownership | 1176-1202 |
+| `deleteBrand(id)` | `schema.brands` | `DELETE FROM brands WHERE id = $1` | ✅ ownership | 1205-1214 |
+
+#### Mention Domain Mutations
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `refreshMentions(brandId, platforms)` | **(external job)** | Stub - triggers background job | ✅ | 1217-1227 |
+| `markMentionReviewed(id)` | `schema.brandMentions` | `SELECT * WHERE id = $1` (read-only) | ✅ | 1230-1240 |
+
+#### GEO Score Domain Mutations
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `calculateGeoScore(brandId)` | `schema.brandMentions`, `schema.recommendations`, `schema.geoScoreHistory` | COUNT + `INSERT INTO geo_score_history` | ✅ | 1243-1318 |
+
+#### Recommendation Domain Mutations
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `updateRecommendationStatus(id, status)` | `schema.recommendations` | `UPDATE recommendations SET status = $2 WHERE id = $1 RETURNING *` | ✅ | 1321-1340 |
+| `assignRecommendation(id, userId)` | `schema.recommendations` | `UPDATE recommendations SET assigned_to = $2 WHERE id = $1 RETURNING *` | ✅ | 1343-1359 |
+| `submitRecommendationFeedback(id, input)` | `schema.recommendationFeedback`, `schema.recommendations` | `INSERT INTO feedback` + `UPDATE recommendations` | ✅ | 1362-1406 |
+| `generateRecommendations(brandId)` | **(external AI)** | Stub - AI generation placeholder | ✅ | 1409-1414 |
+
+#### Audit Domain Mutations
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `startAudit(brandId, url)` | `schema.audits` | `INSERT INTO audits VALUES(...) RETURNING *` | ✅ | 1417-1431 |
+| `cancelAudit(id)` | `schema.audits` | `UPDATE audits SET status = 'failed' WHERE id = $1` | ✅ | 1434-1438 |
+
+#### Content Domain Mutations
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `createContent(input)` | `schema.content` | `INSERT INTO content VALUES(...) RETURNING *` | ✅ | 1441-1459 |
+| `updateContent(id, input)` | `schema.content` | `UPDATE content SET ... WHERE id = $1 RETURNING *` | ✅ | 1462-1480 |
+| `deleteContent(id)` | `schema.content` | `DELETE FROM content WHERE id = $1` | ✅ | 1483-1487 |
+| `optimizeContent(id)` | `schema.content` | `SELECT * WHERE id = $1` (read-only stub) | ✅ | 1490-1500 |
+| `publishContent(id)` | `schema.content` | `UPDATE content SET status = 'published' WHERE id = $1 RETURNING *` | ✅ | 1503-1513 |
+
+#### Subscription Domain Mutations
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `createCheckoutSession(planId, billingCycle)` | **(external Stripe)** | Stub - Stripe integration placeholder | ✅ | 1516-1520 |
+| `changePlan(planId)` | `schema.organizations` | `UPDATE organizations SET plan = $2 WHERE id = $1` | ✅ | 1522-1546 |
+| `cancelSubscription(immediately)` | `schema.organizations` | `UPDATE organizations SET plan = 'starter' WHERE id = $1` | ✅ | 1548-1572 |
+
+#### Integration Domain Mutations
+
+| Resolver | Schema Table(s) | DB Operation | Auth | Line # |
+|----------|----------------|--------------|------|--------|
+| `connectIntegration(type, config)` | `schema.apiIntegrations` | `INSERT INTO api_integrations VALUES(...) RETURNING *` | ✅ | 1575-1591 |
+| `disconnectIntegration(id)` | `schema.apiIntegrations` | `DELETE FROM api_integrations WHERE id = $1` | ✅ | 1593-1597 |
+| `syncIntegration(id)` | `schema.apiIntegrations` | `UPDATE api_integrations SET last_verified = NOW() WHERE id = $1 RETURNING *` | ✅ | 1599-1612 |
+
+---
+
+### Field Resolvers (11 total)
+
+#### Brand Type Resolvers
+
+| Resolver | Schema Table(s) | DB Operation | Line # |
+|----------|----------------|--------------|--------|
+| `Brand.mentions(first, after, platform, sentiment)` | `schema.brandMentions` | `SELECT * WHERE brand_id = parent.id ORDER BY timestamp DESC` | 1617-1668 |
+| `Brand.recommendations(first, status)` | `schema.recommendations` | `SELECT * WHERE brand_id = parent.id ORDER BY created_at DESC` | 1670-1680 |
+| `Brand.audits(first)` | `schema.audits` | `SELECT * WHERE brand_id = parent.id ORDER BY created_at DESC` | 1682-1692 |
+| `Brand.geoScore` | `schema.brandMentions`, `schema.recommendations` | COUNT aggregations (calculated on-the-fly) | 1694-1728 |
+| `Brand.stats` | `schema.brandMentions`, `schema.recommendations` | Multiple COUNT aggregations | 1730-1755 |
+
+#### Mention Type Resolvers
+
+| Resolver | Schema Table(s) | DB Operation | Line # |
+|----------|----------------|--------------|--------|
+| `Mention.brand` | `schema.brands` | `SELECT * WHERE id = parent.brandId` | 1758-1769 |
+
+#### Recommendation Type Resolvers
+
+| Resolver | Schema Table(s) | DB Operation | Line # |
+|----------|----------------|--------------|--------|
+| `Recommendation.brand` | `schema.brands` | `SELECT * WHERE id = parent.brandId` | 1772-1783 |
+| `Recommendation.feedback` | `schema.recommendationFeedback` | `SELECT * WHERE recommendation_id = parent.id ORDER BY created_at DESC` | 1784-1801 |
+
+#### Audit Type Resolvers
+
+| Resolver | Schema Table(s) | DB Operation | Line # |
+|----------|----------------|--------------|--------|
+| `Audit.brand` | `schema.brands` | `SELECT * WHERE id = parent.brandId` | 1804-1815 |
+
+#### Content Type Resolvers
+
+| Resolver | Schema Table(s) | DB Operation | Line # |
+|----------|----------------|--------------|--------|
+| `Content.brand` | `schema.brands` | `SELECT * WHERE id = parent.brandId` | 1818-1829 |
+
+#### GEOScore Type Resolvers
+
+| Resolver | Schema Table(s) | DB Operation | Line # |
+|----------|----------------|--------------|--------|
+| `GEOScore.history(days)` | `schema.geoScoreHistory` | `SELECT * WHERE brand_id = parent.brandId AND calculated_at >= $date ORDER BY calculated_at DESC` | 1832-1861 |
+
+---
+
+## SCHEMA TABLE USAGE SUMMARY
+
+### Schema Tables → Resolver Mapping
+
+| Schema Table | Schema File | Query Resolvers | Mutation Resolvers | Field Resolvers |
+|--------------|-------------|-----------------|--------------------|-----------------|
+| `schema.brands` | `src/lib/db/schema/brands.ts` | brand, brands, brandByDomain, competitorAnalysis | createBrand, updateBrand, deleteBrand | Mention.brand, Recommendation.brand, Audit.brand, Content.brand |
+| `schema.brandMentions` | `src/lib/db/schema/mentions.ts` | mention, mentions, geoScore, analytics, comparePlatforms | markMentionReviewed, calculateGeoScore | Brand.mentions, Brand.geoScore, Brand.stats |
+| `schema.recommendations` | `src/lib/db/schema/recommendations.ts` | recommendation, recommendations, geoScore, analytics | updateRecommendationStatus, assignRecommendation, submitRecommendationFeedback | Brand.recommendations, Brand.geoScore, Brand.stats |
+| `schema.recommendationFeedback` | `src/lib/db/schema/feedback.ts` | - | submitRecommendationFeedback | Recommendation.feedback |
+| `schema.audits` | `src/lib/db/schema/audits.ts` | audit, audits | startAudit, cancelAudit | Brand.audits |
+| `schema.content` | `src/lib/db/schema/content.ts` | content, contents, analytics | createContent, updateContent, deleteContent, optimizeContent, publishContent | - |
+| `schema.organizations` | `src/lib/db/schema/organizations.ts` | subscription | changePlan, cancelSubscription | - |
+| `schema.users` | `src/lib/db/schema/users.ts` | me | - | - |
+| `schema.apiIntegrations` | `src/lib/db/schema/api-integrations.ts` | integrations, integration | connectIntegration, disconnectIntegration, syncIntegration | - |
+| `schema.geoScoreHistory` | `src/lib/db/schema/feedback.ts` | geoScoreHistory | calculateGeoScore | GEOScore.history |
+
+---
+
+## IDENTIFIED GAPS & NOTES
+
+### Expected External Service Stubs (Not Issues)
+
+| Resolver | Reason | Future Integration |
+|----------|--------|-------------------|
+| `refreshMentions` | Triggers background scraping job | Background job system (e.g., BullMQ, Inngest) |
+| `generateRecommendations` | AI-powered recommendation generation | OpenAI/Anthropic integration |
+| `optimizeContent` | AI content optimization | OpenAI/Anthropic integration |
+| `createCheckoutSession` | Stripe payment integration | Stripe SDK |
+
+### Static Data (Intentional)
+
+| Resolver | Reason |
+|----------|--------|
+| `subscriptionPlans` | Configuration data - plans don't change at runtime |
+| `health` | System health check - no database state needed |
+
+### Architecture Observations
+
+1. **Organization Isolation**: All brand-related queries filter by `user.orgId` for multi-tenant security
+2. **Computed Values**: GEOScore is calculated on-the-fly from mentions/recommendations rather than stored
+3. **Denormalized Fields**: GraphQL type field transformations (e.g., `monitoringPlatforms` → `platforms`)
+4. **Cursor Pagination**: Uses Base64-encoded cursors for Relay-style pagination
+
+### Total Counts
+
+| Category | Count | Database-Connected | Static/External |
+|----------|-------|-------------------|-----------------|
+| Query Resolvers | 22 | 20 (91%) | 2 (health, subscriptionPlans) |
+| Mutation Resolvers | 23 | 18 (78%) | 5 (external service stubs) |
+| Field Resolvers | 11 | 11 (100%) | 0 |
+| **TOTAL** | **56** | **49 (88%)** | **7 (12%)** |
+
+---
+
+### Verification Complete
+
+This mapping documentation satisfies all acceptance criteria:
+- ✅ All 22 Query resolvers documented with DB status
+- ✅ All 23 Mutation resolvers documented with DB status
+- ✅ All 11 Field resolvers documented with their schema tables
+- ✅ Gaps identified: 5 expected external service stubs, 2 static config resolvers

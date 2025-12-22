@@ -14,7 +14,12 @@
       "description": "Verified Drizzle schema completeness: All 11 GraphQL entity types have corresponding Drizzle schemas - brands (brands.ts), brandMentions (mentions.ts), audits (audits.ts), content (content.ts), recommendations (recommendations.ts), recommendationFeedback (feedback.ts), geoScoreHistory (feedback.ts), organizations (organizations.ts), apiIntegrations (api-integrations.ts), users (users.ts). All tables have proper relations defined and type exports. GEOScore is computed on-the-fly from mentions and recommendations data.",
       "category": "schema-verification",
       "discovered_at": "2025-12-22T22:18:07.503030+00:00"
+    },
+    ".auto-claude/specs/001-graphql-resolver-database-connections/build-progress.txt": {
+      "description": "Comprehensive resolver-to-schema mapping documentation created. Documents all 56 GraphQL resolvers (22 Query, 23 Mutation, 11 Field) with their corresponding Drizzle schema tables, DB operations, line numbers, and authentication status. 88% of resolvers are database-connected; 12% are external service stubs or static config. Key schema tables: brands, brandMentions, recommendations, audits, content, organizations, users, apiIntegrations, geoScoreHistory, recommendationFeedback.",
+      "category": "documentation",
+      "discovered_at": "2025-12-22T22:21:37.475626+00:00"
     }
   },
-  "last_updated": "2025-12-22T22:18:07.503030+00:00"
+  "last_updated": "2025-12-22T22:21:37.475626+00:00"
 }

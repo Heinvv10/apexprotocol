@@ -84,7 +84,7 @@
           "id": "1.4",
           "title": "Document resolver-to-schema mappings",
           "description": "Create mapping documentation showing which resolvers use which schema tables",
-          "status": "pending",
+          "status": "completed",
           "priority": "medium",
           "estimated_minutes": 20,
           "file": ".auto-claude/specs/001-graphql-resolver-database-connections/build-progress.txt",
@@ -94,7 +94,8 @@
             "Field resolvers documented",
             "Any gaps or issues identified"
           ],
-          "notes": "Important for maintenance and testing"
+          "notes": "Comprehensive resolver-to-schema mapping documentation created in build-progress.txt. Includes:\n- 22 Query resolvers mapped to schema tables with DB operations, auth requirements, and line numbers\n- 23 Mutation resolvers mapped to schema tables with DB operations\n- 11 Field resolvers documented with parent types and schema relationships\n- Schema table usage summary showing which resolvers use which tables\n- Identified 5 expected external service stubs and 2 static config resolvers\n- Total: 56 resolvers (49 database-connected, 7 static/external)\nAll acceptance criteria met.",
+          "updated_at": "2025-12-22T22:22:21.709296+00:00"
         }
       ]
     },
@@ -659,5 +660,5 @@
       "Connection pooling verified"
     ]
   },
-  "last_updated": "2025-12-22T22:18:23.341503+00:00"
+  "last_updated": "2025-12-22T22:22:21.709296+00:00"
 }
