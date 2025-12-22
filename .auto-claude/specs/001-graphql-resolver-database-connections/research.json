@@ -1,0 +1,313 @@
+{
+  "integrations_researched": [
+    {
+      "name": "Drizzle ORM",
+      "type": "library",
+      "verified_package": {
+        "name": "drizzle-orm",
+        "install_command": "npm install drizzle-orm",
+        "version": "latest",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { drizzle } from 'drizzle-orm/neon-http';",
+          "import { drizzle } from 'drizzle-orm/neon-serverless';",
+          "import { eq, and, or } from 'drizzle-orm';"
+        ],
+        "initialization": "const db = drizzle(process.env.DATABASE_URL);",
+        "initialization_with_client": "const sql = neon(process.env.DATABASE_URL!);\nconst db = drizzle({ client: sql });",
+        "key_functions": [
+          "db.select().from(table)",
+          "db.insert(table).values({...})",
+          "db.update(table).set({...}).where(condition)",
+          "db.delete(table).where(condition)",
+          "db.execute(sql`...`)"
+        ],
+        "query_examples": {
+          "select": "const users = await db.select().from(usersTable);",
+          "select_with_where": "const user = await db.select().from(usersTable).where(eq(usersTable.id, userId));",
+          "insert": "await db.insert(usersTable).values({ name: 'John', email: 'john@example.com' });",
+          "insert_returning": "const inserted = await db.insert(usersTable).values({ name: 'John' }).returning();",
+          "update": "await db.update(usersTable).set({ name: 'Jane' }).where(eq(usersTable.id, userId));",
+          "delete": "await db.delete(usersTable).where(eq(usersTable.id, userId));",
+          "upsert": "await db.insert(users).values({ id: 1, name: 'Dan' }).onConflictDoUpdate({ target: users.id, set: { name: 'John' } });"
+        },
+        "verified_against": "Context7 MCP: /drizzle-team/drizzle-orm-docs"
+      },
+      "configuration": {
+        "env_vars": [
+          "DATABASE_URL"
+        ],
+        "config_files": [],
+        "dependencies": [
+          "@neondatabase/serverless (for Neon PostgreSQL)"
+        ],
+        "connection_format": "postgres://username:password@host/database"
+      },
+      "neon_specific_drivers": {
+        "http_driver": {
+          "import": "drizzle-orm/neon-http",
+          "use_case": "HTTP-based queries, lower latency for simple queries",
+          "initialization": "const db = drizzle(process.env.DATABASE_URL);"
+        },
+        "serverless_driver": {
+          "import": "drizzle-orm/neon-serverless",
+          "use_case": "WebSocket-based connections, better for complex operations",
+          "initialization": "const db = drizzle(process.env.DATABASE_URL);",
+          "nodejs_requirement": "Requires 'ws' package for Node.js v21 and earlier"
+        }
+      },
+      "gotchas": [
+        "Drizzle has multiple drivers for Neon: neon-http (HTTP-based) and neon-serverless (WebSocket-based)",
+        "For Node.js v21 and earlier, neon-serverless requires installing 'ws' package and configuring neonConfig.webSocketConstructor",
+        "Use .returning() on insert/update/delete to get affected rows in PostgreSQL",
+        "Connection string must include proper authentication and SSL settings for Neon",
+        "Schema definitions must be created separately and imported",
+        "Type inference works via typeof table.$inferSelect and typeof table.$inferInsert"
+      ],
+      "research_sources": [
+        "Context7 MCP: /drizzle-team/drizzle-orm-docs",
+        "Context7 MCP: /llmstxt/orm_drizzle_team-llms.txt"
+      ]
+    },
+    {
+      "name": "Neon PostgreSQL Serverless Driver",
+      "type": "library",
+      "verified_package": {
+        "name": "@neondatabase/serverless",
+        "install_command": "npm install @neondatabase/serverless",
+        "version": "latest",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { neon } from '@neondatabase/serverless';",
+          "import { Client, Pool, neonConfig } from '@neondatabase/serverless';"
+        ],
+        "initialization": "const sql = neon(process.env.DATABASE_URL!);",
+        "key_functions": [
+          "sql`SELECT * FROM table`",
+          "neonConfig.webSocketConstructor = ws",
+          "neonConfig.pipelineConnect = 'password'",
+          "neonConfig.useSecureWebSocket = true"
+        ],
+        "usage_patterns": {
+          "basic_query": "const rows = await sql`SELECT * FROM posts WHERE id = ${postId}`;",
+          "with_drizzle": "const sql = neon(process.env.DATABASE_URL!);\nconst db = drizzle({ client: sql });",
+          "nodejs_websocket_config": "import ws from 'ws';\nimport { neonConfig } from '@neondatabase/serverless';\nneonConfig.webSocketConstructor = ws;"
+        },
+        "verified_against": "Context7 MCP: /neondatabase/serverless"
+      },
+      "configuration": {
+        "env_vars": [
+          "DATABASE_URL"
+        ],
+        "config_files": [],
+        "dependencies": [
+          "ws (for Node.js v21 and earlier)",
+          "bufferutil (optional, for Node.js performance)"
+        ],
+        "global_config_options": [
+          "neonConfig.webSocketConstructor - Set WebSocket implementation",
+          "neonConfig.pipelineConnect - Pipeline startup messages for performance",
+          "neonConfig.coalesceWrites - Batch multiple writes",
+          "neonConfig.useSecureWebSocket - Use wss:// protocol",
+          "neonConfig.forceDisablePgSSL - Disable Postgres-level TLS",
+          "neonConfig.poolQueryViaFetch - Route Pool.query() over HTTP for lower latency"
+        ]
+      },
+      "infrastructure": {
+        "requires_docker": false,
+        "cloud_service": "Neon PostgreSQL (serverless)",
+        "connection_string_format": "postgres://username:password@ep-*.*.aws.neon.tech/database",
+        "connection_types": [
+          "WebSocket (default for serverless driver)",
+          "HTTP (for neon-http driver)"
+        ]
+      },
+      "gotchas": [
+        "Node.js v21 and earlier require explicit WebSocket constructor configuration",
+        "Must install 'ws' package separately for Node.js environments",
+        "Neon uses pooled connections by default - no manual pooling needed",
+        "Connection strings are specific to Neon endpoints (ep-*.*.aws.neon.tech format)",
+        "For edge/serverless environments, HTTP driver may have lower latency than WebSocket",
+        "WebSocket connections may timeout on long-running operations - use HTTP for simple queries"
+      ],
+      "research_sources": [
+        "Context7 MCP: /neondatabase/serverless",
+        "Context7 MCP: /llmstxt/neon_tech-llms.txt"
+      ]
+    },
+    {
+      "name": "Apollo Server",
+      "type": "library",
+      "verified_package": {
+        "name": "@apollo/server",
+        "install_command": "npm install @apollo/server graphql",
+        "version": "latest",
+        "verified": true,
+        "note": "Requires 'graphql' as peer dependency"
+      },
+      "api_patterns": {
+        "imports": [
+          "import { ApolloServer } from '@apollo/server';",
+          "import { startStandaloneServer } from '@apollo/server/standalone';"
+        ],
+        "initialization": "const server = new ApolloServer({ typeDefs, resolvers });",
+        "server_start": "const { url } = await startStandaloneServer(server, { context: async () => ({ db }) });",
+        "resolver_structure": {
+          "query_resolver": "Query: {\n  fieldName: (parent, args, contextValue, info) => { ... }\n}",
+          "mutation_resolver": "Mutation: {\n  mutationName: (parent, args, contextValue, info) => { ... }\n}",
+          "type_resolver": "TypeName: {\n  field: (parent, args, contextValue, info) => { ... }\n}"
+        },
+        "context_integration": "context: async () => ({ db: await client.connect() })",
+        "verified_against": "Context7 MCP: /apollographql/apollo-server"
+      },
+      "resolver_patterns": {
+        "database_access_via_context": {
+          "description": "Pass database connection through context to all resolvers",
+          "example": "const resolvers = {\n  Query: {\n    users: async (_, __, { db }) => {\n      return await db.select().from(usersTable);\n    }\n  }\n};"
+        },
+        "resolver_arguments": {
+          "parent": "Result from parent resolver (for nested fields)",
+          "args": "GraphQL query arguments",
+          "contextValue": "Shared context object (database, auth, etc.)",
+          "info": "Query execution information"
+        },
+        "best_practices": [
+          "Access database through contextValue.db for consistency",
+          "Initialize database connection in context function",
+          "Use TypeScript types for type-safe resolvers",
+          "Return promises from async resolvers",
+          "Handle errors properly and throw GraphQLError when needed"
+        ]
+      },
+      "configuration": {
+        "env_vars": [],
+        "required_setup": [
+          "typeDefs - GraphQL schema definition",
+          "resolvers - Resolver map matching schema",
+          "context - Function returning context object with db connection"
+        ],
+        "dependencies": [
+          "graphql (peer dependency, required)"
+        ]
+      },
+      "gotchas": [
+        "Must install 'graphql' package separately (peer dependency)",
+        "Context function is called on EVERY request - ensure database connections are reused",
+        "Resolvers should not modify contextValue - treat it as read-only",
+        "Default resolvers exist for simple fields - only define custom resolvers when needed",
+        "Resolver chains: parent resolver result becomes 'parent' argument of child resolver",
+        "Type definitions and resolvers must match exactly or Apollo will throw errors",
+        "For production, consider using connection pooling in context instead of creating new connections"
+      ],
+      "research_sources": [
+        "Context7 MCP: /apollographql/apollo-server"
+      ]
+    },
+    {
+      "name": "GraphQL",
+      "type": "library",
+      "verified_package": {
+        "name": "graphql",
+        "install_command": "npm install graphql",
+        "version": "latest",
+        "verified": true,
+        "note": "Required peer dependency for Apollo Server"
+      },
+      "api_patterns": {
+        "imports": [
+          "import { GraphQLError } from 'graphql';"
+        ],
+        "schema_definition": "type Query {\n  fieldName: ReturnType\n}\n\ntype Mutation {\n  mutationName(arg: InputType): ReturnType\n}",
+        "verified_against": "Context7 MCP: /graphql/graphql.github.io"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": []
+      },
+      "gotchas": [
+        "graphql package is a peer dependency for most GraphQL servers",
+        "Version compatibility: ensure graphql version matches Apollo Server requirements",
+        "Schema-first approach: type definitions must be defined before resolvers"
+      ],
+      "research_sources": [
+        "Context7 MCP: /graphql/graphql.github.io"
+      ]
+    }
+  ],
+  "integration_patterns": {
+    "recommended_setup": {
+      "description": "Best practice for connecting GraphQL resolvers to Neon PostgreSQL via Drizzle ORM",
+      "steps": [
+        "1. Install packages: drizzle-orm, @neondatabase/serverless, @apollo/server, graphql",
+        "2. Configure DATABASE_URL environment variable with Neon connection string",
+        "3. Create Drizzle schema definitions for all database tables",
+        "4. Initialize Drizzle client with Neon driver in db.ts module",
+        "5. Pass db instance through Apollo Server context",
+        "6. Access db from contextValue in all resolvers",
+        "7. Use Drizzle query methods (select, insert, update, delete) in resolvers"
+      ],
+      "code_structure": {
+        "db_module": "// db.ts\nimport { drizzle } from 'drizzle-orm/neon-http';\nimport { neon } from '@neondatabase/serverless';\n\nconst sql = neon(process.env.DATABASE_URL!);\nexport const db = drizzle({ client: sql });",
+        "apollo_setup": "// server.ts\nimport { ApolloServer } from '@apollo/server';\nimport { startStandaloneServer } from '@apollo/server/standalone';\nimport { db } from './db';\n\nconst server = new ApolloServer({ typeDefs, resolvers });\nconst { url } = await startStandaloneServer(server, {\n  context: async () => ({ db })\n});",
+        "resolver_example": "// resolvers.ts\nconst resolvers = {\n  Query: {\n    brands: async (_, __, { db }) => {\n      return await db.select().from(brandsTable);\n    }\n  },\n  Mutation: {\n    createBrand: async (_, { input }, { db }) => {\n      const [brand] = await db.insert(brandsTable)\n        .values(input)\n        .returning();\n      return brand;\n    }\n  }\n};"
+      }
+    },
+    "connection_pooling": {
+      "description": "Neon serverless driver handles connection pooling automatically",
+      "recommendations": [
+        "Create single db instance and reuse across all resolvers",
+        "Pass db through context rather than creating new instances",
+        "Neon's serverless architecture handles scaling automatically",
+        "For high-traffic scenarios, consider neon-http driver for lower latency"
+      ]
+    },
+    "error_handling": {
+      "description": "Proper error handling for database operations in resolvers",
+      "pattern": "try {\n  const result = await db.select().from(table);\n  return result;\n} catch (error) {\n  throw new GraphQLError('Failed to fetch data', {\n    extensions: { code: 'DATABASE_ERROR' }\n  });\n}"
+    }
+  },
+  "unverified_claims": [],
+  "recommendations": [
+    "Use drizzle-orm/neon-http driver for simple queries (lower latency via HTTP)",
+    "Use drizzle-orm/neon-serverless for complex transactions (WebSocket-based)",
+    "Create a centralized db module that exports configured Drizzle instance",
+    "Define TypeScript types for all resolvers using generated types from schema",
+    "Implement proper error handling in all database operations",
+    "Use .returning() on mutations to return inserted/updated data efficiently",
+    "Consider creating helper functions for common query patterns to reduce duplication across 50+ resolvers",
+    "Use Drizzle's query builder methods (eq, and, or) instead of raw SQL for type safety",
+    "Test database connections in development before deploying to production",
+    "Monitor Neon connection limits and configure appropriate timeouts"
+  ],
+  "critical_implementation_notes": [
+    "All 50+ resolvers must access database through contextValue.db for consistency",
+    "Drizzle schema definitions must exist for all tables before implementing resolvers",
+    "Environment variable DATABASE_URL must be set with valid Neon connection string",
+    "For Node.js environments with neon-serverless driver, install and configure 'ws' package",
+    "Maintain existing GraphQL API contracts - resolvers must return data matching schema types",
+    "Implement error handling from the start - database failures should throw GraphQLError",
+    "Connection pooling is automatic with Neon - do not create multiple db instances",
+    "Use .returning() on all mutations to avoid additional SELECT queries"
+  ],
+  "next_steps_for_architect": [
+    "Inventory all 50+ resolver locations across codebase",
+    "Verify Drizzle schema definitions exist for all data types used in resolvers",
+    "Identify which resolvers are queries vs mutations",
+    "Map each resolver to its corresponding database table",
+    "Plan migration strategy: update resolvers incrementally or all at once",
+    "Design error handling strategy for database failures",
+    "Create reusable query helper functions for common patterns"
+  ],
+  "context7_libraries_used": [
+    "/drizzle-team/drizzle-orm-docs",
+    "/neondatabase/serverless",
+    "/apollographql/apollo-server",
+    "/graphql/graphql.github.io"
+  ],
+  "created_at": "2024-12-22T10:30:00Z"
+}

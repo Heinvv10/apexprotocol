@@ -1,0 +1,7 @@
+{
+  "task_description": "# GraphQL Resolver Database Connections\n\nConnect all 50+ GraphQL resolvers to the Neon PostgreSQL database using Drizzle ORM. This includes query resolvers for brands, mentions, GEO scores, recommendations, audits, content, subscriptions, and integrations.\n\n## Rationale\nCritical foundation - without database connections, the entire platform displays static/mock data. This blocks all other features from functioning with real data.\n\n## User Stories\n- As a business leader, I want to see my real brand data so that I can make informed decisions\n- As a marketing team, I want to track actual AI mentions so that I can measure our visibility\n\n## Acceptance Criteria\n- [ ] All query resolvers return data from PostgreSQL database\n- [ ] All mutation resolvers persist changes to database\n- [ ] Error handling implemented for database failures\n- [ ] Connection pooling configured for production scale\n",
+  "scoped_services": [],
+  "files_to_modify": [],
+  "files_to_reference": [],
+  "created_at": "2025-12-22T23:51:47.939085"
+}
