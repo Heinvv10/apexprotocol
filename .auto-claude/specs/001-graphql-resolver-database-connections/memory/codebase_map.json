@@ -11,10 +11,10 @@
       "discovered_at": "2025-12-22T22:08:28.141603+00:00"
     },
     "src/lib/db/schema/": {
-      "description": "21 Drizzle schema files covering all entity types: brands, brandMentions, audits, content, recommendations, organizations, users, apiIntegrations, geoScoreHistory, recommendationFeedback, and more. Exports from index.ts.",
-      "category": "database",
-      "discovered_at": "2025-12-22T22:03:26.478630+00:00"
+      "description": "Verified Drizzle schema completeness: All 11 GraphQL entity types have corresponding Drizzle schemas - brands (brands.ts), brandMentions (mentions.ts), audits (audits.ts), content (content.ts), recommendations (recommendations.ts), recommendationFeedback (feedback.ts), geoScoreHistory (feedback.ts), organizations (organizations.ts), apiIntegrations (api-integrations.ts), users (users.ts). All tables have proper relations defined and type exports. GEOScore is computed on-the-fly from mentions and recommendations data.",
+      "category": "schema-verification",
+      "discovered_at": "2025-12-22T22:18:07.503030+00:00"
     }
   },
-  "last_updated": "2025-12-22T22:14:26.802680+00:00"
+  "last_updated": "2025-12-22T22:18:07.503030+00:00"
 }
