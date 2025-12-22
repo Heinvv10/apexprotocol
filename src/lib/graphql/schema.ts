@@ -1875,249 +1875,304 @@ const resolvers = {
   // Field resolvers
   Brand: {
     mentions: async (parent: { id: string }, { first, after }: { first?: number; after?: string }) => {
-      const limit = Math.min(first || 20, 100);
-      let whereClause = eq(schema.brandMentions.brandId, parent.id);
+      try {
+        const limit = Math.min(first || 20, 100);
+        let whereClause = eq(schema.brandMentions.brandId, parent.id);
 
-      if (after) {
-        const cursorId = Buffer.from(after, "base64").toString("utf-8");
-        whereClause = and(whereClause, sql`${schema.brandMentions.id} < ${cursorId}`) as typeof whereClause;
+        if (after) {
+          const cursorId = Buffer.from(after, "base64").toString("utf-8");
+          whereClause = and(whereClause, sql`${schema.brandMentions.id} < ${cursorId}`) as typeof whereClause;
+        }
+
+        const mentions = await db.select().from(schema.brandMentions)
+          .where(whereClause)
+          .orderBy(desc(schema.brandMentions.timestamp))
+          .limit(limit + 1);
+
+        const hasNextPage = mentions.length > limit;
+        const edges = mentions.slice(0, limit).map(m => ({
+          cursor: Buffer.from(m.id).toString("base64"),
+          node: {
+            ...m,
+            mentionDate: m.timestamp?.toISOString() || new Date().toISOString(),
+            url: m.citationUrl || "",
+            context: m.response || "",
+            position: m.position || 0,
+          },
+        }));
+
+        const totalResult = await db.select({ count: count() }).from(schema.brandMentions).where(eq(schema.brandMentions.brandId, parent.id));
+        const total = totalResult[0]?.count || 0;
+
+        // Calculate stats
+        const positiveCount = await db.select({ count: count() }).from(schema.brandMentions)
+          .where(and(eq(schema.brandMentions.brandId, parent.id), eq(schema.brandMentions.sentiment, "positive")));
+        const negativeCount = await db.select({ count: count() }).from(schema.brandMentions)
+          .where(and(eq(schema.brandMentions.brandId, parent.id), eq(schema.brandMentions.sentiment, "negative")));
+
+        return {
+          edges,
+          pageInfo: {
+            hasNextPage,
+            hasPreviousPage: !!after,
+            startCursor: edges[0]?.cursor || null,
+            endCursor: edges[edges.length - 1]?.cursor || null,
+            total,
+          },
+          stats: {
+            total,
+            positive: positiveCount[0]?.count || 0,
+            negative: negativeCount[0]?.count || 0,
+            neutral: total - (positiveCount[0]?.count || 0) - (negativeCount[0]?.count || 0),
+          },
+        };
+      } catch (error) {
+        console.error("Database error fetching brand mentions:", error);
+        throw new Error("Failed to fetch brand mentions. Please try again later.");
       }
-
-      const mentions = await db.select().from(schema.brandMentions)
-        .where(whereClause)
-        .orderBy(desc(schema.brandMentions.timestamp))
-        .limit(limit + 1);
-
-      const hasNextPage = mentions.length > limit;
-      const edges = mentions.slice(0, limit).map(m => ({
-        cursor: Buffer.from(m.id).toString("base64"),
-        node: {
-          ...m,
-          mentionDate: m.timestamp?.toISOString() || new Date().toISOString(),
-          url: m.citationUrl || "",
-          context: m.response || "",
-          position: m.position || 0,
-        },
-      }));
-
-      const totalResult = await db.select({ count: count() }).from(schema.brandMentions).where(eq(schema.brandMentions.brandId, parent.id));
-      const total = totalResult[0]?.count || 0;
-
-      // Calculate stats
-      const positiveCount = await db.select({ count: count() }).from(schema.brandMentions)
-        .where(and(eq(schema.brandMentions.brandId, parent.id), eq(schema.brandMentions.sentiment, "positive")));
-      const negativeCount = await db.select({ count: count() }).from(schema.brandMentions)
-        .where(and(eq(schema.brandMentions.brandId, parent.id), eq(schema.brandMentions.sentiment, "negative")));
-
-      return {
-        edges,
-        pageInfo: {
-          hasNextPage,
-          hasPreviousPage: !!after,
-          startCursor: edges[0]?.cursor || null,
-          endCursor: edges[edges.length - 1]?.cursor || null,
-          total,
-        },
-        stats: {
-          total,
-          positive: positiveCount[0]?.count || 0,
-          negative: negativeCount[0]?.count || 0,
-          neutral: total - (positiveCount[0]?.count || 0) - (negativeCount[0]?.count || 0),
-        },
-      };
     },
 
     recommendations: async (parent: { id: string }) => {
-      const recs = await db.select().from(schema.recommendations)
-        .where(eq(schema.recommendations.brandId, parent.id))
-        .orderBy(desc(schema.recommendations.createdAt));
-      return recs.map(r => ({
-        ...r,
-        effort: r.effort || "medium",
-        dueDate: r.dueDate?.toISOString() || null,
-        completedAt: r.completedAt?.toISOString() || null,
-      }));
+      try {
+        const recs = await db.select().from(schema.recommendations)
+          .where(eq(schema.recommendations.brandId, parent.id))
+          .orderBy(desc(schema.recommendations.createdAt));
+        return recs.map(r => ({
+          ...r,
+          effort: r.effort || "medium",
+          dueDate: r.dueDate?.toISOString() || null,
+          completedAt: r.completedAt?.toISOString() || null,
+        }));
+      } catch (error) {
+        console.error("Database error fetching brand recommendations:", error);
+        throw new Error("Failed to fetch brand recommendations. Please try again later.");
+      }
     },
 
     audits: async (parent: { id: string }) => {
-      const audits = await db.select().from(schema.audits)
-        .where(eq(schema.audits.brandId, parent.id))
-        .orderBy(desc(schema.audits.createdAt));
-      return audits.map(a => ({
-        ...a,
-        startedAt: a.startedAt?.toISOString() || null,
-        completedAt: a.completedAt?.toISOString() || null,
-        duration: a.completedAt && a.startedAt ? Math.round((a.completedAt.getTime() - a.startedAt.getTime()) / 1000) : null,
-      }));
+      try {
+        const audits = await db.select().from(schema.audits)
+          .where(eq(schema.audits.brandId, parent.id))
+          .orderBy(desc(schema.audits.createdAt));
+        return audits.map(a => ({
+          ...a,
+          startedAt: a.startedAt?.toISOString() || null,
+          completedAt: a.completedAt?.toISOString() || null,
+          duration: a.completedAt && a.startedAt ? Math.round((a.completedAt.getTime() - a.startedAt.getTime()) / 1000) : null,
+        }));
+      } catch (error) {
+        console.error("Database error fetching brand audits:", error);
+        throw new Error("Failed to fetch brand audits. Please try again later.");
+      }
     },
 
     geoScore: async (parent: { id: string }) => {
-      // Calculate real-time GEO score from mentions and recommendations
-      const mentionsResult = await db.select({ count: count() }).from(schema.brandMentions).where(eq(schema.brandMentions.brandId, parent.id));
-      const mentionCount = mentionsResult[0]?.count || 0;
+      try {
+        // Calculate real-time GEO score from mentions and recommendations
+        const mentionsResult = await db.select({ count: count() }).from(schema.brandMentions).where(eq(schema.brandMentions.brandId, parent.id));
+        const mentionCount = mentionsResult[0]?.count || 0;
 
-      const positiveResult = await db.select({ count: count() }).from(schema.brandMentions)
-        .where(and(eq(schema.brandMentions.brandId, parent.id), eq(schema.brandMentions.sentiment, "positive")));
-      const positiveCount = positiveResult[0]?.count || 0;
+        const positiveResult = await db.select({ count: count() }).from(schema.brandMentions)
+          .where(and(eq(schema.brandMentions.brandId, parent.id), eq(schema.brandMentions.sentiment, "positive")));
+        const positiveCount = positiveResult[0]?.count || 0;
 
-      const recsResult = await db.select({ count: count() }).from(schema.recommendations).where(eq(schema.recommendations.brandId, parent.id));
-      const recCount = recsResult[0]?.count || 0;
+        const recsResult = await db.select({ count: count() }).from(schema.recommendations).where(eq(schema.recommendations.brandId, parent.id));
+        const recCount = recsResult[0]?.count || 0;
 
-      const completedRecsResult = await db.select({ count: count() }).from(schema.recommendations)
-        .where(and(eq(schema.recommendations.brandId, parent.id), eq(schema.recommendations.status, "completed")));
-      const completedRecs = completedRecsResult[0]?.count || 0;
+        const completedRecsResult = await db.select({ count: count() }).from(schema.recommendations)
+          .where(and(eq(schema.recommendations.brandId, parent.id), eq(schema.recommendations.status, "completed")));
+        const completedRecs = completedRecsResult[0]?.count || 0;
 
-      const visibilityScore = Math.min(100, mentionCount * 5);
-      const sentimentScore = mentionCount > 0 ? Math.round((positiveCount / mentionCount) * 100) : 50;
-      const recommendationScore = recCount > 0 ? Math.round((completedRecs / recCount) * 100) : 100;
-      const overallScore = Math.round((visibilityScore * 0.4 + sentimentScore * 0.3 + recommendationScore * 0.3));
+        const visibilityScore = Math.min(100, mentionCount * 5);
+        const sentimentScore = mentionCount > 0 ? Math.round((positiveCount / mentionCount) * 100) : 50;
+        const recommendationScore = recCount > 0 ? Math.round((completedRecs / recCount) * 100) : 100;
+        const overallScore = Math.round((visibilityScore * 0.4 + sentimentScore * 0.3 + recommendationScore * 0.3));
 
-      return {
-        id: `geo_${parent.id}`,
-        brandId: parent.id,
-        overallScore,
-        visibilityScore,
-        sentimentScore,
-        recommendationScore,
-        competitorGapScore: 50,
-        platformScores: {},
-        previousScore: null,
-        trend: 0,
-        calculatedAt: new Date().toISOString(),
-      };
+        return {
+          id: `geo_${parent.id}`,
+          brandId: parent.id,
+          overallScore,
+          visibilityScore,
+          sentimentScore,
+          recommendationScore,
+          competitorGapScore: 50,
+          platformScores: {},
+          previousScore: null,
+          trend: 0,
+          calculatedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        console.error("Database error calculating brand GEO score:", error);
+        throw new Error("Failed to calculate brand GEO score. Please try again later.");
+      }
     },
 
     stats: async (parent: { id: string }) => {
-      const totalMentions = await db.select({ count: count() }).from(schema.brandMentions).where(eq(schema.brandMentions.brandId, parent.id));
-      const positiveMentions = await db.select({ count: count() }).from(schema.brandMentions)
-        .where(and(eq(schema.brandMentions.brandId, parent.id), eq(schema.brandMentions.sentiment, "positive")));
-      const negativeMentions = await db.select({ count: count() }).from(schema.brandMentions)
-        .where(and(eq(schema.brandMentions.brandId, parent.id), eq(schema.brandMentions.sentiment, "negative")));
+      try {
+        const totalMentions = await db.select({ count: count() }).from(schema.brandMentions).where(eq(schema.brandMentions.brandId, parent.id));
+        const positiveMentions = await db.select({ count: count() }).from(schema.brandMentions)
+          .where(and(eq(schema.brandMentions.brandId, parent.id), eq(schema.brandMentions.sentiment, "positive")));
+        const negativeMentions = await db.select({ count: count() }).from(schema.brandMentions)
+          .where(and(eq(schema.brandMentions.brandId, parent.id), eq(schema.brandMentions.sentiment, "negative")));
 
-      const recommendationCount = await db.select({ count: count() }).from(schema.recommendations).where(eq(schema.recommendations.brandId, parent.id));
-      const completedRecommendations = await db.select({ count: count() }).from(schema.recommendations)
-        .where(and(eq(schema.recommendations.brandId, parent.id), eq(schema.recommendations.status, "completed")));
+        const recommendationCount = await db.select({ count: count() }).from(schema.recommendations).where(eq(schema.recommendations.brandId, parent.id));
+        const completedRecommendations = await db.select({ count: count() }).from(schema.recommendations)
+          .where(and(eq(schema.recommendations.brandId, parent.id), eq(schema.recommendations.status, "completed")));
 
-      const total = totalMentions[0]?.count || 0;
-      const positive = positiveMentions[0]?.count || 0;
-      const negative = negativeMentions[0]?.count || 0;
-      const avgSentiment = total > 0 ? Math.round(((positive - negative) / total) * 100) : 0;
+        const total = totalMentions[0]?.count || 0;
+        const positive = positiveMentions[0]?.count || 0;
+        const negative = negativeMentions[0]?.count || 0;
+        const avgSentiment = total > 0 ? Math.round(((positive - negative) / total) * 100) : 0;
 
-      return {
-        totalMentions: total,
-        positiveMentions: positive,
-        negativeMentions: negative,
-        avgSentiment,
-        mentionsTrend: 0,
-        recommendationCount: recommendationCount[0]?.count || 0,
-        completedRecommendations: completedRecommendations[0]?.count || 0,
-      };
+        return {
+          totalMentions: total,
+          positiveMentions: positive,
+          negativeMentions: negative,
+          avgSentiment,
+          mentionsTrend: 0,
+          recommendationCount: recommendationCount[0]?.count || 0,
+          completedRecommendations: completedRecommendations[0]?.count || 0,
+        };
+      } catch (error) {
+        console.error("Database error fetching brand stats:", error);
+        throw new Error("Failed to fetch brand stats. Please try again later.");
+      }
     },
   },
 
   Mention: {
     brand: async (parent: { brandId: string }) => {
-      const result = await db.select().from(schema.brands).where(eq(schema.brands.id, parent.brandId)).limit(1);
-      if (!result[0]) return null;
-      const brand = result[0];
-      return {
-        ...brand,
-        platforms: brand.monitoringPlatforms || [],
-        keywords: brand.keywords || [],
-        competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
-      };
+      try {
+        const result = await db.select().from(schema.brands).where(eq(schema.brands.id, parent.brandId)).limit(1);
+        if (!result[0]) return null;
+        const brand = result[0];
+        return {
+          ...brand,
+          platforms: brand.monitoringPlatforms || [],
+          keywords: brand.keywords || [],
+          competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
+        };
+      } catch (error) {
+        console.error("Database error fetching brand for mention:", error);
+        throw new Error("Failed to fetch brand for mention. Please try again later.");
+      }
     },
   },
 
   Recommendation: {
     brand: async (parent: { brandId: string }) => {
-      const result = await db.select().from(schema.brands).where(eq(schema.brands.id, parent.brandId)).limit(1);
-      if (!result[0]) return null;
-      const brand = result[0];
-      return {
-        ...brand,
-        platforms: brand.monitoringPlatforms || [],
-        keywords: brand.keywords || [],
-        competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
-      };
+      try {
+        const result = await db.select().from(schema.brands).where(eq(schema.brands.id, parent.brandId)).limit(1);
+        if (!result[0]) return null;
+        const brand = result[0];
+        return {
+          ...brand,
+          platforms: brand.monitoringPlatforms || [],
+          keywords: brand.keywords || [],
+          competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
+        };
+      } catch (error) {
+        console.error("Database error fetching brand for recommendation:", error);
+        throw new Error("Failed to fetch brand for recommendation. Please try again later.");
+      }
     },
     feedback: async (parent: { id: string }) => {
-      // Fetch feedback from recommendation_feedback table
-      const feedbackList = await db
-        .select()
-        .from(schema.recommendationFeedback)
-        .where(eq(schema.recommendationFeedback.recommendationId, parent.id))
-        .orderBy(desc(schema.recommendationFeedback.createdAt));
+      try {
+        // Fetch feedback from recommendation_feedback table
+        const feedbackList = await db
+          .select()
+          .from(schema.recommendationFeedback)
+          .where(eq(schema.recommendationFeedback.recommendationId, parent.id))
+          .orderBy(desc(schema.recommendationFeedback.createdAt));
 
-      return feedbackList.map((f) => ({
-        id: f.id,
-        userId: f.userId,
-        rating: f.rating,
-        wasHelpful: f.wasHelpful,
-        comment: f.comment,
-        actualImpact: f.actualImpact,
-        createdAt: f.createdAt.toISOString(),
-      }));
+        return feedbackList.map((f) => ({
+          id: f.id,
+          userId: f.userId,
+          rating: f.rating,
+          wasHelpful: f.wasHelpful,
+          comment: f.comment,
+          actualImpact: f.actualImpact,
+          createdAt: f.createdAt.toISOString(),
+        }));
+      } catch (error) {
+        console.error("Database error fetching recommendation feedback:", error);
+        throw new Error("Failed to fetch recommendation feedback. Please try again later.");
+      }
     },
   },
 
   Audit: {
     brand: async (parent: { brandId: string }) => {
-      const result = await db.select().from(schema.brands).where(eq(schema.brands.id, parent.brandId)).limit(1);
-      if (!result[0]) return null;
-      const brand = result[0];
-      return {
-        ...brand,
-        platforms: brand.monitoringPlatforms || [],
-        keywords: brand.keywords || [],
-        competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
-      };
+      try {
+        const result = await db.select().from(schema.brands).where(eq(schema.brands.id, parent.brandId)).limit(1);
+        if (!result[0]) return null;
+        const brand = result[0];
+        return {
+          ...brand,
+          platforms: brand.monitoringPlatforms || [],
+          keywords: brand.keywords || [],
+          competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
+        };
+      } catch (error) {
+        console.error("Database error fetching brand for audit:", error);
+        throw new Error("Failed to fetch brand for audit. Please try again later.");
+      }
     },
   },
 
   Content: {
     brand: async (parent: { brandId: string }) => {
-      const result = await db.select().from(schema.brands).where(eq(schema.brands.id, parent.brandId)).limit(1);
-      if (!result[0]) return null;
-      const brand = result[0];
-      return {
-        ...brand,
-        platforms: brand.monitoringPlatforms || [],
-        keywords: brand.keywords || [],
-        competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
-      };
+      try {
+        const result = await db.select().from(schema.brands).where(eq(schema.brands.id, parent.brandId)).limit(1);
+        if (!result[0]) return null;
+        const brand = result[0];
+        return {
+          ...brand,
+          platforms: brand.monitoringPlatforms || [],
+          keywords: brand.keywords || [],
+          competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
+        };
+      } catch (error) {
+        console.error("Database error fetching brand for content:", error);
+        throw new Error("Failed to fetch brand for content. Please try again later.");
+      }
     },
   },
 
   GEOScore: {
     history: async (parent: { brandId: string }, { days }: { days?: number }) => {
-      const limit = days || 30;
-      const startDate = new Date(Date.now() - limit * 24 * 60 * 60 * 1000);
+      try {
+        const limit = days || 30;
+        const startDate = new Date(Date.now() - limit * 24 * 60 * 60 * 1000);
 
-      // Fetch historical GEO scores from geo_score_history table
-      const historyData = await db
-        .select()
-        .from(schema.geoScoreHistory)
-        .where(
-          and(
-            eq(schema.geoScoreHistory.brandId, parent.brandId),
-            sql`${schema.geoScoreHistory.calculatedAt} >= ${startDate}`
+        // Fetch historical GEO scores from geo_score_history table
+        const historyData = await db
+          .select()
+          .from(schema.geoScoreHistory)
+          .where(
+            and(
+              eq(schema.geoScoreHistory.brandId, parent.brandId),
+              sql`${schema.geoScoreHistory.calculatedAt} >= ${startDate}`
+            )
           )
-        )
-        .orderBy(desc(schema.geoScoreHistory.calculatedAt))
-        .limit(limit);
+          .orderBy(desc(schema.geoScoreHistory.calculatedAt))
+          .limit(limit);
 
-      return historyData.map((h) => ({
-        date: h.calculatedAt.toISOString(),
-        score: h.overallScore,
-        components: {
-          visibility: h.visibilityScore,
-          sentiment: h.sentimentScore,
-          recommendation: h.recommendationScore,
-          competitorGap: h.competitorGapScore,
-          platformScores: h.platformScores,
-        },
-      }));
+        return historyData.map((h) => ({
+          date: h.calculatedAt.toISOString(),
+          score: h.overallScore,
+          components: {
+            visibility: h.visibilityScore,
+            sentiment: h.sentimentScore,
+            recommendation: h.recommendationScore,
+            competitorGap: h.competitorGapScore,
+            platformScores: h.platformScores,
+          },
+        }));
+      } catch (error) {
+        console.error("Database error fetching GEO score history:", error);
+        throw new Error("Failed to fetch GEO score history. Please try again later.");
+      }
     },
   },
 
