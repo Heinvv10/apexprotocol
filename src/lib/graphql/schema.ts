@@ -8,6 +8,12 @@ import { createSchema, createYoga, YogaInitialContext } from "graphql-yoga";
 import { auth } from "@clerk/nextjs/server";
 import { eq, desc, and, sql, like, count } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
+import {
+  handleDatabaseError,
+  handleNotFound,
+  handleConstraintViolation,
+  isKnownError,
+} from "./db-error-handler";
 
 // Type Definitions
 const typeDefs = /* GraphQL */ `
@@ -579,9 +585,9 @@ const resolvers = {
       const user = context.requireAuth();
       try {
         const result = await db.select().from(schema.brands).where(eq(schema.brands.id, id)).limit(1);
-        if (!result[0]) return null;
+        const brand = handleNotFound(result[0], "Brand", { throwIfNotFound: false, entityId: id });
+        if (!brand) return null;
         // Verify user has access to this brand's organization
-        const brand = result[0];
         if (user.orgId && brand.organizationId !== user.orgId) return null;
         return {
           ...brand,
@@ -590,8 +596,8 @@ const resolvers = {
           competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
         };
       } catch (error) {
-        console.error("Database error fetching brand:", error);
-        throw new Error("Failed to fetch brand. Please try again later.");
+        if (isKnownError(error)) throw error;
+        handleDatabaseError(error, { operation: "fetching brand", entityType: "Brand", entityId: id });
       }
     },
 
@@ -635,8 +641,8 @@ const resolvers = {
           },
         };
       } catch (error) {
-        console.error("Database error fetching brands:", error);
-        throw new Error("Failed to fetch brands. Please try again later.");
+        if (isKnownError(error)) throw error;
+        handleDatabaseError(error, { operation: "fetching brands", entityType: "Brand" });
       }
     },
 
@@ -670,8 +676,8 @@ const resolvers = {
       context.requireAuth();
       try {
         const result = await db.select().from(schema.brandMentions).where(eq(schema.brandMentions.id, id)).limit(1);
-        if (!result[0]) return null;
-        const mention = result[0];
+        const mention = handleNotFound(result[0], "Mention", { throwIfNotFound: false, entityId: id });
+        if (!mention) return null;
         return {
           ...mention,
           sentimentScore: mention.sentiment === "positive" ? 0.8 : mention.sentiment === "negative" ? 0.2 : 0.5,
@@ -679,8 +685,8 @@ const resolvers = {
           competitorMentioned: (mention.competitors || []).length > 0,
         };
       } catch (error) {
-        console.error("Database error fetching mention:", error);
-        throw new Error("Failed to fetch mention. Please try again later.");
+        if (isKnownError(error)) throw error;
+        handleDatabaseError(error, { operation: "fetching mention", entityType: "Mention", entityId: id });
       }
     },
 
@@ -1268,12 +1274,13 @@ const resolvers = {
           competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
         };
       } catch (error) {
-        console.error("Database error creating brand:", error);
-        // Handle unique constraint violations
-        if (error instanceof Error && error.message.includes("unique")) {
-          throw new Error("A brand with this name or domain already exists.");
-        }
-        throw new Error("Failed to create brand. Please try again later.");
+        // Handle constraint violations with specific messages
+        handleConstraintViolation(error, {
+          entityType: "Brand",
+          uniqueFields: ["name", "domain"],
+        });
+        // Handle other database errors
+        handleDatabaseError(error, { operation: "creating brand", entityType: "Brand" });
       }
     },
 
@@ -1284,7 +1291,7 @@ const resolvers = {
       try {
         // Verify ownership
         const existing = await db.select().from(schema.brands).where(eq(schema.brands.id, id)).limit(1);
-        if (!existing[0]) throw new Error("Brand not found");
+        handleNotFound(existing[0], "Brand", { entityId: id });
         if (user.orgId && existing[0].organizationId !== user.orgId) throw new Error("Unauthorized");
 
         const updateData: Record<string, unknown> = { updatedAt: new Date() };
@@ -1306,16 +1313,15 @@ const resolvers = {
           competitors: (brand.competitors || []).map((c: { name: string }) => c.name),
         };
       } catch (error) {
-        // Re-throw known errors
-        if (error instanceof Error && (error.message === "Brand not found" || error.message === "Unauthorized")) {
-          throw error;
-        }
-        console.error("Database error updating brand:", error);
-        // Handle unique constraint violations
-        if (error instanceof Error && error.message.includes("unique")) {
-          throw new Error("A brand with this name or domain already exists.");
-        }
-        throw new Error("Failed to update brand. Please try again later.");
+        // Re-throw known errors (not found, unauthorized)
+        if (isKnownError(error)) throw error;
+        // Handle constraint violations
+        handleConstraintViolation(error, {
+          entityType: "Brand",
+          uniqueFields: ["name", "domain"],
+        });
+        // Handle other database errors
+        handleDatabaseError(error, { operation: "updating brand", entityType: "Brand", entityId: id });
       }
     },
 
@@ -1331,16 +1337,15 @@ const resolvers = {
         await db.delete(schema.brands).where(eq(schema.brands.id, id));
         return true;
       } catch (error) {
-        // Re-throw Unauthorized error
-        if (error instanceof Error && error.message === "Unauthorized") {
-          throw error;
-        }
-        console.error("Database error deleting brand:", error);
+        // Re-throw known errors (unauthorized)
+        if (isKnownError(error)) throw error;
         // Handle foreign key constraint violations
-        if (error instanceof Error && error.message.includes("foreign key")) {
-          throw new Error("Cannot delete brand with associated mentions or recommendations. Please remove them first.");
-        }
-        throw new Error("Failed to delete brand. Please try again later.");
+        handleConstraintViolation(error, {
+          entityType: "Brand",
+          foreignKeyMessage: "Cannot delete brand with associated mentions or recommendations. Please remove them first.",
+        });
+        // Handle other database errors
+        handleDatabaseError(error, { operation: "deleting brand", entityType: "Brand", entityId: id });
       }
     },
 
