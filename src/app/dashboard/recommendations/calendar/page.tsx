@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
+  GripVertical,
   Sparkles,
   BarChart3,
   Zap,
@@ -196,11 +197,15 @@ function CalendarDay({
   isCurrentMonth,
   isToday,
   recommendations,
+  onDragStart,
+  draggingId,
 }: {
   day: number;
   isCurrentMonth: boolean;
   isToday: boolean;
   recommendations: CalendarRecommendation[];
+  onDragStart: (e: React.DragEvent, id: string) => void;
+  draggingId: string | null;
 }) {
   return (
     <div
@@ -225,16 +230,22 @@ function CalendarDay({
       <div className="space-y-1">
         {recommendations.slice(0, 3).map((rec) => {
           const TypeIcon = typeConfig[rec.type].icon;
+          const isDragging = draggingId === rec.id;
           return (
             <div
               key={rec.id}
+              draggable
+              onDragStart={(e) => onDragStart(e, rec.id)}
               className={cn(
                 "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] truncate",
-                "bg-[#18181B] border border-[#27272A] hover:border-[#3F3F46] cursor-pointer",
+                "bg-[#18181B] border border-[#27272A] hover:border-[#3F3F46]",
+                "cursor-grab active:cursor-grabbing transition-all duration-150",
                 rec.status === "completed" && "opacity-50 line-through",
-                rec.status === "dismissed" && "opacity-30"
+                rec.status === "dismissed" && "opacity-30",
+                isDragging && "opacity-50 ring-2 ring-primary/50"
               )}
             >
+              <GripVertical className="h-2.5 w-2.5 text-muted-foreground/50 shrink-0" />
               <div
                 className={cn(
                   "w-1.5 h-1.5 rounded-full shrink-0",
@@ -260,6 +271,7 @@ export default function CalendarPage() {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = React.useState(today.getMonth());
   const [currentYear, setCurrentYear] = React.useState(today.getFullYear());
+  const [draggingId, setDraggingId] = React.useState<string | null>(null);
   const selectedBrand = useSelectedBrand();
 
   // Fetch recommendations from API
@@ -359,6 +371,17 @@ export default function CalendarPage() {
     ).length,
   };
 
+  // Drag handlers
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggingId(id);
+    e.dataTransfer.setData("text/plain", id);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragEnd = () => {
+    setDraggingId(null);
+  };
+
   // Show loading state
   if (isLoading) {
     return (
@@ -447,7 +470,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" onDragEnd={handleDragEnd}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -537,6 +560,8 @@ export default function CalendarPage() {
                 isCurrentMonth={calDay.isCurrentMonth}
                 isToday={isToday}
                 recommendations={recommendations}
+                onDragStart={handleDragStart}
+                draggingId={draggingId}
               />
             );
           })}
