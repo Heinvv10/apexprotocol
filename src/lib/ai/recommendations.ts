@@ -522,58 +522,312 @@ function validatePlatforms(platforms: unknown): string[] {
 // ============================================================================
 
 /**
- * Calculate impact score for a recommendation based on visibility data context
+ * Default weights for impact scoring as per specification
+ * Platform reach (40%), Visibility gap (30%), Traffic gain (20%), Competitive advantage (10%)
  */
-function calculateRecommendationImpactScore(
-  recommendation: AIRecommendationOutput,
-  visibilityData: VisibilityData
+export const IMPACT_SCORING_WEIGHTS = {
+  platformReach: 0.40,
+  visibilityGap: 0.30,
+  trafficGain: 0.20,
+  competitiveAdvantage: 0.10,
+};
+
+/**
+ * Impact score factors extracted from visibility data and recommendation
+ */
+export interface ImpactScoreFactors {
+  platformReachScore: number;      // 0-100: Based on number of platforms affected
+  visibilityGapScore: number;      // 0-100: Based on current vs target mention rate
+  trafficGainScore: number;        // 0-100: Based on estimated traffic improvement
+  competitiveAdvantageScore: number; // 0-100: Based on gap vs competitors
+}
+
+/**
+ * Calculate platform reach score based on number of AI platforms affected
+ * More platforms = higher score (max 100 for 4+ platforms)
+ */
+export function calculatePlatformReachScore(
+  targetedPlatforms: string[],
+  totalPlatformsInData: number
+): number {
+  const platformCount = targetedPlatforms.length;
+
+  // Base score based on platform count
+  // 1 platform = 25, 2 = 50, 3 = 75, 4+ = 100
+  const baseScore = Math.min(platformCount * 25, 100);
+
+  // Bonus if targeting all available platforms in data
+  const coverageBonus = totalPlatformsInData > 0 &&
+    platformCount >= totalPlatformsInData ? 10 : 0;
+
+  return Math.min(100, baseScore + coverageBonus);
+}
+
+/**
+ * Calculate visibility gap severity score
+ * Lower current visibility = higher priority score
+ */
+export function calculateVisibilityGapScore(
+  platforms: PlatformVisibility[],
+  targetedPlatforms: string[]
+): number {
+  if (platforms.length === 0) {
+    return 50; // Default score when no platform data
+  }
+
+  // Find platforms targeted by this recommendation
+  const relevantPlatforms = platforms.filter((p) =>
+    targetedPlatforms.some(
+      (tp) => tp.toLowerCase() === p.name.toLowerCase()
+    )
+  );
+
+  if (relevantPlatforms.length === 0) {
+    return 50; // Default if no matching platforms
+  }
+
+  // Calculate average visibility gap (100 - mentionRate = gap)
+  const avgGap = relevantPlatforms.reduce((sum, p) => {
+    const gap = 100 - p.mentionRate;
+    return sum + gap;
+  }, 0) / relevantPlatforms.length;
+
+  // Score based on gap severity
+  // Gap > 50% = critical (score 80-100)
+  // Gap 30-50% = high (score 60-79)
+  // Gap 15-30% = medium (score 40-59)
+  // Gap < 15% = low (score 0-39)
+  if (avgGap > 50) {
+    return Math.min(100, 80 + (avgGap - 50) * 0.4);
+  } else if (avgGap > 30) {
+    return 60 + (avgGap - 30) * 0.95;
+  } else if (avgGap > 15) {
+    return 40 + (avgGap - 15) * 1.33;
+  } else {
+    return avgGap * 2.67;
+  }
+}
+
+/**
+ * Calculate expected traffic gain score based on recommendation impact and effort
+ */
+export function calculateTrafficGainScore(
+  impact: AIRecommendationOutput["impact"],
+  effort: AIRecommendationOutput["effort"],
+  contentGaps: ContentGap[],
+  targetedPlatforms: string[]
 ): number {
   let score = 50; // Base score
 
-  // Priority weight (40%)
-  const priorityScores: Record<AIRecommendationOutput["priority"], number> = {
-    critical: 40,
+  // Impact level contributes significantly
+  const impactBonus: Record<AIRecommendationOutput["impact"], number> = {
     high: 30,
-    medium: 20,
-    low: 10,
+    medium: 15,
+    low: 5,
   };
-  score += priorityScores[recommendation.priority] * 0.4;
+  score += impactBonus[impact];
 
-  // Impact level weight (30%)
-  const impactScores: Record<AIRecommendationOutput["impact"], number> = {
-    high: 30,
-    medium: 20,
-    low: 10,
-  };
-  score += impactScores[recommendation.impact] * 0.3;
-
-  // Platform coverage weight (20%)
-  const platformCount = recommendation.aiPlatforms.length;
-  const platformScore = Math.min(platformCount * 5, 20);
-  score += platformScore;
-
-  // Effort inverse weight (10%) - easier = higher score
-  const effortScores: Record<AIRecommendationOutput["effort"], number> = {
-    quick_win: 10,
-    moderate: 5,
+  // Lower effort = quicker realization of gains
+  const effortBonus: Record<AIRecommendationOutput["effort"], number> = {
+    quick_win: 15,
+    moderate: 8,
     major: 0,
   };
-  score += effortScores[recommendation.effort];
+  score += effortBonus[effort];
 
-  // Bonus for addressing critical content gaps
+  // Bonus for addressing critical/high severity gaps
+  const criticalHighGaps = contentGaps.filter(
+    (gap) => gap.severity === "critical" || gap.severity === "high"
+  );
+
+  // Check if targeted platforms have critical gaps
+  const addressesCriticalGap = criticalHighGaps.some((gap) =>
+    gap.affectedPlatforms.some((platform) =>
+      targetedPlatforms.some(
+        (tp) => tp.toLowerCase() === platform.toLowerCase()
+      )
+    )
+  );
+
+  if (addressesCriticalGap) {
+    score += 10;
+  }
+
+  return Math.min(100, Math.max(0, score));
+}
+
+/**
+ * Calculate competitive advantage score based on competitor data
+ */
+export function calculateCompetitiveAdvantageScore(
+  competitors: CompetitorMetrics[],
+  platforms: PlatformVisibility[],
+  targetedPlatforms: string[]
+): number {
+  if (competitors.length === 0 || platforms.length === 0) {
+    return 50; // Default when no competitor data
+  }
+
+  // Calculate average brand mention rate on targeted platforms
+  const relevantPlatforms = platforms.filter((p) =>
+    targetedPlatforms.some(
+      (tp) => tp.toLowerCase() === p.name.toLowerCase()
+    )
+  );
+
+  if (relevantPlatforms.length === 0) {
+    return 50;
+  }
+
+  const brandAvgMentionRate = relevantPlatforms.reduce(
+    (sum, p) => sum + p.mentionRate, 0
+  ) / relevantPlatforms.length;
+
+  // Calculate average competitor mention rate
+  const competitorAvgMentionRate = competitors.reduce(
+    (sum, c) => sum + c.mentionRate, 0
+  ) / competitors.length;
+
+  // Calculate competitive gap (how much behind competitors)
+  const competitiveGap = Math.max(0, competitorAvgMentionRate - brandAvgMentionRate);
+
+  // Score based on competitive gap
+  // Gap > 40% = critical competitive disadvantage (80-100)
+  // Gap 20-40% = significant gap (60-79)
+  // Gap 10-20% = moderate gap (40-59)
+  // Gap < 10% = minor gap (0-39)
+  if (competitiveGap > 40) {
+    return Math.min(100, 80 + (competitiveGap - 40) * 0.5);
+  } else if (competitiveGap > 20) {
+    return 60 + (competitiveGap - 20);
+  } else if (competitiveGap > 10) {
+    return 40 + (competitiveGap - 10) * 2;
+  } else {
+    return competitiveGap * 4;
+  }
+}
+
+/**
+ * Extract all impact score factors for a recommendation
+ */
+export function extractImpactFactors(
+  recommendation: AIRecommendationOutput,
+  visibilityData: VisibilityData
+): ImpactScoreFactors {
+  const targetedPlatforms = recommendation.aiPlatforms;
+
+  return {
+    platformReachScore: calculatePlatformReachScore(
+      targetedPlatforms,
+      visibilityData.platforms.length
+    ),
+    visibilityGapScore: calculateVisibilityGapScore(
+      visibilityData.platforms,
+      targetedPlatforms
+    ),
+    trafficGainScore: calculateTrafficGainScore(
+      recommendation.impact,
+      recommendation.effort,
+      visibilityData.contentGaps,
+      targetedPlatforms
+    ),
+    competitiveAdvantageScore: calculateCompetitiveAdvantageScore(
+      visibilityData.competitorData,
+      visibilityData.platforms,
+      targetedPlatforms
+    ),
+  };
+}
+
+/**
+ * Calculate weighted impact score from individual factors
+ */
+export function calculateWeightedImpactScore(
+  factors: ImpactScoreFactors,
+  weights: typeof IMPACT_SCORING_WEIGHTS = IMPACT_SCORING_WEIGHTS
+): number {
+  const score =
+    factors.platformReachScore * weights.platformReach +
+    factors.visibilityGapScore * weights.visibilityGap +
+    factors.trafficGainScore * weights.trafficGain +
+    factors.competitiveAdvantageScore * weights.competitiveAdvantage;
+
+  return Math.round(score * 100) / 100;
+}
+
+/**
+ * Determine priority level based on impact score and platform count
+ * Following specification thresholds:
+ * - critical: Score >= 80, affects 3+ platforms, gap > 50%
+ * - high: Score 60-79, affects 2+ platforms, gap 30-50%
+ * - medium: Score 40-59, affects 1-2 platforms, gap 15-30%
+ * - low: Score < 40, single platform, gap < 15%
+ */
+export function determinePriorityFromScore(
+  score: number,
+  platformCount: number,
+  visibilityGapScore: number
+): AIRecommendationOutput["priority"] {
+  // Critical: Score >= 80, 3+ platforms, high visibility gap
+  if (score >= 80 && platformCount >= 3 && visibilityGapScore >= 80) {
+    return "critical";
+  }
+
+  // High: Score 60-79 or 2+ platforms with significant gap
+  if (score >= 60 || (platformCount >= 2 && visibilityGapScore >= 60)) {
+    return "high";
+  }
+
+  // Medium: Score 40-59 or moderate visibility gap
+  if (score >= 40 || visibilityGapScore >= 40) {
+    return "medium";
+  }
+
+  return "low";
+}
+
+/**
+ * Calculate impact score for a recommendation based on visibility data context
+ * Uses weighted scoring algorithm with four key factors:
+ * - Platform reach (40%): Number of AI platforms affected
+ * - Visibility gap (30%): Current vs target mention rate
+ * - Traffic gain (20%): Estimated traffic improvement potential
+ * - Competitive advantage (10%): Gap vs competitors
+ */
+export function calculateRecommendationImpactScore(
+  recommendation: AIRecommendationOutput,
+  visibilityData: VisibilityData
+): number {
+  // Extract all scoring factors
+  const factors = extractImpactFactors(recommendation, visibilityData);
+
+  // Calculate base weighted score
+  let score = calculateWeightedImpactScore(factors);
+
+  // Apply priority-based adjustment (AI-assigned priority as validation)
+  const priorityAdjustment: Record<AIRecommendationOutput["priority"], number> = {
+    critical: 10,
+    high: 5,
+    medium: 0,
+    low: -5,
+  };
+  score += priorityAdjustment[recommendation.priority];
+
+  // Bonus for addressing critical content gaps directly
   const criticalGaps = visibilityData.contentGaps.filter(
     (gap) => gap.severity === "critical"
   );
   if (criticalGaps.length > 0) {
     const addressesCriticalGap = criticalGaps.some((gap) =>
-      recommendation.description.toLowerCase().includes(gap.type.toLowerCase())
+      recommendation.description.toLowerCase().includes(gap.type.toLowerCase()) ||
+      recommendation.title.toLowerCase().includes(gap.type.toLowerCase())
     );
     if (addressesCriticalGap) {
-      score += 10;
+      score += 5;
     }
   }
 
-  // Bonus for targeting low-visibility platforms
+  // Bonus for targeting low-visibility platforms directly
   const lowVisibilityPlatforms = visibilityData.platforms.filter(
     (p) => p.mentionRate < 30
   );
@@ -583,9 +837,10 @@ function calculateRecommendationImpactScore(
     )
   );
   if (targetsLowVisibility) {
-    score += 5;
+    score += 3;
   }
 
+  // Ensure score is within valid range
   return Math.min(100, Math.max(0, Math.round(score)));
 }
 
