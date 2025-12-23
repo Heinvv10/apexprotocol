@@ -1,12 +1,16 @@
 /**
  * Recommendations Generate API (F106-F107)
  * POST /api/recommendations/generate - Generate recommendations for a brand
+ *
+ * Supports both AI-powered generation (default) and rule-based generation.
+ * AI-powered generation uses Claude to analyze visibility data and generate
+ * prioritized, actionable recommendations with impact scores.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { brands, audits, brandMentions } from "@/lib/db/schema";
+import { brands, audits, brandMentions, type NewRecommendation } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
 import {
@@ -14,6 +18,17 @@ import {
   type MonitorData,
   type AuditData,
 } from "@/lib/recommendations";
+import {
+  generateAIRecommendations,
+  type VisibilityData,
+  type PlatformVisibility,
+  type ContentGap,
+  type CompetitorMetrics,
+  type GeneratedRecommendation,
+} from "@/lib/ai/recommendations";
+import {
+  createRecommendationsWithDuplicateDetection,
+} from "@/lib/db/queries/recommendations";
 
 // Request schema
 const generateRequestSchema = z.object({
@@ -22,6 +37,7 @@ const generateRequestSchema = z.object({
   includeAudit: z.boolean().default(true),
   maxRecommendations: z.number().min(1).max(100).default(50),
   minConfidence: z.number().min(0).max(100).default(30),
+  useAI: z.boolean().default(true), // Flag to use AI vs rule-based generation
 });
 
 export async function POST(request: NextRequest) {
@@ -43,6 +59,7 @@ export async function POST(request: NextRequest) {
       includeAudit,
       maxRecommendations,
       minConfidence,
+      useAI,
     } = generateRequestSchema.parse(body);
 
     // Verify brand belongs to user's org
@@ -165,7 +182,130 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate recommendations
+    // Branch: AI-powered vs rule-based generation
+    if (useAI) {
+      // Transform monitor and audit data into VisibilityData format for AI
+      const visibilityData = transformToVisibilityData(
+        brandId,
+        brand.name,
+        monitorDataArray,
+        auditData
+      );
+
+      // Generate AI-powered recommendations
+      const aiResult = await generateAIRecommendations(visibilityData, {
+        maxRecommendations,
+        minImpactThreshold: minConfidence,
+      });
+
+      if (!aiResult.success) {
+        // If AI generation failed but we have a warning (e.g., insufficient data), return empty with 200
+        if (aiResult.error?.includes("Insufficient")) {
+          return NextResponse.json({
+            success: true,
+            brandId,
+            generatedAt: new Date().toISOString(),
+            warning: aiResult.error,
+            summary: {
+              total: 0,
+              critical: 0,
+              high: 0,
+              medium: 0,
+              low: 0,
+              persisted: 0,
+              duplicatesSkipped: 0,
+            },
+            sources: {
+              monitorPlatforms: monitorDataArray.length,
+              auditIncluded: auditData !== null,
+            },
+            recommendations: [],
+          });
+        }
+
+        // Otherwise, return error
+        return NextResponse.json(
+          {
+            error: "Failed to generate AI recommendations",
+            details: aiResult.error,
+          },
+          { status: 500 }
+        );
+      }
+
+      // Persist AI-generated recommendations to database
+      const recommendationsToInsert: NewRecommendation[] = aiResult.recommendations.map(
+        (rec) => ({
+          brandId,
+          title: rec.title,
+          description: rec.description,
+          category: rec.category,
+          priority: rec.priority,
+          impact: rec.impact,
+          effort: rec.effort,
+          status: "pending" as const,
+          source: "monitoring" as const, // AI recommendations from visibility data
+          steps: rec.steps,
+          estimatedTime: rec.estimatedTimeframe,
+          notes: `AI-generated recommendation. Expected outcome: ${rec.expectedOutcome}. Impact score: ${rec.impactScore}`,
+        })
+      );
+
+      const persistResult = await createRecommendationsWithDuplicateDetection(
+        recommendationsToInsert
+      );
+
+      // Group by priority
+      const grouped = {
+        critical: aiResult.recommendations.filter((r) => r.priority === "critical"),
+        high: aiResult.recommendations.filter((r) => r.priority === "high"),
+        medium: aiResult.recommendations.filter((r) => r.priority === "medium"),
+        low: aiResult.recommendations.filter((r) => r.priority === "low"),
+      };
+
+      return NextResponse.json({
+        success: true,
+        brandId,
+        generatedAt: new Date().toISOString(),
+        summary: {
+          total: aiResult.recommendations.length,
+          critical: grouped.critical.length,
+          high: grouped.high.length,
+          medium: grouped.medium.length,
+          low: grouped.low.length,
+          persisted: persistResult.createdCount,
+          duplicatesSkipped: persistResult.skippedCount,
+        },
+        sources: {
+          monitorPlatforms: monitorDataArray.length,
+          auditIncluded: auditData !== null,
+        },
+        tokenUsage: aiResult.tokenUsage,
+        recommendations: aiResult.recommendations.map((rec, index) => ({
+          id: persistResult.created[index]?.id,
+          source: "monitoring",
+          category: rec.category,
+          priority: rec.priority,
+          impactScore: rec.impactScore,
+          title: rec.title,
+          description: rec.description,
+          impact: rec.impact,
+          effort: rec.effort,
+          steps: rec.steps,
+          aiPlatforms: rec.aiPlatforms,
+          expectedOutcome: rec.expectedOutcome,
+          estimatedTimeframe: rec.estimatedTimeframe,
+        })),
+        grouped: {
+          critical: grouped.critical.map(mapAIRecToResponse),
+          high: grouped.high.map(mapAIRecToResponse),
+          medium: grouped.medium.map(mapAIRecToResponse),
+          low: grouped.low.map(mapAIRecToResponse),
+        },
+      });
+    }
+
+    // Fallback: Rule-based generation
     const recommendations = await generateRecommendations(
       brandId,
       monitorDataArray,
@@ -232,4 +372,181 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Transform MonitorData and AuditData into VisibilityData format for AI analysis
+ */
+function transformToVisibilityData(
+  brandId: string,
+  brandName: string,
+  monitorDataArray: MonitorData[],
+  auditData: AuditData | null
+): VisibilityData {
+  // Transform monitor data into platform visibility metrics
+  const platforms: PlatformVisibility[] = monitorDataArray.map((monitor) => {
+    // Calculate average position from mentions
+    const mentionsWithPosition = monitor.mentions.filter((m) => m.position !== undefined);
+    const avgPosition = mentionsWithPosition.length > 0
+      ? mentionsWithPosition.reduce((sum, m) => sum + (m.position ?? 0), 0) / mentionsWithPosition.length
+      : null;
+
+    // Calculate mention rate (percentage of mentions where brand was found)
+    const totalMentions = monitor.mentions.length;
+    const brandMentioned = monitor.mentions.filter((m) => m.mentioned).length;
+    const mentionRate = totalMentions > 0 ? (brandMentioned / totalMentions) * 100 : 0;
+
+    // Get citation frequency from sentiment data
+    const citationFrequency = monitor.mentions.filter((m) => m.mentioned).length;
+
+    return {
+      name: normalizePlatformName(monitor.platform),
+      mentionRate: Math.round(mentionRate),
+      averagePosition: avgPosition ? Math.round(avgPosition * 10) / 10 : null,
+      sentiment: monitor.sentiment.overall,
+      citationFrequency,
+    };
+  });
+
+  // Extract content gaps from audit data
+  const contentGaps: ContentGap[] = [];
+  if (auditData) {
+    // Convert audit issues to content gaps
+    for (const issue of auditData.issues) {
+      contentGaps.push({
+        type: issue.category,
+        description: `${issue.title}: ${issue.description}`,
+        severity: mapIssueSeverityToGapSeverity(issue.severity),
+        affectedPlatforms: getPlatformsAffectedByCategory(issue.category, platforms),
+      });
+    }
+
+    // Add gaps based on low category scores
+    for (const categoryScore of auditData.categoryScores) {
+      const scorePercent = (categoryScore.score / categoryScore.maxScore) * 100;
+      if (scorePercent < 60) {
+        contentGaps.push({
+          type: `low_${categoryScore.category}_score`,
+          description: `${categoryScore.category} score is ${Math.round(scorePercent)}% (${categoryScore.score}/${categoryScore.maxScore})`,
+          severity: scorePercent < 30 ? "critical" : scorePercent < 50 ? "high" : "medium",
+          affectedPlatforms: platforms.map((p) => p.name),
+        });
+      }
+    }
+  }
+
+  // Extract competitor data from monitor data
+  const competitorData: CompetitorMetrics[] = [];
+  for (const monitor of monitorDataArray) {
+    for (const competitor of monitor.competitors) {
+      // Check if we already have this competitor
+      const existing = competitorData.find((c) => c.name === competitor.name);
+      if (existing) {
+        // Add platform if not already included
+        if (!existing.platforms.includes(monitor.platform)) {
+          existing.platforms.push(monitor.platform);
+        }
+      } else {
+        // Calculate approximate mention rate from mentions count
+        // If a competitor has more mentions, they likely have higher visibility
+        const mentionRate = Math.min(competitor.mentions * 10, 100); // Rough estimate
+        competitorData.push({
+          name: competitor.name,
+          mentionRate: mentionRate,
+          platforms: [monitor.platform],
+          advantageAreas: competitor.avgPosition < 3 ? ["High visibility ranking"] : undefined,
+        });
+      }
+    }
+  }
+
+  return {
+    brandId,
+    brandName,
+    platforms,
+    contentGaps,
+    competitorData,
+  };
+}
+
+/**
+ * Normalize platform names to standard format
+ */
+function normalizePlatformName(platform: string): string {
+  const normalized = platform.toLowerCase();
+  if (normalized.includes("chatgpt") || normalized.includes("openai")) {
+    return "ChatGPT";
+  }
+  if (normalized.includes("claude") || normalized.includes("anthropic")) {
+    return "Claude";
+  }
+  if (normalized.includes("perplexity")) {
+    return "Perplexity";
+  }
+  if (normalized.includes("gemini") || normalized.includes("google")) {
+    return "Gemini";
+  }
+  return platform;
+}
+
+/**
+ * Map audit issue severity to content gap severity
+ */
+function mapIssueSeverityToGapSeverity(
+  severity: string
+): "critical" | "high" | "medium" | "low" {
+  switch (severity.toLowerCase()) {
+    case "critical":
+      return "critical";
+    case "high":
+    case "error":
+      return "high";
+    case "medium":
+    case "warning":
+      return "medium";
+    default:
+      return "low";
+  }
+}
+
+/**
+ * Determine which platforms are likely affected by a category issue
+ */
+function getPlatformsAffectedByCategory(
+  category: string,
+  platforms: PlatformVisibility[]
+): string[] {
+  // For schema markup issues, all platforms are affected
+  if (category.toLowerCase().includes("schema")) {
+    return platforms.map((p) => p.name);
+  }
+  // For technical SEO, prioritize platforms with low mention rates
+  if (category.toLowerCase().includes("seo") || category.toLowerCase().includes("technical")) {
+    return platforms.filter((p) => p.mentionRate < 50).map((p) => p.name);
+  }
+  // Default: all platforms
+  return platforms.map((p) => p.name);
+}
+
+/**
+ * Map AI recommendation to response format
+ */
+function mapAIRecToResponse(rec: GeneratedRecommendation) {
+  return {
+    category: rec.category,
+    priority: rec.priority,
+    impactScore: rec.impactScore,
+    title: rec.title,
+    description: rec.description,
+    impact: rec.impact,
+    effort: rec.effort,
+    steps: rec.steps,
+    aiPlatforms: rec.aiPlatforms,
+    expectedOutcome: rec.expectedOutcome,
+    estimatedTimeframe: rec.estimatedTimeframe,
+  };
 }
