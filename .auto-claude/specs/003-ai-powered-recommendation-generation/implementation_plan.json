@@ -487,7 +487,9 @@
               "Generation completes within 30 seconds"
             ]
           },
-          "status": "pending"
+          "status": "in_progress",
+          "notes": "Starting manual QA testing with real visibility data. Creating QA test documentation and scripts.",
+          "updated_at": "2025-12-23T04:16:25.690986+00:00"
         }
       ]
     },
@@ -705,5 +707,5 @@
   "status": "human_review",
   "planStatus": "review",
   "updated_at": "2025-12-22T22:22:43.928Z",
-  "last_updated": "2025-12-23T03:56:44.180469+00:00"
+  "last_updated": "2025-12-23T04:16:25.690986+00:00"
 }

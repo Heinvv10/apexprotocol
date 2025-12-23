@@ -386,16 +386,15 @@ describe("AI Recommendation Generator", () => {
     });
 
     it("should validate and normalize recommendation fields", async () => {
-      mockClaudeCreate.mockResolvedValueOnce(createMockAIResponse([
-        {
-          title: "Valid Recommendation",
-          description: "Valid description",
-          category: "INVALID_CATEGORY" as any, // Should be normalized
-          priority: "SUPER_HIGH" as any, // Should be normalized
-          impact: "MASSIVE" as any, // Should be normalized
-          effort: "EASY" as any, // Should be normalized
-        },
-      ]));
+      const invalidRecommendation: Record<string, unknown> = {
+        title: "Valid Recommendation",
+        description: "Valid description",
+        category: "INVALID_CATEGORY", // Should be normalized
+        priority: "SUPER_HIGH", // Should be normalized
+        impact: "MASSIVE", // Should be normalized
+        effort: "EASY", // Should be normalized
+      };
+      mockClaudeCreate.mockResolvedValueOnce(createMockAIResponse([invalidRecommendation]));
 
       const visibilityData = createSampleVisibilityData();
       const result = await generateAIRecommendations(visibilityData);

@@ -3,7 +3,7 @@
  * Uses Claude AI to analyze brand visibility data and generate actionable recommendations
  */
 
-import { getClaudeClient, CLAUDE_MODELS, DEFAULT_MODELS } from "./claude";
+import { getClaudeClient, CLAUDE_MODELS } from "./claude";
 
 // ============================================================================
 // Types
@@ -437,10 +437,13 @@ function buildAnalysisPrompt(data: VisibilityData): string {
 
 /**
  * Parse and validate recommendations from Claude response
+ * @param responseText - Raw text response from Claude
+ * @param _visibilityData - Reserved for future context-aware validation
  */
 function parseAndValidateRecommendations(
   responseText: string,
-  visibilityData: VisibilityData
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _visibilityData: VisibilityData
 ): AIRecommendationOutput[] {
   // Try to extract JSON from response
   let jsonText = responseText.trim();
