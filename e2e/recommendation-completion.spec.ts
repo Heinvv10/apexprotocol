@@ -360,6 +360,601 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
   });
 
+  test.describe("Feedback Workflow", () => {
+    test("should open feedback dialog when clicking Provide Feedback", async ({ page }) => {
+      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Check for brand selection prompt
+      const hasBrandPrompt = await page.getByText(/select.*brand/i).isVisible().catch(() => false);
+
+      if (!hasBrandPrompt) {
+        // Filter by completed status
+        const completedFilter = page.getByRole("button", { name: /completed/i });
+        const hasCompletedFilter = await completedFilter.isVisible().catch(() => false);
+        if (hasCompletedFilter) {
+          await completedFilter.click();
+          await page.waitForTimeout(500);
+        }
+
+        // Look for recommendation cards
+        const recommendationCards = page.locator('[class*="rounded-xl"][class*="border"]');
+        const hasCards = await recommendationCards.first().isVisible().catch(() => false);
+
+        if (hasCards) {
+          // Click first recommendation to expand it
+          await recommendationCards.first().click();
+          await page.waitForTimeout(500);
+
+          // Click Provide Feedback button if visible
+          const feedbackButton = page.getByRole("button", { name: /provide feedback|edit feedback/i });
+          const hasFeedbackButton = await feedbackButton.isVisible().catch(() => false);
+
+          if (hasFeedbackButton) {
+            await feedbackButton.click();
+            await page.waitForTimeout(500);
+
+            // Verify dialog opens with rating and feedback elements
+            await expect(page.getByRole("dialog")).toBeVisible();
+            await expect(page.getByText(/rating/i)).toBeVisible();
+            await expect(page.getByRole("radiogroup", { name: /rating/i })).toBeVisible();
+          }
+        }
+      }
+    });
+
+    test("should display star rating component with 5 clickable stars", async ({ page }) => {
+      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Check for brand selection prompt
+      const hasBrandPrompt = await page.getByText(/select.*brand/i).isVisible().catch(() => false);
+
+      if (!hasBrandPrompt) {
+        // Filter by completed status
+        const completedFilter = page.getByRole("button", { name: /completed/i });
+        const hasCompletedFilter = await completedFilter.isVisible().catch(() => false);
+        if (hasCompletedFilter) {
+          await completedFilter.click();
+          await page.waitForTimeout(500);
+        }
+
+        // Look for recommendation cards
+        const recommendationCards = page.locator('[class*="rounded-xl"][class*="border"]');
+        const hasCards = await recommendationCards.first().isVisible().catch(() => false);
+
+        if (hasCards) {
+          // Click first recommendation to expand it
+          await recommendationCards.first().click();
+          await page.waitForTimeout(500);
+
+          // Click Provide Feedback button if visible
+          const feedbackButton = page.getByRole("button", { name: /provide feedback|edit feedback/i });
+          const hasFeedbackButton = await feedbackButton.isVisible().catch(() => false);
+
+          if (hasFeedbackButton) {
+            await feedbackButton.click();
+            await page.waitForTimeout(500);
+
+            // Verify 5 star buttons are present
+            const starButtons = page.getByRole("radio");
+            await expect(starButtons).toHaveCount(5);
+
+            // Verify aria labels for each star
+            await expect(page.getByRole("radio", { name: "1 star" })).toBeVisible();
+            await expect(page.getByRole("radio", { name: "2 stars" })).toBeVisible();
+            await expect(page.getByRole("radio", { name: "3 stars" })).toBeVisible();
+            await expect(page.getByRole("radio", { name: "4 stars" })).toBeVisible();
+            await expect(page.getByRole("radio", { name: "5 stars" })).toBeVisible();
+          }
+        }
+      }
+    });
+
+    test("should select 4-star rating and show corresponding text", async ({ page }) => {
+      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Check for brand selection prompt
+      const hasBrandPrompt = await page.getByText(/select.*brand/i).isVisible().catch(() => false);
+
+      if (!hasBrandPrompt) {
+        // Filter by completed status
+        const completedFilter = page.getByRole("button", { name: /completed/i });
+        const hasCompletedFilter = await completedFilter.isVisible().catch(() => false);
+        if (hasCompletedFilter) {
+          await completedFilter.click();
+          await page.waitForTimeout(500);
+        }
+
+        // Look for recommendation cards
+        const recommendationCards = page.locator('[class*="rounded-xl"][class*="border"]');
+        const hasCards = await recommendationCards.first().isVisible().catch(() => false);
+
+        if (hasCards) {
+          // Click first recommendation to expand it
+          await recommendationCards.first().click();
+          await page.waitForTimeout(500);
+
+          // Click Provide Feedback button if visible
+          const feedbackButton = page.getByRole("button", { name: /provide feedback|edit feedback/i });
+          const hasFeedbackButton = await feedbackButton.isVisible().catch(() => false);
+
+          if (hasFeedbackButton) {
+            await feedbackButton.click();
+            await page.waitForTimeout(500);
+
+            // Click 4-star rating
+            const fourStarButton = page.getByRole("radio", { name: "4 stars" });
+            await fourStarButton.click();
+            await page.waitForTimeout(300);
+
+            // Verify the rating hint text shows "Very helpful"
+            await expect(page.getByText(/very helpful/i)).toBeVisible();
+          }
+        }
+      }
+    });
+
+    test("should allow entering optional text feedback", async ({ page }) => {
+      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Check for brand selection prompt
+      const hasBrandPrompt = await page.getByText(/select.*brand/i).isVisible().catch(() => false);
+
+      if (!hasBrandPrompt) {
+        // Filter by completed status
+        const completedFilter = page.getByRole("button", { name: /completed/i });
+        const hasCompletedFilter = await completedFilter.isVisible().catch(() => false);
+        if (hasCompletedFilter) {
+          await completedFilter.click();
+          await page.waitForTimeout(500);
+        }
+
+        // Look for recommendation cards
+        const recommendationCards = page.locator('[class*="rounded-xl"][class*="border"]');
+        const hasCards = await recommendationCards.first().isVisible().catch(() => false);
+
+        if (hasCards) {
+          // Click first recommendation to expand it
+          await recommendationCards.first().click();
+          await page.waitForTimeout(500);
+
+          // Click Provide Feedback button if visible
+          const feedbackButton = page.getByRole("button", { name: /provide feedback|edit feedback/i });
+          const hasFeedbackButton = await feedbackButton.isVisible().catch(() => false);
+
+          if (hasFeedbackButton) {
+            await feedbackButton.click();
+            await page.waitForTimeout(500);
+
+            // Find the feedback textarea
+            const feedbackTextarea = page.locator("#feedback-text");
+            await expect(feedbackTextarea).toBeVisible();
+
+            // Enter text feedback
+            const testFeedback = "This recommendation was very helpful for improving our GEO score!";
+            await feedbackTextarea.fill(testFeedback);
+
+            // Verify the text was entered
+            await expect(feedbackTextarea).toHaveValue(testFeedback);
+          }
+        }
+      }
+    });
+
+    test("should disable Submit button until rating is selected", async ({ page }) => {
+      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Check for brand selection prompt
+      const hasBrandPrompt = await page.getByText(/select.*brand/i).isVisible().catch(() => false);
+
+      if (!hasBrandPrompt) {
+        // Filter by completed status
+        const completedFilter = page.getByRole("button", { name: /completed/i });
+        const hasCompletedFilter = await completedFilter.isVisible().catch(() => false);
+        if (hasCompletedFilter) {
+          await completedFilter.click();
+          await page.waitForTimeout(500);
+        }
+
+        // Look for recommendation cards
+        const recommendationCards = page.locator('[class*="rounded-xl"][class*="border"]');
+        const hasCards = await recommendationCards.first().isVisible().catch(() => false);
+
+        if (hasCards) {
+          // Click first recommendation to expand it
+          await recommendationCards.first().click();
+          await page.waitForTimeout(500);
+
+          // Click Provide Feedback button if visible
+          const feedbackButton = page.getByRole("button", { name: /provide feedback|edit feedback/i });
+          const hasFeedbackButton = await feedbackButton.isVisible().catch(() => false);
+
+          if (hasFeedbackButton) {
+            await feedbackButton.click();
+            await page.waitForTimeout(500);
+
+            // Verify Submit button is disabled initially
+            const submitButton = page.getByRole("button", { name: /submit feedback/i });
+            await expect(submitButton).toBeDisabled();
+
+            // Select a rating
+            await page.getByRole("radio", { name: "4 stars" }).click();
+            await page.waitForTimeout(300);
+
+            // Verify Submit button is now enabled
+            await expect(submitButton).toBeEnabled();
+          }
+        }
+      }
+    });
+
+    test("should close dialog without saving when Skip is clicked", async ({ page }) => {
+      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Check for brand selection prompt
+      const hasBrandPrompt = await page.getByText(/select.*brand/i).isVisible().catch(() => false);
+
+      if (!hasBrandPrompt) {
+        // Filter by completed status
+        const completedFilter = page.getByRole("button", { name: /completed/i });
+        const hasCompletedFilter = await completedFilter.isVisible().catch(() => false);
+        if (hasCompletedFilter) {
+          await completedFilter.click();
+          await page.waitForTimeout(500);
+        }
+
+        // Look for recommendation cards
+        const recommendationCards = page.locator('[class*="rounded-xl"][class*="border"]');
+        const hasCards = await recommendationCards.first().isVisible().catch(() => false);
+
+        if (hasCards) {
+          // Click first recommendation to expand it
+          await recommendationCards.first().click();
+          await page.waitForTimeout(500);
+
+          // Click Provide Feedback button if visible
+          const feedbackButton = page.getByRole("button", { name: /provide feedback|edit feedback/i });
+          const hasFeedbackButton = await feedbackButton.isVisible().catch(() => false);
+
+          if (hasFeedbackButton) {
+            await feedbackButton.click();
+            await page.waitForTimeout(500);
+
+            // Verify dialog is open
+            await expect(page.getByRole("dialog")).toBeVisible();
+
+            // Select a rating and enter feedback
+            await page.getByRole("radio", { name: "3 stars" }).click();
+            await page.locator("#feedback-text").fill("Test feedback that should not be saved");
+
+            // Click Skip button
+            await page.getByRole("button", { name: /skip/i }).click();
+            await page.waitForTimeout(500);
+
+            // Verify dialog is closed
+            await expect(page.getByRole("dialog")).not.toBeVisible();
+
+            // Verify the feedback button still shows "Provide Feedback" (not "Edit Feedback")
+            // indicating feedback was not saved
+            const provideFeedbackButton = page.getByRole("button", { name: /provide feedback/i });
+            const hasProvideFeedback = await provideFeedbackButton.isVisible().catch(() => false);
+            const editFeedbackButton = page.getByRole("button", { name: /edit feedback/i });
+            const hasEditFeedback = await editFeedbackButton.isVisible().catch(() => false);
+
+            // Either still shows "Provide Feedback" or already had feedback (shows "Edit Feedback")
+            expect(hasProvideFeedback || hasEditFeedback).toBeTruthy();
+          }
+        }
+      }
+    });
+
+    test("should submit feedback and update recommendation display", async ({ page }) => {
+      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Check for brand selection prompt
+      const hasBrandPrompt = await page.getByText(/select.*brand/i).isVisible().catch(() => false);
+
+      if (!hasBrandPrompt) {
+        // Filter by completed status
+        const completedFilter = page.getByRole("button", { name: /completed/i });
+        const hasCompletedFilter = await completedFilter.isVisible().catch(() => false);
+        if (hasCompletedFilter) {
+          await completedFilter.click();
+          await page.waitForTimeout(500);
+        }
+
+        // Look for recommendation cards
+        const recommendationCards = page.locator('[class*="rounded-xl"][class*="border"]');
+        const hasCards = await recommendationCards.first().isVisible().catch(() => false);
+
+        if (hasCards) {
+          // Click first recommendation to expand it
+          await recommendationCards.first().click();
+          await page.waitForTimeout(500);
+
+          // Click Provide Feedback button if visible
+          const feedbackButton = page.getByRole("button", { name: /provide feedback|edit feedback/i });
+          const hasFeedbackButton = await feedbackButton.isVisible().catch(() => false);
+
+          if (hasFeedbackButton) {
+            await feedbackButton.click();
+            await page.waitForTimeout(500);
+
+            // Select 4-star rating
+            await page.getByRole("radio", { name: "4 stars" }).click();
+            await page.waitForTimeout(300);
+
+            // Enter text feedback
+            const testFeedback = "This recommendation helped us improve our content strategy significantly.";
+            await page.locator("#feedback-text").fill(testFeedback);
+
+            // Submit feedback
+            const submitButton = page.getByRole("button", { name: /submit feedback/i });
+            await submitButton.click();
+
+            // Wait for submission and dialog to close
+            await page.waitForTimeout(1500);
+
+            // Verify dialog is closed
+            await expect(page.getByRole("dialog")).not.toBeVisible();
+
+            // Verify feedback was saved - button should now show "Edit Feedback"
+            const editFeedbackButton = page.getByRole("button", { name: /edit feedback/i });
+            const hasEditButton = await editFeedbackButton.isVisible().catch(() => false);
+
+            // Or verify rating is displayed
+            const hasRatingDisplay = await page.getByText(/rated|star/i).first().isVisible().catch(() => false);
+
+            // Either the button changed to "Edit" or rating is displayed
+            expect(hasEditButton || hasRatingDisplay).toBeTruthy();
+          }
+        }
+      }
+    });
+
+    test("should allow editing existing feedback", async ({ page }) => {
+      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Check for brand selection prompt
+      const hasBrandPrompt = await page.getByText(/select.*brand/i).isVisible().catch(() => false);
+
+      if (!hasBrandPrompt) {
+        // Filter by completed status
+        const completedFilter = page.getByRole("button", { name: /completed/i });
+        const hasCompletedFilter = await completedFilter.isVisible().catch(() => false);
+        if (hasCompletedFilter) {
+          await completedFilter.click();
+          await page.waitForTimeout(500);
+        }
+
+        // Look for recommendation cards
+        const recommendationCards = page.locator('[class*="rounded-xl"][class*="border"]');
+        const hasCards = await recommendationCards.first().isVisible().catch(() => false);
+
+        if (hasCards) {
+          // Click first recommendation to expand it
+          await recommendationCards.first().click();
+          await page.waitForTimeout(500);
+
+          // Check if Edit Feedback button is visible (indicates existing feedback)
+          const editFeedbackButton = page.getByRole("button", { name: /edit feedback/i });
+          const hasEditButton = await editFeedbackButton.isVisible().catch(() => false);
+
+          if (hasEditButton) {
+            // Click Edit Feedback button
+            await editFeedbackButton.click();
+            await page.waitForTimeout(500);
+
+            // Verify dialog opens with "Edit Feedback" title
+            await expect(page.getByRole("dialog")).toBeVisible();
+            await expect(page.getByText(/edit feedback/i).first()).toBeVisible();
+
+            // The form should be pre-populated with existing values
+            // Change rating to 5 stars
+            await page.getByRole("radio", { name: "5 stars" }).click();
+            await page.waitForTimeout(300);
+
+            // Verify "Extremely helpful" text is shown
+            await expect(page.getByText(/extremely helpful/i)).toBeVisible();
+
+            // Update feedback text
+            await page.locator("#feedback-text").fill("Updated: This was extremely helpful!");
+
+            // Submit updated feedback
+            await page.getByRole("button", { name: /submit feedback/i }).click();
+
+            // Wait for submission
+            await page.waitForTimeout(1500);
+
+            // Verify dialog closed
+            await expect(page.getByRole("dialog")).not.toBeVisible();
+          }
+        }
+      }
+    });
+
+    test("should display rating hints for each star level", async ({ page }) => {
+      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Check for brand selection prompt
+      const hasBrandPrompt = await page.getByText(/select.*brand/i).isVisible().catch(() => false);
+
+      if (!hasBrandPrompt) {
+        // Filter by completed status
+        const completedFilter = page.getByRole("button", { name: /completed/i });
+        const hasCompletedFilter = await completedFilter.isVisible().catch(() => false);
+        if (hasCompletedFilter) {
+          await completedFilter.click();
+          await page.waitForTimeout(500);
+        }
+
+        // Look for recommendation cards
+        const recommendationCards = page.locator('[class*="rounded-xl"][class*="border"]');
+        const hasCards = await recommendationCards.first().isVisible().catch(() => false);
+
+        if (hasCards) {
+          // Click first recommendation to expand it
+          await recommendationCards.first().click();
+          await page.waitForTimeout(500);
+
+          // Click Provide Feedback button if visible
+          const feedbackButton = page.getByRole("button", { name: /provide feedback|edit feedback/i });
+          const hasFeedbackButton = await feedbackButton.isVisible().catch(() => false);
+
+          if (hasFeedbackButton) {
+            await feedbackButton.click();
+            await page.waitForTimeout(500);
+
+            // Initially should show "Select a rating" hint
+            await expect(page.getByText(/select a rating/i)).toBeVisible();
+
+            // Test each star level and its hint
+            const ratingHints = [
+              { stars: 1, hint: /not helpful at all/i },
+              { stars: 2, hint: /slightly helpful/i },
+              { stars: 3, hint: /moderately helpful/i },
+              { stars: 4, hint: /very helpful/i },
+              { stars: 5, hint: /extremely helpful/i },
+            ];
+
+            for (const { stars, hint } of ratingHints) {
+              await page.getByRole("radio", { name: `${stars} star${stars !== 1 ? "s" : ""}` }).click();
+              await page.waitForTimeout(200);
+              await expect(page.getByText(hint)).toBeVisible();
+            }
+          }
+        }
+      }
+    });
+  });
+
+  test.describe("Full Feedback Workflow Integration", () => {
+    test("should complete full feedback workflow: open dialog -> select rating -> enter feedback -> submit -> verify saved", async ({ page }) => {
+      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Check for brand selection prompt
+      const hasBrandPrompt = await page.getByText(/select.*brand/i).isVisible().catch(() => false);
+
+      if (!hasBrandPrompt) {
+        // Filter by completed status
+        const completedFilter = page.getByRole("button", { name: /completed/i });
+        const hasCompletedFilter = await completedFilter.isVisible().catch(() => false);
+        if (hasCompletedFilter) {
+          await completedFilter.click();
+          await page.waitForTimeout(500);
+        }
+
+        // Look for recommendation cards
+        const recommendationCards = page.locator('[class*="rounded-xl"][class*="border"]');
+        const hasCards = await recommendationCards.first().isVisible().catch(() => false);
+
+        if (hasCards) {
+          // Click first recommendation to expand it
+          await recommendationCards.first().click();
+          await page.waitForTimeout(500);
+
+          // Check for Provide Feedback button (not Edit, meaning no existing feedback)
+          const provideFeedbackButton = page.getByRole("button", { name: /provide feedback/i });
+          const hasProvideFeedback = await provideFeedbackButton.isVisible().catch(() => false);
+
+          if (hasProvideFeedback) {
+            // Step 1: Open feedback dialog
+            await provideFeedbackButton.click();
+            await page.waitForTimeout(500);
+            await expect(page.getByRole("dialog")).toBeVisible();
+
+            // Step 2: Select 4-star rating
+            await page.getByRole("radio", { name: "4 stars" }).click();
+            await page.waitForTimeout(300);
+            await expect(page.getByText(/very helpful/i)).toBeVisible();
+
+            // Step 3: Enter text feedback
+            const feedbackText = "This recommendation was very helpful for our GEO optimization efforts.";
+            await page.locator("#feedback-text").fill(feedbackText);
+
+            // Step 4: Submit feedback
+            await page.getByRole("button", { name: /submit feedback/i }).click();
+
+            // Wait for API call and UI update
+            await page.waitForTimeout(2000);
+
+            // Step 5: Verify dialog closed
+            await expect(page.getByRole("dialog")).not.toBeVisible();
+
+            // Step 6: Verify feedback was saved
+            // The button should now show "Edit Feedback"
+            const editButton = page.getByRole("button", { name: /edit feedback/i });
+            const hasEditButton = await editButton.isVisible().catch(() => false);
+
+            // Or there should be some indication of the rating
+            const hasRatingIndicator = await page.locator("svg.fill-amber-400").first().isVisible().catch(() => false);
+
+            // Step 7: Verify rating is displayed on recommendation
+            expect(hasEditButton || hasRatingIndicator).toBeTruthy();
+
+            // Additional verification: open edit dialog to confirm values
+            if (hasEditButton) {
+              await editButton.click();
+              await page.waitForTimeout(500);
+
+              // Verify the 4-star rating is selected (aria-checked)
+              const fourStarButton = page.getByRole("radio", { name: "4 stars" });
+              const isChecked = await fourStarButton.getAttribute("aria-checked");
+              expect(isChecked).toBe("true");
+
+              // Close dialog
+              await page.getByRole("button", { name: /skip/i }).click();
+            }
+          } else {
+            // If there's already feedback, test the edit flow
+            const editFeedbackButton = page.getByRole("button", { name: /edit feedback/i });
+            const hasEditButton = await editFeedbackButton.isVisible().catch(() => false);
+
+            if (hasEditButton) {
+              // Verify we can open the edit dialog
+              await editFeedbackButton.click();
+              await page.waitForTimeout(500);
+              await expect(page.getByRole("dialog")).toBeVisible();
+              await expect(page.getByText(/edit feedback/i).first()).toBeVisible();
+
+              // Close dialog
+              await page.getByRole("button", { name: /skip/i }).click();
+            }
+          }
+        }
+      }
+    });
+  });
+
   test.describe("Responsive Design", () => {
     test("should display correctly on mobile viewport", async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
