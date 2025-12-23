@@ -194,26 +194,57 @@ function transformCalendarRecommendation(
 // Calendar Day Component
 function CalendarDay({
   day,
+  month,
+  year,
   isCurrentMonth,
   isToday,
   recommendations,
   onDragStart,
+  onDragOver,
+  onDrop,
   draggingId,
 }: {
   day: number;
+  month: number;
+  year: number;
   isCurrentMonth: boolean;
   isToday: boolean;
   recommendations: CalendarRecommendation[];
   onDragStart: (e: React.DragEvent, id: string) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, date: Date) => void;
   draggingId: string | null;
 }) {
+  const [isOver, setIsOver] = React.useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsOver(true);
+    onDragOver(e);
+  };
+
+  const handleDragLeave = () => {
+    setIsOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsOver(false);
+    onDrop(e, new Date(year, month, day));
+  };
+
   return (
     <div
       className={cn(
         "min-h-[100px] p-2 border-r border-b border-[#27272A]",
+        "transition-all duration-150",
         !isCurrentMonth && "bg-[#0A0A0B]",
-        isToday && "bg-primary/5"
+        isToday && "bg-primary/5",
+        isOver && "border-primary/50 bg-primary/5"
       )}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       <div
         className={cn(
@@ -376,6 +407,18 @@ export default function CalendarPage() {
     setDraggingId(id);
     e.dataTransfer.setData("text/plain", id);
     e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e: React.DragEvent, _date: Date) => {
+    e.preventDefault();
+    // Get the dragged recommendation ID (will be used in subsequent subtask for API call)
+    e.dataTransfer.getData("text/plain");
+    setDraggingId(null);
   };
 
   const handleDragEnd = () => {
@@ -557,10 +600,14 @@ export default function CalendarPage() {
               <CalendarDay
                 key={index}
                 day={calDay.day}
+                month={calDay.month}
+                year={calDay.year}
                 isCurrentMonth={calDay.isCurrentMonth}
                 isToday={isToday}
                 recommendations={recommendations}
                 onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
                 draggingId={draggingId}
               />
             );
