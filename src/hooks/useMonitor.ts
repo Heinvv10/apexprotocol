@@ -117,22 +117,80 @@ async function fetchBrandConfig(brandId: string): Promise<BrandConfig> {
   if (!response.ok) {
     throw new Error("Failed to fetch brand config");
   }
-  return response.json();
+  const result = await response.json();
+  // API returns { success: true, data: brand }, extract the data field
+  const brand = result.data || result;
+
+  // Convert competitors from BrandCompetitor[] to string[]
+  // API returns { name, url, reason } objects, interface expects strings
+  const competitorNames = (brand.competitors || []).map(
+    (c: { name: string } | string) => (typeof c === "string" ? c : c.name)
+  );
+
+  // Map API fields to BrandConfig interface
+  return {
+    id: brand.id,
+    name: brand.name,
+    domain: brand.domain,
+    description: brand.description,
+    keywords: brand.keywords || [],
+    competitors: competitorNames,
+    trackingEnabled: brand.monitoringEnabled ?? true,
+    alertsEnabled: true, // Default value since API doesn't have this field
+    platforms: brand.monitoringPlatforms || [],
+    settings: brand.settings,
+  };
 }
 
 async function saveBrandConfig(config: BrandConfig): Promise<BrandConfig> {
   const method = config.id ? "PUT" : "POST";
   const url = config.id ? `/api/monitor/brands/${config.id}` : "/api/monitor/brands";
 
+  // Map BrandConfig fields to API fields
+  // Handle competitors - convert string[] to BrandCompetitor[] if needed
+  const competitors = Array.isArray(config.competitors)
+    ? config.competitors.map((c) =>
+        typeof c === "string"
+          ? { name: c, url: "", reason: "Competitor" }
+          : c
+      )
+    : [];
+
+  const apiPayload = {
+    name: config.name,
+    domain: config.domain,
+    description: config.description,
+    keywords: config.keywords,
+    competitors,
+    monitoringEnabled: config.trackingEnabled,
+    monitoringPlatforms: config.platforms,
+  };
+
   const response = await fetch(url, {
     method,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(config),
+    body: JSON.stringify(apiPayload),
   });
   if (!response.ok) {
     throw new Error("Failed to save brand config");
   }
-  return response.json();
+  const result = await response.json();
+  // API returns { success: true, data: brand }, extract the data field
+  const brand = result.data || result;
+
+  // Map API response back to BrandConfig
+  return {
+    id: brand.id,
+    name: brand.name,
+    domain: brand.domain,
+    description: brand.description,
+    keywords: brand.keywords || [],
+    competitors: brand.competitors || [],
+    trackingEnabled: brand.monitoringEnabled ?? true,
+    alertsEnabled: true,
+    platforms: brand.monitoringPlatforms || [],
+    settings: brand.settings,
+  };
 }
 
 async function fetchMentions(filters: MentionFilters = {}): Promise<MentionListResponse> {
