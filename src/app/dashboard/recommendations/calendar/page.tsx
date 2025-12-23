@@ -126,7 +126,15 @@ const monthNames = [
 // Day names
 const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-// Transform API recommendation to calendar format with synthetic due date
+// Map category to type
+const categoryToType: Record<string, RecommendationType> = {
+  technical: "technical",
+  content: "content",
+  authority: "schema",
+  ai_readiness: "ai-visibility",
+};
+
+// Transform API recommendation to calendar format using real dueDate field
 function transformCalendarRecommendation(
   apiRec: {
     id: string;
@@ -134,38 +142,16 @@ function transformCalendarRecommendation(
     priority: string;
     category: string;
     status: string;
-  },
-  index: number
+    dueDate: string;
+  }
 ): CalendarRecommendation {
-  // Map category to type
-  const categoryToType: Record<string, RecommendationType> = {
-    technical: "technical",
-    content: "content",
-    authority: "schema",
-    ai_readiness: "ai-visibility",
-  };
-
-  // Generate synthetic due date based on priority
-  // Critical: 1-3 days, High: 4-7 days, Medium: 8-14 days, Low: 15-30 days
-  const priorityDaysOffset: Record<string, [number, number]> = {
-    critical: [1, 3],
-    high: [4, 7],
-    medium: [8, 14],
-    low: [15, 30],
-  };
-
-  const [minDays, maxDays] = priorityDaysOffset[apiRec.priority] || [8, 14];
-  const daysOffset = minDays + (index % (maxDays - minDays + 1));
-  const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + daysOffset);
-
   return {
     id: apiRec.id,
     title: apiRec.title,
     priority: apiRec.priority as Priority,
     type: categoryToType[apiRec.category] || "technical",
     status: apiRec.status as Status,
-    dueDate,
+    dueDate: new Date(apiRec.dueDate),
   };
 }
 
@@ -246,10 +232,12 @@ export default function CalendarPage() {
     selectedBrand?.id ? { brandId: selectedBrand.id, limit: 100 } : { limit: 100 }
   );
 
-  // Transform API data to calendar format
+  // Transform API data to calendar format - only include recommendations with dueDate
   const recommendations: CalendarRecommendation[] = React.useMemo(() => {
     if (!apiData?.recommendations) return [];
-    return apiData.recommendations.map((rec, index) => transformCalendarRecommendation(rec, index));
+    return apiData.recommendations
+      .filter((rec) => rec.dueDate) // Only include recommendations with a dueDate
+      .map((rec) => transformCalendarRecommendation(rec as { id: string; title: string; priority: string; category: string; status: string; dueDate: string }));
   }, [apiData]);
 
   const hasData = recommendations.length > 0;
