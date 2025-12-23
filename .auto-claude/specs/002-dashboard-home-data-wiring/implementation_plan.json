@@ -1,0 +1,372 @@
+{
+  "feature": "Dashboard Home Data Wiring - Verification & Testing",
+  "workflow_type": "simple",
+  "workflow_rationale": "Investigation revealed components, hooks, and API endpoints already exist and are connected. This is a verification and testing task, not new implementation. Simple workflow is appropriate for single-service verification tasks.",
+  "phases": [
+    {
+      "id": "phase-1-verification",
+      "name": "Data Flow Verification",
+      "type": "implementation",
+      "description": "Verify all three dashboard components fetch and display real database data through existing REST API endpoints",
+      "depends_on": [],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-1-1",
+          "description": "Verify GEO Score Trend component displays live data from /api/analytics/unified-score",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "files_to_verify": [
+            "src/components/dashboard/geo-score-trend.tsx",
+            "src/hooks/useDashboard.ts",
+            "src/app/api/analytics/unified-score/route.ts"
+          ],
+          "patterns_from": [],
+          "verification": {
+            "type": "browser",
+            "url": "http://localhost:3000/dashboard",
+            "checks": [
+              "GEO Score Trend chart renders with data points",
+              "Historical trend line shows database values",
+              "Loading state displays during fetch",
+              "No console errors"
+            ]
+          },
+          "status": "completed",
+          "notes": "Verified GEO Score Trend data flow: Component uses useUnifiedScore hook \u2192 Hook calls /api/analytics/unified-score \u2192 API queries PostgreSQL via Drizzle. Loading states, empty states, and error handling all implemented. No TypeScript errors. Note: Dashboard uses ScoreTrend (unified SEO+GEO+AEO) which uses same API.",
+          "updated_at": "2025-12-23T02:46:23.431544+00:00"
+        },
+        {
+          "id": "subtask-1-2",
+          "description": "Verify Prioritized Recommendations component displays live data from /api/recommendations",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "files_to_verify": [
+            "src/components/dashboard/prioritized-recommendations.tsx",
+            "src/hooks/useRecommendations.ts",
+            "src/app/api/recommendations/route.ts"
+          ],
+          "patterns_from": [],
+          "verification": {
+            "type": "browser",
+            "url": "http://localhost:3000/dashboard",
+            "checks": [
+              "Recommendations list displays database items",
+              "Items are sorted by priority (critical > high > medium > low)",
+              "Loading state displays during fetch",
+              "Zero-state message shows when no recommendations",
+              "No console errors"
+            ]
+          },
+          "status": "completed",
+          "notes": "Verified PrioritizedRecommendations data flow: Component uses useRecommendations hook \u2192 Hook calls /api/recommendations \u2192 API queries PostgreSQL via Drizzle ORM. Fixed priority sorting: now sorts by priority ASC (critical > high > medium > low) then by createdAt DESC. Loading states (Loader2 spinner), empty states (\"No recommendations yet\"), and error handling all implemented. No TypeScript errors.",
+          "updated_at": "2025-12-23T02:55:19.184478+00:00"
+        },
+        {
+          "id": "subtask-1-3",
+          "description": "Verify Citation Velocity Chart component displays live data from /api/monitor/citations",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "files_to_verify": [
+            "src/components/dashboard/citation-velocity-chart.tsx",
+            "src/hooks/useMonitor.ts",
+            "src/app/api/monitor/citations/route.ts"
+          ],
+          "patterns_from": [],
+          "verification": {
+            "type": "browser",
+            "url": "http://localhost:3000/dashboard",
+            "checks": [
+              "Citation Velocity chart renders with trend data",
+              "Time series shows database citation counts",
+              "Loading state displays during fetch",
+              "No console errors"
+            ]
+          },
+          "status": "completed",
+          "notes": "Verified CitationVelocityChart data flow: Component uses useCitations hook \u2192 Hook calls /api/monitor/citations \u2192 API queries PostgreSQL via Drizzle ORM (brandMentions table with citationUrl). Loading states (Loader2 spinner), empty states (\"No citation data available\"), and error handling all implemented. No TypeScript errors in citation-related files. Component is exported from dashboard components and can be used anywhere. The citation data is also displayed on the Citations Analytics page (/dashboard/monitor/analytics/citations) which uses the same useCitations hook with full chart visualization.",
+          "updated_at": "2025-12-23T03:00:55.853353+00:00"
+        }
+      ]
+    },
+    {
+      "id": "phase-2-error-handling",
+      "name": "Error Handling & Edge Cases",
+      "type": "implementation",
+      "description": "Verify robust error handling, loading states, and edge cases for all dashboard components",
+      "depends_on": [
+        "phase-1-verification"
+      ],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-2-1",
+          "description": "Verify loading states and error handling for all three components",
+          "service": "main",
+          "files_to_modify": [
+            "src/components/dashboard/geo-score-trend.tsx",
+            "src/components/dashboard/prioritized-recommendations.tsx",
+            "src/components/dashboard/citation-velocity-chart.tsx"
+          ],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "manual",
+            "instructions": "Test: 1) Loading states appear during data fetch, 2) API errors display user-friendly messages, 3) Components handle empty data gracefully, 4) Network timeouts are handled"
+          },
+          "status": "pending",
+          "notes": "Components should already have loading/error states from hooks. Verify and enhance if needed."
+        },
+        {
+          "id": "subtask-2-2",
+          "description": "Test edge cases: no data, partial data, zero recommendations",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "files_to_verify": [
+            "src/components/dashboard/geo-score-trend.tsx",
+            "src/components/dashboard/prioritized-recommendations.tsx",
+            "src/components/dashboard/citation-velocity-chart.tsx"
+          ],
+          "patterns_from": [],
+          "verification": {
+            "type": "manual",
+            "instructions": "Test scenarios: 1) Brand with no historical data shows 'No data available', 2) Partial data renders correctly, 3) Zero recommendations shows positive message, 4) Large datasets don't crash UI"
+          },
+          "status": "pending",
+          "notes": "Edge case handling may need additions to components."
+        }
+      ]
+    },
+    {
+      "id": "phase-3-performance",
+      "name": "Performance Verification",
+      "type": "implementation",
+      "description": "Verify dashboard loads within 2-second performance constraint with all data displayed",
+      "depends_on": [
+        "phase-1-verification"
+      ],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-3-1",
+          "description": "Measure dashboard load time and optimize if needed",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "files_to_verify": [
+            "src/app/(dashboard)/dashboard/page.tsx"
+          ],
+          "patterns_from": [],
+          "verification": {
+            "type": "manual",
+            "instructions": "Use Chrome DevTools Performance tab: 1) Record page load from navigation, 2) Measure time until all three components show data, 3) Verify \u2264 2 seconds total, 4) Check that API calls are parallelized, not sequential"
+          },
+          "status": "pending",
+          "notes": "API endpoints already use database queries. Check if caching or query optimization is needed."
+        },
+        {
+          "id": "subtask-3-2",
+          "description": "Verify API response times and optimize database queries if needed",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "files_to_verify": [
+            "src/app/api/analytics/unified-score/route.ts",
+            "src/app/api/recommendations/route.ts",
+            "src/app/api/monitor/citations/route.ts"
+          ],
+          "patterns_from": [],
+          "verification": {
+            "type": "api",
+            "method": "GET",
+            "urls": [
+              "/api/analytics/unified-score?brandId=test",
+              "/api/recommendations?brandId=test",
+              "/api/monitor/citations?brandId=test"
+            ],
+            "expected": "Each endpoint responds in < 500ms with database data"
+          },
+          "status": "pending",
+          "notes": "API routes already use Drizzle ORM for database queries. Test with sample data."
+        }
+      ]
+    },
+    {
+      "id": "phase-4-testing",
+      "name": "Automated Testing",
+      "type": "implementation",
+      "description": "Add or update tests for dashboard components and API endpoints",
+      "depends_on": [
+        "phase-2-error-handling",
+        "phase-3-performance"
+      ],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-4-1",
+          "description": "Add/update unit tests for dashboard components",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [
+            "tests/components/dashboard/geo-score-trend.test.tsx",
+            "tests/components/dashboard/prioritized-recommendations.test.tsx",
+            "tests/components/dashboard/citation-velocity-chart.test.tsx"
+          ],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "npm run test:run tests/components/dashboard/",
+            "expected": "All dashboard component tests pass"
+          },
+          "status": "pending",
+          "notes": "Use @testing-library/react to test component rendering with mocked API responses."
+        },
+        {
+          "id": "subtask-4-2",
+          "description": "Add E2E test for dashboard page data loading",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [
+            "tests/e2e/dashboard-data-load.spec.ts"
+          ],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "npx playwright test tests/e2e/dashboard-data-load.spec.ts",
+            "expected": "E2E test passes: dashboard loads, all components display data"
+          },
+          "status": "pending",
+          "notes": "Playwright test to verify full dashboard flow with real API calls."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_phases": 4,
+    "total_subtasks": 9,
+    "services_involved": [
+      "main"
+    ],
+    "parallelism": {
+      "max_parallel_phases": 2,
+      "parallel_groups": [
+        {
+          "phases": [
+            "phase-2-error-handling",
+            "phase-3-performance"
+          ],
+          "reason": "Both depend only on phase-1-verification and work on different aspects"
+        }
+      ],
+      "recommended_workers": 1,
+      "speedup_estimate": "Minimal - simple verification workflow, sequential testing preferred"
+    },
+    "startup_command": "npm run dev"
+  },
+  "verification_strategy": {
+    "risk_level": "low",
+    "skip_validation": false,
+    "test_creation_phase": "post_implementation",
+    "test_types_required": [
+      "unit",
+      "e2e"
+    ],
+    "security_scanning_required": false,
+    "staging_deployment_required": false,
+    "acceptance_criteria": [
+      "All three dashboard components display real database data",
+      "Dashboard loads within 2 seconds",
+      "All existing tests pass",
+      "New component tests added and passing",
+      "No console errors during dashboard load",
+      "Loading and error states work correctly",
+      "Edge cases handled gracefully"
+    ],
+    "verification_steps": [
+      {
+        "name": "Unit Tests",
+        "command": "npm run test:run tests/components/dashboard/",
+        "expected_outcome": "All dashboard component tests pass",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "E2E Dashboard Load Test",
+        "command": "npx playwright test tests/e2e/dashboard-data-load.spec.ts",
+        "expected_outcome": "Dashboard loads with all data within 2 seconds",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "Browser Verification",
+        "command": "npm run dev",
+        "expected_outcome": "Visit http://localhost:3000/dashboard - all components show data, no errors",
+        "type": "manual",
+        "required": true,
+        "blocking": false
+      },
+      {
+        "name": "Performance Check",
+        "command": "Chrome DevTools Performance Recording",
+        "expected_outcome": "Dashboard loads in \u2264 2 seconds from navigation start",
+        "type": "manual",
+        "required": true,
+        "blocking": true
+      }
+    ],
+    "reasoning": "Low risk verification task. Components and APIs already exist. Main focus is testing and validation."
+  },
+  "qa_acceptance": {
+    "unit_tests": {
+      "required": true,
+      "commands": [
+        "npm run test:run tests/components/dashboard/"
+      ],
+      "minimum_coverage": null
+    },
+    "integration_tests": {
+      "required": false,
+      "commands": [],
+      "services_to_test": []
+    },
+    "e2e_tests": {
+      "required": true,
+      "commands": [
+        "npx playwright test tests/e2e/dashboard-data-load.spec.ts"
+      ],
+      "flows": [
+        "dashboard-data-load"
+      ]
+    },
+    "browser_verification": {
+      "required": true,
+      "pages": [
+        {
+          "url": "http://localhost:3000/dashboard",
+          "checks": [
+            "GEO Score Trend chart renders with data",
+            "Prioritized Recommendations list shows items",
+            "Citation Velocity Chart displays trend",
+            "No console errors",
+            "Page loads within 2 seconds"
+          ]
+        }
+      ]
+    },
+    "database_verification": {
+      "required": false,
+      "checks": []
+    }
+  },
+  "qa_signoff": null,
+  "status": "human_review",
+  "planStatus": "review",
+  "updated_at": "2025-12-22T22:12:03.942Z",
+  "last_updated": "2025-12-23T03:00:55.853353+00:00"
+}

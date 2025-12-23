@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { recommendations, brands } from "@/lib/db/schema";
-import { eq, and, desc, inArray, gte, lte } from "drizzle-orm";
+import { eq, and, desc, asc, inArray, gte, lte } from "drizzle-orm";
 import { z } from "zod";
 import { detectRecommendationsReviewed } from "@/lib/onboarding/auto-detection";
 import { getOrganizationId } from "@/lib/auth";
@@ -114,11 +114,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Execute query
+    // Sort by priority (critical > high > medium > low) then by createdAt
+    // The priority enum is defined in order: critical, high, medium, low
+    // So ascending sort puts critical first
     const recommendationsList = await db
       .select()
       .from(recommendations)
       .where(and(...conditions))
-      .orderBy(desc(recommendations.createdAt))
+      .orderBy(asc(recommendations.priority), desc(recommendations.createdAt))
       .limit(params.limit)
       .offset(params.offset);
 
