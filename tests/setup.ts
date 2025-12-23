@@ -3,11 +3,24 @@
  * Runs before all tests - handles both node and jsdom environments
  */
 
+// Load environment variables from .env.local before any other setup
+import { config } from "dotenv";
+config({ path: ".env.local" });
+config({ path: ".env" });
+
 import { vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 // Mock environment variables for testing
-process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
+// Preserve real DATABASE_URL for integration tests if TEST_DATABASE_URL is set or DATABASE_URL is a real connection
+const isRealDatabase = process.env.TEST_DATABASE_URL ||
+  (process.env.DATABASE_URL &&
+   process.env.DATABASE_URL !== "postgresql://placeholder" &&
+   !process.env.DATABASE_URL.includes("localhost"));
+
+if (!isRealDatabase) {
+  process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
+}
 process.env.UPSTASH_REDIS_REST_URL = "https://test.upstash.io";
 process.env.UPSTASH_REDIS_REST_TOKEN = "test-token";
 process.env.CLERK_SECRET_KEY = "test-clerk-secret";

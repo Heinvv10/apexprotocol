@@ -1,0 +1,85 @@
+{
+  "discovered_files": {
+    "src/lib/graphql/schema.ts": {
+      "description": "All 11 field resolvers now have try-catch error handling: Brand.mentions, Brand.recommendations, Brand.audits, Brand.geoScore, Brand.stats, Mention.brand, Recommendation.brand, Recommendation.feedback, Audit.brand, Content.brand, GEOScore.history. Pattern: wrap DB operations in try-catch, log with console.error, throw user-friendly Error messages. Total 51 catch blocks across all resolvers (Query, Mutation, and Field).",
+      "category": "error_handling",
+      "discovered_at": "2025-12-22T22:53:51.567017+00:00"
+    },
+    "src/lib/db/index.ts": {
+      "description": "Database connection verified: Uses Neon serverless + Drizzle ORM with lazy initialization Proxy pattern. Dependencies: @neondatabase/serverless ^1.0.2, drizzle-orm ^0.45.0. Exports db (proxy), getDb(), and schema. isDatabaseConfigured() validates DATABASE_URL.",
+      "category": "database",
+      "discovered_at": "2025-12-22T22:08:28.141603+00:00"
+    },
+    "src/lib/db/schema/": {
+      "description": "Verified Drizzle schema completeness: All 11 GraphQL entity types have corresponding Drizzle schemas - brands (brands.ts), brandMentions (mentions.ts), audits (audits.ts), content (content.ts), recommendations (recommendations.ts), recommendationFeedback (feedback.ts), geoScoreHistory (feedback.ts), organizations (organizations.ts), apiIntegrations (api-integrations.ts), users (users.ts). All tables have proper relations defined and type exports. GEOScore is computed on-the-fly from mentions and recommendations data.",
+      "category": "schema-verification",
+      "discovered_at": "2025-12-22T22:18:07.503030+00:00"
+    },
+    ".auto-claude/specs/001-graphql-resolver-database-connections/build-progress.txt": {
+      "description": "Comprehensive resolver-to-schema mapping documentation with 56 total resolvers (22 Query, 23 Mutation, 11 Field), including line number references, DB operations, auth requirements, and identified gaps (5 external service stubs, 2 static configs).",
+      "category": "documentation",
+      "discovered_at": "2025-12-22T22:23:15.000995+00:00"
+    },
+    "src/lib/graphql/db-error-handler.ts": {
+      "description": "Database error handling utility with 7 exported functions: handleDatabaseError, handleNotFound, handleConstraintViolation, isKnownError, classifyDatabaseError, withErrorHandling, logDatabaseOperation. Integrates with schema.ts for consistent error handling across Query/Mutation resolvers.",
+      "category": "utility",
+      "discovered_at": "2025-12-22T23:01:43.053697+00:00"
+    },
+    "tests/graphql/": {
+      "description": "GraphQL test infrastructure verified working: tests/graphql/mocks/db.ts (Drizzle mock with chainable queries, call tracking), tests/graphql/factories/index.ts (factory functions for all entity types), tests/graphql/setup.ts (setupGraphQLTest, DatabaseErrors, dbAssertions), tests/graphql/setup.test.ts (36 passing tests). Commit: 14133a9a",
+      "category": "testing",
+      "discovered_at": "2025-12-22T23:11:23.300963+00:00"
+    },
+    "tests/graphql/resolvers/brands.test.ts": {
+      "description": "Brand resolver unit tests with 46 test cases covering Query (brand, brands, brandByDomain) and Mutation (createBrand, updateBrand, deleteBrand) resolvers. Tests verify: database operations (SELECT, INSERT, UPDATE, DELETE with .returning()), organization access control, field transformations (monitoringPlatforms \u2192 platforms, competitors object \u2192 name array), error handling (unique/foreign key constraints, connection errors, timeouts), authentication (requireAuth, userId fallback), and pagination (cursor encoding, limits). Uses setupGraphQLTest() with mocked db and schema.",
+      "category": "testing",
+      "discovered_at": "2025-12-22T23:17:26.884297+00:00"
+    },
+    "tests/graphql/resolvers/mentions.test.ts": {
+      "description": "Mention resolver unit tests with 46 test cases covering Query (mention, mentions), Mutation (markMentionReviewed, refreshMentions), Field Resolver (Mention.brand). Tests verify computed fields (sentimentScore based on positive/negative/neutral = 0.8/0.2/0.5, isRecommendation from promptCategory, competitorMentioned from competitors array). Uses setupGraphQLTest() pattern with mocked db and schema. Pagination tested with cursor encoding (base64 \"mention:{idx}\"). Error handling tests for connection errors, timeouts, user-friendly messages.",
+      "category": "test",
+      "discovered_at": "2025-12-22T23:24:19.448716+00:00"
+    },
+    "tests/graphql/resolvers/geo-score.test.ts": {
+      "description": "GEO Score resolver unit tests with 56 test cases covering: geoScore query (visibility/sentiment/recommendation score calculations), geoScoreHistory query (date filtering, ordering, transformation), calculateGeoScore mutation (sentiment breakdown, trend calculation, history insert), GEOScore.history field resolver. Tests verify score formula: overall = visibility*0.4 + sentiment*0.3 + recommendation*0.3. Uses setupGraphQLTest() with mocked db and schema.",
+      "category": "tests",
+      "discovered_at": "2025-12-22T23:34:15.700610+00:00"
+    },
+    "tests/graphql/resolvers/recommendations.test.ts": {
+      "description": "Recommendation resolver unit tests with 90 test cases covering Query (recommendation, recommendations), Mutation (updateRecommendationStatus, assignRecommendation, submitRecommendationFeedback, generateRecommendations), Field Resolver (Recommendation.brand, Recommendation.feedback). Tests verify: estimatedImpact computation (high=0.8, medium=0.5, low=0.3), type field from category, status transitions (pending \u2192 in_progress \u2192 completed/dismissed), timestamp updates (completedAt, dismissedAt, updatedAt), feedback creation with expectedImpact calculation, foreign key validations. Uses setupGraphQLTest() pattern with mocked db and schema. All 90 tests pass.",
+      "category": "test_coverage",
+      "discovered_at": "2025-12-22T23:43:44.518737+00:00"
+    },
+    "tests/graphql/resolvers/": {
+      "description": "Completed remaining resolver test files for subtask 3.6: audits.test.ts (54 tests for audit/audits queries, startAudit/cancelAudit mutations, Audit.brand field resolver), content.test.ts (88 tests for content/contents queries, CRUD mutations, publishContent, optimizeContent, Content.brand field resolver), subscriptions.test.ts (59 tests for subscription query, subscriptionPlans static query, changePlan/cancelSubscription mutations). All tests use setupGraphQLTest() pattern with mocked db and schema.",
+      "category": "tests",
+      "discovered_at": "2025-12-22T23:52:56.887068+00:00"
+    },
+    "tests/graphql/resolvers/error-handling.test.ts": {
+      "description": "Error handling unit tests with 88 test cases covering: database error classification (connection, timeout, constraints), handleDatabaseError/handleNotFound/handleConstraintViolation/isKnownError/withErrorHandling utilities, authorization failures, edge cases (empty results, not found, invalid input), error message formatting, and resolver error patterns. Uses setupGraphQLTest() with DatabaseErrors factory for mocking. All tests pass.",
+      "category": "tests",
+      "discovered_at": "2025-12-23T00:03:49.327543+00:00"
+    },
+    "tests/integration/setup.ts": {
+      "description": "Added isDatabaseReachable() async function to check actual database connectivity before running integration tests. Also added wasDatabaseConnected() and skipIfNotReachable() helpers for graceful test skipping when database is unavailable. This prevents integration test failures when DATABASE_URL is configured but database server is not reachable.",
+      "category": "testing",
+      "discovered_at": "2025-12-23T01:16:07.697101+00:00"
+    },
+    "tests/integration/brands.test.ts": {
+      "description": "Brand integration tests with 30 test cases covering full CRUD cycle. Tests verify: CREATE (insert with .returning(), defaults, complex nested data), READ (by ID, by domain, list with pagination/ordering/filtering), UPDATE (single/multiple fields, nested data, timestamps), DELETE (single brand, isolation, cascade behavior), organization isolation (multi-tenant security), and edge cases (empty arrays, null fields, special characters, long text). Uses setupIntegrationTest() with auto-seeding. Requires live database connection.",
+      "category": "test_infrastructure",
+      "discovered_at": "2025-12-23T00:33:22.338144+00:00"
+    },
+    "tests/integration/": {
+      "description": "Integration tests for mentions and recommendations: tests/integration/mentions.test.ts (26 tests) covers query/create/computed fields/relationships/edge cases for mentions. tests/integration/recommendations.test.ts (33 tests) covers query/status transitions/feedback submission/assignment/relationships/edge cases for recommendations. Both use setupIntegrationTest() with auto-seeding/cleanup. Require TEST_DATABASE_URL or DATABASE_URL for real database connection.",
+      "category": "integration-tests",
+      "discovered_at": "2025-12-23T00:44:03.709991+00:00"
+    },
+    "tests/integration/concurrent-requests.test.ts": {
+      "description": "Concurrent request integration tests with 15 test cases covering: 10+ concurrent queries, cross-table queries, mixed read/write operations, stress testing (50 concurrent queries), error resilience, and response validation. Tests verify Neon connection pooling handles concurrent load. Uses setupIntegrationTest() pattern with auto-seeding. Tests skip gracefully when database is not configured.",
+      "category": "test",
+      "discovered_at": "2025-12-23T00:51:48.417680+00:00"
+    }
+  },
+  "last_updated": "2025-12-23T01:16:07.697101+00:00"
+}
