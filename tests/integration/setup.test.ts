@@ -232,6 +232,36 @@ describe("Seed Data Structure", () => {
       expect(uniqueIds.size).toBe(TEST_IDS.CONTENT.length);
     });
   });
+
+  describe("GEO Score History Seed Data", () => {
+    it("should have 5 GEO score history items configured", () => {
+      expect(TEST_IDS.GEO_SCORE_HISTORY).toHaveLength(5);
+    });
+
+    it("should have unique GEO score history IDs", () => {
+      const uniqueIds = new Set(TEST_IDS.GEO_SCORE_HISTORY);
+      expect(uniqueIds.size).toBe(TEST_IDS.GEO_SCORE_HISTORY.length);
+    });
+
+    it("should have correct ID prefix", () => {
+      expect(TEST_IDS.GEO_SCORE_HISTORY[0]).toBe("test-geo-history-001");
+    });
+  });
+
+  describe("Integration Seed Data", () => {
+    it("should have 2 integrations configured", () => {
+      expect(TEST_IDS.INTEGRATIONS).toHaveLength(2);
+    });
+
+    it("should have unique integration IDs", () => {
+      const uniqueIds = new Set(TEST_IDS.INTEGRATIONS);
+      expect(uniqueIds.size).toBe(TEST_IDS.INTEGRATIONS.length);
+    });
+
+    it("should have correct ID prefix", () => {
+      expect(TEST_IDS.INTEGRATIONS[0]).toBe("test-integration-001");
+    });
+  });
 });
 
 describe("Test Context Creation", () => {
