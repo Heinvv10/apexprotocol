@@ -614,17 +614,18 @@ describe("Recommendation Integration Tests", () => {
 
       // Create feedback with delays
       for (let i = 0; i < 3; i++) {
-        const feedbackId = `integration-feedback-order-${i}-${Date.now()}`;
-        feedbackIds.push(feedbackId);
+        // Wait a bit between inserts to ensure different timestamps
+        if (i > 0) await new Promise((r) => setTimeout(r, 10));
 
-        await db.insert(schema.recommendationFeedback).values({
-          id: feedbackId,
+        const [feedback] = await db.insert(schema.recommendationFeedback).values({
           recommendationId: recData.id,
+          userId: TEST_IDS.USERS[0],
           rating: i + 3,
           wasHelpful: true,
           comment: `Feedback ${i}`,
-          createdAt: new Date(Date.now() + i * 1000), // Stagger timestamps
-        });
+        }).returning();
+
+        if (feedback?.id) feedbackIds.push(feedback.id);
       }
 
       // Query feedback ordered by createdAt desc
@@ -654,19 +655,17 @@ describe("Recommendation Integration Tests", () => {
       await db.insert(schema.recommendations).values(recData).returning();
 
       // Create minimal feedback (no comment, no expectedImpact)
-      const feedbackId = `integration-feedback-minimal-${Date.now()}`;
-      feedbackIds.push(feedbackId);
-
       const [feedback] = await db
         .insert(schema.recommendationFeedback)
         .values({
-          id: feedbackId,
           recommendationId: recData.id,
+          userId: TEST_IDS.USERS[0],
           rating: 3,
           wasHelpful: false,
-          createdAt: new Date(),
         })
         .returning();
+
+      if (feedback?.id) feedbackIds.push(feedback.id);
 
       expect(feedback.comment).toBeNull();
       expect(feedback.expectedImpact).toBeNull();
