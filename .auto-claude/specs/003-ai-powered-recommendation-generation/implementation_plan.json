@@ -705,8 +705,19 @@
       ]
     }
   },
-  "qa_signoff": {"status": "approved", "timestamp": "2025-12-23T07:00:00.000Z", "qa_session": 1, "report_file": "qa_report.md", "tests_passed": {"unit": "65/65", "integration": "28/28", "e2e": "16/16"}, "verified_by": "qa_agent"},
-  "status": "approved",
+  "qa_signoff": {
+    "status": "approved",
+    "timestamp": "2025-12-23T07:00:00.000Z",
+    "qa_session": 1,
+    "report_file": "qa_report.md",
+    "tests_passed": {
+      "unit": "65/65",
+      "integration": "28/28",
+      "e2e": "16/16"
+    },
+    "verified_by": "qa_agent"
+  },
+  "status": "done",
   "planStatus": "complete",
   "updated_at": "2025-12-22T22:22:43.928Z",
   "last_updated": "2025-12-23T04:47:12.009040+00:00"
