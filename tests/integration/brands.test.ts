@@ -13,19 +13,13 @@
  * The tests will fail if DATABASE_URL is set but database is unreachable.
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { describe, it, expect, afterAll, beforeEach } from "vitest";
 import { eq, and, desc } from "drizzle-orm";
 import {
   setupIntegrationTest,
-  createTestContext,
-  dbAssertions,
   isDatabaseConfigured,
-  getIntegrationDb,
-  getSchema,
-  type IntegrationDatabase,
-  type IntegrationTestSchema,
 } from "./setup";
-import { TEST_IDS, type SeedResult } from "./seed";
+import { TEST_IDS } from "./seed";
 
 // Check if database is configured
 const dbConfigured = isDatabaseConfigured();
@@ -38,7 +32,7 @@ describe("Brand Integration Tests", () => {
   }
 
   // Set up integration test infrastructure
-  const { getDb, getSchema: getSchemaFn, getSeededData, cleanup, createContext, testIds } =
+  const { getDb, getSchema: getSchemaFn, getSeededData } =
     setupIntegrationTest();
 
   // Helper to create a unique brand for testing
@@ -166,7 +160,7 @@ describe("Brand Integration Tests", () => {
       const brandData = createUniqueBrand("create-nested-data");
 
       // Insert brand with complex data
-      const [insertedBrand] = await db
+      await db
         .insert(schema.brands)
         .values(brandData)
         .returning();
@@ -594,7 +588,7 @@ describe("Brand Integration Tests", () => {
           sentiment: "positive",
           timestamp: new Date(),
         });
-      } catch (error) {
+      } catch {
         // If mention insert fails due to FK, that's okay
         await cleanupBrand(brandData.id);
         return;
