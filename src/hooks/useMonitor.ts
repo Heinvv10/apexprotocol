@@ -110,7 +110,7 @@ async function updatePlatformConfig(config: PlatformConfig): Promise<Platform> {
 }
 
 async function fetchBrandConfig(brandId: string): Promise<BrandConfig> {
-  const response = await fetch(`/api/monitor/brand/${brandId}`);
+  const response = await fetch(`/api/monitor/brands/${brandId}`);
   if (!response.ok) {
     throw new Error("Failed to fetch brand config");
   }
@@ -119,7 +119,7 @@ async function fetchBrandConfig(brandId: string): Promise<BrandConfig> {
 
 async function saveBrandConfig(config: BrandConfig): Promise<BrandConfig> {
   const method = config.id ? "PUT" : "POST";
-  const url = config.id ? `/api/monitor/brand/${config.id}` : "/api/monitor/brand";
+  const url = config.id ? `/api/monitor/brands/${config.id}` : "/api/monitor/brands";
 
   const response = await fetch(url, {
     method,
@@ -288,7 +288,7 @@ export function useUpdateBrandKeywords(brandId: string) {
 
   return useMutation({
     mutationFn: async (keywords: string[]) => {
-      const response = await fetch(`/api/monitor/brand/${brandId}/keywords`, {
+      const response = await fetch(`/api/monitor/brands/${brandId}/keywords`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ keywords }),
@@ -314,7 +314,7 @@ export function useUpdateBrandCompetitors(brandId: string) {
 
   return useMutation({
     mutationFn: async (competitors: string[]) => {
-      const response = await fetch(`/api/monitor/brand/${brandId}/competitors`, {
+      const response = await fetch(`/api/monitor/brands/${brandId}/competitors`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ competitors }),
