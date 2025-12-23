@@ -95,6 +95,9 @@ const RETRY_DELAY_MS = 1000;
 const MIN_IMPACT_THRESHOLD = 30;
 const DEFAULT_MAX_RECOMMENDATIONS = 10;
 
+// Logging prefix for observability
+const LOG_PREFIX = "[AI:Recommendations]";
+
 /**
  * System prompt for Claude to generate recommendations
  */
@@ -151,13 +154,28 @@ export async function generateAIRecommendations(
     minImpactThreshold?: number;
   } = {}
 ): Promise<GenerationResult> {
+  const generationStartTime = Date.now();
   const {
     maxRecommendations = DEFAULT_MAX_RECOMMENDATIONS,
     minImpactThreshold = MIN_IMPACT_THRESHOLD,
   } = options;
 
+  // Log generation request
+  console.info(
+    `${LOG_PREFIX} Starting recommendation generation`,
+    {
+      brandId: visibilityData.brandId,
+      platformCount: visibilityData.platforms.length,
+      contentGapsCount: visibilityData.contentGaps.length,
+      competitorCount: visibilityData.competitorData.length,
+      maxRecommendations,
+      minImpactThreshold,
+    }
+  );
+
   // Validate input
   if (!visibilityData.brandId) {
+    console.warn(`${LOG_PREFIX} Validation failed: Brand ID is required`);
     return {
       success: false,
       recommendations: [],
@@ -170,6 +188,10 @@ export async function generateAIRecommendations(
     visibilityData.platforms.length === 0 &&
     visibilityData.contentGaps.length === 0
   ) {
+    console.info(
+      `${LOG_PREFIX} Insufficient data for analysis`,
+      { brandId: visibilityData.brandId }
+    );
     return {
       success: true,
       recommendations: [],
@@ -179,12 +201,47 @@ export async function generateAIRecommendations(
 
   // Build the analysis prompt
   const userPrompt = buildAnalysisPrompt(visibilityData);
+  const promptLength = userPrompt.length;
+  const systemPromptLength = RECOMMENDATION_SYSTEM_PROMPT.length;
+
+  console.info(
+    `${LOG_PREFIX} Prompt constructed`,
+    {
+      brandId: visibilityData.brandId,
+      userPromptLength: promptLength,
+      systemPromptLength,
+      totalPromptLength: promptLength + systemPromptLength,
+    }
+  );
 
   // Call Claude with retry logic
   let lastError: Error | null = null;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    const attemptStartTime = Date.now();
+
     try {
+      if (attempt > 1) {
+        console.info(
+          `${LOG_PREFIX} Retry attempt ${attempt}/${MAX_RETRIES}`,
+          { brandId: visibilityData.brandId }
+        );
+      }
+
       const result = await callClaudeForRecommendations(userPrompt);
+      const aiResponseTime = Date.now() - attemptStartTime;
+
+      // Log AI response metrics
+      console.info(
+        `${LOG_PREFIX} AI response received`,
+        {
+          brandId: visibilityData.brandId,
+          responseTimeMs: aiResponseTime,
+          inputTokens: result.usage.input,
+          outputTokens: result.usage.output,
+          totalTokens: result.usage.input + result.usage.output,
+          responseLength: result.text.length,
+        }
+      );
 
       // Parse and validate recommendations
       const recommendations = parseAndValidateRecommendations(
@@ -202,6 +259,28 @@ export async function generateAIRecommendations(
         .sort((a, b) => b.impactScore - a.impactScore)
         .slice(0, maxRecommendations);
 
+      const totalTime = Date.now() - generationStartTime;
+
+      // Log successful generation summary
+      console.info(
+        `${LOG_PREFIX} Generation completed successfully`,
+        {
+          brandId: visibilityData.brandId,
+          totalTimeMs: totalTime,
+          aiResponseTimeMs: aiResponseTime,
+          rawRecommendations: recommendations.length,
+          filteredRecommendations: scoredRecommendations.length,
+          inputTokens: result.usage.input,
+          outputTokens: result.usage.output,
+          priorityBreakdown: {
+            critical: scoredRecommendations.filter((r) => r.priority === "critical").length,
+            high: scoredRecommendations.filter((r) => r.priority === "high").length,
+            medium: scoredRecommendations.filter((r) => r.priority === "medium").length,
+            low: scoredRecommendations.filter((r) => r.priority === "low").length,
+          },
+        }
+      );
+
       return {
         success: true,
         recommendations: scoredRecommendations,
@@ -209,18 +288,47 @@ export async function generateAIRecommendations(
       };
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
+      const attemptTime = Date.now() - attemptStartTime;
+
+      console.warn(
+        `${LOG_PREFIX} AI call failed (attempt ${attempt}/${MAX_RETRIES})`,
+        {
+          brandId: visibilityData.brandId,
+          attemptTimeMs: attemptTime,
+          error: lastError.message,
+        }
+      );
 
       // Don't retry on validation errors
       if (lastError.message.includes("Invalid JSON")) {
+        console.error(
+          `${LOG_PREFIX} Invalid JSON response from AI - not retrying`,
+          { brandId: visibilityData.brandId }
+        );
         break;
       }
 
       // Wait before retry with exponential backoff
       if (attempt < MAX_RETRIES) {
-        await sleep(RETRY_DELAY_MS * Math.pow(2, attempt - 1));
+        const backoffMs = RETRY_DELAY_MS * Math.pow(2, attempt - 1);
+        console.info(
+          `${LOG_PREFIX} Waiting ${backoffMs}ms before retry`,
+          { brandId: visibilityData.brandId }
+        );
+        await sleep(backoffMs);
       }
     }
   }
+
+  const totalTime = Date.now() - generationStartTime;
+  console.error(
+    `${LOG_PREFIX} Generation failed after all retries`,
+    {
+      brandId: visibilityData.brandId,
+      totalTimeMs: totalTime,
+      error: lastError?.message,
+    }
+  );
 
   return {
     success: false,

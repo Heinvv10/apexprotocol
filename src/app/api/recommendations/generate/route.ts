@@ -30,6 +30,9 @@ import {
   createRecommendationsWithDuplicateDetection,
 } from "@/lib/db/queries/recommendations";
 
+// Logging prefix for observability
+const LOG_PREFIX = "[API:Recommendations/Generate]";
+
 // Request schema
 const generateRequestSchema = z.object({
   brandId: z.string().min(1, "Brand ID is required"),
@@ -41,10 +44,13 @@ const generateRequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const requestStartTime = Date.now();
+
   try {
     const { userId, orgId } = await auth();
 
     if (!userId) {
+      console.warn(`${LOG_PREFIX} Unauthorized request attempt`);
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
@@ -76,6 +82,21 @@ export async function POST(request: NextRequest) {
       useAI,
     } = generateRequestSchema.parse(body);
 
+    // Log incoming request
+    console.info(
+      `${LOG_PREFIX} Request received`,
+      {
+        brandId,
+        userId,
+        orgId,
+        includeMonitor,
+        includeAudit,
+        maxRecommendations,
+        minConfidence,
+        useAI,
+      }
+    );
+
     // Verify brand belongs to user's org
     const brand = await db.query.brands.findFirst({
       where: and(
@@ -85,6 +106,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!brand) {
+      console.warn(`${LOG_PREFIX} Brand not found`, { brandId, orgId });
       return NextResponse.json(
         { success: false, error: "Brand not found" },
         { status: 404 }
@@ -198,6 +220,8 @@ export async function POST(request: NextRequest) {
 
     // Branch: AI-powered vs rule-based generation
     if (useAI) {
+      const aiGenerationStartTime = Date.now();
+
       // Transform monitor and audit data into VisibilityData format for AI
       const visibilityData = transformToVisibilityData(
         brandId,
@@ -206,15 +230,37 @@ export async function POST(request: NextRequest) {
         auditData
       );
 
+      console.info(
+        `${LOG_PREFIX} Starting AI generation`,
+        {
+          brandId,
+          platformCount: visibilityData.platforms.length,
+          contentGapsCount: visibilityData.contentGaps.length,
+          competitorCount: visibilityData.competitorData.length,
+        }
+      );
+
       // Generate AI-powered recommendations
       const aiResult = await generateAIRecommendations(visibilityData, {
         maxRecommendations,
         minImpactThreshold: minConfidence,
       });
 
+      const aiGenerationTime = Date.now() - aiGenerationStartTime;
+
       if (!aiResult.success) {
         // If AI generation failed but we have a warning (e.g., insufficient data), return empty with 200
         if (aiResult.error?.includes("Insufficient")) {
+          const totalTime = Date.now() - requestStartTime;
+          console.info(
+            `${LOG_PREFIX} Insufficient data - returning empty result`,
+            {
+              brandId,
+              totalTimeMs: totalTime,
+              aiGenerationTimeMs: aiGenerationTime,
+              warning: aiResult.error,
+            }
+          );
           return NextResponse.json({
             success: true,
             brandId,
@@ -238,6 +284,16 @@ export async function POST(request: NextRequest) {
         }
 
         // Otherwise, return error
+        const totalTime = Date.now() - requestStartTime;
+        console.error(
+          `${LOG_PREFIX} AI generation failed`,
+          {
+            brandId,
+            totalTimeMs: totalTime,
+            aiGenerationTimeMs: aiGenerationTime,
+            error: aiResult.error,
+          }
+        );
         return NextResponse.json(
           {
             success: false,
@@ -277,6 +333,29 @@ export async function POST(request: NextRequest) {
         medium: aiResult.recommendations.filter((r) => r.priority === "medium"),
         low: aiResult.recommendations.filter((r) => r.priority === "low"),
       };
+
+      const totalTime = Date.now() - requestStartTime;
+
+      // Log successful AI generation completion
+      console.info(
+        `${LOG_PREFIX} AI generation completed successfully`,
+        {
+          brandId,
+          totalTimeMs: totalTime,
+          aiGenerationTimeMs: aiGenerationTime,
+          recommendationsGenerated: aiResult.recommendations.length,
+          recommendationsPersisted: persistResult.createdCount,
+          duplicatesSkipped: persistResult.skippedCount,
+          inputTokens: aiResult.tokenUsage?.input,
+          outputTokens: aiResult.tokenUsage?.output,
+          priorityBreakdown: {
+            critical: grouped.critical.length,
+            high: grouped.high.length,
+            medium: grouped.medium.length,
+            low: grouped.low.length,
+          },
+        }
+      );
 
       return NextResponse.json({
         success: true,
@@ -321,6 +400,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Fallback: Rule-based generation
+    console.info(
+      `${LOG_PREFIX} Using rule-based generation`,
+      { brandId, monitorPlatforms: monitorDataArray.length, hasAudit: auditData !== null }
+    );
+
+    const ruleBasedStartTime = Date.now();
     const recommendations = await generateRecommendations(
       brandId,
       monitorDataArray,
@@ -330,6 +415,7 @@ export async function POST(request: NextRequest) {
         minConfidence,
       }
     );
+    const ruleBasedTime = Date.now() - ruleBasedStartTime;
 
     // Group by priority
     const grouped = {
@@ -338,6 +424,24 @@ export async function POST(request: NextRequest) {
       medium: recommendations.filter((r) => r.priority === "medium"),
       low: recommendations.filter((r) => r.priority === "low"),
     };
+
+    const totalTime = Date.now() - requestStartTime;
+
+    console.info(
+      `${LOG_PREFIX} Rule-based generation completed`,
+      {
+        brandId,
+        totalTimeMs: totalTime,
+        ruleBasedTimeMs: ruleBasedTime,
+        recommendationsGenerated: recommendations.length,
+        priorityBreakdown: {
+          critical: grouped.critical.length,
+          high: grouped.high.length,
+          medium: grouped.medium.length,
+          low: grouped.low.length,
+        },
+      }
+    );
 
     return NextResponse.json({
       success: true,
@@ -372,7 +476,13 @@ export async function POST(request: NextRequest) {
       grouped,
     });
   } catch (error) {
+    const totalTime = Date.now() - requestStartTime;
+
     if (error instanceof z.ZodError) {
+      console.warn(
+        `${LOG_PREFIX} Validation error`,
+        { totalTimeMs: totalTime, issues: error.issues.length }
+      );
       return NextResponse.json(
         {
           success: false,
@@ -384,6 +494,10 @@ export async function POST(request: NextRequest) {
     }
 
     const message = error instanceof Error ? error.message : "Unknown error";
+    console.error(
+      `${LOG_PREFIX} Unexpected error`,
+      { totalTimeMs: totalTime, error: message }
+    );
     return NextResponse.json(
       { success: false, error: message },
       { status: 500 }
