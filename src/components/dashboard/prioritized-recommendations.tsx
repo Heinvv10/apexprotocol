@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronRight, Zap, Clock, AlertTriangle, CheckCircle2, Lightbulb, Loader2 } from "lucide-react";
+import { ChevronRight, Zap, Clock, AlertTriangle, CheckCircle2, Lightbulb, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRecommendations } from "@/hooks/useRecommendations";
 import { useSelectedBrand } from "@/stores";
@@ -74,7 +74,7 @@ export function PrioritizedRecommendations({
   const effectiveBrandId = brandId || selectedBrand?.id;
 
   // Fetch recommendations from API when no data prop is provided
-  const { data: recData, isLoading } = useRecommendations(
+  const { data: recData, isLoading, isError, error } = useRecommendations(
     { brandId: effectiveBrandId, limit: limit + 2, status: "pending" as const },
     { enabled: !recommendations && !!effectiveBrandId }
   );
@@ -117,7 +117,29 @@ export function PrioritizedRecommendations({
     );
   }
 
-  // Empty state
+  // Error state
+  if (isError && !recommendations) {
+    return (
+      <div className={cn("card-secondary", className)}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-medium text-muted-foreground">
+            Prioritized Recommendations
+          </h3>
+        </div>
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <AlertCircle className="h-8 w-8 mx-auto text-error mb-2" />
+            <p className="text-sm text-error font-medium">Failed to load recommendations</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {error instanceof Error ? error.message : "Please try again later"}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state - Show positive message when all recommendations are completed
   if (!hasData) {
     return (
       <div className={cn("card-secondary", className)}>
@@ -128,9 +150,9 @@ export function PrioritizedRecommendations({
         </div>
         <div className="flex items-center justify-center py-8">
           <div className="text-center">
-            <Lightbulb className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
-            <p className="text-sm text-muted-foreground">No recommendations yet</p>
-            <p className="text-xs text-muted-foreground/70 mt-1">Run a site audit to generate recommendations</p>
+            <CheckCircle2 className="h-8 w-8 mx-auto text-success mb-2" />
+            <p className="text-sm text-foreground font-medium">All caught up!</p>
+            <p className="text-xs text-muted-foreground mt-1">No pending recommendations. Great job!</p>
           </div>
         </div>
       </div>

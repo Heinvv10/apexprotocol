@@ -1,25 +1,25 @@
 {
   "active": true,
-  "spec": "001-graphql-resolver-database-connections",
-  "state": "complete",
+  "spec": "004-recommendation-completion-tracking",
+  "state": "building",
   "subtasks": {
-    "completed": 26,
-    "total": 26,
-    "in_progress": 0,
+    "completed": 6,
+    "total": 14,
+    "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "QA Verification",
+    "current": "API Endpoints",
     "id": null,
-    "total": 6
+    "total": 3
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 24,
-    "started_at": "2025-12-22T23:54:55.705658"
+    "number": 7,
+    "started_at": "2025-12-23T04:38:50.732813"
   },
-  "last_update": "2025-12-23T04:01:20.038277"
+  "last_update": "2025-12-23T05:23:08.315626"
 }

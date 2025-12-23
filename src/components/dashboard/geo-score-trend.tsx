@@ -13,7 +13,7 @@ import {
   ReferenceArea,
   ReferenceDot,
 } from "recharts";
-import { TrendingUp, Target, Sparkles, Loader2 } from "lucide-react";
+import { TrendingUp, Target, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUnifiedScore } from "@/hooks/useDashboard";
 import { useSelectedBrand } from "@/stores";
@@ -111,7 +111,7 @@ export function GeoScoreTrend({
   const effectiveBrandId = brandId || selectedBrand?.id;
 
   // Fetch unified score data when no data prop is provided
-  const { data: scoreData, isLoading } = useUnifiedScore(effectiveBrandId || "", {
+  const { data: scoreData, isLoading, isError, error } = useUnifiedScore(effectiveBrandId || "", {
     enabled: !data && !!effectiveBrandId,
   });
 
@@ -172,7 +172,35 @@ export function GeoScoreTrend({
     );
   }
 
-  // Empty state
+  // Error state
+  if (isError && !data) {
+    return (
+      <div className={cn("card-secondary", className)}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              GEO Score Trend
+            </h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              3-month score progression
+            </p>
+          </div>
+        </div>
+        <div style={{ height }} className="w-full flex items-center justify-center">
+          <div className="text-center">
+            <AlertCircle className="h-10 w-10 mx-auto text-error mb-3" />
+            <p className="text-sm text-error font-medium">Failed to load trend data</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {error instanceof Error ? error.message : "Please try again later"}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state - No historical data available yet
   if (!hasData) {
     return (
       <div className={cn("card-secondary", className)}>
@@ -190,8 +218,8 @@ export function GeoScoreTrend({
         <div style={{ height }} className="w-full flex items-center justify-center">
           <div className="text-center">
             <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-            <p className="text-sm text-muted-foreground">No trend data available</p>
-            <p className="text-xs text-muted-foreground/70 mt-1">Score history will appear here as data is collected</p>
+            <p className="text-sm text-foreground font-medium">No data available yet</p>
+            <p className="text-xs text-muted-foreground mt-1">Score history will appear here as data is collected</p>
           </div>
         </div>
       </div>

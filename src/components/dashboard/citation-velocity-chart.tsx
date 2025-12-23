@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { BarChart3, Loader2 } from "lucide-react";
+import { BarChart3, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCitations } from "@/hooks/useMonitor";
 import { useSelectedBrand } from "@/stores";
@@ -31,7 +31,7 @@ export function CitationVelocityChart({
   const effectiveBrandId = brandId || selectedBrand?.id;
 
   // Fetch citation data when no data prop is provided
-  const { data: citationData, isLoading } = useCitations(
+  const { data: citationData, isLoading, isError, error } = useCitations(
     effectiveBrandId,
     range,
     20
@@ -63,7 +63,27 @@ export function CitationVelocityChart({
     );
   }
 
-  // Empty state
+  // Error state
+  if (isError && !data) {
+    return (
+      <div className={cn("card-secondary", className)}>
+        <h3 className="text-sm font-medium text-muted-foreground mb-4">
+          Citation Velocity
+        </h3>
+        <div className="h-[160px] w-full flex items-center justify-center">
+          <div className="text-center">
+            <AlertCircle className="h-8 w-8 mx-auto text-error mb-2" />
+            <p className="text-sm text-error font-medium">Failed to load citations</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {error instanceof Error ? error.message : "Please try again later"}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state - No citation data available yet
   if (!hasData) {
     return (
       <div className={cn("card-secondary", className)}>
@@ -73,7 +93,8 @@ export function CitationVelocityChart({
         <div className="h-[160px] w-full flex items-center justify-center">
           <div className="text-center">
             <BarChart3 className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
-            <p className="text-xs text-muted-foreground">No citation data available</p>
+            <p className="text-sm text-foreground font-medium">No data available yet</p>
+            <p className="text-xs text-muted-foreground mt-1">Citation trends will appear as data is collected</p>
           </div>
         </div>
       </div>
