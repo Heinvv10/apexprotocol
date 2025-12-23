@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, Building2 } from "lucide-react";
 import Link from "next/link";
 import { BrandConfigForm } from "@/components/monitor";
 import { Button } from "@/components/ui/button";
@@ -20,11 +20,49 @@ function SettingsLoadingState() {
   );
 }
 
+// Error state component
+function SettingsErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  return (
+    <div className="flex items-center justify-center min-h-[200px]">
+      <div className="text-center space-y-4">
+        <AlertCircle className="w-10 h-10 text-destructive mx-auto" />
+        <div>
+          <p className="text-destructive font-medium">Failed to load brand configuration</p>
+          <p className="text-muted-foreground text-sm mt-1">{error.message}</p>
+        </div>
+        <Button variant="outline" onClick={onRetry}>
+          Try Again
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// No brand selected state
+function NoBrandSelectedState() {
+  return (
+    <div className="flex items-center justify-center min-h-[200px]">
+      <div className="text-center space-y-4">
+        <Building2 className="w-10 h-10 text-muted-foreground mx-auto" />
+        <div>
+          <p className="font-medium">No brand selected</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            Please select a brand from the Monitor dashboard to configure its settings.
+          </p>
+        </div>
+        <Link href="/dashboard/monitor">
+          <Button variant="outline">Go to Monitor Dashboard</Button>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default function MonitorSettingsPage() {
   const selectedBrand = useSelectedBrand();
 
   // Fetch brand config from API
-  const { data: brandConfig, isLoading } = useBrandConfig(selectedBrand?.id || "");
+  const { data: brandConfig, isLoading, error, refetch } = useBrandConfig(selectedBrand?.id || "");
   const saveBrandConfig = useSaveBrandConfig();
 
   // Transform API data to form format
@@ -55,6 +93,20 @@ export default function MonitorSettingsPage() {
     });
   };
 
+  // Render appropriate content based on state
+  const renderContent = () => {
+    if (!selectedBrand?.id) {
+      return <NoBrandSelectedState />;
+    }
+    if (isLoading) {
+      return <SettingsLoadingState />;
+    }
+    if (error) {
+      return <SettingsErrorState error={error as Error} onRetry={() => refetch()} />;
+    }
+    return <BrandConfigForm initialData={formData} onSubmit={handleSubmit} />;
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -74,12 +126,21 @@ export default function MonitorSettingsPage() {
 
       {/* Form Card */}
       <div className="card-secondary max-w-2xl">
-        {isLoading ? (
-          <SettingsLoadingState />
-        ) : (
-          <BrandConfigForm initialData={formData} onSubmit={handleSubmit} />
-        )}
+        {renderContent()}
       </div>
+
+      {/* Save Error Feedback */}
+      {saveBrandConfig.isError && (
+        <div className="max-w-2xl bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-destructive">
+            <AlertCircle className="h-4 w-4" />
+            <span className="font-medium">Failed to save configuration</span>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            {saveBrandConfig.error?.message || "An unexpected error occurred. Please try again."}
+          </p>
+        </div>
+      )}
 
       {/* Info Section */}
       <div className="card-tertiary max-w-2xl">

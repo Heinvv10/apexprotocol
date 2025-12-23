@@ -42,6 +42,13 @@ export function BrandConfigForm({
     competitors?: string;
   }>({});
 
+  // Sync state with props when initialData changes (e.g., when API data loads)
+  React.useEffect(() => {
+    setBrandName(initialData.brandName);
+    setKeywords(initialData.keywords);
+    setCompetitors(initialData.competitors);
+  }, [initialData.brandName, initialData.keywords, initialData.competitors]);
+
   const addKeyword = () => {
     const trimmed = newKeyword.trim();
     if (trimmed && !keywords.includes(trimmed)) {
