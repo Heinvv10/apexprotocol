@@ -3,9 +3,9 @@
 import * as React from "react";
 import { ArrowLeft, TrendingUp, TrendingDown, MessageSquare, Sparkles, Settings, ArrowRight, Loader2, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { MentionCard, MentionFilters, PlatformId, SentimentType } from "@/components/monitor";
+import { MentionCard, MentionFilters, PlatformId, SentimentType, LastUpdatedTimestamp } from "@/components/monitor";
 import { Button } from "@/components/ui/button";
-import { useMentions, useMentionsByBrand, useRefreshMentions } from "@/hooks/useMonitor";
+import { useMentions, useRefreshMentions } from "@/hooks/useMonitor";
 import { useSelectedBrand } from "@/stores";
 
 // Pagination constants
@@ -171,7 +171,7 @@ export default function MentionsPage() {
   }, [selectedBrand?.id, selectedPlatforms, selectedSentiments, dateRange, currentPage, pageSize]);
 
   // Fetch mentions from API
-  const { data: mentionsData, isLoading, error, refetch, isFetching } = useMentions(apiFilters);
+  const { data: mentionsData, isLoading, isFetching, dataUpdatedAt } = useMentions(apiFilters);
   const refreshMentions = useRefreshMentions();
 
   // Calculate pagination info
@@ -249,15 +249,18 @@ export default function MentionsPage() {
             </p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => selectedBrand?.id && refreshMentions.mutate(selectedBrand.id)}
-          disabled={refreshMentions.isPending || !selectedBrand}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${refreshMentions.isPending ? "animate-spin" : ""}`} />
-          {refreshMentions.isPending ? "Refreshing..." : "Refresh"}
-        </Button>
+        <div className="flex items-center gap-3">
+          <LastUpdatedTimestamp lastUpdated={dataUpdatedAt} isFetching={isFetching} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => selectedBrand?.id && refreshMentions.mutate(selectedBrand.id)}
+            disabled={refreshMentions.isPending || !selectedBrand}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshMentions.isPending ? "animate-spin" : ""}`} />
+            {refreshMentions.isPending ? "Refreshing..." : "Refresh"}
+          </Button>
+        </div>
       </div>
 
       {/* Stats Overview */}

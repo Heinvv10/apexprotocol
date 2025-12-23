@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ArrowLeft, Search, TrendingUp, BarChart3, AlertCircle, Sparkles, Settings, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { PromptPerformanceTable, SearchPrompt, PlatformId } from "@/components/monitor";
+import { PromptPerformanceTable, SearchPrompt, PlatformId, DataRefreshIndicator } from "@/components/monitor";
 import { Button } from "@/components/ui/button";
 import { usePrompts, SearchPromptResponse } from "@/hooks/useMonitor";
 import { useSelectedBrand } from "@/stores";
@@ -82,7 +82,7 @@ export default function PromptsPage() {
   const selectedBrand = useSelectedBrand();
 
   // Fetch prompts from API
-  const { data: promptsData, isLoading } = usePrompts(selectedBrand?.id);
+  const { data: promptsData, isLoading, refetch, isFetching, dataUpdatedAt } = usePrompts(selectedBrand?.id);
 
   // Transform API data to UI format
   const prompts: SearchPrompt[] = React.useMemo(() => {
@@ -171,18 +171,28 @@ export default function PromptsPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link href="/dashboard/monitor">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Search Prompt Performance</h2>
-          <p className="text-muted-foreground">
-            Track which search queries trigger your brand mentions across AI platforms
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/monitor">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Search Prompt Performance</h2>
+            <p className="text-muted-foreground">
+              Track which search queries trigger your brand mentions across AI platforms
+            </p>
+          </div>
         </div>
+
+        {/* Refresh Indicator */}
+        <DataRefreshIndicator
+          lastUpdated={dataUpdatedAt}
+          isFetching={isFetching}
+          onRefresh={() => refetch()}
+          size="sm"
+        />
       </div>
 
       {/* Stats Overview */}
