@@ -68,9 +68,12 @@ export interface MentionFilters {
   status?: string;
   dateFrom?: string;
   dateTo?: string;
+  startDate?: string;
+  endDate?: string;
   search?: string;
   page?: number;
   limit?: number;
+  offset?: number;
   sort?: string;
   order?: "asc" | "desc";
 }
@@ -144,7 +147,26 @@ async function fetchMentions(filters: MentionFilters = {}): Promise<MentionListR
   if (!response.ok) {
     throw new Error("Failed to fetch mentions");
   }
-  return response.json();
+
+  const data = await response.json();
+
+  // Map API response to expected format
+  // API returns: { success, data, meta: { total, limit, offset } }
+  // We need: { mentions, total, page, limit, totalPages, filters }
+  const limit = data.meta?.limit ?? filters.limit ?? 50;
+  const offset = data.meta?.offset ?? filters.offset ?? 0;
+  const total = data.meta?.total ?? 0;
+  const page = Math.floor(offset / limit) + 1;
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    mentions: data.data || [],
+    total,
+    page,
+    limit,
+    totalPages,
+    filters,
+  };
 }
 
 async function fetchMention(id: string): Promise<Mention> {
