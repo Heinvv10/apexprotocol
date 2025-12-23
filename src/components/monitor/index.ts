@@ -9,3 +9,10 @@ export type { SearchPrompt } from "./prompt-performance-table";
 export { FilterSidebar } from "./filter-sidebar";
 export { SmartTable } from "./smart-table";
 export type { QueryRow } from "./smart-table";
+export {
+  MonitorErrorBoundary,
+  MonitorErrorFallback,
+  MonitorInlineError,
+  MonitorCardError,
+  MonitorPageError,
+} from "./error-boundary";
