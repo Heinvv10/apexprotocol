@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
+  GripVertical,
   Sparkles,
   BarChart3,
   Zap,
@@ -15,11 +16,13 @@ import {
   Settings,
   ArrowRight,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useRecommendations } from "@/hooks/useRecommendations";
+import { useRecommendations, useUpdateRecommendation } from "@/hooks/useRecommendations";
 import { useSelectedBrand } from "@/stores";
+import { useToast } from "@/components/toast";
 
 // Types (exported for API integration)
 export type Priority = "critical" | "high" | "medium" | "low";
@@ -42,6 +45,40 @@ function CalendarLoadingState() {
       <div className="text-center space-y-4">
         <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
         <p className="text-muted-foreground">Loading recommendations...</p>
+      </div>
+    </div>
+  );
+}
+
+// Error state component
+function CalendarErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center max-w-md space-y-6">
+        <div className="relative mx-auto w-20 h-20">
+          <div
+            className="absolute inset-0 rounded-full opacity-20"
+            style={{
+              background: "radial-gradient(circle, rgba(239, 68, 68, 0.4) 0%, transparent 70%)",
+              filter: "blur(20px)",
+            }}
+          />
+          <div className="relative w-20 h-20 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+            <AlertCircle className="w-10 h-10 text-red-500" />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h3 className="text-xl font-bold text-foreground">Failed to Load Recommendations</h3>
+          <p className="text-muted-foreground text-sm">
+            There was an error loading your recommendations. Please try again.
+          </p>
+        </div>
+
+        <Button onClick={onRetry} variant="outline">
+          <AlertCircle className="w-4 h-4 mr-2" />
+          Try Again
+        </Button>
       </div>
     </div>
   );
@@ -126,7 +163,15 @@ const monthNames = [
 // Day names
 const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-// Transform API recommendation to calendar format with synthetic due date
+// Map category to type
+const categoryToType: Record<string, RecommendationType> = {
+  technical: "technical",
+  content: "content",
+  authority: "schema",
+  ai_readiness: "ai-visibility",
+};
+
+// Transform API recommendation to calendar format using real dueDate field
 function transformCalendarRecommendation(
   apiRec: {
     id: string;
@@ -134,60 +179,73 @@ function transformCalendarRecommendation(
     priority: string;
     category: string;
     status: string;
-  },
-  index: number
+    dueDate: string;
+  }
 ): CalendarRecommendation {
-  // Map category to type
-  const categoryToType: Record<string, RecommendationType> = {
-    technical: "technical",
-    content: "content",
-    authority: "schema",
-    ai_readiness: "ai-visibility",
-  };
-
-  // Generate synthetic due date based on priority
-  // Critical: 1-3 days, High: 4-7 days, Medium: 8-14 days, Low: 15-30 days
-  const priorityDaysOffset: Record<string, [number, number]> = {
-    critical: [1, 3],
-    high: [4, 7],
-    medium: [8, 14],
-    low: [15, 30],
-  };
-
-  const [minDays, maxDays] = priorityDaysOffset[apiRec.priority] || [8, 14];
-  const daysOffset = minDays + (index % (maxDays - minDays + 1));
-  const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + daysOffset);
-
   return {
     id: apiRec.id,
     title: apiRec.title,
     priority: apiRec.priority as Priority,
     type: categoryToType[apiRec.category] || "technical",
     status: apiRec.status as Status,
-    dueDate,
+    dueDate: new Date(apiRec.dueDate),
   };
 }
 
 // Calendar Day Component
 function CalendarDay({
   day,
+  month,
+  year,
   isCurrentMonth,
   isToday,
   recommendations,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  draggingId,
 }: {
   day: number;
+  month: number;
+  year: number;
   isCurrentMonth: boolean;
   isToday: boolean;
   recommendations: CalendarRecommendation[];
+  onDragStart: (e: React.DragEvent, id: string) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, date: Date) => void;
+  draggingId: string | null;
 }) {
+  const [isOver, setIsOver] = React.useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsOver(true);
+    onDragOver(e);
+  };
+
+  const handleDragLeave = () => {
+    setIsOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsOver(false);
+    onDrop(e, new Date(year, month, day));
+  };
+
   return (
     <div
       className={cn(
         "min-h-[100px] p-2 border-r border-b border-[#27272A]",
+        "transition-all duration-150",
         !isCurrentMonth && "bg-[#0A0A0B]",
-        isToday && "bg-primary/5"
+        isToday && "bg-primary/5",
+        isOver && "border-primary/50 bg-primary/5"
       )}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       <div
         className={cn(
@@ -204,16 +262,22 @@ function CalendarDay({
       <div className="space-y-1">
         {recommendations.slice(0, 3).map((rec) => {
           const TypeIcon = typeConfig[rec.type].icon;
+          const isDragging = draggingId === rec.id;
           return (
             <div
               key={rec.id}
+              draggable
+              onDragStart={(e) => onDragStart(e, rec.id)}
               className={cn(
                 "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] truncate",
-                "bg-[#18181B] border border-[#27272A] hover:border-[#3F3F46] cursor-pointer",
+                "bg-[#18181B] border border-[#27272A] hover:border-[#3F3F46]",
+                "cursor-grab active:cursor-grabbing transition-all duration-150",
                 rec.status === "completed" && "opacity-50 line-through",
-                rec.status === "dismissed" && "opacity-30"
+                rec.status === "dismissed" && "opacity-30",
+                isDragging && "opacity-50 ring-2 ring-primary/50"
               )}
             >
+              <GripVertical className="h-2.5 w-2.5 text-muted-foreground/50 shrink-0" />
               <div
                 className={cn(
                   "w-1.5 h-1.5 rounded-full shrink-0",
@@ -239,18 +303,38 @@ export default function CalendarPage() {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = React.useState(today.getMonth());
   const [currentYear, setCurrentYear] = React.useState(today.getFullYear());
+  const [draggingId, setDraggingId] = React.useState<string | null>(null);
+  const [pendingUpdate, setPendingUpdate] = React.useState<{
+    id: string;
+    newDate: Date;
+    originalDate: Date;
+  } | null>(null);
   const selectedBrand = useSelectedBrand();
+  const toast = useToast();
 
   // Fetch recommendations from API
-  const { data: apiData, isLoading } = useRecommendations(
+  const { data: apiData, isLoading, isError, refetch } = useRecommendations(
     selectedBrand?.id ? { brandId: selectedBrand.id, limit: 100 } : { limit: 100 }
   );
 
-  // Transform API data to calendar format
+  // Mutation hook for due date updates
+  const updateRecommendation = useUpdateRecommendation();
+
+  // Transform API data to calendar format - only include recommendations with dueDate
+  // Apply optimistic update for pending changes
   const recommendations: CalendarRecommendation[] = React.useMemo(() => {
     if (!apiData?.recommendations) return [];
-    return apiData.recommendations.map((rec, index) => transformCalendarRecommendation(rec, index));
-  }, [apiData]);
+    return apiData.recommendations
+      .filter((rec) => rec.dueDate) // Only include recommendations with a dueDate
+      .map((rec) => {
+        const transformed = transformCalendarRecommendation(rec as { id: string; title: string; priority: string; category: string; status: string; dueDate: string });
+        // Apply optimistic update if this is the pending item
+        if (pendingUpdate && rec.id === pendingUpdate.id) {
+          return { ...transformed, dueDate: pendingUpdate.newDate };
+        }
+        return transformed;
+      });
+  }, [apiData, pendingUpdate]);
 
   const hasData = recommendations.length > 0;
 
@@ -336,6 +420,77 @@ export default function CalendarPage() {
     ).length,
   };
 
+  // Drag handlers
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggingId(id);
+    e.dataTransfer.setData("text/plain", id);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e: React.DragEvent, date: Date) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text/plain");
+
+    // Find the original recommendation to get its current date
+    const originalRec = recommendations.find((rec) => rec.id === id);
+    if (!originalRec) {
+      setDraggingId(null);
+      return;
+    }
+
+    // Store the original date for potential rollback
+    const originalDate = originalRec.dueDate;
+
+    // Skip if dropping on the same date
+    if (
+      originalDate.getFullYear() === date.getFullYear() &&
+      originalDate.getMonth() === date.getMonth() &&
+      originalDate.getDate() === date.getDate()
+    ) {
+      setDraggingId(null);
+      return;
+    }
+
+    // Set optimistic update state
+    setPendingUpdate({ id, newDate: date, originalDate });
+
+    // Call API to update due date with error handling
+    updateRecommendation.mutate(
+      {
+        id,
+        data: { dueDate: date.toISOString() },
+      },
+      {
+        onSuccess: () => {
+          // Clear pending state on success
+          setPendingUpdate(null);
+          toast.success(
+            "Date Updated",
+            `Recommendation rescheduled to ${date.toLocaleDateString()}`
+          );
+        },
+        onError: () => {
+          // Clear pending state to trigger rollback
+          setPendingUpdate(null);
+          toast.error(
+            "Failed to Update",
+            "Could not reschedule recommendation. It has been restored to its original date."
+          );
+        },
+      }
+    );
+    setDraggingId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingId(null);
+  };
+
   // Show loading state
   if (isLoading) {
     return (
@@ -361,6 +516,35 @@ export default function CalendarPage() {
           </div>
         </div>
         <CalendarLoadingState />
+      </div>
+    );
+  }
+
+  // Show error state if API call failed
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/recommendations">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to List
+              </Button>
+            </Link>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                <Lightbulb className="h-6 w-6 text-primary" />
+                Calendar View
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                View recommendations by due date
+              </p>
+            </div>
+          </div>
+        </div>
+        <CalendarErrorState onRetry={() => refetch()} />
       </div>
     );
   }
@@ -395,7 +579,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" onDragEnd={handleDragEnd}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -482,9 +666,15 @@ export default function CalendarPage() {
               <CalendarDay
                 key={index}
                 day={calDay.day}
+                month={calDay.month}
+                year={calDay.year}
                 isCurrentMonth={calDay.isCurrentMonth}
                 isToday={isToday}
                 recommendations={recommendations}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                draggingId={draggingId}
               />
             );
           })}

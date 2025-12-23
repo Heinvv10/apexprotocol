@@ -18,10 +18,19 @@ import {
   ArrowRight,
   LayoutGrid,
   Loader2,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { useRecommendations, useUpdateRecommendationStatus, RecommendationStatus } from "@/hooks/useRecommendations";
+import { useRecommendations, useUpdateRecommendationStatus, useAssignRecommendation, useUpdateRecommendation, RecommendationStatus, RecommendationPriority } from "@/hooks/useRecommendations";
+import { useTeamMembers } from "@/hooks/useSettings";
 import { useSelectedBrand } from "@/stores";
 
 // Types (matching main recommendations page)
@@ -41,6 +50,7 @@ export interface Recommendation {
   confidence: number;
   affectedPages: string[];
   suggestedAction: string;
+  assigneeId?: string;
 }
 
 // Empty state component
@@ -111,19 +121,61 @@ const typeConfig: Record<RecommendationType, { label: string; icon: React.Elemen
   "ai-visibility": { label: "AI Visibility", icon: Target },
 };
 
+// Team member type for assignment dropdown
+interface TeamMember {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  avatar?: string;
+}
+
+// Priority options for the dropdown
+const priorityOptions: { value: Priority; label: string }[] = [
+  { value: "critical", label: "Critical" },
+  { value: "high", label: "High" },
+  { value: "medium", label: "Medium" },
+  { value: "low", label: "Low" },
+];
+
 // Kanban Card Component
 function KanbanCard({
   recommendation,
   onDragStart,
   isDragging,
+  teamMembers,
+  onAssign,
+  isAssigning,
+  onPriorityChange,
+  isPriorityUpdating,
 }: {
   recommendation: Recommendation;
   onDragStart: (e: React.DragEvent, id: string) => void;
   isDragging: boolean;
+  teamMembers: TeamMember[];
+  onAssign: (recommendationId: string, assigneeId: string | null) => void;
+  isAssigning: boolean;
+  onPriorityChange: (recommendationId: string, priority: Priority) => void;
+  isPriorityUpdating: boolean;
 }) {
   const priority = priorityConfig[recommendation.priority];
   const type = typeConfig[recommendation.type];
   const TypeIcon = type.icon;
+
+  // Find current assignee
+  const currentAssignee = teamMembers.find(
+    (m) => m.userId === recommendation.assigneeId || m.id === recommendation.assigneeId
+  );
+
+  const handleAssignmentChange = (value: string) => {
+    // Prevent drag start when interacting with select
+    const newAssigneeId = value === "unassigned" ? null : value;
+    onAssign(recommendation.id, newAssigneeId);
+  };
+
+  const handlePriorityChange = (value: string) => {
+    onPriorityChange(recommendation.id, value as Priority);
+  };
 
   return (
     <div
@@ -147,15 +199,39 @@ function KanbanCard({
 
       {/* Meta */}
       <div className="flex items-center gap-2 mt-2 pl-6">
-        {/* Priority Badge */}
-        <span
-          className={cn(
-            "px-1.5 py-0.5 text-[10px] font-medium rounded border",
-            priority.className
-          )}
-        >
-          {priority.label}
-        </span>
+        {/* Priority Badge with Inline Editing */}
+        <div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+          <Select
+            value={recommendation.priority}
+            onValueChange={handlePriorityChange}
+            disabled={isPriorityUpdating}
+          >
+            <SelectTrigger
+              className={cn(
+                "h-auto px-1.5 py-0.5 text-[10px] font-medium rounded border min-w-0 w-auto gap-0.5",
+                priority.className,
+                "bg-transparent hover:opacity-80 focus:ring-0 focus:ring-offset-0"
+              )}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <SelectValue>{priority.label}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {priorityOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value} className="text-xs">
+                  <span
+                    className={cn(
+                      "px-1.5 py-0.5 rounded border text-[10px] font-medium",
+                      priorityConfig[option.value].className
+                    )}
+                  >
+                    {option.label}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         {/* Type */}
         <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
           <TypeIcon className="h-3 w-3" />
@@ -167,6 +243,37 @@ function KanbanCard({
       <div className="flex items-center gap-3 mt-2 pl-6 text-[10px] text-muted-foreground">
         <span>Impact: {recommendation.impact}/10</span>
         <span>Effort: {recommendation.effort}/10</span>
+      </div>
+
+      {/* Assignment Dropdown */}
+      <div className="mt-2 pl-6" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+        <Select
+          value={recommendation.assigneeId || "unassigned"}
+          onValueChange={handleAssignmentChange}
+          disabled={isAssigning}
+        >
+          <SelectTrigger
+            className="h-7 text-[10px] bg-[#0A0A0B] border-[#27272A] hover:border-[#3F3F46]"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-1.5">
+              <User className="h-3 w-3 text-muted-foreground" />
+              <SelectValue placeholder="Unassigned">
+                {currentAssignee ? currentAssignee.name : "Unassigned"}
+              </SelectValue>
+            </div>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="unassigned" className="text-xs">
+              <span className="text-muted-foreground">Unassigned</span>
+            </SelectItem>
+            {teamMembers.map((member) => (
+              <SelectItem key={member.id} value={member.userId || member.id} className="text-xs">
+                {member.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
@@ -180,6 +287,11 @@ function KanbanColumn({
   onDragOver,
   onDrop,
   draggingId,
+  teamMembers,
+  onAssign,
+  isAssigning,
+  onPriorityChange,
+  isPriorityUpdating,
 }: {
   column: (typeof columns)[0];
   recommendations: Recommendation[];
@@ -187,6 +299,11 @@ function KanbanColumn({
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, status: Status) => void;
   draggingId: string | null;
+  teamMembers: TeamMember[];
+  onAssign: (recommendationId: string, assigneeId: string | null) => void;
+  isAssigning: boolean;
+  onPriorityChange: (recommendationId: string, priority: Priority) => void;
+  isPriorityUpdating: boolean;
 }) {
   const Icon = column.icon;
   const [isOver, setIsOver] = React.useState(false);
@@ -238,6 +355,11 @@ function KanbanColumn({
             recommendation={rec}
             onDragStart={onDragStart}
             isDragging={draggingId === rec.id}
+            teamMembers={teamMembers}
+            onAssign={onAssign}
+            isAssigning={isAssigning}
+            onPriorityChange={onPriorityChange}
+            isPriorityUpdating={isPriorityUpdating}
           />
         ))}
         {recommendations.length === 0 && (
@@ -272,6 +394,7 @@ function transformRecommendation(apiRec: {
   status: string;
   impact: number;
   effort: string;
+  assigneeId?: string;
 }): Recommendation {
   // Map API effort to numeric value
   const effortMap: Record<string, number> = { low: 3, medium: 5, high: 8 };
@@ -296,6 +419,7 @@ function transformRecommendation(apiRec: {
     confidence: 80,
     affectedPages: [],
     suggestedAction: apiRec.description,
+    assigneeId: apiRec.assigneeId,
   };
 }
 
@@ -308,8 +432,48 @@ export default function KanbanPage() {
     selectedBrand?.id ? { brandId: selectedBrand.id, limit: 100 } : { limit: 100 }
   );
 
+  // Fetch team members for assignment dropdown
+  const { data: teamMembersData } = useTeamMembers();
+
   // Mutation hook for status updates
   const updateStatus = useUpdateRecommendationStatus();
+
+  // Mutation hook for assignment updates
+  const assignRecommendation = useAssignRecommendation();
+
+  // Mutation hook for priority updates
+  const updateRecommendation = useUpdateRecommendation();
+
+  // Transform team members to simple format
+  const teamMembers: TeamMember[] = React.useMemo(() => {
+    if (!teamMembersData) return [];
+    return teamMembersData.map((m) => ({
+      id: m.id,
+      userId: m.userId,
+      name: m.name,
+      email: m.email,
+      avatar: m.avatar,
+    }));
+  }, [teamMembersData]);
+
+  // Handle assignment change
+  const handleAssign = React.useCallback(
+    (recommendationId: string, assigneeId: string | null) => {
+      assignRecommendation.mutate({ id: recommendationId, assigneeId });
+    },
+    [assignRecommendation]
+  );
+
+  // Handle priority change
+  const handlePriorityChange = React.useCallback(
+    (recommendationId: string, priority: Priority) => {
+      updateRecommendation.mutate({
+        id: recommendationId,
+        data: { priority: priority as RecommendationPriority },
+      });
+    },
+    [updateRecommendation]
+  );
 
   // Transform API data to UI format
   const recommendations: Recommendation[] = React.useMemo(() => {
@@ -471,6 +635,11 @@ export default function KanbanPage() {
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             draggingId={draggingId}
+            teamMembers={teamMembers}
+            onAssign={handleAssign}
+            isAssigning={assignRecommendation.isPending}
+            onPriorityChange={handlePriorityChange}
+            isPriorityUpdating={updateRecommendation.isPending}
           />
         ))}
       </div>
