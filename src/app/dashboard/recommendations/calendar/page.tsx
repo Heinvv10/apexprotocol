@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useRecommendations } from "@/hooks/useRecommendations";
+import { useRecommendations, useUpdateRecommendation } from "@/hooks/useRecommendations";
 import { useSelectedBrand } from "@/stores";
 
 // Types (exported for API integration)
@@ -310,6 +310,9 @@ export default function CalendarPage() {
     selectedBrand?.id ? { brandId: selectedBrand.id, limit: 100 } : { limit: 100 }
   );
 
+  // Mutation hook for due date updates
+  const updateRecommendation = useUpdateRecommendation();
+
   // Transform API data to calendar format - only include recommendations with dueDate
   const recommendations: CalendarRecommendation[] = React.useMemo(() => {
     if (!apiData?.recommendations) return [];
@@ -414,10 +417,15 @@ export default function CalendarPage() {
     e.dataTransfer.dropEffect = "move";
   };
 
-  const handleDrop = (e: React.DragEvent, _date: Date) => {
+  const handleDrop = (e: React.DragEvent, date: Date) => {
     e.preventDefault();
-    // Get the dragged recommendation ID (will be used in subsequent subtask for API call)
-    e.dataTransfer.getData("text/plain");
+    const id = e.dataTransfer.getData("text/plain");
+
+    // Call API to update due date
+    updateRecommendation.mutate({
+      id,
+      data: { dueDate: date.toISOString() },
+    });
     setDraggingId(null);
   };
 
