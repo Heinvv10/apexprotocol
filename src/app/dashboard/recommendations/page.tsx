@@ -87,6 +87,8 @@ import {
   useUpdateRecommendationStatus,
   Recommendation as APIRecommendation,
 } from "@/hooks/useRecommendations";
+import { CompletionTracker } from "@/components/recommendations/CompletionTracker";
+import { FeedbackDialog } from "@/components/recommendations/FeedbackDialog";
 
 // Priority levels with muted semantic colors (Linear-style)
 type Priority = "critical" | "high" | "medium" | "low";
@@ -105,6 +107,14 @@ interface Recommendation {
   confidence: number; // percentage
   affectedPages: string[];
   suggestedAction: string;
+  // Completion tracking fields
+  baselineScore?: number | null;
+  postImplementationScore?: number | null;
+  scoreImprovement?: number | null;
+  effectivenessScore?: number | null;
+  // Feedback fields
+  userRating?: number | null;
+  userFeedback?: string | null;
 }
 
 // Priority badge styles (muted semantic colors on transparent bg)
@@ -294,76 +304,83 @@ function RecommendationCard({
           </div>
 
           {/* Affected Pages */}
-          <div>
-            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-              Affected Pages ({recommendation.affectedPages.length})
+          {recommendation.affectedPages.length > 0 && (
+            <div>
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                Affected Pages ({recommendation.affectedPages.length})
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {recommendation.affectedPages.map((page) => (
+                  <span
+                    key={page}
+                    className="px-2 py-1 text-xs bg-[#0A0A0B] border border-[#27272A] rounded text-muted-foreground"
+                  >
+                    {page}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {recommendation.affectedPages.map((page) => (
-                <span
-                  key={page}
-                  className="px-2 py-1 text-xs bg-[#0A0A0B] border border-[#27272A] rounded text-muted-foreground"
-                >
-                  {page}
-                </span>
-              ))}
+          )}
+
+          {/* Completion Tracker - Score-based status tracking */}
+          <div className="p-3 rounded-lg bg-[#0A0A0B] border border-[#27272A]">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+              Completion Tracking
             </div>
+            <CompletionTracker
+              recommendation={{
+                id: recommendation.id,
+                status: recommendation.status,
+                baselineScore: recommendation.baselineScore,
+                postImplementationScore: recommendation.postImplementationScore,
+                scoreImprovement: recommendation.scoreImprovement,
+                effectivenessScore: recommendation.effectivenessScore,
+                priority: recommendation.priority,
+              }}
+              onStatusChange={(newStatus) => onStatusChange(recommendation.id, newStatus)}
+            />
           </div>
 
-          {/* Action Buttons - Ghost style with actual functionality */}
+          {/* Feedback Section - Only for completed recommendations */}
+          {recommendation.status === "completed" && (
+            <div className="flex items-center gap-3 pt-2">
+              <FeedbackDialog
+                recommendationId={recommendation.id}
+                recommendationTitle={recommendation.title}
+                existingRating={recommendation.userRating}
+                existingFeedback={recommendation.userFeedback}
+              />
+              {recommendation.userRating != null && recommendation.userRating > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  Rated {recommendation.userRating}/5 stars
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Action Buttons - Quick actions */}
           <div className="flex items-center gap-2 pt-2">
-            {recommendation.status === "pending" && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-xs hover:bg-success/10 hover:text-success"
-                  onClick={(e) => handleStatusChange("completed", e)}
-                >
-                  <Check className="h-3 w-3 mr-1.5" />
-                  Mark Complete
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-xs hover:bg-primary/10 hover:text-primary"
-                  onClick={(e) => handleStatusChange("in_progress", e)}
-                >
-                  <Clock className="h-3 w-3 mr-1.5" />
-                  Start Working
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-xs hover:bg-muted/50 text-muted-foreground"
-                  onClick={(e) => handleStatusChange("dismissed", e)}
-                >
-                  <X className="h-3 w-3 mr-1.5" />
-                  Dismiss
-                </Button>
-              </>
+            {recommendation.status === "dismissed" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs hover:bg-muted/50 text-muted-foreground"
+                onClick={(e) => handleStatusChange("pending", e)}
+              >
+                <RotateCcw className="h-3 w-3 mr-1.5" />
+                Restore
+              </Button>
             )}
-            {recommendation.status === "in_progress" && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-xs hover:bg-success/10 hover:text-success"
-                  onClick={(e) => handleStatusChange("completed", e)}
-                >
-                  <Check className="h-3 w-3 mr-1.5" />
-                  Mark Complete
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-xs hover:bg-muted/50 text-muted-foreground"
-                  onClick={(e) => handleStatusChange("pending", e)}
-                >
-                  <RotateCcw className="h-3 w-3 mr-1.5" />
-                  Reset to Pending
-                </Button>
-              </>
+            {(recommendation.status === "pending" || recommendation.status === "in_progress") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs hover:bg-muted/50 text-muted-foreground"
+                onClick={(e) => handleStatusChange("dismissed", e)}
+              >
+                <X className="h-3 w-3 mr-1.5" />
+                Dismiss
+              </Button>
             )}
             {recommendation.status === "completed" && (
               <Button
@@ -374,17 +391,6 @@ function RecommendationCard({
               >
                 <RotateCcw className="h-3 w-3 mr-1.5" />
                 Reopen
-              </Button>
-            )}
-            {recommendation.status === "dismissed" && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 text-xs hover:bg-muted/50 text-muted-foreground"
-                onClick={(e) => handleStatusChange("pending", e)}
-              >
-                <RotateCcw className="h-3 w-3 mr-1.5" />
-                Restore
               </Button>
             )}
             <Button
@@ -419,7 +425,14 @@ const priorityTabs = [
 ];
 
 // Transform API recommendation to UI Recommendation format
-function apiToUIRecommendation(rec: APIRecommendation): Recommendation {
+function apiToUIRecommendation(rec: APIRecommendation & {
+  baselineScore?: number | null;
+  postImplementationScore?: number | null;
+  scoreImprovement?: number | null;
+  effectivenessScore?: number | null;
+  userRating?: number | null;
+  userFeedback?: string | null;
+}): Recommendation {
   // Map category to type
   const categoryToType: Record<string, RecommendationType> = {
     technical: "technical",
@@ -447,6 +460,14 @@ function apiToUIRecommendation(rec: APIRecommendation): Recommendation {
     confidence: 85, // Default confidence since API doesn't provide it
     affectedPages: [], // Not in API response
     suggestedAction: rec.actionUrl || "Review and implement this recommendation",
+    // Completion tracking fields
+    baselineScore: rec.baselineScore,
+    postImplementationScore: rec.postImplementationScore,
+    scoreImprovement: rec.scoreImprovement,
+    effectivenessScore: rec.effectivenessScore,
+    // Feedback fields
+    userRating: rec.userRating,
+    userFeedback: rec.userFeedback,
   };
 }
 
