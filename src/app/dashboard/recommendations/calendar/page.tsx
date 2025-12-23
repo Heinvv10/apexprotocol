@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useRecommendations, useUpdateRecommendation } from "@/hooks/useRecommendations";
 import { useSelectedBrand } from "@/stores";
+import { useToast } from "@/components/toast";
 
 // Types (exported for API integration)
 export type Priority = "critical" | "high" | "medium" | "low";
@@ -303,7 +304,13 @@ export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = React.useState(today.getMonth());
   const [currentYear, setCurrentYear] = React.useState(today.getFullYear());
   const [draggingId, setDraggingId] = React.useState<string | null>(null);
+  const [pendingUpdate, setPendingUpdate] = React.useState<{
+    id: string;
+    newDate: Date;
+    originalDate: Date;
+  } | null>(null);
   const selectedBrand = useSelectedBrand();
+  const toast = useToast();
 
   // Fetch recommendations from API
   const { data: apiData, isLoading, isError, refetch } = useRecommendations(
@@ -314,12 +321,20 @@ export default function CalendarPage() {
   const updateRecommendation = useUpdateRecommendation();
 
   // Transform API data to calendar format - only include recommendations with dueDate
+  // Apply optimistic update for pending changes
   const recommendations: CalendarRecommendation[] = React.useMemo(() => {
     if (!apiData?.recommendations) return [];
     return apiData.recommendations
       .filter((rec) => rec.dueDate) // Only include recommendations with a dueDate
-      .map((rec) => transformCalendarRecommendation(rec as { id: string; title: string; priority: string; category: string; status: string; dueDate: string }));
-  }, [apiData]);
+      .map((rec) => {
+        const transformed = transformCalendarRecommendation(rec as { id: string; title: string; priority: string; category: string; status: string; dueDate: string });
+        // Apply optimistic update if this is the pending item
+        if (pendingUpdate && rec.id === pendingUpdate.id) {
+          return { ...transformed, dueDate: pendingUpdate.newDate };
+        }
+        return transformed;
+      });
+  }, [apiData, pendingUpdate]);
 
   const hasData = recommendations.length > 0;
 
@@ -421,11 +436,54 @@ export default function CalendarPage() {
     e.preventDefault();
     const id = e.dataTransfer.getData("text/plain");
 
-    // Call API to update due date
-    updateRecommendation.mutate({
-      id,
-      data: { dueDate: date.toISOString() },
-    });
+    // Find the original recommendation to get its current date
+    const originalRec = recommendations.find((rec) => rec.id === id);
+    if (!originalRec) {
+      setDraggingId(null);
+      return;
+    }
+
+    // Store the original date for potential rollback
+    const originalDate = originalRec.dueDate;
+
+    // Skip if dropping on the same date
+    if (
+      originalDate.getFullYear() === date.getFullYear() &&
+      originalDate.getMonth() === date.getMonth() &&
+      originalDate.getDate() === date.getDate()
+    ) {
+      setDraggingId(null);
+      return;
+    }
+
+    // Set optimistic update state
+    setPendingUpdate({ id, newDate: date, originalDate });
+
+    // Call API to update due date with error handling
+    updateRecommendation.mutate(
+      {
+        id,
+        data: { dueDate: date.toISOString() },
+      },
+      {
+        onSuccess: () => {
+          // Clear pending state on success
+          setPendingUpdate(null);
+          toast.success(
+            "Date Updated",
+            `Recommendation rescheduled to ${date.toLocaleDateString()}`
+          );
+        },
+        onError: () => {
+          // Clear pending state to trigger rollback
+          setPendingUpdate(null);
+          toast.error(
+            "Failed to Update",
+            "Could not reschedule recommendation. It has been restored to its original date."
+          );
+        },
+      }
+    );
     setDraggingId(null);
   };
 
