@@ -71,7 +71,43 @@
       "Bash(xargs:*)",
       "Bash(for f in src/app/api/admin/audit-logs/[id]/route.test.ts src/app/api/admin/audit-logs/route.test.ts src/app/api/admin/audit-logs/export/route.test.ts src/app/api/admin/users/route.test.ts src/lib/audit-logger.test.ts)",
       "Bash(do)",
-      "Bash(if ! head -1 \"$f\")"
+      "Bash(if ! head -1 \"$f\")",
+      "mcp__playwright__browser_install",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:forum.cursor.com)",
+      "mcp__chrome-devtools__new_page",
+      "mcp__chrome-devtools__take_screenshot",
+      "mcp__chrome-devtools__list_pages",
+      "mcp__chrome-devtools__navigate_page",
+      "mcp__chrome-devtools__take_snapshot",
+      "mcp__chrome-devtools__resize_page",
+      "WebFetch(domain:www.xugj520.cn)",
+      "mcp__chrome-devtools__evaluate_script",
+      "mcp__chrome-devtools__select_page",
+      "mcp__chrome-devtools__close_page",
+      "mcp__chrome-devtools__fill",
+      "mcp__chrome-devtools__click",
+      "mcp__chrome-devtools__press_key"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "context7",
+    "sequential-thinking",
+    "memory",
+    "github",
+    "veritas",
+    "httpx",
+    "content",
+    "daemon",
+    "Foundry",
+    "naabu",
+    "brightdata",
+    "stripe",
+    "Ref",
+    "apify",
+    "playwright",
+    "claude-prompts",
+    "hostinger-api"
+  ]
 }
