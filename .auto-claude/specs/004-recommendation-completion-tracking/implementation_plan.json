@@ -1,0 +1,651 @@
+{
+  "feature": "Recommendation Completion Tracking with GEO Score Impact Measurement",
+  "workflow_type": "feature",
+  "workflow_rationale": "This is a new feature development adding completion tracking, before/after GEO score measurement, effectiveness calculation, and user feedback to an existing recommendation system. It involves database schema changes, new API endpoints, frontend UI components, and analytics logic.",
+  "phases": [
+    {
+      "id": "phase-1-database-schema",
+      "name": "Database Schema Updates",
+      "type": "setup",
+      "description": "Add completion tracking, score measurement, and feedback fields to recommendations table",
+      "depends_on": [],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-1-1",
+          "description": "Update recommendations schema with completion tracking fields",
+          "service": "main",
+          "files_to_modify": [
+            "src/lib/db/schema/recommendations.ts"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/lib/db/schema/recommendations.ts",
+            "src/lib/db/schema/brands.ts"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "npm run db:generate",
+            "expected": "Migration generated successfully"
+          },
+          "status": "completed",
+          "implementation_notes": [
+            "Add fields: startedAt (timestamp), baselineScore (integer), postImplementationScore (integer), scoreImprovement (integer), effectivenessScore (integer 0-100), userRating (integer 1-5), userFeedback (text), feedbackAt (timestamp)",
+            "Note: 'status' and 'completedAt' already exist in schema",
+            "Use Drizzle conventions: timestamp('field_name', { withTimezone: true }), integer('field_name')",
+            "All new fields should be nullable since existing recommendations won't have this data"
+          ],
+          "notes": "Added 8 new fields to recommendations schema: startedAt, baselineScore, postImplementationScore, scoreImprovement, effectivenessScore, userRating, userFeedback, feedbackAt. Migration 0005_cloudy_random.sql generated successfully. All fields nullable to preserve existing data.",
+          "updated_at": "2025-12-23T02:41:56.143177+00:00"
+        },
+        {
+          "id": "subtask-1-2",
+          "description": "Generate and apply database migration",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [
+            "drizzle/migrations/[timestamp]_add_completion_tracking.sql"
+          ],
+          "patterns_from": [
+            "drizzle/meta/_journal.json"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "npm run db:migrate",
+            "expected": "Migration applied successfully"
+          },
+          "status": "completed",
+          "implementation_notes": [
+            "Use npm run db:migrate to apply the migration",
+            "Verify in Drizzle Studio (npm run db:studio) that new columns exist",
+            "Test that existing recommendation records are not affected"
+          ],
+          "notes": "Migration successfully applied using custom migration script (scripts/apply-completion-tracking-migration.ts). All 8 completion tracking columns verified in database: started_at, baseline_score, post_implementation_score, score_improvement, effectiveness_score, user_rating, user_feedback, feedback_at. Note: npm run db:migrate has a pre-existing issue with migration tracking, so custom script was used with IF NOT EXISTS clauses.",
+          "updated_at": "2025-12-23T02:55:09.174184+00:00"
+        }
+      ]
+    },
+    {
+      "id": "phase-2-effectiveness-calculation",
+      "name": "Effectiveness Calculation Logic",
+      "type": "implementation",
+      "description": "Build utility functions for calculating effectiveness scores and improvement metrics",
+      "depends_on": [
+        "phase-1-database-schema"
+      ],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-2-1",
+          "description": "Create effectiveness calculation utilities",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [
+            "src/lib/analytics/effectiveness.ts"
+          ],
+          "patterns_from": [
+            "src/lib/recommendations/engine.ts"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "npm run test -- src/lib/analytics/effectiveness.test.ts",
+            "expected": "All effectiveness calculation tests pass"
+          },
+          "status": "completed",
+          "implementation_notes": [
+            "Implement calculateEffectivenessScore(baselineScore, postScore, implementationDays, priority) -> 0-100",
+            "Formula: 70% score improvement, 20% time efficiency, 10% priority bonus",
+            "Implement calculateScoreImprovement(postScore, baselineScore) -> delta (can be negative)",
+            "Handle edge cases: negative improvements, missing scores, division by zero",
+            "Export TypeScript types for calculation inputs/outputs"
+          ],
+          "notes": "Created effectiveness calculation utilities in src/lib/analytics/effectiveness.ts with comprehensive test coverage (41 tests, all passing). Implemented: calculateEffectivenessScore, calculateScoreImprovement, calculateTimeEfficiencyScore, calculateEffectivenessResult, calculateAggregateMetrics, getEffectivenessLevel, getEffectivenessDescription. Formula: 70% score improvement, 20% time efficiency, 10% priority bonus.",
+          "updated_at": "2025-12-23T03:03:43.689205+00:00"
+        },
+        {
+          "id": "subtask-2-2",
+          "description": "Write unit tests for effectiveness calculations",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [
+            "tests/lib/analytics/effectiveness.test.ts"
+          ],
+          "patterns_from": [
+            "tests/lib/recommendations/engine.test.ts"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "npm run test -- tests/lib/analytics/effectiveness.test.ts",
+            "expected": "All tests pass"
+          },
+          "status": "completed",
+          "implementation_notes": [
+            "Test normal case: baseline=65, post=78, days=7, priority=high -> effectiveness ~85",
+            "Test negative improvement: baseline=70, post=60 -> effectiveness=0",
+            "Test zero improvement: baseline=80, post=80 -> effectiveness based on time/priority only",
+            "Test boundary: baseline=0, post=100 -> max effectiveness",
+            "Test invalid inputs: negative scores, null values"
+          ],
+          "notes": "Unit tests for effectiveness calculations already exist and pass (41 tests). Tests were created as part of subtask-2-1 implementation. All required test cases covered: calculateScoreImprovement (positive/negative/zero/max/invalid), calculateTimeEfficiencyScore (early/on-time/late by priority), calculateEffectivenessScore (high effectiveness, negative/zero improvement, max improvement, boundary cases, invalid inputs, priority levels), calculateEffectivenessResult (complete result object), calculateAggregateMetrics (averages, null values, empty array), getEffectivenessLevel/getEffectivenessDescription, clamp helper, and constants verification.",
+          "updated_at": "2025-12-23T03:09:39.018070+00:00"
+        }
+      ]
+    },
+    {
+      "id": "phase-3-api-endpoints",
+      "name": "API Endpoints",
+      "type": "implementation",
+      "description": "Create/update API routes for completion tracking, score capture, and feedback submission",
+      "depends_on": [
+        "phase-2-effectiveness-calculation"
+      ],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-3-1",
+          "description": "Update status endpoint to handle score capture",
+          "service": "main",
+          "files_to_modify": [
+            "src/app/api/recommendations/[id]/status/route.ts"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/app/api/recommendations/[id]/status/route.ts"
+          ],
+          "verification": {
+            "type": "api",
+            "method": "PATCH",
+            "url": "http://localhost:3000/api/recommendations/[id]/status",
+            "body": {
+              "status": "in_progress",
+              "baselineScore": 65
+            },
+            "expected_status": 200
+          },
+          "status": "completed",
+          "implementation_notes": [
+            "Extend existing validation schema to accept optional baselineScore, postImplementationScore",
+            "When status changes to 'in_progress': require baselineScore, set startedAt timestamp",
+            "When status changes to 'completed': require postImplementationScore, calculate scoreImprovement and effectivenessScore using lib/analytics/effectiveness",
+            "Return updated recommendation with all new fields in response",
+            "Maintain existing authentication/authorization checks (getOrganizationId, brand ownership)"
+          ],
+          "notes": "Updated status endpoint to handle score capture. Extended validation schema with baselineScore and postImplementationScore fields. Added validation to require baselineScore when transitioning to in_progress and postImplementationScore when completing. Calculates scoreImprovement and effectivenessScore automatically on completion using the analytics/effectiveness utilities. Maps priority enum (critical/high/medium/low) to effectiveness calculation priority type. Clears score tracking fields when reverting status. TypeScript compilation and linting pass. Committed as 979053b5.",
+          "updated_at": "2025-12-23T03:16:09.957358+00:00"
+        },
+        {
+          "id": "subtask-3-2",
+          "description": "Update feedback API to persist to database",
+          "service": "main",
+          "files_to_modify": [
+            "src/app/api/recommendations/feedback/route.ts"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/app/api/recommendations/[id]/status/route.ts"
+          ],
+          "verification": {
+            "type": "api",
+            "method": "POST",
+            "url": "http://localhost:3000/api/recommendations/feedback",
+            "body": {
+              "action": "submit",
+              "recommendationId": "test-id",
+              "rating": 4,
+              "feedback": "Very helpful!"
+            },
+            "expected_status": 200
+          },
+          "status": "completed",
+          "implementation_notes": [
+            "Replace in-memory feedbackManager with database persistence",
+            "Update submitFeedback action to write userRating, userFeedback, feedbackAt to recommendations table",
+            "Use Drizzle ORM update query with eq(recommendations.id, recommendationId)",
+            "Validate rating is 1-5, feedback is optional text",
+            "Return updated recommendation in response",
+            "Keep authentication checks from original implementation"
+          ],
+          "notes": "Updated feedback API to persist to database using recommendations table fields (userRating, userFeedback, feedbackAt). Follows pattern from status endpoint with org authorization via brands table. Simplified API to core functionality: GET retrieves feedback by brandId/recommendationId, POST submits feedback with rating 1-5 and optional text.",
+          "updated_at": "2025-12-23T03:22:35.030956+00:00"
+        },
+        {
+          "id": "subtask-3-3",
+          "description": "Create effectiveness metrics aggregation endpoint",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [
+            "src/app/api/recommendations/effectiveness/route.ts"
+          ],
+          "patterns_from": [
+            "src/app/api/recommendations/route.ts"
+          ],
+          "verification": {
+            "type": "api",
+            "method": "GET",
+            "url": "http://localhost:3000/api/recommendations/effectiveness?brandId=test-brand",
+            "expected_status": 200
+          },
+          "status": "pending",
+          "implementation_notes": [
+            "GET endpoint accepting optional brandId query parameter",
+            "Query recommendations table for completed recommendations (status='completed')",
+            "Calculate aggregate metrics: totalCompleted, averageEffectiveness, averageScoreImprovement, topPerformers (top 5 by effectivenessScore)",
+            "Filter by brandId and organization ownership",
+            "Return JSON with metrics and list of top performing recommendations",
+            "Use Drizzle ORM select with where, orderBy, limit"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-4-frontend-components",
+      "name": "Frontend UI Components",
+      "type": "implementation",
+      "description": "Build React components for completion tracking, score input, and feedback collection",
+      "depends_on": [
+        "phase-3-api-endpoints"
+      ],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-4-1",
+          "description": "Create CompletionTracker component",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [
+            "src/components/recommendations/CompletionTracker.tsx"
+          ],
+          "patterns_from": [
+            "src/components/dashboard/prioritized-recommendations.tsx"
+          ],
+          "verification": {
+            "type": "browser",
+            "url": "http://localhost:3000/dashboard/recommendations",
+            "checks": [
+              "CompletionTracker component renders",
+              "Start Implementation button visible for pending recommendations",
+              "Score input field appears when starting",
+              "Mark Completed button appears for in-progress recommendations"
+            ]
+          },
+          "status": "pending",
+          "implementation_notes": [
+            "Accept recommendation prop with id, status, baselineScore, postImplementationScore",
+            "Show different UI based on status: pending -> 'Start Implementation' button, in_progress -> score input + 'Mark Completed', completed -> scores display",
+            "Use useUpdateRecommendationStatus hook from useRecommendations.ts",
+            "For 'Start Implementation': show dialog with number input for baseline GEO score (0-100 validation)",
+            "For 'Mark Completed': show dialog with number input for post-implementation score",
+            "Call API with optimistic updates",
+            "Use Radix UI Dialog component, Button from src/components/ui",
+            "Apply Tailwind CSS with status badge colors: pending=gray, in_progress=blue, completed=green"
+          ]
+        },
+        {
+          "id": "subtask-4-2",
+          "description": "Create FeedbackDialog component",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [
+            "src/components/recommendations/FeedbackDialog.tsx"
+          ],
+          "patterns_from": [
+            "src/components/ui/dialog.tsx"
+          ],
+          "verification": {
+            "type": "browser",
+            "url": "http://localhost:3000/dashboard/recommendations/[id]",
+            "checks": [
+              "Feedback button visible for completed recommendations",
+              "Dialog opens with star rating (1-5)",
+              "Textarea for feedback text",
+              "Submit and Skip buttons functional"
+            ]
+          },
+          "status": "pending",
+          "implementation_notes": [
+            "Accept recommendationId prop",
+            "Use Radix UI Dialog for modal",
+            "Implement star rating: 5 clickable star icons (use lucide-react Star icon)",
+            "Textarea for optional text feedback",
+            "Submit button disabled until rating selected",
+            "Call /api/recommendations/feedback POST with action='submit'",
+            "Show success toast/message on submission",
+            "Skip button closes dialog without saving"
+          ]
+        },
+        {
+          "id": "subtask-4-3",
+          "description": "Create EffectivenessReport component",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [
+            "src/components/recommendations/EffectivenessReport.tsx"
+          ],
+          "patterns_from": [
+            "src/components/dashboard/prioritized-recommendations.tsx"
+          ],
+          "verification": {
+            "type": "browser",
+            "url": "http://localhost:3000/dashboard/reports/effectiveness",
+            "checks": [
+              "Metrics cards display: total completed, average effectiveness, average improvement",
+              "Top performers list shows top 5 recommendations",
+              "No NaN or undefined values displayed"
+            ]
+          },
+          "status": "pending",
+          "implementation_notes": [
+            "Accept optional brandId prop",
+            "Fetch data from /api/recommendations/effectiveness using React Query",
+            "Display aggregate metrics in card layout: Total Completed, Avg Effectiveness (0-100), Avg Score Improvement (+X points)",
+            "Show top 5 performing recommendations with title, effectiveness score, score improvement",
+            "Use Tailwind CSS card components",
+            "Handle loading state with skeleton loaders",
+            "Handle empty state (no completed recommendations yet)",
+            "Format numbers: round to 1 decimal, add + prefix for positive improvements"
+          ]
+        },
+        {
+          "id": "subtask-4-4",
+          "description": "Update recommendations page to integrate new components",
+          "service": "main",
+          "files_to_modify": [
+            "src/app/dashboard/recommendations/page.tsx"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/app/dashboard/recommendations/page.tsx"
+          ],
+          "verification": {
+            "type": "browser",
+            "url": "http://localhost:3000/dashboard/recommendations",
+            "checks": [
+              "CompletionTracker visible on each recommendation card",
+              "Feedback button visible for completed recommendations",
+              "Page renders without console errors"
+            ]
+          },
+          "status": "pending",
+          "implementation_notes": [
+            "Import CompletionTracker and FeedbackDialog components",
+            "Add CompletionTracker to each recommendation card in the list",
+            "Add FeedbackDialog with conditional rendering (show for completed only)",
+            "Ensure existing recommendation display functionality is preserved",
+            "Test with different recommendation statuses"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-5-integration",
+      "name": "Integration & End-to-End Testing",
+      "type": "integration",
+      "description": "Wire all components together and verify complete user flows",
+      "depends_on": [
+        "phase-4-frontend-components"
+      ],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-5-1",
+          "description": "End-to-end completion workflow verification",
+          "all_services": true,
+          "files_to_modify": [],
+          "files_to_create": [
+            "e2e/recommendation-completion.spec.ts"
+          ],
+          "patterns_from": [
+            "e2e/recommendations.spec.ts"
+          ],
+          "verification": {
+            "type": "e2e",
+            "steps": [
+              "Navigate to recommendations page",
+              "Click 'Start Implementation' on pending recommendation",
+              "Enter baseline score (65)",
+              "Verify status changes to 'in_progress'",
+              "Click 'Mark Completed'",
+              "Enter post-implementation score (78)",
+              "Verify status changes to 'completed'",
+              "Verify score improvement (13) displayed",
+              "Verify effectiveness score calculated and shown"
+            ]
+          },
+          "status": "pending",
+          "implementation_notes": [
+            "Use Playwright to automate the full user workflow",
+            "Create test data: seed database with pending recommendation",
+            "Test validation: reject invalid scores (negative, >100, non-numeric)",
+            "Test calculations: verify scoreImprovement = postScore - baselineScore",
+            "Test edge case: negative improvement (post < baseline)",
+            "Clean up test data after test run"
+          ]
+        },
+        {
+          "id": "subtask-5-2",
+          "description": "End-to-end feedback workflow verification",
+          "all_services": true,
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [
+            "e2e/recommendations.spec.ts"
+          ],
+          "verification": {
+            "type": "e2e",
+            "steps": [
+              "Navigate to completed recommendation",
+              "Click 'Provide Feedback'",
+              "Select 4-star rating",
+              "Enter text feedback",
+              "Submit",
+              "Verify feedback saved",
+              "Verify rating displayed on recommendation"
+            ]
+          },
+          "status": "pending",
+          "implementation_notes": [
+            "Create test data: seed completed recommendation",
+            "Test star rating interaction (click stars 1-5)",
+            "Test optional feedback text",
+            "Test 'Skip' button (closes without saving)",
+            "Verify database persistence: query recommendations table after submission",
+            "Test that feedback can only be submitted once per recommendation"
+          ]
+        },
+        {
+          "id": "subtask-5-3",
+          "description": "Verify effectiveness report displays correct metrics",
+          "all_services": true,
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [
+            "e2e/dashboard.spec.ts"
+          ],
+          "verification": {
+            "type": "e2e",
+            "steps": [
+              "Seed database with 10 completed recommendations with varying effectiveness scores",
+              "Navigate to effectiveness report page",
+              "Verify total completed count = 10",
+              "Verify average effectiveness calculated correctly",
+              "Verify top 5 performers list shows highest effectiveness scores first"
+            ]
+          },
+          "status": "pending",
+          "implementation_notes": [
+            "Create comprehensive test dataset with known metrics",
+            "Calculate expected averages manually for comparison",
+            "Test edge cases: 0 completed recommendations (empty state), 1 recommendation, 100+ recommendations",
+            "Test filtering by brandId if implemented",
+            "Verify no NaN or undefined values in UI",
+            "Test sorting of top performers"
+          ]
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_phases": 5,
+    "total_subtasks": 13,
+    "services_involved": [
+      "main"
+    ],
+    "parallelism": {
+      "max_parallel_phases": 2,
+      "parallel_groups": [
+        {
+          "phases": [
+            "phase-2-effectiveness-calculation",
+            "phase-1-database-schema"
+          ],
+          "reason": "Effectiveness calculations can be built while database migration is being tested (no dependency)"
+        }
+      ],
+      "recommended_workers": 1,
+      "speedup_estimate": "Sequential execution recommended due to tight dependencies between phases"
+    },
+    "startup_command": "npm run dev"
+  },
+  "verification_strategy": {
+    "risk_level": "medium",
+    "skip_validation": false,
+    "test_creation_phase": "post_implementation",
+    "test_types_required": [
+      "unit",
+      "integration",
+      "e2e"
+    ],
+    "security_scanning_required": false,
+    "staging_deployment_required": false,
+    "acceptance_criteria": [
+      "All existing tests pass after schema changes",
+      "New effectiveness calculation logic has 100% test coverage",
+      "API endpoints validate inputs and handle errors gracefully",
+      "UI components work with different recommendation statuses",
+      "Database migration runs without data loss",
+      "End-to-end user workflows complete successfully"
+    ],
+    "verification_steps": [
+      {
+        "name": "Unit Tests - Effectiveness Calculations",
+        "command": "npm run test -- tests/lib/analytics/effectiveness.test.ts",
+        "expected_outcome": "All calculation tests pass (normal, negative, edge cases)",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "Integration Tests - API Endpoints",
+        "command": "npm run test -- tests/api/recommendations",
+        "expected_outcome": "All API tests pass (status update, feedback, effectiveness)",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "E2E Tests - Complete Workflows",
+        "command": "npx playwright test e2e/recommendation-completion.spec.ts",
+        "expected_outcome": "Full completion and feedback workflows pass",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "Database Migration Verification",
+        "command": "npm run db:studio",
+        "expected_outcome": "New columns exist, existing data preserved, constraints valid",
+        "type": "manual",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "Browser Verification - Completion UI",
+        "command": "Open http://localhost:3000/dashboard/recommendations and test completion workflow",
+        "expected_outcome": "Can start implementation, enter scores, mark completed, view effectiveness",
+        "type": "manual",
+        "required": true,
+        "blocking": false
+      }
+    ],
+    "reasoning": "Medium risk due to database schema changes affecting existing data model. Requires comprehensive testing at all levels (unit, integration, E2E) to ensure data integrity and correct calculations. No security-sensitive operations or external integrations."
+  },
+  "qa_acceptance": {
+    "unit_tests": {
+      "required": true,
+      "commands": [
+        "npm run test -- tests/lib/analytics/effectiveness.test.ts"
+      ],
+      "minimum_coverage": 100
+    },
+    "integration_tests": {
+      "required": true,
+      "commands": [
+        "npm run test -- tests/api/recommendations"
+      ],
+      "services_to_test": [
+        "main"
+      ]
+    },
+    "e2e_tests": {
+      "required": true,
+      "commands": [
+        "npx playwright test e2e/recommendation-completion.spec.ts"
+      ],
+      "flows": [
+        "complete-recommendation-workflow",
+        "submit-feedback-workflow",
+        "view-effectiveness-report"
+      ]
+    },
+    "browser_verification": {
+      "required": true,
+      "pages": [
+        {
+          "url": "http://localhost:3000/dashboard/recommendations",
+          "checks": [
+            "CompletionTracker renders for all recommendations",
+            "Status badges show correct colors",
+            "Start Implementation button works",
+            "Score input validates 0-100 range",
+            "Mark Completed button works",
+            "Effectiveness score displays after completion"
+          ]
+        },
+        {
+          "url": "http://localhost:3000/dashboard/recommendations/[id]",
+          "checks": [
+            "Feedback button visible for completed recommendations",
+            "Star rating interactive (1-5 stars)",
+            "Feedback submission saves to database",
+            "Skip button closes dialog without saving"
+          ]
+        },
+        {
+          "url": "http://localhost:3000/dashboard/reports/effectiveness",
+          "checks": [
+            "Aggregate metrics display correctly",
+            "No NaN or undefined values",
+            "Top performers list shows top 5",
+            "Empty state handles 0 completed recommendations"
+          ]
+        }
+      ]
+    },
+    "database_verification": {
+      "required": true,
+      "checks": [
+        "Schema migration creates all new columns (startedAt, baselineScore, postImplementationScore, scoreImprovement, effectivenessScore, userRating, userFeedback, feedbackAt)",
+        "All new columns are nullable",
+        "Existing recommendation data is preserved",
+        "Status enum still contains: pending, in_progress, completed, dismissed",
+        "Timestamps populate correctly on status changes",
+        "Score calculations stored accurately (scoreImprovement = post - baseline)"
+      ]
+    }
+  },
+  "qa_signoff": null,
+  "status": "human_review",
+  "planStatus": "review",
+  "updated_at": "2025-12-22T22:13:19.907Z",
+  "last_updated": "2025-12-23T03:22:35.030956+00:00"
+}

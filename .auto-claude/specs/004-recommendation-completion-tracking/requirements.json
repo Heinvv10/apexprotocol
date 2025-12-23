@@ -1,0 +1,4 @@
+{
+  "task_description": "# Recommendation Completion Tracking\n\nTrack recommendation completion rates, measure GEO score improvements after implementation, and provide feedback loops for recommendation quality.\n\n## Rationale\nClosing the loop between recommendations and results demonstrates value and helps improve the recommendation algorithm over time.\n\n## User Stories\n- As a marketing manager, I want to see which recommendations improved my GEO score so that I can focus on what works\n- As an executive, I want completion reports so that I can track team progress\n\n## Acceptance Criteria\n- [ ] Track completion status of each recommendation\n- [ ] Measure GEO score changes after recommendation implementation\n- [ ] Calculate recommendation effectiveness metrics\n- [ ] Feedback mechanism for rating recommendation quality\n",
+  "workflow_type": "feature"
+}

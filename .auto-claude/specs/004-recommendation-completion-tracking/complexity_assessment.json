@@ -1,0 +1,70 @@
+{
+  "complexity": "standard",
+  "workflow_type": "feature",
+  "confidence": 0.85,
+  "reasoning": "Feature development spanning multiple layers (database, API, UI) with schema changes and business logic for effectiveness metrics. No external integrations or unfamiliar technologies, but touches 8-12 files across data, backend, and frontend layers.",
+
+  "analysis": {
+    "scope": {
+      "estimated_files": 10,
+      "estimated_services": 2,
+      "is_cross_cutting": true,
+      "notes": "Will touch database models, backend API endpoints, business logic for metrics calculation, and frontend UI components for tracking display and feedback collection"
+    },
+    "integrations": {
+      "external_services": [],
+      "new_dependencies": [],
+      "research_needed": false,
+      "notes": "Works within existing GEO and recommendation systems. No external APIs or unfamiliar libraries required"
+    },
+    "infrastructure": {
+      "docker_changes": false,
+      "database_changes": true,
+      "config_changes": false,
+      "notes": "Requires database schema changes to add completion status tracking, before/after GEO scores, timestamps, and user feedback ratings"
+    },
+    "knowledge": {
+      "patterns_exist": true,
+      "research_required": false,
+      "unfamiliar_tech": [],
+      "notes": "Likely extends existing recommendation and GEO score models/patterns already in codebase"
+    },
+    "risk": {
+      "level": "medium",
+      "concerns": [
+        "Database schema migrations could affect existing data",
+        "Proper attribution of score changes to recommendations",
+        "Effectiveness calculation methodology needs clear definition",
+        "Ensuring backward compatibility with existing recommendation data"
+      ],
+      "notes": "Medium risk due to database changes and need for accurate before/after tracking, but no security-critical or payment-related concerns"
+    }
+  },
+
+  "recommended_phases": [
+    "discovery",
+    "requirements",
+    "context",
+    "spec_writing",
+    "planning",
+    "validation"
+  ],
+
+  "flags": {
+    "needs_research": false,
+    "needs_self_critique": false,
+    "needs_infrastructure_setup": false
+  },
+
+  "validation_recommendations": {
+    "risk_level": "medium",
+    "skip_validation": false,
+    "minimal_mode": false,
+    "test_types_required": ["unit", "integration"],
+    "security_scan_required": false,
+    "staging_deployment_required": false,
+    "reasoning": "Database schema changes and business logic for effectiveness metrics require unit tests for calculations and integration tests for API endpoints. No security-sensitive code or external integrations involved."
+  },
+
+  "created_at": "2025-12-22T10:30:00Z"
+}

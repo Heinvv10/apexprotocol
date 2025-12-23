@@ -1,0 +1,291 @@
+{
+  "project_root": "C:\\Jarvis\\AI Workspace\\Apex",
+  "project_type": "single",
+  "services": {
+    "main": {
+      "name": "main",
+      "path": "C:\\Jarvis\\AI Workspace\\Apex",
+      "language": "TypeScript",
+      "framework": "Next.js",
+      "type": "frontend",
+      "package_manager": "npm",
+      "default_port": 3000,
+      "styling": "Tailwind CSS",
+      "state_management": "Zustand",
+      "orm": "Drizzle",
+      "dev_command": "npm run dev",
+      "key_directories": {
+        "src": {
+          "path": "src",
+          "purpose": "Source code"
+        },
+        "tests": {
+          "path": "tests",
+          "purpose": "Tests"
+        }
+      },
+      "dependencies": [
+        "@anthropic-ai/sdk",
+        "@clerk/nextjs",
+        "@clerk/themes",
+        "@hookform/resolvers",
+        "@neondatabase/serverless",
+        "@next/swc-win32-x64-msvc",
+        "@paralleldrive/cuid2",
+        "@pinecone-database/pinecone",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-dropdown-menu",
+        "@radix-ui/react-label",
+        "@radix-ui/react-progress",
+        "@radix-ui/react-scroll-area",
+        "@radix-ui/react-select",
+        "@radix-ui/react-separator",
+        "@radix-ui/react-slot",
+        "@radix-ui/react-switch",
+        "@radix-ui/react-tabs",
+        "@radix-ui/react-tooltip",
+        "@react-pdf/renderer"
+      ],
+      "dev_dependencies": [
+        "@playwright/test",
+        "@tailwindcss/postcss",
+        "@tanstack/react-query-devtools",
+        "@testing-library/jest-dom",
+        "@testing-library/react",
+        "@testing-library/user-event",
+        "@types/node",
+        "@types/pg",
+        "@types/react",
+        "@types/react-dom"
+      ],
+      "testing": "Vitest",
+      "e2e_testing": "Playwright",
+      "test_directory": "tests",
+      "dockerfile": "Dockerfile",
+      "environment": {
+        "variables": {
+          "DEV_SUPER_ADMIN": {
+            "value": "true",
+            "source": ".env",
+            "type": "boolean",
+            "sensitive": false,
+            "required": true
+          },
+          "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": {
+            "value": "<REDACTED>",
+            "source": ".env.local",
+            "type": "string",
+            "sensitive": true,
+            "required": true
+          },
+          "CLERK_SECRET_KEY": {
+            "value": "<REDACTED>",
+            "source": ".env.local",
+            "type": "string",
+            "sensitive": true,
+            "required": true
+          },
+          "NEXT_PUBLIC_CLERK_SIGN_IN_URL": {
+            "value": "/sign-in",
+            "source": ".env.local",
+            "type": "path",
+            "sensitive": false,
+            "required": true
+          },
+          "NEXT_PUBLIC_CLERK_SIGN_UP_URL": {
+            "value": "/sign-up",
+            "source": ".env.local",
+            "type": "path",
+            "sensitive": false,
+            "required": true
+          },
+          "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": {
+            "value": "/dashboard",
+            "source": ".env.local",
+            "type": "path",
+            "sensitive": false,
+            "required": true
+          },
+          "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": {
+            "value": "/onboarding",
+            "source": ".env.local",
+            "type": "path",
+            "sensitive": false,
+            "required": true
+          },
+          "DATABASE_URL": {
+            "value": "postgresql://neondb_owner:npg_JwkLm6Qh0ztf@ep-nameless-base-ahzec9h2-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require",
+            "source": ".env.local",
+            "type": "url",
+            "sensitive": false,
+            "required": true
+          },
+          "OPENAI_API_KEY": {
+            "value": "<REDACTED>",
+            "source": "../.env",
+            "type": "string",
+            "sensitive": true,
+            "required": true
+          },
+          "NODE_ENV": {
+            "value": "development",
+            "source": ".env.local",
+            "type": "string",
+            "sensitive": false,
+            "required": true
+          },
+          "MEM0_ENABLED": {
+            "value": "true",
+            "source": "../.env",
+            "type": "boolean",
+            "sensitive": false,
+            "required": false
+          },
+          "MEM0_VECTOR_STORE": {
+            "value": "chroma",
+            "source": "../.env",
+            "type": "string",
+            "sensitive": false,
+            "required": false
+          },
+          "MEM0_STORAGE_PATH": {
+            "value": "C:/Jarvis/AI Workspace/memory/vector_store",
+            "source": "../.env",
+            "type": "path",
+            "sensitive": false,
+            "required": false
+          },
+          "MEM0_LLM_MODEL": {
+            "value": "gpt-4",
+            "source": "../.env",
+            "type": "string",
+            "sensitive": false,
+            "required": false
+          },
+          "MEM0_EMBEDDING_MODEL": {
+            "value": "text-embedding-3-small",
+            "source": "../.env",
+            "type": "string",
+            "sensitive": false,
+            "required": false
+          },
+          "JARVIS_OA_MODE": {
+            "value": "enhanced",
+            "source": "../.env",
+            "type": "string",
+            "sensitive": false,
+            "required": false
+          },
+          "JARVIS_MEMORY_SYSTEM": {
+            "value": "mem0",
+            "source": "../.env",
+            "type": "string",
+            "sensitive": false,
+            "required": false
+          },
+          "API_TIMEOUT_MS": {
+            "value": "600000",
+            "source": "../.env",
+            "type": "number",
+            "sensitive": false,
+            "required": false
+          },
+          "UPSTASH_REDIS_REST_URL": {
+            "value": null,
+            "source": ".env.example",
+            "type": "string",
+            "sensitive": false,
+            "required": true
+          },
+          "UPSTASH_REDIS_REST_TOKEN": {
+            "value": null,
+            "source": ".env.example",
+            "type": "string",
+            "sensitive": true,
+            "required": true
+          },
+          "ANTHROPIC_API_KEY": {
+            "value": null,
+            "source": ".env.example",
+            "type": "string",
+            "sensitive": true,
+            "required": true
+          },
+          "CLERK_WEBHOOK_SECRET": {
+            "value": null,
+            "source": "docker-compose.yml",
+            "type": "string",
+            "sensitive": false,
+            "required": false
+          },
+          "PINECONE_API_KEY": {
+            "value": null,
+            "source": "docker-compose.yml",
+            "type": "string",
+            "sensitive": false,
+            "required": false
+          },
+          "PINECONE_INDEX": {
+            "value": null,
+            "source": "docker-compose.yml",
+            "type": "string",
+            "sensitive": false,
+            "required": false
+          },
+          "STRIPE_SECRET_KEY": {
+            "value": null,
+            "source": "docker-compose.yml",
+            "type": "string",
+            "sensitive": false,
+            "required": false
+          },
+          "STRIPE_WEBHOOK_SECRET": {
+            "value": null,
+            "source": "docker-compose.yml",
+            "type": "string",
+            "sensitive": false,
+            "required": false
+          },
+          "NEXT_PUBLIC_APP_URL": {
+            "value": null,
+            "source": "docker-compose.yml",
+            "type": "string",
+            "sensitive": false,
+            "required": false
+          }
+        },
+        "required_count": 13,
+        "optional_count": 0,
+        "detected_count": 27
+      },
+      "services": {
+        "databases": [
+          {
+            "type": "postgresql",
+            "client": "pg"
+          }
+        ],
+        "payments": [
+          {
+            "provider": "stripe",
+            "client": "stripe"
+          }
+        ]
+      }
+    }
+  },
+  "infrastructure": {
+    "docker_compose": "docker-compose.yml",
+    "docker_services": [
+      "app",
+      "redis",
+      "nginx",
+      "worker"
+    ],
+    "dockerfile": "Dockerfile",
+    "deployment": "Vercel"
+  },
+  "conventions": {
+    "typescript": true
+  }
+}
