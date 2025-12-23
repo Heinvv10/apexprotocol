@@ -4,6 +4,7 @@ import {
   timestamp,
   jsonb,
   pgEnum,
+  integer,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
@@ -94,10 +95,22 @@ export const recommendations = pgTable("recommendations", {
 
   // Timestamps
   dueDate: timestamp("due_date", { withTimezone: true }),
+  startedAt: timestamp("started_at", { withTimezone: true }),
   completedAt: timestamp("completed_at", { withTimezone: true }),
   dismissedAt: timestamp("dismissed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+
+  // GEO Score Tracking
+  baselineScore: integer("baseline_score"),
+  postImplementationScore: integer("post_implementation_score"),
+  scoreImprovement: integer("score_improvement"),
+  effectivenessScore: integer("effectiveness_score"),
+
+  // User Feedback
+  userRating: integer("user_rating"),
+  userFeedback: text("user_feedback"),
+  feedbackAt: timestamp("feedback_at", { withTimezone: true }),
 });
 
 // Relations
