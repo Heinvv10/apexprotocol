@@ -23,6 +23,17 @@ export default defineConfig({
     ],
     // Setup file - handles both environments
     setupFiles: ["./tests/setup.ts"],
+    // Run integration tests sequentially (they share database state)
+    poolOptions: {
+      threads: {
+        // Use single thread for integration tests to avoid race conditions
+        singleThread: false,
+      },
+    },
+    // Limit concurrency for integration tests
+    sequence: {
+      shuffle: false,
+    },
   },
   resolve: {
     alias: {
