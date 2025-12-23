@@ -39,7 +39,32 @@
       "description": "Mention resolver unit tests with 46 test cases covering Query (mention, mentions), Mutation (markMentionReviewed, refreshMentions), Field Resolver (Mention.brand). Tests verify computed fields (sentimentScore based on positive/negative/neutral = 0.8/0.2/0.5, isRecommendation from promptCategory, competitorMentioned from competitors array). Uses setupGraphQLTest() pattern with mocked db and schema. Pagination tested with cursor encoding (base64 \"mention:{idx}\"). Error handling tests for connection errors, timeouts, user-friendly messages.",
       "category": "test",
       "discovered_at": "2025-12-22T23:24:19.448716+00:00"
+    },
+    "tests/graphql/resolvers/geo-score.test.ts": {
+      "description": "GEO Score resolver unit tests with 56 test cases covering: geoScore query (visibility/sentiment/recommendation score calculations), geoScoreHistory query (date filtering, ordering, transformation), calculateGeoScore mutation (sentiment breakdown, trend calculation, history insert), GEOScore.history field resolver. Tests verify score formula: overall = visibility*0.4 + sentiment*0.3 + recommendation*0.3. Uses setupGraphQLTest() with mocked db and schema.",
+      "category": "tests",
+      "discovered_at": "2025-12-22T23:34:15.700610+00:00"
+    },
+    "tests/graphql/resolvers/recommendations.test.ts": {
+      "description": "Recommendation resolver unit tests with 90 test cases covering Query (recommendation, recommendations), Mutation (updateRecommendationStatus, assignRecommendation, submitRecommendationFeedback, generateRecommendations), Field Resolver (Recommendation.brand, Recommendation.feedback). Tests verify: estimatedImpact computation (high=0.8, medium=0.5, low=0.3), type field from category, status transitions (pending \u2192 in_progress \u2192 completed/dismissed), timestamp updates (completedAt, dismissedAt, updatedAt), feedback creation with expectedImpact calculation, foreign key validations. Uses setupGraphQLTest() pattern with mocked db and schema. All 90 tests pass.",
+      "category": "test_coverage",
+      "discovered_at": "2025-12-22T23:43:44.518737+00:00"
+    },
+    "tests/graphql/resolvers/": {
+      "description": "Completed remaining resolver test files for subtask 3.6: audits.test.ts (54 tests for audit/audits queries, startAudit/cancelAudit mutations, Audit.brand field resolver), content.test.ts (88 tests for content/contents queries, CRUD mutations, publishContent, optimizeContent, Content.brand field resolver), subscriptions.test.ts (59 tests for subscription query, subscriptionPlans static query, changePlan/cancelSubscription mutations). All tests use setupGraphQLTest() pattern with mocked db and schema.",
+      "category": "tests",
+      "discovered_at": "2025-12-22T23:52:56.887068+00:00"
+    },
+    "tests/graphql/resolvers/error-handling.test.ts": {
+      "description": "Error handling unit tests with 88 test cases covering: database error classification (connection, timeout, constraints), handleDatabaseError/handleNotFound/handleConstraintViolation/isKnownError/withErrorHandling utilities, authorization failures, edge cases (empty results, not found, invalid input), error message formatting, and resolver error patterns. Uses setupGraphQLTest() with DatabaseErrors factory for mocking. All tests pass.",
+      "category": "tests",
+      "discovered_at": "2025-12-23T00:03:49.327543+00:00"
+    },
+    "tests/integration/setup.ts": {
+      "description": "Integration test infrastructure with database connection, seed data utilities, and cleanup functions. Uses TEST_DATABASE_URL (preferred) or DATABASE_URL. Provides setupIntegrationTest() for auto-seeding/cleanup.",
+      "category": "testing",
+      "discovered_at": "2025-12-23T00:20:59.519433+00:00"
     }
   },
-  "last_updated": "2025-12-22T23:24:19.448716+00:00"
+  "last_updated": "2025-12-23T00:20:59.519433+00:00"
 }

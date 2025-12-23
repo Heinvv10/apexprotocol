@@ -3,23 +3,23 @@
   "spec": "001-graphql-resolver-database-connections",
   "state": "building",
   "subtasks": {
-    "completed": 11,
+    "completed": 16,
     "total": 26,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Unit Tests",
+    "current": "Integration Tests",
     "id": null,
-    "total": 7
+    "total": 5
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 13,
-    "started_at": "2025-12-22T23:56:24.807979"
+    "number": 17,
+    "started_at": "2025-12-22T23:54:55.705658"
   },
-  "last_update": "2025-12-23T01:27:43.755936"
+  "last_update": "2025-12-23T02:24:38.379819"
 }
