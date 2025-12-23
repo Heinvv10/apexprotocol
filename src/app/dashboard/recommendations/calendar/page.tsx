@@ -15,6 +15,7 @@ import {
   Settings,
   ArrowRight,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,40 @@ function CalendarLoadingState() {
       <div className="text-center space-y-4">
         <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
         <p className="text-muted-foreground">Loading recommendations...</p>
+      </div>
+    </div>
+  );
+}
+
+// Error state component
+function CalendarErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center max-w-md space-y-6">
+        <div className="relative mx-auto w-20 h-20">
+          <div
+            className="absolute inset-0 rounded-full opacity-20"
+            style={{
+              background: "radial-gradient(circle, rgba(239, 68, 68, 0.4) 0%, transparent 70%)",
+              filter: "blur(20px)",
+            }}
+          />
+          <div className="relative w-20 h-20 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+            <AlertCircle className="w-10 h-10 text-red-500" />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h3 className="text-xl font-bold text-foreground">Failed to Load Recommendations</h3>
+          <p className="text-muted-foreground text-sm">
+            There was an error loading your recommendations. Please try again.
+          </p>
+        </div>
+
+        <Button onClick={onRetry} variant="outline">
+          <AlertCircle className="w-4 h-4 mr-2" />
+          Try Again
+        </Button>
       </div>
     </div>
   );
@@ -228,7 +263,7 @@ export default function CalendarPage() {
   const selectedBrand = useSelectedBrand();
 
   // Fetch recommendations from API
-  const { data: apiData, isLoading } = useRecommendations(
+  const { data: apiData, isLoading, isError, refetch } = useRecommendations(
     selectedBrand?.id ? { brandId: selectedBrand.id, limit: 100 } : { limit: 100 }
   );
 
@@ -349,6 +384,35 @@ export default function CalendarPage() {
           </div>
         </div>
         <CalendarLoadingState />
+      </div>
+    );
+  }
+
+  // Show error state if API call failed
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/recommendations">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to List
+              </Button>
+            </Link>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                <Lightbulb className="h-6 w-6 text-primary" />
+                Calendar View
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                View recommendations by due date
+              </p>
+            </div>
+          </div>
+        </div>
+        <CalendarErrorState onRetry={() => refetch()} />
       </div>
     );
   }
