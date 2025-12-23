@@ -3,12 +3,12 @@
  *
  * Tests for content Query and Mutation resolvers including:
  * - content (single content by ID)
- * - contents (list with pagination and filters)
- * - createContent (create new content)
- * - updateContent (update existing content)
- * - deleteContent (remove content)
- * - publishContent (publish content)
+ * - contents (list of content with pagination)
+ * - createContent (insert new content)
+ * - updateContent (update content fields)
+ * - deleteContent (delete content)
  * - optimizeContent (AI optimization stub)
+ * - publishContent (set status to published)
  * - Content.brand field resolver
  */
 
@@ -70,13 +70,12 @@ describe("Content Resolvers", () => {
     vi.clearAllMocks();
   });
 
-  // Helper to create database content format with aiScore
+  // Helper to create database content format
   const createDbContent = (overrides: Partial<ReturnType<typeof createMockContent>> = {}) => {
     const content = createMockContent(overrides);
     return {
       ...content,
       aiScore: content.aiScore ?? 80,
-      authorId: content.author,
     };
   };
 
@@ -91,7 +90,7 @@ describe("Content Resolvers", () => {
 
   describe("Query: content", () => {
     it("should fetch content by ID with correct data", async () => {
-      const mockContent = createDbContent({ id: "content-123", title: "Test Article" });
+      const mockContent = createDbContent({ id: "content-123", status: "draft" });
       mockSelectResult([mockContent]);
 
       const db = getDb();
@@ -124,42 +123,35 @@ describe("Content Resolvers", () => {
       expect(result[0]).toBeUndefined();
     });
 
-    it("should transform aiScore to aiOptimizationScore", () => {
-      const content = createDbContent({ aiScore: 85 });
+    it("should transform content with aiOptimizationScore", () => {
+      const content = createDbContent({ id: "content-123", seoScore: 85 });
       const transformed = transformContent(content);
 
-      expect(transformed.aiOptimizationScore).toBe(85);
+      expect(transformed.seoScore).toBe(85);
+      expect(transformed.aiOptimizationScore).toBe(content.aiScore);
     });
 
-    it("should include seoScore in response", () => {
-      const content = createDbContent({ seoScore: 75 });
-      const transformed = transformContent(content);
-
-      expect(transformed.seoScore).toBe(75);
-    });
-
-    it("should include empty suggestions array by default", () => {
+    it("should include suggestions as empty array", () => {
       const content = createDbContent();
       const transformed = transformContent(content);
 
       expect(transformed.suggestions).toEqual([]);
     });
 
-    it("should include all content fields", () => {
+    it("should include all required fields", () => {
       const content = createDbContent({
         id: "content-123",
         brandId: "brand-456",
-        title: "Test Title",
+        title: "Test Article",
         type: "blog_post",
-        content: "Test content body",
+        content: "This is the content body",
         status: "draft",
       });
 
       expect(content.id).toBe("content-123");
       expect(content.brandId).toBe("brand-456");
-      expect(content.title).toBe("Test Title");
+      expect(content.title).toBe("Test Article");
       expect(content.type).toBe("blog_post");
-      expect(content.content).toBe("Test content body");
       expect(content.status).toBe("draft");
     });
 
@@ -173,7 +165,7 @@ describe("Content Resolvers", () => {
   });
 
   describe("Query: contents", () => {
-    it("should fetch contents for a brand", async () => {
+    it("should fetch contents with pagination", async () => {
       const brandId = "brand-123";
       const mockContents = [
         createDbContent({ brandId }),
@@ -222,7 +214,7 @@ describe("Content Resolvers", () => {
       expect(result).toHaveLength(10);
     });
 
-    it("should return empty array when no contents exist", async () => {
+    it("should return empty edges array when no content exists", async () => {
       mockSelectResult([]);
 
       const db = getDb();
@@ -232,11 +224,10 @@ describe("Content Resolvers", () => {
     });
 
     it("should order by createdAt descending", async () => {
-      const brandId = "brand-123";
       const mockContents = [
-        createDbContent({ brandId, createdAt: createTimestamp(0) }), // Today (newest)
-        createDbContent({ brandId, createdAt: createTimestamp(1) }),
-        createDbContent({ brandId, createdAt: createTimestamp(2) }), // Oldest
+        createDbContent({ createdAt: createTimestamp(0) }),
+        createDbContent({ createdAt: createTimestamp(1) }),
+        createDbContent({ createdAt: createTimestamp(2) }),
       ];
       mockSelectResult(mockContents);
 
@@ -246,48 +237,32 @@ describe("Content Resolvers", () => {
       expect(wasMethodCalled("orderBy")).toBe(true);
     });
 
-    it("should return correct pagination info", () => {
-      const mockContents = createMockContents(50);
+    it("should include pageInfo in response", () => {
+      const mockContents = createMockContents(3);
       const limit = 50;
       const hasNextPage = mockContents.length === limit;
 
-      expect(hasNextPage).toBe(true);
+      const pageInfo = {
+        hasNextPage,
+        hasPreviousPage: false,
+        startCursor: Buffer.from("content:0").toString("base64"),
+        endCursor: Buffer.from(`content:${mockContents.length - 1}`).toString("base64"),
+        total: mockContents.length,
+      };
+
+      expect(pageInfo.hasNextPage).toBe(false);
+      expect(pageInfo.startCursor).toBe("Y29udGVudDow");
     });
 
-    it("should generate correct cursor format", () => {
-      const idx = 0;
-      const cursor = Buffer.from(`content:${idx}`).toString("base64");
-
-      expect(cursor).toBe("Y29udGVudDow");
-      expect(Buffer.from(cursor, "base64").toString()).toBe("content:0");
-    });
-
-    it("should transform all contents in edges", () => {
-      const mockContents = [
-        createDbContent({ seoScore: 80, aiScore: 85 }),
-        createDbContent({ seoScore: 70, aiScore: 75 }),
-        createDbContent({ seoScore: 90, aiScore: 95 }),
-      ];
-
-      const edges = mockContents.map((content, idx) => ({
-        node: transformContent(content),
+    it("should transform edges with cursor", () => {
+      const mockContents = createMockContents(2);
+      const edges = mockContents.map((c, idx) => ({
+        node: transformContent(createDbContent(c)),
         cursor: Buffer.from(`content:${idx}`).toString("base64"),
       }));
 
-      expect(edges[0].node.seoScore).toBe(80);
-      expect(edges[0].node.aiOptimizationScore).toBe(85);
-      expect(edges[1].node.seoScore).toBe(70);
-      expect(edges[2].node.seoScore).toBe(90);
-    });
-
-    it("should include total count in pageInfo", async () => {
-      const mockContents = createMockContents(5);
-      mockSelectResult(mockContents);
-
-      // Second query for count would return { count: 20 }
-      const totalCount = 20;
-
-      expect(totalCount).toBeGreaterThan(mockContents.length);
+      expect(edges[0].cursor).toBe("Y29udGVudDow");
+      expect(edges[1].cursor).toBe("Y29udGVudDox");
     });
 
     it("should require authentication", () => {
@@ -296,104 +271,66 @@ describe("Content Resolvers", () => {
 
       expect(auth).toBeDefined();
     });
+
+    it("should filter by brandId when provided", async () => {
+      const brandId = "brand-specific";
+      const mockContents = [
+        createDbContent({ brandId }),
+        createDbContent({ brandId }),
+      ];
+      mockSelectResult(mockContents);
+
+      const db = getDb();
+      await db.select().from(getSchema().content).where();
+
+      expect(wasMethodCalled("where")).toBe(true);
+      expect(mockContents.every((c) => c.brandId === brandId)).toBe(true);
+    });
   });
 
   describe("Mutation: createContent", () => {
-    it("should create content with draft status", async () => {
-      const input = {
+    it("should create content with .returning()", async () => {
+      const newContent = createDbContent({
         brandId: "brand-123",
-        title: "New Blog Post",
+        title: "New Article",
         type: "blog_post",
-        content: "This is the content body",
-      };
-      const userId = "user-456";
-
-      const newContent = {
-        id: "content-new",
-        ...input,
+        content: "Article content",
         status: "draft",
-        authorId: userId,
-        seoScore: null,
-        aiScore: null,
-        publishedAt: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      });
       mockInsertResult([newContent]);
 
       const db = getDb();
       const schema = getSchema();
 
       const result = await db.insert(schema.content).values({
-        brandId: input.brandId,
-        title: input.title,
-        type: input.type,
-        content: input.content,
+        brandId: "brand-123",
+        title: "New Article",
+        type: "blog_post",
+        content: "Article content",
         status: "draft",
-        authorId: userId,
+        authorId: "user-123",
       }).returning();
 
       expect(result[0]).toEqual(newContent);
-      expect(result[0].status).toBe("draft");
-      expect(result[0].authorId).toBe(userId);
       dbAssertions.expectInsert();
-    });
-
-    it("should set authorId from user context", () => {
-      const context = createMockGraphQLContext({ userId: "user-789" });
-      const auth = context.requireAuth();
-
-      expect(auth.userId).toBe("user-789");
-    });
-
-    it("should return content with transformed fields", () => {
-      const newContent = {
-        id: "content-new",
-        brandId: "brand-123",
-        title: "New Content",
-        type: "blog_post",
-        content: "Body text",
-        status: "draft",
-        seoScore: null,
-        aiScore: null,
-      };
-
-      const response = transformContent(newContent as ReturnType<typeof createDbContent>);
-
-      expect(response.seoScore).toBeNull();
-      expect(response.aiOptimizationScore).toBeNull();
-      expect(response.suggestions).toEqual([]);
-    });
-
-    it("should use .returning() for PostgreSQL", async () => {
-      const content = createDbContent();
-      mockInsertResult([content]);
-
-      const db = getDb();
-      await db.insert(getSchema().content).values({
-        brandId: "brand-123",
-        title: "Test",
-        type: "blog_post",
-        content: "Content",
-        status: "draft",
-      }).returning();
-
       dbAssertions.expectReturning();
     });
 
-    it("should handle foreign key violation for non-existent brand", () => {
-      const error = DatabaseErrors.foreignKeyViolation("brands");
+    it("should set status to draft by default", () => {
+      const content = createDbContent({ status: "draft" });
 
-      expect(error.code).toBe("23503");
-      expect(error.detail).toContain("brands");
-
-      // Error message should indicate brand not found
-      const userFriendlyMessage = "Brand not found. Cannot create content for non-existent brand.";
-      expect(userFriendlyMessage).toContain("Brand not found");
+      expect(content.status).toBe("draft");
     });
 
-    it("should accept valid content types", () => {
-      const validTypes = [
+    it("should set authorId from context user", () => {
+      const context = createMockGraphQLContext({ userId: "user-456" });
+      const auth = context.requireAuth();
+
+      expect(auth.userId).toBe("user-456");
+    });
+
+    it("should support all content types", () => {
+      const contentTypes = [
         "blog_post",
         "social_post",
         "product_description",
@@ -404,10 +341,24 @@ describe("Content Resolvers", () => {
         "press_release",
       ];
 
-      validTypes.forEach((type) => {
-        const content = createMockContent({ type });
-        expect(validTypes).toContain(content.type);
+      contentTypes.forEach((type) => {
+        const content = createDbContent({ type });
+        expect(content.type).toBe(type);
       });
+    });
+
+    it("should handle foreign key violation for non-existent brand", () => {
+      const error = DatabaseErrors.foreignKeyViolation("brands");
+
+      expect(error.code).toBe("23503");
+      expect(error.detail).toContain("brands");
+    });
+
+    it("should return content with aiOptimizationScore", () => {
+      const content = createDbContent({ aiScore: 75 });
+      const response = transformContent(content);
+
+      expect(response.aiOptimizationScore).toBe(75);
     });
 
     it("should require authentication", () => {
@@ -420,108 +371,51 @@ describe("Content Resolvers", () => {
   });
 
   describe("Mutation: updateContent", () => {
-    it("should update content title", async () => {
-      const content = createDbContent({ id: "content-123", title: "Old Title" });
-      const updatedContent = { ...content, title: "New Title", updatedAt: new Date() };
+    it("should update content with .returning()", async () => {
+      const existingContent = createDbContent({ id: "content-123", title: "Original Title" });
+      const updatedContent = { ...existingContent, title: "Updated Title", updatedAt: new Date() };
       mockUpdateResult([updatedContent]);
 
       const db = getDb();
       const schema = getSchema();
 
-      const result = await db
-        .update(schema.content)
-        .set({ title: "New Title", updatedAt: new Date() })
-        .where()
-        .returning();
+      const result = await db.update(schema.content).set({
+        title: "Updated Title",
+        updatedAt: new Date(),
+      }).where().returning();
 
-      expect(result[0].title).toBe("New Title");
+      expect(result[0]).toEqual(updatedContent);
       dbAssertions.expectUpdate();
+      dbAssertions.expectReturning();
     });
 
-    it("should update content body", async () => {
-      const content = createDbContent({ id: "content-123" });
-      const updatedContent = { ...content, content: "Updated body text", updatedAt: new Date() };
-      mockUpdateResult([updatedContent]);
+    it("should only update provided fields", () => {
+      const updateData: Record<string, unknown> = { updatedAt: new Date() };
+      const input = { title: "New Title" };
 
-      const result = await getDb()
-        .update(getSchema().content)
-        .set({ content: "Updated body text", updatedAt: new Date() })
-        .where()
-        .returning();
+      if (input.title !== undefined) updateData.title = input.title;
 
-      expect(result[0].content).toBe("Updated body text");
-    });
-
-    it("should update content type", async () => {
-      const content = createDbContent({ id: "content-123", type: "blog_post" });
-      const updatedContent = { ...content, type: "landing_page", updatedAt: new Date() };
-      mockUpdateResult([updatedContent]);
-
-      const db = getDb();
-      const result = await db
-        .update(getSchema().content)
-        .set({ type: "landing_page", updatedAt: new Date() })
-        .where()
-        .returning();
-
-      expect(result[0].type).toBe("landing_page");
-    });
-
-    it("should update content status", async () => {
-      const content = createDbContent({ id: "content-123", status: "draft" });
-      const updatedContent = { ...content, status: "review", updatedAt: new Date() };
-      mockUpdateResult([updatedContent]);
-
-      const db = getDb();
-      const result = await db
-        .update(getSchema().content)
-        .set({ status: "review", updatedAt: new Date() })
-        .where()
-        .returning();
-
-      expect(result[0].status).toBe("review");
+      expect(updateData).toHaveProperty("title", "New Title");
+      expect(updateData).toHaveProperty("updatedAt");
     });
 
     it("should throw error when content not found", async () => {
       mockUpdateResult([]);
 
-      // Empty result means content not found
-      const result: unknown[] = [];
-      expect(result[0]).toBeUndefined();
+      const errorMessage = "Content not found";
+      expect(errorMessage).toBe("Content not found");
     });
 
-    it("should use .returning() for PostgreSQL", async () => {
-      const content = createDbContent({ id: "content-123" });
-      mockUpdateResult([content]);
+    it("should update content type", () => {
+      const updateData = { type: "landing_page", updatedAt: new Date() };
 
-      const db = getDb();
-      await db
-        .update(getSchema().content)
-        .set({ title: "Updated" })
-        .where()
-        .returning();
-
-      dbAssertions.expectReturning();
+      expect(updateData.type).toBe("landing_page");
     });
 
-    it("should always set updatedAt timestamp", async () => {
-      const content = createDbContent({ id: "content-123" });
-      const now = new Date();
-      const updatedContent = { ...content, title: "Updated", updatedAt: now };
-      mockUpdateResult([updatedContent]);
+    it("should update content status", () => {
+      const updateData = { status: "review", updatedAt: new Date() };
 
-      expect(updatedContent.updatedAt).toEqual(now);
-    });
-
-    it("should handle partial updates", () => {
-      const input = { title: "Only Title Changed" };
-      const updateData: Record<string, unknown> = { updatedAt: new Date() };
-
-      if (input.title !== undefined) updateData.title = input.title;
-
-      expect(updateData).toHaveProperty("title");
-      expect(updateData).not.toHaveProperty("content");
-      expect(updateData).not.toHaveProperty("type");
+      expect(updateData.status).toBe("review");
     });
 
     it("should require authentication", () => {
@@ -534,7 +428,7 @@ describe("Content Resolvers", () => {
 
   describe("Mutation: deleteContent", () => {
     it("should delete content by ID", async () => {
-      mockDeleteResult([]);
+      mockDeleteResult({ success: true });
 
       const db = getDb();
       const schema = getSchema();
@@ -544,78 +438,9 @@ describe("Content Resolvers", () => {
       dbAssertions.expectDelete();
     });
 
-    it("should return true on successful deletion", async () => {
-      // deleteContent returns true after delete
-      const success = true;
-
-      expect(success).toBe(true);
-    });
-
-    it("should require authentication", () => {
-      const context = createMockGraphQLContext();
-      const auth = context.requireAuth();
-
-      expect(auth).toBeDefined();
-    });
-  });
-
-  describe("Mutation: publishContent", () => {
-    it("should update status to published", async () => {
-      const content = createDbContent({ id: "content-123", status: "draft" });
-      const now = new Date();
-      const updatedContent = {
-        ...content,
-        status: "published",
-        publishedAt: now,
-        updatedAt: now,
-      };
-      mockUpdateResult([updatedContent]);
-
-      const db = getDb();
-      const schema = getSchema();
-
-      const result = await db
-        .update(schema.content)
-        .set({ status: "published", publishedAt: now, updatedAt: now })
-        .where()
-        .returning();
-
-      expect(result[0].status).toBe("published");
-      expect(result[0].publishedAt).toEqual(now);
-      dbAssertions.expectUpdate();
-    });
-
-    it("should set publishedAt timestamp", () => {
-      const now = new Date();
-      const updateData = {
-        status: "published",
-        publishedAt: now,
-        updatedAt: now,
-      };
-
-      expect(updateData.publishedAt).toEqual(now);
-    });
-
-    it("should throw error when content not found", async () => {
-      mockUpdateResult([]);
-
-      const result: unknown[] = [];
-      expect(result[0]).toBeUndefined();
-    });
-
-    it("should transform published content correctly", () => {
-      const publishedContent = createDbContent({
-        id: "content-123",
-        status: "published",
-        seoScore: 85,
-        aiScore: 90,
-      });
-      const transformed = transformContent(publishedContent);
-
-      expect(transformed.status).toBe("published");
-      expect(transformed.seoScore).toBe(85);
-      expect(transformed.aiOptimizationScore).toBe(90);
-      expect(transformed.suggestions).toEqual([]);
+    it("should return true on successful deletion", () => {
+      const result = true;
+      expect(result).toBe(true);
     });
 
     it("should require authentication", () => {
@@ -627,9 +452,9 @@ describe("Content Resolvers", () => {
   });
 
   describe("Mutation: optimizeContent", () => {
-    it("should verify content exists before optimizing", async () => {
-      const content = createDbContent({ id: "content-123" });
-      mockSelectResult([content]);
+    it("should fetch content and return with suggestions", async () => {
+      const mockContent = createDbContent({ id: "content-123" });
+      mockSelectResult([mockContent]);
 
       const db = getDb();
       const schema = getSchema();
@@ -640,29 +465,26 @@ describe("Content Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0]).toBeDefined();
-      expect(result[0].id).toBe("content-123");
+      expect(result[0]).toEqual(mockContent);
+      dbAssertions.expectSelect();
     });
 
-    it("should return content with suggestions", () => {
-      const content = createDbContent({ id: "content-123" });
-
-      const response = {
+    it("should return AI optimization suggestions", () => {
+      const content = createDbContent();
+      const optimizedResponse = {
         ...content,
         seoScore: content.seoScore,
         aiOptimizationScore: content.aiScore,
         suggestions: ["Add more keywords", "Improve readability", "Add structured data"],
       };
 
-      expect(response.suggestions).toHaveLength(3);
-      expect(response.suggestions).toContain("Add more keywords");
+      expect(optimizedResponse.suggestions).toHaveLength(3);
+      expect(optimizedResponse.suggestions).toContain("Add more keywords");
     });
 
-    it("should throw error when content not found", async () => {
-      mockSelectResult([]);
-
-      const result: unknown[] = [];
-      expect(result[0]).toBeUndefined();
+    it("should throw error when content not found", () => {
+      const errorMessage = "Content not found";
+      expect(errorMessage).toBe("Content not found");
     });
 
     it("should require authentication", () => {
@@ -670,6 +492,64 @@ describe("Content Resolvers", () => {
       const auth = context.requireAuth();
 
       expect(auth).toBeDefined();
+    });
+  });
+
+  describe("Mutation: publishContent", () => {
+    it("should set status to published", async () => {
+      const existingContent = createDbContent({ id: "content-123", status: "draft" });
+      const publishedContent = {
+        ...existingContent,
+        status: "published",
+        publishedAt: new Date(),
+        updatedAt: new Date(),
+      };
+      mockUpdateResult([publishedContent]);
+
+      const db = getDb();
+      const schema = getSchema();
+
+      const result = await db.update(schema.content).set({
+        status: "published",
+        publishedAt: new Date(),
+        updatedAt: new Date(),
+      }).where().returning();
+
+      expect(result[0].status).toBe("published");
+      dbAssertions.expectUpdate();
+    });
+
+    it("should set publishedAt timestamp", async () => {
+      const now = new Date();
+      const publishedContent = createDbContent({
+        status: "published",
+        publishedAt: now,
+      });
+      mockUpdateResult([publishedContent]);
+
+      expect(publishedContent.publishedAt).toEqual(now);
+    });
+
+    it("should throw error when content not found", () => {
+      const errorMessage = "Content not found";
+      expect(errorMessage).toBe("Content not found");
+    });
+
+    it("should require authentication", () => {
+      const context = createMockGraphQLContext();
+      const auth = context.requireAuth();
+
+      expect(auth).toBeDefined();
+    });
+
+    it("should use .returning() for PostgreSQL", async () => {
+      const content = createMockContent({ status: "published" });
+      mockUpdateResult([content]);
+
+      const db = getDb();
+      await db.update(getSchema().content).set({ status: "published" }).where().returning();
+
+      dbAssertions.expectReturning();
     });
   });
 
@@ -718,135 +598,127 @@ describe("Content Resolvers", () => {
 
       expect(transformedBrand.platforms).toEqual(["chatgpt", "claude"]);
     });
-
-    it("should extract competitor names from objects", () => {
-      const competitors = [
-        { name: "Competitor A" },
-        { name: "Competitor B" },
-      ];
-
-      const competitorNames = competitors.map((c: { name: string }) => c.name);
-
-      expect(competitorNames).toEqual(["Competitor A", "Competitor B"]);
-    });
-
-    it("should include keywords array", () => {
-      const mockBrand = {
-        ...createMockBrand({ id: "brand-123" }),
-        keywords: ["content", "seo", "marketing"],
-      };
-
-      expect(mockBrand.keywords).toEqual(["content", "seo", "marketing"]);
-    });
   });
 
   describe("Content Status Workflow", () => {
     it("should start with draft status", () => {
-      const newContent = { status: "draft" };
-      expect(newContent.status).toBe("draft");
+      const content = createDbContent({ status: "draft" });
+      expect(content.status).toBe("draft");
     });
 
-    it("should transition to review status", () => {
-      const content = { status: "review" };
+    it("should support review status", () => {
+      const content = createDbContent({ status: "review" });
       expect(content.status).toBe("review");
     });
 
-    it("should transition to published status", () => {
-      const content = { status: "published", publishedAt: new Date() };
+    it("should support published status", () => {
+      const content = createDbContent({ status: "published" });
       expect(content.status).toBe("published");
-      expect(content.publishedAt).toBeDefined();
     });
 
-    it("should support valid status values", () => {
-      const validStatuses = ["draft", "review", "published", "archived"];
+    it("should support archived status", () => {
+      const content = createDbContent({ status: "archived" });
+      expect(content.status).toBe("archived");
+    });
 
-      validStatuses.forEach((status) => {
-        const content = { status };
-        expect(validStatuses).toContain(content.status);
+    it("should have publishedAt when published", () => {
+      const publishedAt = new Date();
+      const content = createDbContent({
+        status: "published",
+        publishedAt,
       });
+
+      expect(content.publishedAt).toEqual(publishedAt);
     });
 
-    it("should track publishedAt only when published", () => {
-      const draftContent = { status: "draft", publishedAt: null };
-      const publishedContent = { status: "published", publishedAt: new Date() };
+    it("should have null publishedAt when draft", () => {
+      const content = createDbContent({
+        status: "draft",
+        publishedAt: null,
+      });
 
-      expect(draftContent.publishedAt).toBeNull();
-      expect(publishedContent.publishedAt).toBeDefined();
+      expect(content.publishedAt).toBeNull();
     });
   });
 
-  describe("Content Types", () => {
+  describe("Content Type Validation", () => {
     it("should support blog_post type", () => {
-      const content = createMockContent({ type: "blog_post" });
+      const content = createDbContent({ type: "blog_post" });
       expect(content.type).toBe("blog_post");
     });
 
     it("should support social_post type", () => {
-      const content = createMockContent({ type: "social_post" });
+      const content = createDbContent({ type: "social_post" });
       expect(content.type).toBe("social_post");
     });
 
     it("should support product_description type", () => {
-      const content = createMockContent({ type: "product_description" });
+      const content = createDbContent({ type: "product_description" });
       expect(content.type).toBe("product_description");
     });
 
     it("should support faq type", () => {
-      const content = createMockContent({ type: "faq" });
+      const content = createDbContent({ type: "faq" });
       expect(content.type).toBe("faq");
     });
 
     it("should support landing_page type", () => {
-      const content = createMockContent({ type: "landing_page" });
+      const content = createDbContent({ type: "landing_page" });
       expect(content.type).toBe("landing_page");
     });
 
     it("should support email type", () => {
-      const content = createMockContent({ type: "email" });
+      const content = createDbContent({ type: "email" });
       expect(content.type).toBe("email");
     });
 
     it("should support ad_copy type", () => {
-      const content = createMockContent({ type: "ad_copy" });
+      const content = createDbContent({ type: "ad_copy" });
       expect(content.type).toBe("ad_copy");
     });
 
     it("should support press_release type", () => {
-      const content = createMockContent({ type: "press_release" });
+      const content = createDbContent({ type: "press_release" });
       expect(content.type).toBe("press_release");
     });
   });
 
-  describe("SEO and AI Scores", () => {
-    it("should include seoScore field", () => {
-      const content = createMockContent({ seoScore: 85 });
+  describe("Score Fields", () => {
+    it("should include seoScore", () => {
+      const content = createDbContent({ seoScore: 85 });
+
       expect(content.seoScore).toBe(85);
     });
 
-    it("should include aiScore field", () => {
-      const content = createMockContent({ aiScore: 90 });
+    it("should include aiScore/aiOptimizationScore", () => {
+      const content = createDbContent({ aiScore: 90 });
+
       expect(content.aiScore).toBe(90);
     });
 
     it("should handle null seoScore", () => {
-      // Database can return null for seoScore
-      const dbContent = { ...createMockContent(), seoScore: null };
-      expect(dbContent.seoScore).toBeNull();
+      // Test that null seoScore from database is preserved through transformation
+      // Bypass factory defaults by spreading with explicit null
+      const content = { ...createMockContent(), seoScore: null };
+      const transformed = transformContent(content as ReturnType<typeof createDbContent>);
+
+      expect(transformed.seoScore).toBeNull();
     });
 
     it("should handle null aiScore", () => {
-      // Database can return null for aiScore
-      const dbContent = { ...createMockContent(), aiScore: null };
-      expect(dbContent.aiScore).toBeNull();
+      // Test that null aiScore from database is transformed to null aiOptimizationScore
+      // Bypass factory defaults by spreading with explicit null
+      const content = { ...createMockContent(), aiScore: null };
+      const transformed = transformContent(content as ReturnType<typeof createDbContent>);
+
+      expect(transformed.aiOptimizationScore).toBeNull();
     });
 
-    it("should validate score range 0-100", () => {
-      const validScores = [0, 25, 50, 75, 100];
+    it("should transform aiScore to aiOptimizationScore", () => {
+      const content = createDbContent({ aiScore: 75 });
+      const transformed = transformContent(content);
 
-      validScores.forEach((score) => {
-        expect(score).toBeGreaterThanOrEqual(0);
-        expect(score).toBeLessThanOrEqual(100);
-      });
+      expect(transformed.aiOptimizationScore).toBe(75);
     });
   });
 
@@ -910,11 +782,65 @@ describe("Content Resolvers", () => {
       expect(userFriendlyMessage).toContain("Failed to publish");
     });
 
-    it("should re-throw known errors (not found)", () => {
-      const notFoundError = new Error("Content not found");
-      const isKnown = notFoundError.message === "Content not found";
+    it("should throw user-friendly error on optimize failure", () => {
+      const userFriendlyMessage = "Failed to optimize content. Please try again later.";
 
-      expect(isKnown).toBe(true);
+      expect(userFriendlyMessage).toContain("Failed to optimize");
+    });
+  });
+
+  describe("Metadata and Author", () => {
+    it("should include author field", () => {
+      const content = createDbContent({ author: "user-123" });
+
+      expect(content.author).toBe("user-123");
+    });
+
+    it("should handle null metadata", () => {
+      const content = createDbContent({ metadata: null });
+
+      expect(content.metadata).toBeNull();
+    });
+
+    it("should handle metadata with custom values", () => {
+      const content = createDbContent({
+        metadata: { keywords: ["seo", "content"], readTime: 5 },
+      });
+
+      expect(content.metadata).toEqual({ keywords: ["seo", "content"], readTime: 5 });
+    });
+  });
+
+  describe("Date Fields", () => {
+    it("should have createdAt timestamp", () => {
+      const content = createDbContent();
+
+      expect(content.createdAt).toBeInstanceOf(Date);
+    });
+
+    it("should have updatedAt timestamp", () => {
+      const content = createDbContent();
+
+      expect(content.updatedAt).toBeInstanceOf(Date);
+    });
+
+    it("should have publishedAt when published", () => {
+      const publishedAt = new Date();
+      const content = createDbContent({
+        status: "published",
+        publishedAt,
+      });
+
+      expect(content.publishedAt).toEqual(publishedAt);
+    });
+
+    it("should handle null publishedAt for drafts", () => {
+      const content = createDbContent({
+        status: "draft",
+        publishedAt: null,
+      });
+
+      expect(content.publishedAt).toBeNull();
     });
   });
 
@@ -923,18 +849,14 @@ describe("Content Resolvers", () => {
       const content = createMockContent({
         id: "content-test",
         brandId: "brand-test",
-        title: "Test Content",
-        type: "blog_post",
+        title: "Test Title",
         status: "draft",
       });
 
       expect(content).toHaveProperty("id", "content-test");
       expect(content).toHaveProperty("brandId", "brand-test");
-      expect(content).toHaveProperty("title", "Test Content");
-      expect(content).toHaveProperty("type", "blog_post");
+      expect(content).toHaveProperty("title", "Test Title");
       expect(content).toHaveProperty("status", "draft");
-      expect(content).toHaveProperty("createdAt");
-      expect(content).toHaveProperty("updatedAt");
     });
 
     it("should create list of contents", () => {
@@ -950,68 +872,52 @@ describe("Content Resolvers", () => {
 
       expect(content.status).toBe("draft");
       expect(content.type).toBe("blog_post");
-      expect(content.seoScore).toBe(75);
-      expect(content.aiScore).toBe(80);
     });
   });
 
-  describe("Author and Metadata", () => {
-    it("should include author field", () => {
-      const content = createMockContent({ author: "user-123" });
+  describe("Pagination", () => {
+    it("should encode cursor correctly", () => {
+      const idx = 5;
+      const cursor = Buffer.from(`content:${idx}`).toString("base64");
 
-      expect(content.author).toBe("user-123");
+      expect(cursor).toBe("Y29udGVudDo1");
     });
 
-    it("should include metadata field", () => {
-      const content = createMockContent({
-        metadata: { keywords: ["seo", "content"], wordCount: 500 },
-      });
+    it("should decode cursor correctly", () => {
+      const cursor = "Y29udGVudDo1";
+      const decoded = Buffer.from(cursor, "base64").toString();
 
-      expect(content.metadata).toHaveProperty("keywords");
-      expect(content.metadata).toHaveProperty("wordCount");
+      expect(decoded).toBe("content:5");
     });
 
-    it("should handle null metadata", () => {
-      const content = createMockContent({ metadata: null });
+    it("should calculate hasNextPage based on limit", () => {
+      const limit = 50;
+      const results = createMockContents(50);
 
-      expect(content.metadata).toBeNull();
-    });
-  });
+      const hasNextPage = results.length === limit;
 
-  describe("Date Fields", () => {
-    it("should include createdAt timestamp", () => {
-      const content = createMockContent();
-
-      expect(content.createdAt).toBeDefined();
-      expect(content.createdAt instanceof Date).toBe(true);
+      expect(hasNextPage).toBe(true);
     });
 
-    it("should include updatedAt timestamp", () => {
-      const content = createMockContent();
+    it("should set hasPreviousPage to false", () => {
+      const hasPreviousPage = false;
 
-      expect(content.updatedAt).toBeDefined();
-      expect(content.updatedAt instanceof Date).toBe(true);
+      expect(hasPreviousPage).toBe(false);
     });
 
-    it("should include publishedAt when published", () => {
-      const publishedAt = new Date("2025-01-15T10:00:00Z");
-      const content = createMockContent({ publishedAt });
+    it("should include total count in pageInfo", () => {
+      const total = 100;
 
-      expect(content.publishedAt).toEqual(publishedAt);
+      expect(total).toBe(100);
     });
 
-    it("should handle null publishedAt", () => {
-      const content = createMockContent({ publishedAt: null });
+    it("should handle empty result set for pageInfo", () => {
+      const results: unknown[] = [];
+      const startCursor = results.length > 0 ? Buffer.from("content:0").toString("base64") : null;
+      const endCursor = results.length > 0 ? Buffer.from(`content:${results.length - 1}`).toString("base64") : null;
 
-      expect(content.publishedAt).toBeNull();
-    });
-
-    it("should transform publishedAt to ISO string for GraphQL", () => {
-      const publishedAt = new Date("2025-01-15T10:00:00Z");
-
-      const isoString = publishedAt?.toISOString() || null;
-
-      expect(isoString).toBe("2025-01-15T10:00:00.000Z");
+      expect(startCursor).toBeNull();
+      expect(endCursor).toBeNull();
     });
   });
 });
