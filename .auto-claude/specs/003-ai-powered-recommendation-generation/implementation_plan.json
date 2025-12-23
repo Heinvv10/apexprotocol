@@ -457,7 +457,9 @@
               "cleanup": "afterEach() hook to delete test recommendations"
             }
           },
-          "status": "pending"
+          "status": "completed",
+          "notes": "Created tests/integration/recommendations-api.test.ts with 28 comprehensive tests covering: authentication (401 unauthorized), validation errors (400 bad request), brand not found (404), successful AI generation (200), rule-based generation fallback, error handling, and content validation. All tests pass using vi.doMock() pattern for proper mock isolation.",
+          "updated_at": "2025-12-23T04:15:00.000000+00:00"
         },
         {
           "id": "subtask-4-3",
