@@ -46,13 +46,27 @@ export async function POST(request: NextRequest) {
 
     if (!userId) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { success: false, error: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    // Parse and validate request
-    const body = await request.json();
+    // Parse request body with error handling for empty/invalid JSON
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid request body",
+          details: [{ message: "Request body must be valid JSON" }],
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate request schema
     const {
       brandId,
       includeMonitor,
@@ -72,7 +86,7 @@ export async function POST(request: NextRequest) {
 
     if (!brand) {
       return NextResponse.json(
-        { error: "Brand not found" },
+        { success: false, error: "Brand not found" },
         { status: 404 }
       );
     }
@@ -226,6 +240,7 @@ export async function POST(request: NextRequest) {
         // Otherwise, return error
         return NextResponse.json(
           {
+            success: false,
             error: "Failed to generate AI recommendations",
             details: aiResult.error,
           },
@@ -359,16 +374,18 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        {
+          success: false,
+          error: "Invalid request body",
+          details: error.issues,
+        },
         { status: 400 }
       );
     }
 
+    const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      {
-        error: "Failed to generate recommendations",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { success: false, error: message },
       { status: 500 }
     );
   }
