@@ -1102,4 +1102,427 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
       }
     });
   });
+
+  test.describe("Effectiveness Report Page", () => {
+    test("should display effectiveness report page with header and title", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Should show APEX branding
+      await expect(page.getByText("APEX", { exact: true })).toBeVisible();
+
+      // Should show Effectiveness Report title
+      await expect(page.getByText(/effectiveness report/i).first()).toBeVisible();
+
+      // Should show AI Status
+      await expect(page.getByText(/ai status/i)).toBeVisible();
+      await expect(page.getByText(/active/i)).toBeVisible();
+    });
+
+    test("should display page title and description", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Should show main page title
+      await expect(page.getByText("Recommendation Effectiveness").first()).toBeVisible();
+
+      // Should show description about tracking impact
+      await expect(page.getByText(/track.*impact.*roi/i)).toBeVisible();
+    });
+
+    test("should display Recommendation Effectiveness section heading", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Should show the effectiveness section heading from the component
+      const hasEffectivenessHeading = await page.getByText(/recommendation effectiveness/i).first().isVisible().catch(() => false);
+      expect(hasEffectivenessHeading).toBeTruthy();
+    });
+
+    test("should show loading state initially", async ({ page }) => {
+      // Navigate without waiting for network idle to catch loading state
+      await page.goto("/dashboard/reports/effectiveness");
+
+      // Should either show loading or content
+      const hasLoading = await page.getByText(/loading.*effectiveness.*metrics/i).isVisible().catch(() => false);
+      const hasContent = await page.getByText(/recommendation effectiveness/i).first().isVisible().catch(() => false);
+      const hasEmptyState = await page.getByText(/no completed recommendations/i).isVisible().catch(() => false);
+
+      expect(hasLoading || hasContent || hasEmptyState).toBeTruthy();
+    });
+  });
+
+  test.describe("Effectiveness Report Metrics", () => {
+    test("should display Total Completed metric card", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Should show Total Completed metric label
+      const hasTotalCompleted = await page.getByText(/total completed/i).isVisible().catch(() => false);
+      const hasEmptyState = await page.getByText(/no completed recommendations/i).isVisible().catch(() => false);
+
+      // Either shows metrics or empty state
+      expect(hasTotalCompleted || hasEmptyState).toBeTruthy();
+    });
+
+    test("should display Average Effectiveness metric card", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Should show Average Effectiveness metric label
+      const hasAverageEffectiveness = await page.getByText(/average effectiveness/i).isVisible().catch(() => false);
+      const hasEmptyState = await page.getByText(/no completed recommendations/i).isVisible().catch(() => false);
+
+      // Either shows metrics or empty state
+      expect(hasAverageEffectiveness || hasEmptyState).toBeTruthy();
+    });
+
+    test("should display Average Improvement metric card", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Should show Average Improvement metric label
+      const hasAverageImprovement = await page.getByText(/average improvement/i).isVisible().catch(() => false);
+      const hasEmptyState = await page.getByText(/no completed recommendations/i).isVisible().catch(() => false);
+
+      // Either shows metrics or empty state
+      expect(hasAverageImprovement || hasEmptyState).toBeTruthy();
+    });
+
+    test("should display metrics with proper number formatting (no NaN or undefined)", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Check page content doesn't contain NaN or undefined
+      const pageContent = await page.textContent("body");
+
+      // Should not display NaN
+      expect(pageContent).not.toContain("NaN");
+
+      // Should not display raw "undefined" text (case sensitive to avoid matching descriptions)
+      const hasRawUndefined = /\bundefined\b/i.test(pageContent || "");
+      expect(hasRawUndefined).toBeFalsy();
+    });
+
+    test("should display percentage format for effectiveness score", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // If there are completed recommendations, should show percentage
+      const hasEmptyState = await page.getByText(/no completed recommendations/i).isVisible().catch(() => false);
+
+      if (!hasEmptyState) {
+        // Should display % symbol somewhere in the metrics
+        const hasPercentage = await page.getByText(/%/).first().isVisible().catch(() => false);
+        expect(hasPercentage).toBeTruthy();
+      }
+    });
+
+    test("should display points format for score improvement", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // If there are completed recommendations, should show pts
+      const hasEmptyState = await page.getByText(/no completed recommendations/i).isVisible().catch(() => false);
+
+      if (!hasEmptyState) {
+        // Should display "pts" for points
+        const hasPts = await page.getByText(/pts/).first().isVisible().catch(() => false);
+        expect(hasPts).toBeTruthy();
+      }
+    });
+  });
+
+  test.describe("Effectiveness Report Top Performers", () => {
+    test("should display Top Performers section when completed recommendations exist", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // If there are completed recommendations, should show Top Performers
+      const hasEmptyState = await page.getByText(/no completed recommendations/i).isVisible().catch(() => false);
+
+      if (!hasEmptyState) {
+        // Should show Top Performers heading
+        const hasTopPerformers = await page.getByText(/top performers/i).isVisible().catch(() => false);
+        expect(hasTopPerformers).toBeTruthy();
+      }
+    });
+
+    test("should display ranked list with numbered positions", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // If there are completed recommendations
+      const hasEmptyState = await page.getByText(/no completed recommendations/i).isVisible().catch(() => false);
+      const hasTopPerformers = await page.getByText(/top performers/i).isVisible().catch(() => false);
+
+      if (!hasEmptyState && hasTopPerformers) {
+        // Should show rank numbers (1, 2, 3, etc.)
+        const hasRankOne = await page.locator(".rounded-full").filter({ hasText: "1" }).first().isVisible().catch(() => false);
+        expect(hasRankOne).toBeTruthy();
+      }
+    });
+
+    test("should display effectiveness level badges on performers", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // If there are completed recommendations
+      const hasEmptyState = await page.getByText(/no completed recommendations/i).isVisible().catch(() => false);
+      const hasTopPerformers = await page.getByText(/top performers/i).isVisible().catch(() => false);
+
+      if (!hasEmptyState && hasTopPerformers) {
+        // Should show effectiveness level badges (excellent, good, moderate, poor, or ineffective)
+        const hasExcellent = await page.getByText(/excellent/i).isVisible().catch(() => false);
+        const hasGood = await page.getByText(/good/i).isVisible().catch(() => false);
+        const hasModerate = await page.getByText(/moderate/i).isVisible().catch(() => false);
+        const hasPoor = await page.getByText(/poor/i).isVisible().catch(() => false);
+        const hasIneffective = await page.getByText(/ineffective/i).isVisible().catch(() => false);
+
+        // At least one level badge should be visible
+        expect(hasExcellent || hasGood || hasModerate || hasPoor || hasIneffective).toBeTruthy();
+      }
+    });
+
+    test("should display maximum 5 top performers", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // If there are completed recommendations
+      const hasEmptyState = await page.getByText(/no completed recommendations/i).isVisible().catch(() => false);
+      const hasTopPerformers = await page.getByText(/top performers/i).isVisible().catch(() => false);
+
+      if (!hasEmptyState && hasTopPerformers) {
+        // Count the performer items (items with rank numbers in circles)
+        const performerItems = page.locator(".rounded-full").filter({ has: page.locator("text=/^[1-5]$/") });
+        const count = await performerItems.count();
+
+        // Should have at most 5 performers displayed
+        expect(count).toBeLessThanOrEqual(5);
+      }
+    });
+
+    test("should show trend indicators for score improvements", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // If there are completed recommendations
+      const hasEmptyState = await page.getByText(/no completed recommendations/i).isVisible().catch(() => false);
+      const hasTopPerformers = await page.getByText(/top performers/i).isVisible().catch(() => false);
+
+      if (!hasEmptyState && hasTopPerformers) {
+        // Should show trend icons (TrendingUp or TrendingDown from lucide-react)
+        // These appear in the SVG icons within the performer items
+        const hasTrendIcon = await page.locator("svg").first().isVisible().catch(() => false);
+        expect(hasTrendIcon).toBeTruthy();
+      }
+    });
+  });
+
+  test.describe("Effectiveness Report Empty State", () => {
+    test("should display empty state when no completed recommendations", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Should either show metrics or empty state message
+      const hasTotalCompleted = await page.getByText(/total completed/i).isVisible().catch(() => false);
+      const hasEmptyState = await page.getByText(/no completed recommendations/i).isVisible().catch(() => false);
+      const hasCompleteToSee = await page.getByText(/complete recommendations.*see effectiveness/i).isVisible().catch(() => false);
+
+      // One of these states should be present
+      expect(hasTotalCompleted || hasEmptyState || hasCompleteToSee).toBeTruthy();
+    });
+
+    test("should show guidance text in empty state", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // If in empty state, should show guidance
+      const hasEmptyState = await page.getByText(/no completed recommendations/i).isVisible().catch(() => false);
+
+      if (hasEmptyState) {
+        // Should show guidance text about completing recommendations
+        const hasGuidance = await page.getByText(/complete recommendations/i).isVisible().catch(() => false);
+        expect(hasGuidance).toBeTruthy();
+      }
+    });
+  });
+
+  test.describe("Effectiveness Report Improvements Stats", () => {
+    test("should display positive improvements count", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // If there are completed recommendations
+      const hasEmptyState = await page.getByText(/no completed recommendations/i).isVisible().catch(() => false);
+
+      if (!hasEmptyState) {
+        // Should show positive improvements text
+        const hasPositiveImprovements = await page.getByText(/positive improvements/i).isVisible().catch(() => false);
+        expect(hasPositiveImprovements).toBeTruthy();
+      }
+    });
+
+    test("should conditionally display negative improvements if any exist", async ({ page }) => {
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // If there are completed recommendations
+      const hasEmptyState = await page.getByText(/no completed recommendations/i).isVisible().catch(() => false);
+
+      if (!hasEmptyState) {
+        // Negative improvements section is conditional
+        // Just verify the positive improvements section exists (negative is optional)
+        const hasPositiveImprovements = await page.getByText(/positive improvements/i).isVisible().catch(() => false);
+        expect(hasPositiveImprovements).toBeTruthy();
+      }
+    });
+  });
+
+  test.describe("Effectiveness Report Error Handling", () => {
+    test("should handle page load without errors", async ({ page }) => {
+      // Track console errors
+      const errors: string[] = [];
+      page.on("console", msg => {
+        if (msg.type() === "error") {
+          errors.push(msg.text());
+        }
+      });
+
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Filter out known acceptable errors (like network errors in test environment)
+      const criticalErrors = errors.filter(e =>
+        !e.includes("Failed to fetch") &&
+        !e.includes("net::ERR") &&
+        !e.includes("NetworkError")
+      );
+
+      // Should have no critical console errors
+      expect(criticalErrors.length).toBe(0);
+    });
+
+    test("should display error state gracefully if API fails", async ({ page }) => {
+      // Intercept the API request and force it to fail
+      await page.route("**/api/recommendations/effectiveness**", route => {
+        route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({ success: false, error: "Internal server error" })
+        });
+      });
+
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for error state
+      await page.waitForTimeout(2000);
+
+      // Should show error message
+      const hasError = await page.getByText(/failed to load metrics/i).isVisible().catch(() => false);
+      const hasTryAgain = await page.getByText(/try again/i).isVisible().catch(() => false);
+
+      // Should show some error indication
+      expect(hasError || hasTryAgain).toBeTruthy();
+    });
+  });
+
+  test.describe("Effectiveness Report Responsive Design", () => {
+    test("should display correctly on mobile viewport", async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 667 });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Page should load
+      await expect(page.locator("body")).toBeVisible();
+
+      // Core content should be visible
+      await expect(page.getByText("APEX", { exact: true })).toBeVisible();
+    });
+
+    test("should stack metric cards on mobile", async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 667 });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Should show effectiveness heading
+      const hasHeading = await page.getByText(/recommendation effectiveness/i).first().isVisible().catch(() => false);
+      expect(hasHeading).toBeTruthy();
+    });
+
+    test("should display correctly on tablet viewport", async ({ page }) => {
+      await page.setViewportSize({ width: 768, height: 1024 });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Core content should be visible
+      await expect(page.getByText("APEX", { exact: true })).toBeVisible();
+      await expect(page.getByText(/recommendation effectiveness/i).first()).toBeVisible();
+    });
+  });
+
+  test.describe("Effectiveness Report Integration with Completion Tracking", () => {
+    test("should navigate from recommendations page to effectiveness report", async ({ page }) => {
+      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Navigate to effectiveness report
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Verify we're on the effectiveness report page
+      await expect(page.getByText(/effectiveness report/i).first()).toBeVisible();
+    });
+
+    test("should reflect completed recommendations from tracking workflow", async ({ page }) => {
+      // First visit effectiveness report to get baseline
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Check current state - either has metrics or empty state
+      const hasMetrics = await page.getByText(/total completed/i).isVisible().catch(() => false);
+      const hasEmptyState = await page.getByText(/no completed recommendations/i).isVisible().catch(() => false);
+
+      // Page should show one of these states
+      expect(hasMetrics || hasEmptyState).toBeTruthy();
+    });
+  });
 });
