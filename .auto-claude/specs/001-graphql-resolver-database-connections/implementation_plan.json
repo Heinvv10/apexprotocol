@@ -703,10 +703,17 @@
       "timestamp": "2025-12-23T02:02:47.006024+00:00",
       "issues": [],
       "duration_seconds": 425.64
+    },
+    {
+      "iteration": 1,
+      "status": "approved",
+      "timestamp": "2025-12-23T02:09:52.449486+00:00",
+      "issues": [],
+      "duration_seconds": 512.34
     }
   ],
   "qa_stats": {
-    "total_iterations": 1,
+    "total_iterations": 2,
     "last_iteration": 1,
     "last_status": "approved",
     "issues_by_type": {}
