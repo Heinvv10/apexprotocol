@@ -211,6 +211,36 @@ export function getSeededData(): SeedResult | null {
   return _seededData;
 }
 
+// Track if database connection was verified to be available
+let _databaseConnected = false;
+
+/**
+ * Check if database is actually reachable (not just configured)
+ */
+export async function isDatabaseReachable(): Promise<boolean> {
+  if (!isDatabaseConfigured()) {
+    return false;
+  }
+
+  try {
+    const db = getIntegrationDb();
+    // Try a simple query to verify connection
+    await db.execute(sql`SELECT 1`);
+    _databaseConnected = true;
+    return true;
+  } catch {
+    _databaseConnected = false;
+    return false;
+  }
+}
+
+/**
+ * Check if database has been verified as connected
+ */
+export function wasDatabaseConnected(): boolean {
+  return _databaseConnected;
+}
+
 /**
  * Main setup function for integration tests
  *
@@ -236,6 +266,16 @@ export function setupIntegrationTest(options: {
         );
         return;
       }
+
+      // Try to connect and verify the database is reachable
+      const reachable = await isDatabaseReachable();
+      if (!reachable) {
+        console.warn(
+          "⚠️  Database not reachable - integration tests will be skipped"
+        );
+        return;
+      }
+
       await seedTestData();
     });
   }
@@ -243,7 +283,7 @@ export function setupIntegrationTest(options: {
   // Auto-cleanup after all tests
   if (autoCleanup) {
     afterAll(async () => {
-      if (isDatabaseConfigured()) {
+      if (_databaseConnected) {
         await cleanupAllTestData();
       }
     });
@@ -299,6 +339,20 @@ export function setupIntegrationTest(options: {
 export function skipIfNoDB(): boolean {
   if (!isDatabaseConfigured()) {
     console.warn("Skipping test - database not configured");
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Skip test if database is not reachable (or not configured)
+ * Use this after setupIntegrationTest() has been called
+ */
+export function skipIfNotReachable(): boolean {
+  if (!isDatabaseConfigured()) {
+    return true;
+  }
+  if (!_databaseConnected) {
     return true;
   }
   return false;

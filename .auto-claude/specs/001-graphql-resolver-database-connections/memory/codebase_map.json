@@ -64,7 +64,22 @@
       "description": "Integration test infrastructure with database connection, seed data utilities, and cleanup functions. Uses TEST_DATABASE_URL (preferred) or DATABASE_URL. Provides setupIntegrationTest() for auto-seeding/cleanup.",
       "category": "testing",
       "discovered_at": "2025-12-23T00:20:59.519433+00:00"
+    },
+    "tests/integration/brands.test.ts": {
+      "description": "Brand integration tests with 30 test cases covering full CRUD cycle. Tests verify: CREATE (insert with .returning(), defaults, complex nested data), READ (by ID, by domain, list with pagination/ordering/filtering), UPDATE (single/multiple fields, nested data, timestamps), DELETE (single brand, isolation, cascade behavior), organization isolation (multi-tenant security), and edge cases (empty arrays, null fields, special characters, long text). Uses setupIntegrationTest() with auto-seeding. Requires live database connection.",
+      "category": "test_infrastructure",
+      "discovered_at": "2025-12-23T00:33:22.338144+00:00"
+    },
+    "tests/integration/": {
+      "description": "Integration tests for mentions and recommendations: tests/integration/mentions.test.ts (26 tests) covers query/create/computed fields/relationships/edge cases for mentions. tests/integration/recommendations.test.ts (33 tests) covers query/status transitions/feedback submission/assignment/relationships/edge cases for recommendations. Both use setupIntegrationTest() with auto-seeding/cleanup. Require TEST_DATABASE_URL or DATABASE_URL for real database connection.",
+      "category": "integration-tests",
+      "discovered_at": "2025-12-23T00:44:03.709991+00:00"
+    },
+    "tests/integration/concurrent-requests.test.ts": {
+      "description": "Concurrent request integration tests with 15 test cases covering: 10+ concurrent queries, cross-table queries, mixed read/write operations, stress testing (50 concurrent queries), error resilience, and response validation. Tests verify Neon connection pooling handles concurrent load. Uses setupIntegrationTest() pattern with auto-seeding. Tests skip gracefully when database is not configured.",
+      "category": "test",
+      "discovered_at": "2025-12-23T00:51:48.417680+00:00"
     }
   },
-  "last_updated": "2025-12-23T00:20:59.519433+00:00"
+  "last_updated": "2025-12-23T00:51:48.417680+00:00"
 }
