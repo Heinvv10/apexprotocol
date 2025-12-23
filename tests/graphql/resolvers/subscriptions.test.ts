@@ -145,7 +145,7 @@ describe("Subscription Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0]).toEqual(mockOrg);
+      expect((result as unknown[])[0]).toEqual(mockOrg);
       expect(wasMethodCalled("select")).toBe(true);
       expect(wasMethodCalled("where")).toBe(true);
     });
@@ -160,7 +160,7 @@ describe("Subscription Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0]).toBeUndefined();
+      expect((result as unknown[])[0]).toBeUndefined();
     });
 
     it("should transform organization to subscription format", () => {

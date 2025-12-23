@@ -120,7 +120,7 @@ describe("Content Resolvers", () => {
         .limit(1);
 
       expect(result).toEqual([]);
-      expect(result[0]).toBeUndefined();
+      expect((result as unknown[])[0]).toBeUndefined();
     });
 
     it("should transform content with aiOptimizationScore", () => {
@@ -465,7 +465,7 @@ describe("Content Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0]).toEqual(mockContent);
+      expect((result as unknown[])[0]).toEqual(mockContent);
       dbAssertions.expectSelect();
     });
 
@@ -515,7 +515,7 @@ describe("Content Resolvers", () => {
         updatedAt: new Date(),
       }).where().returning();
 
-      expect(result[0].status).toBe("published");
+      expect((result as Array<{ status: string }>)[0].status).toBe("published");
       dbAssertions.expectUpdate();
     });
 
@@ -568,7 +568,7 @@ describe("Content Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0]).toEqual(mockBrand);
+      expect((result as unknown[])[0]).toEqual(mockBrand);
       dbAssertions.expectSelect();
     });
 
@@ -582,7 +582,7 @@ describe("Content Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0]).toBeUndefined();
+      expect((result as unknown[])[0]).toBeUndefined();
     });
 
     it("should transform brand with platforms array", () => {
@@ -709,7 +709,7 @@ describe("Content Resolvers", () => {
       // Test that null aiScore from database is transformed to null aiOptimizationScore
       // Bypass factory defaults by spreading with explicit null
       const content = { ...createMockContent(), aiScore: null };
-      const transformed = transformContent(content as ReturnType<typeof createDbContent>);
+      const transformed = transformContent(content as unknown as ReturnType<typeof createDbContent>);
 
       expect(transformed.aiOptimizationScore).toBeNull();
     });

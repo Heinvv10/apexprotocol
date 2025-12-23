@@ -128,7 +128,7 @@ describe("Recommendation Resolvers", () => {
         .limit(1);
 
       expect(result).toEqual([]);
-      expect(result[0]).toBeUndefined();
+      expect((result as unknown[])[0]).toBeUndefined();
     });
 
     it("should transform recommendation with computed type field", () => {
@@ -334,7 +334,7 @@ describe("Recommendation Resolvers", () => {
         .where()
         .returning();
 
-      expect(result[0].status).toBe("pending");
+      expect((result as Array<{ status: string }>)[0].status).toBe("pending");
       dbAssertions.expectUpdate();
     });
 
@@ -349,7 +349,7 @@ describe("Recommendation Resolvers", () => {
         .where()
         .returning();
 
-      expect(result[0].status).toBe("in_progress");
+      expect((result as Array<{ status: string }>)[0].status).toBe("in_progress");
     });
 
     it("should update status to completed and set completedAt", async () => {
@@ -441,7 +441,7 @@ describe("Recommendation Resolvers", () => {
         .where()
         .returning();
 
-      expect(result[0].assignedToId).toBe(userId);
+      expect((result as Array<{ assignedToId: string }>)[0].assignedToId).toBe(userId);
       dbAssertions.expectUpdate();
     });
 
@@ -521,8 +521,8 @@ describe("Recommendation Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0]).toBeDefined();
-      expect(result[0].id).toBe("rec-123");
+      expect((result as unknown[])[0]).toBeDefined();
+      expect((result as Array<{ id: string }>)[0].id).toBe("rec-123");
     });
 
     it("should insert feedback into recommendation_feedback table", async () => {
@@ -626,7 +626,7 @@ describe("Recommendation Resolvers", () => {
     });
 
     it("should handle optional comment field", () => {
-      const feedbackInput = {
+      const feedbackInput: { rating: number; wasHelpful: boolean; comment?: string } = {
         rating: 4,
         wasHelpful: true,
         // comment is optional
@@ -637,7 +637,7 @@ describe("Recommendation Resolvers", () => {
     });
 
     it("should handle optional actualImpact field", () => {
-      const feedbackInput = {
+      const feedbackInput: { rating: number; wasHelpful: boolean; actualImpact?: string } = {
         rating: 4,
         wasHelpful: true,
         // actualImpact is optional
@@ -715,7 +715,7 @@ describe("Recommendation Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0]).toEqual(mockBrand);
+      expect((result as unknown[])[0]).toEqual(mockBrand);
       dbAssertions.expectSelect();
     });
 
@@ -729,7 +729,7 @@ describe("Recommendation Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0]).toBeUndefined();
+      expect((result as unknown[])[0]).toBeUndefined();
     });
 
     it("should transform brand with platforms array", () => {
@@ -797,7 +797,7 @@ describe("Recommendation Resolvers", () => {
         .orderBy();
 
       expect(result).toHaveLength(2);
-      expect(result.every(f => f.recommendationId === parent.id)).toBe(true);
+      expect((result as Array<{ recommendationId: string }>).every((f) => f.recommendationId === parent.id)).toBe(true);
     });
 
     it("should return empty array when no feedback exists", async () => {
@@ -996,7 +996,7 @@ describe("Recommendation Resolvers", () => {
         .from(getSchema().recommendations)
         .where(); // Would filter by priority = 'high'
 
-      expect(result.every(r => r.priority === "high")).toBe(true);
+      expect((result as Array<{ priority: string }>).every((r) => r.priority === "high")).toBe(true);
     });
 
     it("should filter by category", async () => {
@@ -1012,7 +1012,7 @@ describe("Recommendation Resolvers", () => {
         .from(getSchema().recommendations)
         .where(); // Would filter by category = 'content'
 
-      expect(result.every(r => r.category === "content")).toBe(true);
+      expect((result as Array<{ category: string }>).every((r) => r.category === "content")).toBe(true);
     });
 
     it("should filter by status", async () => {
@@ -1028,7 +1028,7 @@ describe("Recommendation Resolvers", () => {
         .from(getSchema().recommendations)
         .where(); // Would filter by status = 'pending'
 
-      expect(result.every(r => r.status === "pending")).toBe(true);
+      expect((result as Array<{ status: string }>).every((r) => r.status === "pending")).toBe(true);
     });
 
     it("should support multiple filters combined", () => {

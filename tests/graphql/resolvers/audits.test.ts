@@ -123,7 +123,7 @@ describe("Audit Resolvers", () => {
         .limit(1);
 
       expect(result).toEqual([]);
-      expect(result[0]).toBeUndefined();
+      expect((result as unknown[])[0]).toBeUndefined();
     });
 
     it("should transform categoryScores to categories array", () => {
@@ -324,10 +324,10 @@ describe("Audit Resolvers", () => {
         triggeredById: userId,
       }).returning();
 
-      expect(result[0]).toEqual(newAudit);
-      expect(result[0].status).toBe("pending");
-      expect(result[0].brandId).toBe(brandId);
-      expect(result[0].url).toBe(url);
+      expect((result as unknown[])[0]).toEqual(newAudit);
+      expect((result as Array<{ status: string }>)[0].status).toBe("pending");
+      expect((result as Array<{ brandId: string }>)[0].brandId).toBe(brandId);
+      expect((result as Array<{ url: string }>)[0].url).toBe(url);
       dbAssertions.expectInsert();
     });
 
@@ -445,7 +445,7 @@ describe("Audit Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0]).toEqual(mockBrand);
+      expect((result as unknown[])[0]).toEqual(mockBrand);
       dbAssertions.expectSelect();
     });
 
@@ -459,7 +459,7 @@ describe("Audit Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0]).toBeUndefined();
+      expect((result as unknown[])[0]).toBeUndefined();
     });
 
     it("should transform brand with platforms array", () => {
@@ -564,7 +564,7 @@ describe("Audit Resolvers", () => {
     });
 
     it("should return null duration when not completed", () => {
-      const audit = { startedAt: new Date(), completedAt: null };
+      const audit: { startedAt: Date | null; completedAt: Date | null } = { startedAt: new Date(), completedAt: null };
 
       const duration = audit.completedAt && audit.startedAt
         ? Math.round((audit.completedAt.getTime() - audit.startedAt.getTime()) / 1000)
@@ -574,7 +574,7 @@ describe("Audit Resolvers", () => {
     });
 
     it("should return null duration when not started", () => {
-      const audit = { startedAt: null, completedAt: null };
+      const audit: { startedAt: Date | null; completedAt: Date | null } = { startedAt: null, completedAt: null };
 
       const duration = audit.completedAt && audit.startedAt
         ? Math.round((audit.completedAt.getTime() - audit.startedAt.getTime()) / 1000)

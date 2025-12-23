@@ -414,7 +414,7 @@ describe("GEO Score Resolvers", () => {
         .orderBy()
         .limit(1);
 
-      expect(result[0]).toEqual({ overallScore: 72 });
+      expect((result as unknown[])[0]).toEqual({ overallScore: 72 });
     });
 
     it("should calculate trend as up when score increased by more than 1", () => {
@@ -575,7 +575,7 @@ describe("GEO Score Resolvers", () => {
         .limit(30);
 
       expect(result).toEqual(historyRecords);
-      expect(result.every((r) => r.brandId === parent.brandId)).toBe(true);
+      expect((result as Array<{ brandId: string }>).every((r) => r.brandId === parent.brandId)).toBe(true);
     });
 
     it("should use default limit when days not provided", () => {

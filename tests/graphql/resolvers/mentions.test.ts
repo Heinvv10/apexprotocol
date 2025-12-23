@@ -118,7 +118,7 @@ describe("Mention Resolvers", () => {
         .limit(1);
 
       expect(result).toEqual([]);
-      expect(result[0]).toBeUndefined();
+      expect((result as unknown[])[0]).toBeUndefined();
     });
 
     it("should compute sentimentScore as 0.8 for positive sentiment", () => {
@@ -181,13 +181,13 @@ describe("Mention Resolvers", () => {
       const db = getDb();
       const result = await db.select().from(getSchema().brandMentions).where().limit(1);
 
-      expect(result[0]).toHaveProperty("id");
-      expect(result[0]).toHaveProperty("brandId");
-      expect(result[0]).toHaveProperty("platform");
-      expect(result[0]).toHaveProperty("query");
-      expect(result[0]).toHaveProperty("response");
-      expect(result[0]).toHaveProperty("position");
-      expect(result[0]).toHaveProperty("sentiment");
+      expect((result as Record<string, unknown>[])[0]).toHaveProperty("id");
+      expect((result as Record<string, unknown>[])[0]).toHaveProperty("brandId");
+      expect((result as Record<string, unknown>[])[0]).toHaveProperty("platform");
+      expect((result as Record<string, unknown>[])[0]).toHaveProperty("query");
+      expect((result as Record<string, unknown>[])[0]).toHaveProperty("response");
+      expect((result as Record<string, unknown>[])[0]).toHaveProperty("position");
+      expect((result as Record<string, unknown>[])[0]).toHaveProperty("sentiment");
     });
   });
 
@@ -233,7 +233,7 @@ describe("Mention Resolvers", () => {
         .limit(20);
 
       expect(result).toEqual(mockMentions);
-      expect(result.every((m) => m.brandId === brandId)).toBe(true);
+      expect((result as Array<{ brandId: string }>).every((m) => m.brandId === brandId)).toBe(true);
     });
 
     it("should filter mentions by platform", async () => {
@@ -250,7 +250,7 @@ describe("Mention Resolvers", () => {
         .where()
         .limit(20);
 
-      expect(result.every((m) => m.platform === "chatgpt")).toBe(true);
+      expect((result as Array<{ platform: string }>).every((m) => m.platform === "chatgpt")).toBe(true);
     });
 
     it("should filter mentions by sentiment", async () => {
@@ -267,7 +267,7 @@ describe("Mention Resolvers", () => {
         .where()
         .limit(20);
 
-      expect(result.every((m) => m.sentiment === "positive")).toBe(true);
+      expect((result as Array<{ sentiment: string }>).every((m) => m.sentiment === "positive")).toBe(true);
     });
 
     it("should apply default limit of 20", async () => {
@@ -390,11 +390,11 @@ describe("Mention Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0]).toBeDefined();
+      expect((result as unknown[])[0]).toBeDefined();
       dbAssertions.expectSelect();
 
       // Verify computed fields
-      const computedResult = computeMentionFields(result[0] as ReturnType<typeof createDbMention>);
+      const computedResult = computeMentionFields((result as ReturnType<typeof createDbMention>[])[0]);
       expect(computedResult.sentimentScore).toBe(0.8);
       expect(computedResult.isRecommendation).toBe(true);
       expect(computedResult.competitorMentioned).toBe(true);
@@ -411,7 +411,7 @@ describe("Mention Resolvers", () => {
         .limit(1);
 
       // Resolver should throw "Mention not found"
-      expect(result[0]).toBeUndefined();
+      expect((result as unknown[])[0]).toBeUndefined();
     });
 
     it("should re-throw known errors like 'Mention not found'", () => {
@@ -496,8 +496,8 @@ describe("Mention Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0]).toBeDefined();
-      expect(result[0].id).toBe(parent.brandId);
+      expect((result as unknown[])[0]).toBeDefined();
+      expect((result as Array<{ id: string }>)[0].id).toBe(parent.brandId);
     });
 
     it("should return null when brand not found", async () => {
@@ -510,7 +510,7 @@ describe("Mention Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0]).toBeUndefined();
+      expect((result as unknown[])[0]).toBeUndefined();
     });
 
     it("should transform brand with platforms array", () => {
