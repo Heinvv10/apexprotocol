@@ -114,3 +114,56 @@ wired to the same `useUnifiedScore` hook and `/api/analytics/unified-score` API.
 The GEO Score Trend component is properly wired to display live data from the database.
 
 === END SESSION 2 ===
+
+=== SESSION 3: SUBTASK 1-2 VERIFICATION ===
+Started: 2025-12-23
+
+## Subtask 1-2: Verify Prioritized Recommendations component displays live data
+
+### Data Flow Verification ✅
+
+1. **Component** (`src/components/dashboard/prioritized-recommendations.tsx`):
+   - Uses `useRecommendations` hook from `@/hooks/useRecommendations`
+   - Gets brand from `useSelectedBrand` store if not provided via props
+   - Transforms API data to component format:
+     * Maps effort values: low→quick, medium→medium, high→long
+     * Multiplies impact by 10 for percentage display
+   - Loading state with `Loader2` spinner and "Loading recommendations..." message
+   - Empty state with "No recommendations yet" and "Run a site audit" suggestion
+   - Displays recommendations with priority badges, impact %, effort labels, categories
+
+2. **Hook** (`src/hooks/useRecommendations.ts`):
+   - `useRecommendations` calls `/api/recommendations?${params}`
+   - Uses TanStack Query with 2 min stale time
+   - Transforms API response format (handles both json.data and json.recommendations)
+   - Proper error handling
+
+3. **API Route** (`src/app/api/recommendations/route.ts`):
+   - Authenticates using `getOrganizationId()`
+   - Fetches real data from PostgreSQL via Drizzle ORM
+   - Filters by organization's brands, category, status, priority, effort, impact, source, due dates
+   - **FIXED**: Now sorts by priority ASC (critical > high > medium > low) then by createdAt DESC
+   - Returns paginated results with meta (total, limit, offset, timestamp)
+
+### Fix Applied ✅
+The API route was sorting by `createdAt DESC` only. Updated to sort by:
+1. `priority ASC` - critical first (enum order: critical, high, medium, low)
+2. `createdAt DESC` - most recent within same priority
+
+### Verification Checklist ✅
+- [x] Recommendations list displays database items
+- [x] Items are sorted by priority (critical > high > medium > low) - FIXED
+- [x] Loading state displays during fetch
+- [x] Zero-state message shows when no recommendations
+- [x] No TypeScript errors in recommendations files
+
+### Code Quality ✅
+- No TypeScript errors in recommendations-related files
+- Loading state properly displays during fetch
+- Error handling implemented at all layers
+- Priority sorting now correct
+
+### Status: VERIFIED ✅
+The Prioritized Recommendations component is properly wired to display live data from the database with correct priority sorting.
+
+=== END SESSION 3 ===
