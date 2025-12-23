@@ -1,0 +1,91 @@
+=== AUTO-BUILD PROGRESS ===
+
+Project: Apex - GEO Optimization Platform
+Feature: AI-Powered Recommendation Generation
+Spec: 003-ai-powered-recommendation-generation
+Started: 2025-12-23
+
+Workflow Type: feature
+Rationale: Greenfield enhancement that replaces rule-based recommendation generation with AI-powered analysis using Claude. This transforms raw visibility metrics into actionable, prioritized recommendations—a key competitive differentiator against GEO tools that only monitor without providing optimization guidance.
+
+Session 1 (Planner):
+- Created implementation_plan.json
+- Phases: 5
+- Total subtasks: 12
+- Created init.sh
+
+Phase Summary:
+- Phase 1: AI Recommendation Analysis Logic (3 subtasks)
+  * Create Claude AI integration for recommendation generation
+  * Define TypeScript types for visibility data input/output
+  * Implement impact scoring algorithm for prioritization
+
+- Phase 2: Database Persistence Layer (2 subtasks)
+  * Create Drizzle ORM query functions for CRUD operations
+  * Add duplicate detection logic to prevent re-generating existing recommendations
+
+- Phase 3: API Endpoint Enhancement (3 subtasks)
+  * Modify existing /api/recommendations/generate to use AI instead of rules
+  * Add input validation with Zod schemas
+  * Implement observability logging for AI operations
+
+- Phase 4: Testing & Validation (3 subtasks)
+  * Write unit tests for AI recommendation generator
+  * Write integration tests for API endpoints
+  * Manual QA with real visibility data
+
+- Phase 5: End-to-End Integration (1 subtask)
+  * Verify complete flow: API → AI generation → DB persistence → retrieval
+
+Services Involved:
+- main (Next.js): All implementation contained in single service
+
+Parallelism Analysis:
+- Max parallel phases: 1
+- Recommended workers: 1
+- Parallel groups: None
+- Reasoning: Sequential execution required - Phase 2 needs Phase 1 types, Phase 3 needs Phase 2 DB queries, Phase 4 tests Phase 3, Phase 5 integrates Phase 4
+
+Key Technical Decisions:
+- AI Provider: Claude Sonnet 3.5 (claude-3-5-sonnet-20241022) - cost-efficient, sufficient for analysis
+- Database: Existing PostgreSQL schema (recommendations table already exists)
+- API Pattern: Enhance existing /api/recommendations/generate endpoint
+- Duplicate Detection: Fuzzy title matching before DB insert
+- Error Handling: Retry logic (3 attempts) + graceful degradation
+
+Critical Files Identified:
+- Existing: src/lib/db/schema/recommendations.ts (database schema)
+- Existing: src/lib/ai/claude.ts (Claude client)
+- Existing: src/app/api/recommendations/generate/route.ts (API endpoint to enhance)
+- New: src/lib/ai/recommendations.ts (AI recommendation generation logic)
+- New: src/lib/ai/types/recommendation-input.ts (TypeScript types)
+- New: src/lib/db/queries/recommendations.ts (Drizzle query functions)
+
+Verification Strategy:
+- Risk Level: Medium
+- Test Types: Unit + Integration
+- No security scanning or staging deployment required
+- Manual QA with real visibility data to verify recommendation quality
+
+=== STARTUP COMMAND ===
+
+To continue building this spec:
+
+  cd "C:\Jarvis\AI Workspace\Apex"
+  npm run dev
+
+Or run the init script:
+
+  bash .auto-claude/specs/003-ai-powered-recommendation-generation/init.sh
+
+=== NEXT STEPS ===
+
+The coder agent will:
+1. Read implementation_plan.json
+2. Start with Phase 1, subtask-1-1
+3. Create src/lib/ai/recommendations.ts with Claude integration
+4. Follow the subtask implementation notes for patterns and requirements
+5. Run verification command (npx tsc --noEmit) before marking complete
+6. Proceed sequentially through all 12 subtasks
+
+=== END SESSION 1 ===

@@ -1,0 +1,460 @@
+{
+  "integrations_researched": [
+    {
+      "name": "Anthropic SDK TypeScript",
+      "type": "library",
+      "verified_package": {
+        "name": "@anthropic-ai/sdk",
+        "install_command": "npm install @anthropic-ai/sdk",
+        "version": "^0.71.2",
+        "verified": true,
+        "already_installed": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import Anthropic from '@anthropic-ai/sdk';"
+        ],
+        "initialization": "const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });",
+        "key_functions": [
+          "client.messages.create({ model, max_tokens, messages })",
+          "client.messages.stream({ model, max_tokens, messages })"
+        ],
+        "structured_output": "Use system prompts to request JSON output, then parse the response text content",
+        "verified_against": "Context7 MCP: /anthropics/anthropic-sdk-typescript"
+      },
+      "configuration": {
+        "env_vars": ["ANTHROPIC_API_KEY"],
+        "config_files": [],
+        "dependencies": []
+      },
+      "usage_in_project": {
+        "existing_implementation": "src/lib/ai/claude.ts",
+        "models_available": [
+          "claude-3-5-sonnet-20241022 (default)",
+          "claude-3-5-haiku-20241022 (fast)",
+          "claude-3-opus-20240229"
+        ],
+        "default_config": {
+          "model": "claude-3-5-sonnet-20241022",
+          "maxTokens": 4096,
+          "temperature": 0.7
+        }
+      },
+      "gotchas": [
+        "Response content is in blocks array, need to extract text from 'text' type blocks",
+        "System prompts are separate parameter, not in messages array",
+        "For structured JSON output, must parse response text manually (no native structured output API)"
+      ],
+      "research_sources": [
+        "Context7 MCP: /anthropics/anthropic-sdk-typescript",
+        "Project file: src/lib/ai/claude.ts",
+        "package.json: @anthropic-ai/sdk@^0.71.2"
+      ]
+    },
+    {
+      "name": "OpenAI SDK",
+      "type": "library",
+      "verified_package": {
+        "name": "openai",
+        "install_command": "npm install openai",
+        "version": "^6.10.0",
+        "verified": true,
+        "already_installed": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import OpenAI from 'openai';",
+          "import { zodResponseFormat } from 'openai/helpers/zod';",
+          "import { z } from 'zod';"
+        ],
+        "initialization": "const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });",
+        "key_functions": [
+          "client.chat.completions.create({ model, messages })",
+          "client.chat.completions.parse({ model, messages, response_format })",
+          "client.chat.completions.stream({ model, messages, stream: true })"
+        ],
+        "structured_output": "Use client.chat.completions.parse() with zodResponseFormat() for type-safe structured JSON responses",
+        "verified_against": "Context7 MCP: /openai/openai-node"
+      },
+      "configuration": {
+        "env_vars": ["OPENAI_API_KEY"],
+        "config_files": [],
+        "dependencies": ["zod (for structured outputs)"]
+      },
+      "usage_in_project": {
+        "existing_implementation": "src/lib/ai/openai.ts",
+        "models_available": [
+          "gpt-4o (default chat)",
+          "gpt-4o-mini (fast)",
+          "gpt-4-turbo-preview",
+          "text-embedding-3-small (embeddings)"
+        ],
+        "default_config": {
+          "model": "gpt-4o",
+          "maxTokens": 4096,
+          "temperature": 0.7
+        }
+      },
+      "gotchas": [
+        "Structured outputs require gpt-4o-2024-08-06 or later models",
+        "Must use zodResponseFormat() helper to convert Zod schemas to JSON Schema format",
+        "Access parsed data via message.parsed property when using .parse() method",
+        "LengthFinishReasonError thrown if response truncated, ContentFilterFinishReasonError if blocked"
+      ],
+      "research_sources": [
+        "Context7 MCP: /openai/openai-node",
+        "Project file: src/lib/ai/openai.ts",
+        "package.json: openai@^6.10.0"
+      ]
+    },
+    {
+      "name": "Drizzle ORM",
+      "type": "library",
+      "verified_package": {
+        "name": "drizzle-orm",
+        "install_command": "npm install drizzle-orm",
+        "version": "^0.45.0",
+        "verified": true,
+        "already_installed": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { drizzle } from 'drizzle-orm/neon-serverless';",
+          "import { eq, and, or, sql } from 'drizzle-orm';",
+          "import { pgTable, text, timestamp, jsonb, pgEnum } from 'drizzle-orm/pg-core';"
+        ],
+        "initialization": "const db = drizzle(pool);",
+        "key_functions": [
+          "db.select().from(table).where(eq(table.id, id))",
+          "db.insert(table).values(data).returning()",
+          "db.update(table).set(data).where(eq(table.id, id)).returning()",
+          "db.query.tableName.findMany({ with: { relations: true } })",
+          "db.query.tableName.findFirst({ where: eq(table.id, id) })"
+        ],
+        "verified_against": "Context7 MCP: /drizzle-team/drizzle-orm"
+      },
+      "configuration": {
+        "env_vars": ["DATABASE_URL"],
+        "config_files": ["drizzle.config.ts"],
+        "dependencies": ["@neondatabase/serverless", "pg"]
+      },
+      "usage_in_project": {
+        "existing_implementation": "src/lib/db/",
+        "schemas_defined": [
+          "brands (src/lib/db/schema/brands.ts)",
+          "recommendations (src/lib/db/schema/recommendations.ts)",
+          "audits",
+          "users",
+          "organizations"
+        ],
+        "recommendation_schema": {
+          "table": "recommendations",
+          "key_fields": [
+            "id (text, primary key, cuid2)",
+            "brandId (text, references brands.id)",
+            "title (text)",
+            "description (text)",
+            "category (enum: technical_seo, content_optimization, schema_markup, citation_building, brand_consistency, competitor_analysis, content_freshness, authority_building)",
+            "priority (enum: critical, high, medium, low)",
+            "impact (enum: high, medium, low)",
+            "effort (enum: quick_win, moderate, major)",
+            "status (enum: pending, in_progress, completed, dismissed)",
+            "steps (jsonb, array of strings)",
+            "source (enum: audit, monitoring, content, manual)"
+          ]
+        }
+      },
+      "gotchas": [
+        "Use .$dynamic() to enable multiple where() calls or conditional query building",
+        "Use .toSQL() to inspect generated SQL queries for debugging",
+        "JSONB fields need type annotations: jsonb('field').$type<Type>()",
+        "Relations must be defined separately using relations() function",
+        "Enums must be defined with pgEnum() before using in schema"
+      ],
+      "research_sources": [
+        "Context7 MCP: /drizzle-team/drizzle-orm",
+        "Project file: src/lib/db/schema/recommendations.ts",
+        "package.json: drizzle-orm@^0.45.0"
+      ]
+    },
+    {
+      "name": "Pinecone Vector Database",
+      "type": "service",
+      "verified_package": {
+        "name": "@pinecone-database/pinecone",
+        "install_command": "npm install @pinecone-database/pinecone",
+        "version": "^6.1.3",
+        "verified": true,
+        "already_installed": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { Pinecone } from '@pinecone-database/pinecone';"
+        ],
+        "initialization": "const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });",
+        "key_functions": [
+          "pc.index('index-name')",
+          "index.upsert([{ id, values, metadata }])",
+          "index.query({ vector, topK, filter, includeMetadata })",
+          "index.describeIndexStats()"
+        ],
+        "verified_against": "Context7 MCP: /pinecone-io/pinecone-ts-client"
+      },
+      "configuration": {
+        "env_vars": ["PINECONE_API_KEY"],
+        "config_files": [],
+        "dependencies": []
+      },
+      "usage_in_project": {
+        "existing_implementation": "src/lib/ai/pinecone.ts",
+        "index_names": {
+          "brand_mentions": "For brand visibility data",
+          "content": "For content embeddings"
+        },
+        "metadata_types": {
+          "BrandMentionMetadata": "platform, sentiment, timestamp, etc.",
+          "ContentMetadata": "contentType, brandId, etc."
+        }
+      },
+      "gotchas": [
+        "Index must be created before use (check if exists first)",
+        "Vectors must match the dimension specified when index was created",
+        "Metadata is optional but highly recommended for filtering",
+        "Use namespaces to organize data within a single index",
+        "Query results include similarity scores for ranking"
+      ],
+      "research_sources": [
+        "Context7 MCP: /pinecone-io/pinecone-ts-client",
+        "Project file: src/lib/ai/pinecone.ts",
+        "package.json: @pinecone-database/pinecone@^6.1.3"
+      ]
+    },
+    {
+      "name": "Next.js",
+      "type": "framework",
+      "verified_package": {
+        "name": "next",
+        "install_command": "npm install next",
+        "version": "16.0.8",
+        "verified": true,
+        "already_installed": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { NextRequest, NextResponse } from 'next/server';",
+          "import { headers } from 'next/headers';"
+        ],
+        "api_routes": "app/api/[route]/route.ts with named exports: GET, POST, PUT, DELETE",
+        "key_functions": [
+          "export async function POST(request: NextRequest)",
+          "NextResponse.json({ data })",
+          "await request.json()"
+        ],
+        "verified_against": "Context7 MCP: /vercel/next.js"
+      },
+      "configuration": {
+        "env_vars": [
+          "NODE_ENV",
+          "NEXT_PUBLIC_* (for client-side env vars)"
+        ],
+        "config_files": [
+          "next.config.js",
+          "tsconfig.json"
+        ],
+        "dependencies": ["react", "react-dom"]
+      },
+      "usage_in_project": {
+        "version": "16.0.8 (App Router)",
+        "structure": "app/ directory structure",
+        "features_used": [
+          "Server Components",
+          "Server Actions",
+          "API Routes",
+          "Middleware"
+        ]
+      },
+      "gotchas": [
+        "App Router uses app/ directory, not pages/",
+        "Server Components are default, client components need 'use client'",
+        "Environment variables must be prefixed with NEXT_PUBLIC_ for client access",
+        "API routes must be in app/api/ with route.ts files"
+      ],
+      "research_sources": [
+        "Context7 MCP: /vercel/next.js",
+        "Project package.json: next@16.0.8"
+      ]
+    },
+    {
+      "name": "Zod",
+      "type": "library",
+      "verified_package": {
+        "name": "zod",
+        "install_command": "npm install zod",
+        "version": "^4.1.13",
+        "verified": true,
+        "already_installed": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { z } from 'zod';"
+        ],
+        "initialization": "Not required",
+        "key_functions": [
+          "z.object({ field: z.string() })",
+          "z.array(schema)",
+          "z.enum(['value1', 'value2'])",
+          "schema.parse(data)",
+          "schema.safeParse(data)"
+        ],
+        "verified_against": "Package documentation and OpenAI integration examples"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": []
+      },
+      "usage_in_project": {
+        "existing_implementation": "Used throughout for validation",
+        "validation_files": "src/lib/validations/"
+      },
+      "gotchas": [
+        "parse() throws on validation failure, safeParse() returns result object",
+        "Use z.infer<typeof Schema> to get TypeScript type from schema",
+        "Combine with zodResponseFormat() for OpenAI structured outputs"
+      ],
+      "research_sources": [
+        "Project package.json: zod@^4.1.13",
+        "OpenAI SDK documentation for structured outputs"
+      ]
+    },
+    {
+      "name": "Neon PostgreSQL",
+      "type": "service",
+      "verified_package": {
+        "name": "@neondatabase/serverless",
+        "install_command": "npm install @neondatabase/serverless",
+        "version": "^1.0.2",
+        "verified": true,
+        "already_installed": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { Pool, neonConfig } from '@neondatabase/serverless';"
+        ],
+        "initialization": "const pool = new Pool({ connectionString: process.env.DATABASE_URL });",
+        "key_functions": [
+          "pool.query(sql, params)",
+          "Used with Drizzle ORM typically"
+        ],
+        "verified_against": "Package documentation"
+      },
+      "configuration": {
+        "env_vars": ["DATABASE_URL"],
+        "config_files": [],
+        "dependencies": []
+      },
+      "infrastructure": {
+        "requires_docker": false,
+        "cloud_service": "Neon serverless PostgreSQL",
+        "connection_pooling": true
+      },
+      "gotchas": [
+        "Serverless-optimized, works with edge runtimes",
+        "Connection pooling managed by Neon",
+        "DATABASE_URL format: postgresql://user:password@host/database"
+      ],
+      "research_sources": [
+        "Project package.json: @neondatabase/serverless@^1.0.2",
+        ".env.example"
+      ]
+    }
+  ],
+  "unverified_claims": [],
+  "recommendations": [
+    {
+      "category": "AI Provider Selection",
+      "recommendation": "Use OpenAI structured outputs (client.chat.completions.parse with Zod schemas) for generating recommendations",
+      "rationale": "OpenAI provides native structured output support with type-safe parsing, eliminating manual JSON parsing errors. The zodResponseFormat() helper ensures responses conform to defined schemas.",
+      "implementation": "Define Zod schema for recommendations with fields: title, description, category, priority, impact, effort, steps[], reasoning. Use gpt-4o model with response_format parameter."
+    },
+    {
+      "category": "Database Design",
+      "recommendation": "Leverage existing recommendations table schema - it already has all required fields",
+      "rationale": "The recommendations table in src/lib/db/schema/recommendations.ts already includes priority, impact, effort, status, steps, and source fields needed for AI-generated recommendations.",
+      "implementation": "No schema changes needed. AI service will populate: title, description, category, priority, impact, effort, estimatedTime, steps, source='monitoring'"
+    },
+    {
+      "category": "Vector Search",
+      "recommendation": "Use Pinecone to retrieve relevant brand visibility data before generating recommendations",
+      "rationale": "Vector similarity search can identify related brand mentions, content gaps, and patterns across platforms to provide context for AI recommendation generation.",
+      "implementation": "Query Pinecone with brand embeddings to find similar mentions, low-performing content, or competitor data. Pass top results as context to LLM."
+    },
+    {
+      "category": "Impact Scoring",
+      "recommendation": "Implement multi-factor scoring algorithm combining AI prediction with historical data",
+      "rationale": "Pure AI predictions may not align with actual business metrics. Combine AI-suggested priority with factors like: visibility gap size, competitor performance, platform importance, historical ROI.",
+      "implementation": "Create scoring function: impactScore = (aiPriority * 0.4) + (visibilityGap * 0.3) + (competitorDiff * 0.2) + (platformWeight * 0.1)"
+    },
+    {
+      "category": "API Design",
+      "recommendation": "Create dedicated API route: POST /api/recommendations/generate with brandId parameter",
+      "rationale": "Separates recommendation generation from other APIs, allows async processing for long-running AI analysis.",
+      "implementation": "app/api/recommendations/generate/route.ts - accepts brandId, retrieves brand data, calls AI service, saves to database, returns recommendations"
+    },
+    {
+      "category": "Error Handling",
+      "recommendation": "Implement fallback to Claude if OpenAI structured outputs fail",
+      "rationale": "Both providers are already configured. Claude can serve as backup if OpenAI rate limits hit or structured output parsing fails.",
+      "implementation": "Use existing LLM router (src/lib/ai/router.ts) to automatically failover between providers"
+    },
+    {
+      "category": "Caching",
+      "recommendation": "Cache generated recommendations for 24 hours using existing Upstash Redis",
+      "rationale": "Recommendation generation is expensive. Cache results to avoid redundant AI calls for same brand data.",
+      "implementation": "Key format: 'recommendations:{brandId}:{dataHash}' - invalidate on new brand visibility data"
+    },
+    {
+      "category": "Testing",
+      "recommendation": "Use existing Vitest setup to test recommendation generation logic",
+      "rationale": "Project already has Vitest configured. Create unit tests for scoring algorithm, integration tests for AI service.",
+      "implementation": "Create tests/lib/ai/recommendation-generator.test.ts with mocked AI responses"
+    }
+  ],
+  "implementation_notes": {
+    "data_flow": [
+      "1. User requests recommendations for brandId",
+      "2. Retrieve brand data from brands table (monitoring platforms, competitors, keywords)",
+      "3. Query Pinecone for recent brand mentions/visibility data",
+      "4. Aggregate visibility metrics (citation count, sentiment, platform coverage)",
+      "5. Identify gaps (missing platforms, negative sentiment areas, competitor advantages)",
+      "6. Format context for LLM prompt with brand info + visibility data + gaps",
+      "7. Call OpenAI with structured output schema for recommendations array",
+      "8. Parse AI response, calculate impact scores using scoring algorithm",
+      "9. Insert recommendations into database with source='monitoring'",
+      "10. Return prioritized recommendations to user"
+    ],
+    "prompt_engineering": [
+      "Include brand voice and key messages in system prompt",
+      "Provide competitor data for competitive analysis recommendations",
+      "Specify monitoring platforms to tailor platform-specific recommendations",
+      "Request actionable steps in imperative voice (Do X, Create Y, Update Z)",
+      "Ask for estimated effort/time based on recommendation complexity",
+      "Include content gap analysis in prompt context"
+    ],
+    "performance_considerations": [
+      "Batch process recommendations for multiple brands asynchronously",
+      "Use gpt-4o-mini for faster, cheaper initial screening",
+      "Use gpt-4o for final recommendation generation and prioritization",
+      "Implement rate limiting to avoid API quota exhaustion",
+      "Stream responses for better UX on long-running requests"
+    ]
+  },
+  "context7_libraries_used": [
+    "/anthropics/anthropic-sdk-typescript",
+    "/openai/openai-node",
+    "/drizzle-team/drizzle-orm",
+    "/pinecone-io/pinecone-ts-client",
+    "/vercel/next.js"
+  ],
+  "created_at": "2025-12-23T00:00:00Z"
+}

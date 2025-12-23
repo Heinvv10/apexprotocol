@@ -1,0 +1,7 @@
+{
+  "task_description": "# AI-Powered Recommendation Generation\n\nImplement the AI recommendation engine that analyzes brand visibility data and generates prioritized, actionable recommendations with impact scores.\n\n## Rationale\nThis is a key differentiator vs competitors who only provide monitoring. Addressing the top competitor pain point: GEO tools lack actionable recommendations and optimization guidance.\n\n## User Stories\n- As a marketing manager, I want AI-generated recommendations so that I know exactly what to do to improve visibility\n- As an executive, I want prioritized recommendations so that resources go to highest-impact activities\n\n## Acceptance Criteria\n- [ ] AI analyzes brand visibility data to identify improvement opportunities\n- [ ] Recommendations prioritized by potential impact\n- [ ] Each recommendation includes specific actionable steps\n- [ ] Recommendations reference specific AI platforms and content gaps\n",
+  "scoped_services": [],
+  "files_to_modify": [],
+  "files_to_reference": [],
+  "created_at": "2025-12-23T00:05:54.830168"
+}

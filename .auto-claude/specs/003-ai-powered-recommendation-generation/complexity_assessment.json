@@ -1,0 +1,71 @@
+{
+  "complexity": "standard",
+  "workflow_type": "feature",
+  "confidence": 0.75,
+  "reasoning": "Greenfield AI recommendation engine requiring research for impact scoring and analysis algorithms. Contains to single service with existing AI infrastructure, but touches multiple layers (DB, API, AI logic, UI). Estimated 10-15 files across database schema, API routes, AI services, and frontend components.",
+
+  "analysis": {
+    "scope": {
+      "estimated_files": 12,
+      "estimated_services": 1,
+      "is_cross_cutting": true,
+      "notes": "Will touch database schema (recommendations storage), API routes (generation endpoints), AI service layer (analysis logic), UI components (display/interaction), and state management. Cross-cutting within single Next.js service."
+    },
+    "integrations": {
+      "external_services": [],
+      "new_dependencies": [],
+      "research_needed": true,
+      "notes": "Project already has @anthropic-ai/sdk and OpenAI integration. No new external APIs required. However, needs research for designing recommendation generation algorithms and impact scoring methodology."
+    },
+    "infrastructure": {
+      "docker_changes": false,
+      "database_changes": true,
+      "config_changes": false,
+      "notes": "Requires new database tables for storing recommendations, impact scores, and potentially tracking metadata. Using existing Drizzle ORM and PostgreSQL infrastructure."
+    },
+    "knowledge": {
+      "patterns_exist": false,
+      "research_required": true,
+      "unfamiliar_tech": [],
+      "notes": "Codebase has AI integration patterns and database patterns, but lacks recommendation engine patterns. Need to research: (1) brand visibility data analysis approaches, (2) impact scoring algorithms, (3) actionable recommendation structuring, (4) content gap identification logic."
+    },
+    "risk": {
+      "level": "medium",
+      "concerns": [
+        "AI recommendation quality depends on algorithm design",
+        "Impact scoring accuracy affects business decisions",
+        "Performance of AI analysis on large datasets",
+        "Dependency on existing brand visibility data structure (unclear from requirements)"
+      ],
+      "notes": "Core business differentiator with high visibility. Poor recommendation quality would undermine competitive advantage. Need clear data dependencies identified during discovery."
+    }
+  },
+
+  "recommended_phases": [
+    "discovery",
+    "requirements",
+    "research",
+    "context",
+    "spec_writing",
+    "planning",
+    "validation"
+  ],
+
+  "flags": {
+    "needs_research": true,
+    "needs_self_critique": false,
+    "needs_infrastructure_setup": false
+  },
+
+  "validation_recommendations": {
+    "risk_level": "medium",
+    "skip_validation": false,
+    "minimal_mode": false,
+    "test_types_required": ["unit", "integration"],
+    "security_scan_required": false,
+    "staging_deployment_required": false,
+    "reasoning": "Core business logic affecting user decision-making requires thorough testing. Unit tests for recommendation algorithms and impact scoring, integration tests for API endpoints and database interactions. No security-sensitive areas or payment flows involved."
+  },
+
+  "created_at": "2025-12-22T10:30:00Z"
+}
