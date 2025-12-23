@@ -17,6 +17,20 @@ const TEST_ORG_ID = "test-org-456";
 const TEST_BRAND_ID = "test-brand-789";
 const TEST_BRAND_NAME = "Test Brand";
 
+// Type for mock AI recommendations
+const defaultRecShape = {
+  category: "" as string,
+  priority: "" as string,
+  impact: "" as string,
+  effort: "" as string,
+  title: "",
+  description: "",
+  steps: [] as string[],
+  aiPlatforms: [] as string[],
+  expectedOutcome: "",
+  estimatedTimeframe: "",
+};
+
 // Mock brand data
 const mockBrand = {
   id: TEST_BRAND_ID,
@@ -115,7 +129,7 @@ const mockGenerateRecommendations = vi.fn();
 /**
  * Create mock AI response
  */
-function createMockAIResponse(recommendations: unknown[] = []) {
+function createMockAIResponse(recommendations: Partial<typeof defaultRecShape>[] = []) {
   const defaultRec = {
     category: "content_optimization",
     priority: "high",
