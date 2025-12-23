@@ -124,7 +124,7 @@ describe("Brand Resolvers", () => {
         .limit(1);
 
       expect(result).toEqual([]);
-      expect(result[0]).toBeUndefined();
+      expect((result as unknown[])[0]).toBeUndefined();
     });
 
     it("should verify organization access for brand", async () => {
@@ -250,7 +250,7 @@ describe("Brand Resolvers", () => {
         .limit(20);
 
       expect(result).toEqual(mockBrands);
-      expect(result.every((b) => b.name.includes("Acme"))).toBe(true);
+      expect((result as Array<{ name: string }>).every((b) => b.name.includes("Acme"))).toBe(true);
     });
 
     it("should return empty array when no brands exist", async () => {
@@ -319,8 +319,8 @@ describe("Brand Resolvers", () => {
         .where() // Would check domain AND orgId
         .limit(1);
 
-      expect(result[0]).toEqual(mockBrand);
-      expect(result[0].domain).toBe("example.com");
+      expect((result as unknown[])[0]).toEqual(mockBrand);
+      expect((result as Array<{ domain: string }>)[0].domain).toBe("example.com");
     });
 
     it("should return null when domain not found", async () => {
@@ -333,7 +333,7 @@ describe("Brand Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0]).toBeUndefined();
+      expect((result as unknown[])[0]).toBeUndefined();
     });
 
     it("should filter by organization ID for security", async () => {
@@ -485,7 +485,7 @@ describe("Brand Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0].organizationId).toBe(context.orgId);
+      expect((result as Array<{ organizationId: string }>)[0].organizationId).toBe(context.orgId);
     });
 
     it("should update brand with .returning()", async () => {
@@ -589,7 +589,7 @@ describe("Brand Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(result[0].organizationId).toBe(context.orgId);
+      expect((result as Array<{ organizationId: string }>)[0].organizationId).toBe(context.orgId);
     });
 
     it("should delete brand and return true", async () => {
@@ -607,7 +607,7 @@ describe("Brand Resolvers", () => {
         .where()
         .limit(1);
 
-      expect(selectResult[0]).toBeDefined();
+      expect((selectResult as unknown[])[0]).toBeDefined();
 
       // Then delete
       await db.delete(schema.brands).where();
@@ -748,7 +748,7 @@ describe("Brand Resolvers", () => {
 
       const graphqlBrand = {
         ...dbBrand,
-        competitors: (dbBrand.competitors || []).map((c: { name: string }) =>
+        competitors: (dbBrand.competitors || []).map((c: string | { name: string }) =>
           typeof c === "object" ? c.name : c
         ),
       };
