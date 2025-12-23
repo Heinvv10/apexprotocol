@@ -602,7 +602,7 @@ describe("Error Handling", () => {
         const result = await db.select().from(getSchema().brands).where().limit(1);
 
         // Pattern: return null for optional fields
-        const brand = result[0] ?? null;
+        const brand = (result as unknown[])[0] ?? null;
         expect(brand).toBeNull();
       });
 
@@ -614,10 +614,10 @@ describe("Error Handling", () => {
 
         // Pattern: throw for required fields
         expect(() => {
-          if (!result[0]) {
+          if (!(result as unknown[])[0]) {
             throw new Error("Brand not found");
           }
-          return result[0];
+          return (result as unknown[])[0];
         }).toThrow("Brand not found");
       });
     });
@@ -782,7 +782,7 @@ describe("Error Handling", () => {
         try {
           const db = getDb();
           const result = await db.select().from(getSchema().brands).where().limit(1);
-          return result[0] ?? null;
+          return (result as unknown[])[0] ?? null;
         } catch (error) {
           console.error("Database error:", error);
           throw new Error("Failed to fetch brand");
@@ -848,27 +848,27 @@ describe("Error Handling", () => {
         const db = getDb();
         const existing = await db.select().from(getSchema().brands).where().limit(1);
 
-        if (!existing[0]) {
+        if (!(existing as unknown[])[0]) {
           throw new Error("Brand not found");
         }
 
-        if (existing[0].organizationId !== context.orgId) {
+        if ((existing as Array<{ organizationId: string }>)[0].organizationId !== context.orgId) {
           throw new Error("Unauthorized: You do not have access to this resource");
         }
 
         // Then update
-        mockUpdateResult([{ ...existing[0], ...input }]);
+        mockUpdateResult([{ ...(existing as Record<string, unknown>[])[0], ...input }]);
         const result = await db
           .update(getSchema().brands)
           .set(input)
           .where()
           .returning();
 
-        return result[0];
+        return (result as unknown[])[0];
       };
 
       const result = await mockUpdateResolver("brand-123", { name: "Updated" });
-      expect(result.organizationId).toBe("org-1");
+      expect((result as { organizationId: string }).organizationId).toBe("org-1");
     });
 
     it("should handle authorization failure in ownership check", async () => {
@@ -880,15 +880,15 @@ describe("Error Handling", () => {
         const db = getDb();
         const existing = await db.select().from(getSchema().brands).where().limit(1);
 
-        if (!existing[0]) {
+        if (!(existing as unknown[])[0]) {
           throw new Error("Brand not found");
         }
 
-        if (existing[0].organizationId !== context.orgId) {
+        if ((existing as Array<{ organizationId: string }>)[0].organizationId !== context.orgId) {
           throw new Error("Unauthorized: You do not have access to this resource");
         }
 
-        return existing[0];
+        return (existing as unknown[])[0];
       };
 
       await expect(mockUpdateResolver("brand-123")).rejects.toThrow("Unauthorized");
