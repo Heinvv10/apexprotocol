@@ -140,7 +140,46 @@ async function seedOrganization(
     },
   };
 
-  await db.insert(schema.organizations).values(orgData);
+  try {
+    // First, check if organization already exists to handle parallel test execution
+    const existing = await db
+      .select({ id: schema.organizations.id })
+      .from(schema.organizations)
+      .where(eq(schema.organizations.id, TEST_IDS.ORG))
+      .limit(1);
+
+    if (existing.length > 0) {
+      // Organization exists, just update it
+      await db
+        .update(schema.organizations)
+        .set({ name: orgData.name, isActive: true })
+        .where(eq(schema.organizations.id, TEST_IDS.ORG));
+    } else {
+      // Organization doesn't exist, try to insert
+      // Use a try-catch to handle race condition if another test file inserts first
+      try {
+        await db.insert(schema.organizations).values(orgData);
+      } catch (insertError: any) {
+        // Check for duplicate key error (can be on error itself or on cause)
+        const errorCode = insertError?.code || insertError?.cause?.code;
+        const errorMessage = String(insertError?.message || insertError?.cause?.message || '');
+        const isDuplicateKey = errorCode === '23505' ||
+          errorMessage.includes('duplicate key') ||
+          errorMessage.includes('already exists');
+
+        if (isDuplicateKey) {
+          // Unique constraint violation - org was created by parallel test, that's ok
+          console.log("Organization already exists (parallel test), continuing...");
+        } else {
+          throw insertError;
+        }
+      }
+    }
+  } catch (error) {
+    // If it still fails for another reason, log and rethrow
+    console.error("Failed to seed organization:", error);
+    throw error;
+  }
 
   return {
     id: orgData.id,
@@ -177,7 +216,8 @@ async function seedUsers(
     },
   ];
 
-  await db.insert(schema.users).values(usersData);
+  // Use onConflictDoNothing to handle race conditions from parallel test files
+  await db.insert(schema.users).values(usersData).onConflictDoNothing();
 
   return usersData.map((u) => ({
     id: u.id,
@@ -297,7 +337,8 @@ async function seedBrands(
     },
   ];
 
-  await db.insert(schema.brands).values(brandsData);
+  // Use onConflictDoNothing to handle race conditions from parallel test files
+  await db.insert(schema.brands).values(brandsData).onConflictDoNothing();
 
   return brandsData.map((b) => ({
     id: b.id,
@@ -339,7 +380,8 @@ async function seedMentions(
     timestamp: daysAgo(idx),
   }));
 
-  await db.insert(schema.brandMentions).values(mentionsData);
+  // Use onConflictDoNothing to handle race conditions from parallel test files
+  await db.insert(schema.brandMentions).values(mentionsData).onConflictDoNothing();
 
   return mentionsData.map((m) => ({
     id: m.id,
@@ -391,7 +433,8 @@ async function seedRecommendations(
     createdAt: daysAgo(10 + idx),
   }));
 
-  await db.insert(schema.recommendations).values(recsData);
+  // Use onConflictDoNothing to handle race conditions from parallel test files
+  await db.insert(schema.recommendations).values(recsData).onConflictDoNothing();
 
   return recsData.map((r) => ({
     id: r.id,
@@ -459,7 +502,8 @@ async function seedAudits(
     createdAt: daysAgo(idx + 1),
   }));
 
-  await db.insert(schema.audits).values(auditsData);
+  // Use onConflictDoNothing to handle race conditions from parallel test files
+  await db.insert(schema.audits).values(auditsData).onConflictDoNothing();
 
   return auditsData.map((a) => ({
     id: a.id,
@@ -507,7 +551,8 @@ async function seedContent(
     createdAt: daysAgo(10 - idx),
   }));
 
-  await db.insert(schema.content).values(contentData);
+  // Use onConflictDoNothing to handle race conditions from parallel test files
+  await db.insert(schema.content).values(contentData).onConflictDoNothing();
 
   return contentData.map((c) => ({
     id: c.id,
@@ -541,7 +586,8 @@ async function seedGeoScoreHistory(
     createdAt: daysAgo((TEST_IDS.GEO_SCORE_HISTORY.length - idx) * 7),
   }));
 
-  await db.insert(schema.geoScoreHistory).values(historyData);
+  // Use onConflictDoNothing to handle race conditions from parallel test files
+  await db.insert(schema.geoScoreHistory).values(historyData).onConflictDoNothing();
 
   return historyData.map((h) => ({
     id: h.id,
@@ -577,7 +623,8 @@ async function seedIntegrations(
     updatedAt: daysAgo(idx),
   }));
 
-  await db.insert(schema.apiIntegrations).values(integrationsData);
+  // Use onConflictDoNothing to handle race conditions from parallel test files
+  await db.insert(schema.apiIntegrations).values(integrationsData).onConflictDoNothing();
 
   return integrationsData.map((i) => ({
     id: i.id,
