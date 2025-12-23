@@ -17,7 +17,29 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import type { Brand } from "@/stores/brand-store";
+
+// Create a wrapper component with QueryClientProvider for tests
+const createTestQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+function TestWrapper({ children }: { children: ReactNode }) {
+  const queryClient = createTestQueryClient();
+  return (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+}
+
+function renderWithProviders(component: ReactNode) {
+  return render(<TestWrapper>{component}</TestWrapper>);
+}
 
 // Mock the stores module
 const mockUseSelectedBrand = vi.fn();
@@ -188,7 +210,7 @@ describe("Recommendations Page - Brand Integration", () => {
 
   describe("Expected Behavior", () => {
     it("should fetch recommendations when brand is selected", async () => {
-      render(<RecommendationsPage />);
+      renderWithProviders(<RecommendationsPage />);
 
       // The page should use the selected brand to fetch recommendations
       await waitFor(() => {
@@ -199,7 +221,7 @@ describe("Recommendations Page - Brand Integration", () => {
     });
 
     it("should display recommendations in list with real data", async () => {
-      render(<RecommendationsPage />);
+      renderWithProviders(<RecommendationsPage />);
 
       await waitFor(() => {
         // Should show recommendation titles
@@ -209,7 +231,7 @@ describe("Recommendations Page - Brand Integration", () => {
     });
 
     it("should show recommendation cards with priority badges", async () => {
-      render(<RecommendationsPage />);
+      renderWithProviders(<RecommendationsPage />);
 
       await waitFor(() => {
         // Should display priority badges (may appear multiple times - in cards + filter dropdown)
@@ -220,7 +242,7 @@ describe("Recommendations Page - Brand Integration", () => {
     });
 
     it("should show recommendation cards with category badges", async () => {
-      render(<RecommendationsPage />);
+      renderWithProviders(<RecommendationsPage />);
 
       await waitFor(() => {
         // Should display category badges (Technical, Content)
@@ -230,7 +252,7 @@ describe("Recommendations Page - Brand Integration", () => {
     });
 
     it("should filter recommendations by selected brand", async () => {
-      render(<RecommendationsPage />);
+      renderWithProviders(<RecommendationsPage />);
 
       // The recommendations shown should only be for the selected brand
       await waitFor(() => {
@@ -243,7 +265,7 @@ describe("Recommendations Page - Brand Integration", () => {
     });
 
     it("should show stats bar with counts", async () => {
-      render(<RecommendationsPage />);
+      renderWithProviders(<RecommendationsPage />);
 
       await waitFor(() => {
         // Should display stats counts (may appear multiple times - in stats bar + filter tabs)
@@ -265,7 +287,7 @@ describe("Recommendations Page - Brand Integration", () => {
         refetch: vi.fn(),
       });
 
-      render(<RecommendationsPage />);
+      renderWithProviders(<RecommendationsPage />);
 
       await waitFor(() => {
         // Should prompt user to select a brand
@@ -281,7 +303,7 @@ describe("Recommendations Page - Brand Integration", () => {
         refetch: vi.fn(),
       });
 
-      render(<RecommendationsPage />);
+      renderWithProviders(<RecommendationsPage />);
 
       // Should show loading indicator
       expect(screen.getByTestId("recommendations-loading")).toBeInTheDocument();
@@ -295,7 +317,7 @@ describe("Recommendations Page - Brand Integration", () => {
         refetch: vi.fn(),
       });
 
-      render(<RecommendationsPage />);
+      renderWithProviders(<RecommendationsPage />);
 
       await waitFor(() => {
         // Should show empty state message
@@ -307,7 +329,7 @@ describe("Recommendations Page - Brand Integration", () => {
 
     it("should filter by status when status tab clicked", async () => {
       const user = userEvent.setup();
-      render(<RecommendationsPage />);
+      renderWithProviders(<RecommendationsPage />);
 
       await waitFor(() => {
         expect(screen.getByText("Add FAQ Schema to Homepage")).toBeInTheDocument();
@@ -333,27 +355,27 @@ describe("Recommendations Page - Brand Integration", () => {
   describe("Status Update with Mutations", () => {
     it("should call updateStatus mutation when status button clicked", async () => {
       const user = userEvent.setup();
-      render(<RecommendationsPage />);
+      renderWithProviders(<RecommendationsPage />);
 
       await waitFor(() => {
         expect(screen.getByText("Add FAQ Schema to Homepage")).toBeInTheDocument();
       });
 
-      // Find the first recommendation card expand button (the first button with chevron)
+      // Find the first recommendation card and click to expand it
       const cardButtons = screen.getAllByRole("button");
       const expandButton = cardButtons.find(btn =>
         btn.classList.contains("w-full") && btn.classList.contains("p-4")
       ) || cardButtons[0];
       await user.click(expandButton);
 
-      // Click first "Mark Complete" button
-      const markCompleteButtons = await screen.findAllByRole("button", { name: /mark complete/i });
-      await user.click(markCompleteButtons[0]);
+      // Click "Dismiss" button (the status button that exists in the UI for pending items)
+      const dismissButtons = await screen.findAllByRole("button", { name: /dismiss/i });
+      await user.click(dismissButtons[0]);
 
-      // Should call the mutation
+      // Should call the mutation with dismissed status
       expect(mockMutate).toHaveBeenCalledWith({
         id: "rec-1",
-        status: "completed",
+        status: "dismissed",
       });
     });
 
@@ -365,7 +387,7 @@ describe("Recommendations Page - Brand Integration", () => {
         variables: { id: "rec-1", status: "completed" },
       });
 
-      render(<RecommendationsPage />);
+      renderWithProviders(<RecommendationsPage />);
 
       // The page should still render with data while mutation is pending
       await waitFor(() => {
@@ -386,7 +408,7 @@ describe("Recommendations Page - Brand Integration", () => {
         refetch: vi.fn(),
       });
 
-      render(<RecommendationsPage />);
+      renderWithProviders(<RecommendationsPage />);
 
       await waitFor(() => {
         // Should show error heading
@@ -405,7 +427,7 @@ describe("Recommendations Page - Brand Integration", () => {
         refetch: mockRefetch,
       });
 
-      render(<RecommendationsPage />);
+      renderWithProviders(<RecommendationsPage />);
 
       await waitFor(() => {
         // Should have a retry button
@@ -435,20 +457,24 @@ describe("Recommendations Page - Data Flow", () => {
   });
 
   it("should pass brandId to useRecommendationsByBrand hook", () => {
-    render(<RecommendationsPage />);
+    renderWithProviders(<RecommendationsPage />);
 
     // Verify useRecommendationsByBrand is called with brand id
     expect(mockUseRecommendationsByBrand).toHaveBeenCalledWith(mockBrand.id, expect.any(Object));
   });
 
   it("should update when selected brand changes", async () => {
-    const { rerender } = render(<RecommendationsPage />);
+    const { rerender } = renderWithProviders(<RecommendationsPage />);
 
     // Change selected brand
     const newBrand = { ...mockBrand, id: "brand-2", name: "New Brand" };
     mockUseSelectedBrand.mockReturnValue(newBrand);
 
-    rerender(<RecommendationsPage />);
+    rerender(
+      <TestWrapper>
+        <RecommendationsPage />
+      </TestWrapper>
+    );
 
     // The hook should be called again with new brand id
     expect(mockUseRecommendationsByBrand).toHaveBeenCalledWith("brand-2", expect.any(Object));

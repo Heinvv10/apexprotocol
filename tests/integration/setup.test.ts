@@ -126,6 +126,38 @@ describe("Integration Test Setup Utilities", () => {
 
       expect(result).toBe(false);
     });
+
+    it("should return false when DATABASE_URL is localhost", () => {
+      const originalDbUrl = process.env.DATABASE_URL;
+      const originalTestDbUrl = process.env.TEST_DATABASE_URL;
+
+      process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
+      delete process.env.TEST_DATABASE_URL;
+
+      const result = isDatabaseConfigured();
+
+      // Restore
+      process.env.DATABASE_URL = originalDbUrl!;
+      if (originalTestDbUrl) process.env.TEST_DATABASE_URL = originalTestDbUrl;
+
+      expect(result).toBe(false);
+    });
+
+    it("should return false when DATABASE_URL is 127.0.0.1", () => {
+      const originalDbUrl = process.env.DATABASE_URL;
+      const originalTestDbUrl = process.env.TEST_DATABASE_URL;
+
+      process.env.DATABASE_URL = "postgresql://test:test@127.0.0.1:5432/test";
+      delete process.env.TEST_DATABASE_URL;
+
+      const result = isDatabaseConfigured();
+
+      // Restore
+      process.env.DATABASE_URL = originalDbUrl!;
+      if (originalTestDbUrl) process.env.TEST_DATABASE_URL = originalTestDbUrl;
+
+      expect(result).toBe(false);
+    });
   });
 
   describe("skipIfNoDB", () => {

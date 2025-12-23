@@ -86,10 +86,16 @@ function getTestDatabaseUrl(): string {
 
 /**
  * Check if database is configured for integration tests
+ * Returns false for localhost test URLs that won't work
  */
 export function isDatabaseConfigured(): boolean {
   try {
-    getTestDatabaseUrl();
+    const url = getTestDatabaseUrl();
+    // Check if this is a real database URL, not a localhost placeholder
+    // The tests/setup.ts sets DATABASE_URL to localhost when no real DB is available
+    if (url.includes("localhost") || url.includes("127.0.0.1") || url.includes("::1")) {
+      return false;
+    }
     return true;
   } catch {
     return false;
