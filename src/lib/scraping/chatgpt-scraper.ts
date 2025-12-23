@@ -46,163 +46,95 @@ export class ChatGPTScraper extends BaseScraper {
   }
 
   /**
-   * Scrape ChatGPT for brand mentions using API
+   * Scrape a single query (implements template method)
    */
-  async scrape(brandName: string, queries: string[]): Promise<ScraperResult> {
-    const startTime = Date.now();
-    const mentions: ScrapedMention[] = [];
-    let retries = 0;
-    let requestCount = 0;
-
+  protected async scrapeQuery(brandName: string, query: string): Promise<ScrapedMention[]> {
     // Prefer API if available
     if (this.apiKey) {
-      return this.scrapeViaAPI(brandName, queries);
+      return this.scrapeQueryViaAPI(brandName, query);
     }
 
     // Fallback to web scraping (limited functionality)
-    for (const query of queries) {
-      try {
-        await scraperRateLimiter.waitForSlot("chatgpt");
-        requestCount++;
-
-        // Note: Web scraping ChatGPT requires authentication
-        // This is a simplified implementation
-        const result = await browserlessScrape("https://chat.openai.com", {
-          waitFor: 5000,
-        });
-
-        const parsedMentions = this.parseResponse(result.html, query);
-        const relevantMentions = parsedMentions.filter(
-          mention =>
-            mention.snippetText.toLowerCase().includes(brandName.toLowerCase())
-        );
-
-        mentions.push(...relevantMentions);
-
-        await this.delay();
-      } catch (error) {
-        retries++;
-        if (retries >= this.config.maxRetries) {
-          return {
-            success: false,
-            mentions,
-            error: `Max retries exceeded: ${error instanceof Error ? error.message : String(error)}`,
-            metadata: {
-              duration: Date.now() - startTime,
-              retries,
-              requestCount,
-            },
-          };
-        }
-      }
-    }
-
-    return {
-      success: true,
-      mentions,
-      metadata: {
-        duration: Date.now() - startTime,
-        retries,
-        requestCount,
-      },
-    };
+    return this.scrapeQueryViaWeb(brandName, query);
   }
 
   /**
    * Scrape using OpenAI API (preferred method)
    */
-  private async scrapeViaAPI(
+  private async scrapeQueryViaAPI(
     brandName: string,
-    queries: string[]
-  ): Promise<ScraperResult> {
-    const startTime = Date.now();
-    const mentions: ScrapedMention[] = [];
-    let retries = 0;
-    let requestCount = 0;
-
-    for (const query of queries) {
-      try {
-        await scraperRateLimiter.waitForSlot("chatgpt");
-        requestCount++;
-
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${this.apiKey}`,
+    query: string
+  ): Promise<ScrapedMention[]> {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4-turbo-preview",
+        messages: [
+          {
+            role: "user",
+            content: query,
           },
-          body: JSON.stringify({
-            model: "gpt-4-turbo-preview",
-            messages: [
-              {
-                role: "user",
-                content: query,
-              },
-            ],
-            max_tokens: 1000,
-          }),
-        });
+        ],
+        max_tokens: 1000,
+      }),
+    });
 
-        if (!response.ok) {
-          throw new Error(`API error: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        const content = data.choices?.[0]?.message?.content || "";
-
-        // Check for brand mentions
-        const detection = this.detectMentions(content, brandName);
-
-        if (detection.hasBrandMention || content.length > 0) {
-          mentions.push({
-            platform: "chatgpt",
-            query,
-            response: content,
-            snippetText: detection.brandContext || content.substring(0, 500),
-            competitorMentions: detection.competitorMentions.map(cm => ({
-              name: cm.name,
-              sentiment: "neutral",
-              context: cm.context,
-            })),
-            metadata: {
-              model: "gpt-4-turbo-preview",
-              source: "api",
-              promptTokens: data.usage?.prompt_tokens,
-              completionTokens: data.usage?.completion_tokens,
-            },
-            scrapedAt: new Date(),
-          });
-        }
-
-        await this.delay(500); // Shorter delay for API
-      } catch (error) {
-        retries++;
-        console.error(`ChatGPT API error for query "${query}":`, error);
-
-        if (retries >= this.config.maxRetries) {
-          return {
-            success: false,
-            mentions,
-            error: `Max retries exceeded: ${error instanceof Error ? error.message : String(error)}`,
-            metadata: {
-              duration: Date.now() - startTime,
-              retries,
-              requestCount,
-            },
-          };
-        }
-      }
+    if (!response.ok) {
+      throw new Error(`API error: ${response.statusText}`);
     }
 
-    return {
-      success: true,
-      mentions,
-      metadata: {
-        duration: Date.now() - startTime,
-        retries,
-        requestCount,
-      },
-    };
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || "";
+
+    // Check for brand mentions
+    const detection = this.detectMentions(content, brandName);
+
+    if (detection.hasBrandMention || content.length > 0) {
+      return [{
+        platform: "chatgpt",
+        query,
+        response: content,
+        snippetText: detection.brandContext || content.substring(0, 500),
+        competitorMentions: detection.competitorMentions.map(cm => ({
+          name: cm.name,
+          sentiment: "neutral",
+          context: cm.context,
+        })),
+        metadata: {
+          model: "gpt-4-turbo-preview",
+          source: "api",
+          promptTokens: data.usage?.prompt_tokens,
+          completionTokens: data.usage?.completion_tokens,
+        },
+        scrapedAt: new Date(),
+      }];
+    }
+
+    return [];
+  }
+
+  /**
+   * Scrape using web scraping (fallback)
+   */
+  private async scrapeQueryViaWeb(
+    brandName: string,
+    query: string
+  ): Promise<ScrapedMention[]> {
+    // Note: Web scraping ChatGPT requires authentication
+    // This is a simplified implementation
+    const result = await browserlessScrape("https://chat.openai.com", {
+      waitFor: 5000,
+    });
+
+    const parsedMentions = this.parseResponse(result.html, query);
+    return parsedMentions.filter(
+      mention =>
+        mention.snippetText.toLowerCase().includes(brandName.toLowerCase())
+    );
   }
 
   /**

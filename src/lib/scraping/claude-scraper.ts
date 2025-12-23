@@ -54,173 +54,100 @@ export class ClaudeScraper extends BaseScraper {
   }
 
   /**
-   * Scrape Claude for brand mentions using API
+   * Scrape a single query (implements template method)
    */
-  async scrape(brandName: string, queries: string[]): Promise<ScraperResult> {
-    const startTime = Date.now();
-    const mentions: ScrapedMention[] = [];
-    let retries = 0;
-    let requestCount = 0;
-
+  protected async scrapeQuery(brandName: string, query: string): Promise<ScrapedMention[]> {
     // Prefer API if available
     if (this.client) {
-      return this.scrapeViaAPI(brandName, queries);
+      return this.scrapeQueryViaAPI(brandName, query);
     }
 
     // Fallback to web scraping (limited functionality)
-    for (const query of queries) {
-      try {
-        await scraperRateLimiter.waitForSlot("claude");
-        requestCount++;
+    return this.scrapeQueryViaWeb(brandName, query);
+  }
 
-        // Note: Web scraping Claude requires authentication
-        // This is a simplified implementation
-        const result = await browserlessScrape("https://claude.ai", {
-          waitFor: 5000,
-        });
-
-        const parsedMentions = this.parseResponse(result.html, query);
-        const relevantMentions = parsedMentions.filter(
-          mention =>
-            mention.snippetText.toLowerCase().includes(brandName.toLowerCase())
-        );
-
-        mentions.push(...relevantMentions);
-
-        await this.delay();
-      } catch (error) {
-        retries++;
-        if (retries >= this.config.maxRetries) {
-          return {
-            success: false,
-            mentions,
-            error: `Max retries exceeded: ${error instanceof Error ? error.message : String(error)}`,
-            metadata: {
-              duration: Date.now() - startTime,
-              retries,
-              requestCount,
-            },
-          };
-        }
-      }
+  /**
+   * Handle Claude-specific errors (e.g., rate limits)
+   */
+  protected async handleError(error: unknown): Promise<void> {
+    if (error instanceof Anthropic.RateLimitError) {
+      await this.delay(5000); // Longer delay for rate limits
     }
-
-    return {
-      success: true,
-      mentions,
-      metadata: {
-        duration: Date.now() - startTime,
-        retries,
-        requestCount,
-      },
-    };
   }
 
   /**
    * Scrape using Anthropic API (preferred method)
    */
-  private async scrapeViaAPI(
+  private async scrapeQueryViaAPI(
     brandName: string,
-    queries: string[]
-  ): Promise<ScraperResult> {
-    const startTime = Date.now();
-    const mentions: ScrapedMention[] = [];
-    let retries = 0;
-    let requestCount = 0;
-
+    query: string
+  ): Promise<ScrapedMention[]> {
     if (!this.client) {
-      return {
-        success: false,
-        mentions: [],
-        error: "Claude API client not initialized",
-        metadata: {
-          duration: 0,
-          retries: 0,
-          requestCount: 0,
+      throw new Error("Claude API client not initialized");
+    }
+
+    const response = await this.client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      messages: [
+        {
+          role: "user",
+          content: query,
         },
-      };
+      ],
+    });
+
+    const content = response.content
+      .filter(block => block.type === "text")
+      .map(block => (block as Anthropic.TextBlock).text)
+      .join("\n");
+
+    // Check for brand mentions
+    const detection = this.detectMentions(content, brandName);
+
+    if (detection.hasBrandMention || content.length > 0) {
+      return [{
+        platform: "claude",
+        query,
+        response: content,
+        snippetText: detection.brandContext || content.substring(0, 500),
+        competitorMentions: detection.competitorMentions.map(cm => ({
+          name: cm.name,
+          sentiment: "neutral",
+          context: cm.context,
+        })),
+        metadata: {
+          model: response.model,
+          source: "api",
+          inputTokens: response.usage.input_tokens,
+          outputTokens: response.usage.output_tokens,
+          stopReason: response.stop_reason,
+        },
+        scrapedAt: new Date(),
+      }];
     }
 
-    for (const query of queries) {
-      try {
-        await scraperRateLimiter.waitForSlot("claude");
-        requestCount++;
+    return [];
+  }
 
-        const response = await this.client.messages.create({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [
-            {
-              role: "user",
-              content: query,
-            },
-          ],
-        });
+  /**
+   * Scrape using web scraping (fallback)
+   */
+  private async scrapeQueryViaWeb(
+    brandName: string,
+    query: string
+  ): Promise<ScrapedMention[]> {
+    // Note: Web scraping Claude requires authentication
+    // This is a simplified implementation
+    const result = await browserlessScrape("https://claude.ai", {
+      waitFor: 5000,
+    });
 
-        const content = response.content
-          .filter(block => block.type === "text")
-          .map(block => (block as Anthropic.TextBlock).text)
-          .join("\n");
-
-        // Check for brand mentions
-        const detection = this.detectMentions(content, brandName);
-
-        if (detection.hasBrandMention || content.length > 0) {
-          mentions.push({
-            platform: "claude",
-            query,
-            response: content,
-            snippetText: detection.brandContext || content.substring(0, 500),
-            competitorMentions: detection.competitorMentions.map(cm => ({
-              name: cm.name,
-              sentiment: "neutral",
-              context: cm.context,
-            })),
-            metadata: {
-              model: response.model,
-              source: "api",
-              inputTokens: response.usage.input_tokens,
-              outputTokens: response.usage.output_tokens,
-              stopReason: response.stop_reason,
-            },
-            scrapedAt: new Date(),
-          });
-        }
-
-        await this.delay(500); // Shorter delay for API
-      } catch (error) {
-        retries++;
-        console.error(`Claude API error for query "${query}":`, error);
-
-        if (retries >= this.config.maxRetries) {
-          return {
-            success: false,
-            mentions,
-            error: `Max retries exceeded: ${error instanceof Error ? error.message : String(error)}`,
-            metadata: {
-              duration: Date.now() - startTime,
-              retries,
-              requestCount,
-            },
-          };
-        }
-
-        // Check for rate limit errors
-        if (error instanceof Anthropic.RateLimitError) {
-          await this.delay(5000); // Longer delay for rate limits
-        }
-      }
-    }
-
-    return {
-      success: true,
-      mentions,
-      metadata: {
-        duration: Date.now() - startTime,
-        retries,
-        requestCount,
-      },
-    };
+    const parsedMentions = this.parseResponse(result.html, query);
+    return parsedMentions.filter(
+      mention =>
+        mention.snippetText.toLowerCase().includes(brandName.toLowerCase())
+    );
   }
 
   /**

@@ -34,61 +34,13 @@ export class PerplexityScraper extends BaseScraper {
   }
 
   /**
-   * Scrape Perplexity for brand mentions
+   * Scrape a single query from Perplexity using URL-based search (implements template method)
    */
-  async scrape(brandName: string, queries: string[]): Promise<ScraperResult> {
-    const startTime = Date.now();
-    const mentions: ScrapedMention[] = [];
-    let requestCount = 0;
-    const retries = 0;
-
-    try {
-      for (const query of queries) {
-        const searchQuery = query.includes(brandName)
-          ? query
-          : `${query} ${brandName}`;
-
-        // Wait for rate limiter
-        await scraperRateLimiter.waitForSlot(this.platform);
-        requestCount++;
-
-        const result = await this.scrapeQuery(brandName, searchQuery);
-
-        if (result) {
-          mentions.push(...result);
-        }
-      }
-
-      return {
-        success: true,
-        mentions,
-        metadata: {
-          duration: Date.now() - startTime,
-          retries,
-          requestCount,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        mentions,
-        error: error instanceof Error ? error.message : String(error),
-        metadata: {
-          duration: Date.now() - startTime,
-          retries,
-          requestCount,
-        },
-      };
-    }
-  }
-
-  /**
-   * Scrape a single query from Perplexity using URL-based search
-   */
-  private async scrapeQuery(
+  protected async scrapeQuery(
     brandName: string,
     query: string
-  ): Promise<ScrapedMention[] | null> {
+  ): Promise<ScrapedMention[]> {
+    const searchQuery = query.includes(brandName) ? query : `${query} ${brandName}`;
     try {
       // Perplexity supports URL-based search
       const searchUrl = `${this.baseUrl}/search?q=${encodeURIComponent(query)}`;
@@ -100,7 +52,7 @@ export class PerplexityScraper extends BaseScraper {
       const content = result.text || result.html;
 
       if (!content) {
-        return null;
+        return [];
       }
 
       // Check if brand is mentioned
@@ -108,7 +60,7 @@ export class PerplexityScraper extends BaseScraper {
       const contentLower = content.toLowerCase();
 
       if (!contentLower.includes(brandLower)) {
-        return null;
+        return [];
       }
 
       // Analyze sentiment
@@ -116,7 +68,7 @@ export class PerplexityScraper extends BaseScraper {
 
       const mention: ScrapedMention = {
         platform: this.platform,
-        query,
+        query: searchQuery,
         response: content,
         snippetText: this.extractContext(content, brandName),
         sentiment,
@@ -129,7 +81,7 @@ export class PerplexityScraper extends BaseScraper {
       return [mention];
     } catch (error) {
       console.error("Error scraping Perplexity:", error);
-      return null;
+      throw error; // Let base class handle the error
     }
   }
 

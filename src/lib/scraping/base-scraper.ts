@@ -55,12 +55,46 @@ export abstract class BaseScraper {
   }
 
   /**
-   * Scrape for brand mentions
+   * Template method: Scrape for brand mentions with built-in error handling and retry logic
    */
-  abstract scrape(
+  async scrape(brandName: string, queries: string[]): Promise<ScraperResult> {
+    const startTime = Date.now();
+    const mentions: ScrapedMention[] = [];
+    let retries = 0;
+    let requestCount = 0;
+
+    for (const query of queries) {
+      try {
+        await scraperRateLimiter.waitForSlot(this.platform);
+        requestCount++;
+
+        const queryMentions = await this.scrapeQuery(brandName, query);
+        mentions.push(...queryMentions);
+
+        await this.delay();
+      } catch (error) {
+        retries++;
+        console.error(`${this.platform} error for query "${query}":`, error);
+
+        if (retries >= this.config.maxRetries) {
+          return this.buildErrorResult(mentions, error, startTime, retries, requestCount);
+        }
+
+        // Allow subclasses to handle specific error types
+        await this.handleError(error);
+      }
+    }
+
+    return this.buildSuccessResult(mentions, startTime, retries, requestCount);
+  }
+
+  /**
+   * Subclasses must implement: Scrape a single query
+   */
+  protected abstract scrapeQuery(
     brandName: string,
-    queries: string[]
-  ): Promise<ScraperResult>;
+    query: string
+  ): Promise<ScrapedMention[]>;
 
   /**
    * Check if platform is accessible
@@ -68,12 +102,62 @@ export abstract class BaseScraper {
   abstract checkAccess(): Promise<boolean>;
 
   /**
-   * Parse response to extract mentions
+   * Parse response to extract mentions (for web scraping fallback)
    */
   protected abstract parseResponse(
     html: string,
     query: string
   ): ScrapedMention[];
+
+  /**
+   * Handle platform-specific errors (e.g., rate limits)
+   * Override this in subclasses for custom error handling
+   */
+  protected async handleError(error: unknown): Promise<void> {
+    // Default: no special handling
+  }
+
+  /**
+   * Build success result with metadata
+   */
+  protected buildSuccessResult(
+    mentions: ScrapedMention[],
+    startTime: number,
+    retries: number,
+    requestCount: number
+  ): ScraperResult {
+    return {
+      success: true,
+      mentions,
+      metadata: {
+        duration: Date.now() - startTime,
+        retries,
+        requestCount,
+      },
+    };
+  }
+
+  /**
+   * Build error result with metadata
+   */
+  protected buildErrorResult(
+    mentions: ScrapedMention[],
+    error: unknown,
+    startTime: number,
+    retries: number,
+    requestCount: number
+  ): ScraperResult {
+    return {
+      success: false,
+      mentions,
+      error: `Max retries exceeded: ${error instanceof Error ? error.message : String(error)}`,
+      metadata: {
+        duration: Date.now() - startTime,
+        retries,
+        requestCount,
+      },
+    };
+  }
 
   /**
    * Helper to delay between requests

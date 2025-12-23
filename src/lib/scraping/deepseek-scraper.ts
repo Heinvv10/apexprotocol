@@ -47,152 +47,92 @@ export class DeepSeekScraper extends BaseScraper {
   }
 
   /**
-   * Scrape DeepSeek for brand mentions
+   * Scrape a single query (implements template method)
    */
-  async scrape(brandName: string, queries: string[]): Promise<ScraperResult> {
-    const startTime = Date.now();
-    const mentions: ScrapedMention[] = [];
-    let requestCount = 0;
-    const retries = 0;
+  protected async scrapeQuery(
+    brandName: string,
+    query: string
+  ): Promise<ScrapedMention[]> {
+    const searchQuery = query.includes(brandName) ? query : `${query} ${brandName}`;
 
-    try {
-      // Try API first if available
-      if (this.apiKey) {
-        return await this.scrapeViaApi(brandName, queries);
-      }
-
-      // Fall back to web scraping
-      for (const query of queries) {
-        const searchQuery = query.includes(brandName)
-          ? query
-          : `${query} ${brandName}`;
-
-        await scraperRateLimiter.waitForSlot(this.platform);
-        requestCount++;
-
-        const result = await this.scrapeQuery(brandName, searchQuery);
-
-        if (result) {
-          mentions.push(...result);
-        }
-      }
-
-      return {
-        success: true,
-        mentions,
-        metadata: {
-          duration: Date.now() - startTime,
-          retries,
-          requestCount,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        mentions,
-        error: error instanceof Error ? error.message : String(error),
-        metadata: {
-          duration: Date.now() - startTime,
-          retries,
-          requestCount,
-        },
-      };
+    // Try API first if available
+    if (this.apiKey) {
+      return this.scrapeQueryViaApi(brandName, searchQuery);
     }
+
+    // Fall back to web scraping
+    return this.scrapeQueryViaWeb(brandName, searchQuery);
   }
 
   /**
    * Scrape via DeepSeek API (if available)
    */
-  private async scrapeViaApi(
+  private async scrapeQueryViaApi(
     brandName: string,
-    queries: string[]
-  ): Promise<ScraperResult> {
-    const startTime = Date.now();
-    const mentions: ScrapedMention[] = [];
-    let requestCount = 0;
-
-    for (const query of queries) {
-      const searchQuery = query.includes(brandName)
-        ? query
-        : `${query} ${brandName}`;
-
-      await scraperRateLimiter.waitForSlot(this.platform);
-      requestCount++;
-
-      try {
-        const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${this.apiKey}`,
+    query: string
+  ): Promise<ScrapedMention[]> {
+    const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [
+          {
+            role: "user",
+            content: query,
           },
-          body: JSON.stringify({
-            model: "deepseek-chat",
-            messages: [
-              {
-                role: "user",
-                content: searchQuery,
-              },
-            ],
-            max_tokens: 2000,
-          }),
-        });
+        ],
+        max_tokens: 2000,
+      }),
+    });
 
-        if (!response.ok) {
-          console.error("DeepSeek API error:", response.status);
-          continue;
-        }
-
-        const data = await response.json();
-        const content = data.choices?.[0]?.message?.content || "";
-
-        if (!content) continue;
-
-        // Check if brand is mentioned
-        const brandLower = brandName.toLowerCase();
-        if (!content.toLowerCase().includes(brandLower)) continue;
-
-        const sentiment = this.analyzeSentiment(content, brandName);
-
-        mentions.push({
-          platform: this.platform,
-          query: searchQuery,
-          response: content,
-          snippetText: this.extractContext(content, brandName),
-          sentiment,
-          scrapedAt: new Date(),
-          metadata: {
-            model: "deepseek-chat",
-            viaApi: true,
-            usage: {
-              promptTokens: data.usage?.prompt_tokens,
-              completionTokens: data.usage?.completion_tokens,
-            },
-          },
-        });
-      } catch (error) {
-        console.error("DeepSeek API request failed:", error);
-      }
+    if (!response.ok) {
+      throw new Error(`DeepSeek API error: ${response.status}`);
     }
 
-    return {
-      success: true,
-      mentions,
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || "";
+
+    if (!content) {
+      return [];
+    }
+
+    // Check if brand is mentioned
+    const brandLower = brandName.toLowerCase();
+    if (!content.toLowerCase().includes(brandLower)) {
+      return [];
+    }
+
+    const sentiment = this.analyzeSentiment(content, brandName);
+
+    return [{
+      platform: this.platform,
+      query,
+      response: content,
+      snippetText: this.extractContext(content, brandName),
+      sentiment,
+      scrapedAt: new Date(),
       metadata: {
-        duration: Date.now() - startTime,
-        retries: 0,
-        requestCount,
+        model: "deepseek-chat",
+        viaApi: true,
+        usage: {
+          promptTokens: data.usage?.prompt_tokens,
+          completionTokens: data.usage?.completion_tokens,
+        },
       },
-    };
+    }];
   }
 
   /**
    * Scrape a single query from DeepSeek web interface
    */
-  private async scrapeQuery(
+  private async scrapeQueryViaWeb(
     brandName: string,
     query: string
-  ): Promise<ScrapedMention[] | null> {
+  ): Promise<ScrapedMention[]> {
     try {
       // Basic page scrape - DeepSeek requires auth for interaction
       const result = await browserlessScrape(this.baseUrl, {
@@ -202,7 +142,7 @@ export class DeepSeekScraper extends BaseScraper {
       const content = result.text || result.html;
 
       if (!content) {
-        return null;
+        return [];
       }
 
       // Check if brand is mentioned
@@ -210,7 +150,7 @@ export class DeepSeekScraper extends BaseScraper {
       const contentLower = content.toLowerCase();
 
       if (!contentLower.includes(brandLower)) {
-        return null;
+        return [];
       }
 
       const sentiment = this.analyzeSentiment(content, brandName);
@@ -231,7 +171,7 @@ export class DeepSeekScraper extends BaseScraper {
       return [mention];
     } catch (error) {
       console.error("Error scraping DeepSeek:", error);
-      return null;
+      throw error; // Let base class handle the error
     }
   }
 

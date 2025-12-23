@@ -34,61 +34,14 @@ export class GrokScraper extends BaseScraper {
   }
 
   /**
-   * Scrape Grok for brand mentions
+   * Scrape a single query from Grok (implements template method)
    * Note: Grok requires X Premium subscription for access
    */
-  async scrape(brandName: string, queries: string[]): Promise<ScraperResult> {
-    const startTime = Date.now();
-    const mentions: ScrapedMention[] = [];
-    let requestCount = 0;
-    const retries = 0;
-
-    try {
-      for (const query of queries) {
-        const searchQuery = query.includes(brandName)
-          ? query
-          : `${query} ${brandName}`;
-
-        await scraperRateLimiter.waitForSlot(this.platform);
-        requestCount++;
-
-        const result = await this.scrapeQuery(brandName, searchQuery);
-
-        if (result) {
-          mentions.push(...result);
-        }
-      }
-
-      return {
-        success: true,
-        mentions,
-        metadata: {
-          duration: Date.now() - startTime,
-          retries,
-          requestCount,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        mentions,
-        error: error instanceof Error ? error.message : String(error),
-        metadata: {
-          duration: Date.now() - startTime,
-          retries,
-          requestCount,
-        },
-      };
-    }
-  }
-
-  /**
-   * Scrape a single query from Grok
-   */
-  private async scrapeQuery(
+  protected async scrapeQuery(
     brandName: string,
     query: string
-  ): Promise<ScrapedMention[] | null> {
+  ): Promise<ScrapedMention[]> {
+    const searchQuery = query.includes(brandName) ? query : `${query} ${brandName}`;
     try {
       // Basic page scrape - Grok requires X Premium auth
       const result = await browserlessScrape(this.baseUrl, {
@@ -98,7 +51,7 @@ export class GrokScraper extends BaseScraper {
       const content = result.text || result.html;
 
       if (!content) {
-        return null;
+        return [];
       }
 
       // Check if brand is mentioned
@@ -106,14 +59,14 @@ export class GrokScraper extends BaseScraper {
       const contentLower = content.toLowerCase();
 
       if (!contentLower.includes(brandLower)) {
-        return null;
+        return [];
       }
 
       const sentiment = this.analyzeSentiment(content, brandName);
 
       const mention: ScrapedMention = {
         platform: this.platform,
-        query,
+        query: searchQuery,
         response: content,
         snippetText: this.extractContext(content, brandName),
         sentiment,
@@ -127,7 +80,7 @@ export class GrokScraper extends BaseScraper {
       return [mention];
     } catch (error) {
       console.error("Error scraping Grok:", error);
-      return null;
+      throw error; // Let base class handle the error
     }
   }
 

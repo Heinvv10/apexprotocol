@@ -45,148 +45,87 @@ export class GeminiScraper extends BaseScraper {
   }
 
   /**
-   * Scrape Gemini for brand mentions
+   * Scrape a single query (implements template method)
    */
-  async scrape(brandName: string, queries: string[]): Promise<ScraperResult> {
-    const startTime = Date.now();
-    const mentions: ScrapedMention[] = [];
-    let requestCount = 0;
-    const retries = 0;
+  protected async scrapeQuery(
+    brandName: string,
+    query: string
+  ): Promise<ScrapedMention[]> {
+    const searchQuery = query.includes(brandName) ? query : `${query} ${brandName}`;
 
-    try {
-      // Prefer API if available
-      if (this.apiKey) {
-        return this.scrapeViaApi(brandName, queries);
-      }
-
-      // Fallback to web scraping (limited)
-      for (const query of queries) {
-        const searchQuery = query.includes(brandName)
-          ? query
-          : `${query} ${brandName}`;
-
-        await scraperRateLimiter.waitForSlot(this.platform);
-        requestCount++;
-
-        const result = await this.scrapeQuery(brandName, searchQuery);
-
-        if (result) {
-          mentions.push(...result);
-        }
-      }
-
-      return {
-        success: true,
-        mentions,
-        metadata: {
-          duration: Date.now() - startTime,
-          retries,
-          requestCount,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        mentions,
-        error: error instanceof Error ? error.message : String(error),
-        metadata: {
-          duration: Date.now() - startTime,
-          retries,
-          requestCount,
-        },
-      };
+    // Prefer API if available
+    if (this.apiKey) {
+      return this.scrapeQueryViaApi(brandName, searchQuery);
     }
+
+    // Fallback to web scraping (limited)
+    return this.scrapeQueryViaWeb(brandName, searchQuery);
   }
 
   /**
    * Scrape via Gemini API
    */
-  private async scrapeViaApi(
+  private async scrapeQueryViaApi(
     brandName: string,
-    queries: string[]
-  ): Promise<ScraperResult> {
-    const startTime = Date.now();
-    const mentions: ScrapedMention[] = [];
-    let requestCount = 0;
-
-    for (const query of queries) {
-      const searchQuery = query.includes(brandName)
-        ? query
-        : `${query} ${brandName}`;
-
-      await scraperRateLimiter.waitForSlot(this.platform);
-      requestCount++;
-
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${this.apiKey}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
+    query: string
+  ): Promise<ScrapedMention[]> {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${this.apiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: query }],
             },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [{ text: searchQuery }],
-                },
-              ],
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          console.error("Gemini API error:", response.status);
-          continue;
-        }
-
-        const data = await response.json();
-        const content =
-          data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-        if (!content) continue;
-
-        // Check if brand is mentioned
-        const brandLower = brandName.toLowerCase();
-        if (!content.toLowerCase().includes(brandLower)) continue;
-
-        const sentiment = this.analyzeSentiment(content, brandName);
-
-        mentions.push({
-          platform: this.platform,
-          query: searchQuery,
-          response: content,
-          snippetText: this.extractContext(content, brandName),
-          sentiment,
-          scrapedAt: new Date(),
-          metadata: {
-            model: "gemini-pro",
-            viaApi: true,
-          },
-        });
-      } catch (error) {
-        console.error("Gemini API request failed:", error);
+          ],
+        }),
       }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status}`);
     }
 
-    return {
-      success: true,
-      mentions,
+    const data = await response.json();
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+    if (!content) {
+      return [];
+    }
+
+    // Check if brand is mentioned
+    const brandLower = brandName.toLowerCase();
+    if (!content.toLowerCase().includes(brandLower)) {
+      return [];
+    }
+
+    const sentiment = this.analyzeSentiment(content, brandName);
+
+    return [{
+      platform: this.platform,
+      query,
+      response: content,
+      snippetText: this.extractContext(content, brandName),
+      sentiment,
+      scrapedAt: new Date(),
       metadata: {
-        duration: Date.now() - startTime,
-        retries: 0,
-        requestCount,
+        model: "gemini-pro",
+        viaApi: true,
       },
-    };
+    }];
   }
 
   /**
    * Scrape a single query from Gemini web interface
    */
-  private async scrapeQuery(
+  private async scrapeQueryViaWeb(
     brandName: string,
     query: string
-  ): Promise<ScrapedMention[] | null> {
+  ): Promise<ScrapedMention[]> {
     try {
       // Basic page scrape - Gemini requires auth for interaction
       const result = await browserlessScrape(this.baseUrl, {
@@ -196,7 +135,7 @@ export class GeminiScraper extends BaseScraper {
       const content = result.text || result.html;
 
       if (!content) {
-        return null;
+        return [];
       }
 
       // Check if brand is mentioned
@@ -204,7 +143,7 @@ export class GeminiScraper extends BaseScraper {
       const contentLower = content.toLowerCase();
 
       if (!contentLower.includes(brandLower)) {
-        return null;
+        return [];
       }
 
       const sentiment = this.analyzeSentiment(content, brandName);
@@ -225,7 +164,7 @@ export class GeminiScraper extends BaseScraper {
       return [mention];
     } catch (error) {
       console.error("Error scraping Gemini:", error);
-      return null;
+      throw error; // Let base class handle the error
     }
   }
 
@@ -246,13 +185,12 @@ export class GeminiScraper extends BaseScraper {
     const index = contentLower.indexOf(brandLower);
 
     if (index === -1) {
-      return content.slice(0, 500);
+      return content.substring(0, 500);
     }
 
-    const start = Math.max(0, index - 200);
-    const end = Math.min(content.length, index + brandName.length + 300);
-
-    return content.slice(start, end);
+    const start = Math.max(0, index - 100);
+    const end = Math.min(content.length, index + brandName.length + 100);
+    return content.substring(start, end);
   }
 
   /**
@@ -261,74 +199,34 @@ export class GeminiScraper extends BaseScraper {
   private analyzeSentiment(
     content: string,
     brandName: string
-  ): "positive" | "negative" | "neutral" {
-    const brandLower = brandName.toLowerCase();
+  ): "positive" | "negative" | "neutral" | "mixed" {
+    const contentLower = content.toLowerCase();
 
-    const sentences = content.split(/[.!?]+/);
-    const brandSentences = sentences.filter((s) =>
-      s.toLowerCase().includes(brandLower)
-    );
+    // Simple keyword-based sentiment
+    const positiveKeywords = ["good", "great", "excellent", "recommend", "best", "love"];
+    const negativeKeywords = ["bad", "poor", "terrible", "avoid", "worst", "hate"];
 
-    if (brandSentences.length === 0) {
-      return "neutral";
+    let positiveCount = 0;
+    let negativeCount = 0;
+
+    for (const keyword of positiveKeywords) {
+      if (contentLower.includes(keyword)) positiveCount++;
     }
 
-    const combinedText = brandSentences.join(" ").toLowerCase();
-
-    const positiveWords = [
-      "best",
-      "great",
-      "excellent",
-      "recommended",
-      "leading",
-      "top",
-      "innovative",
-      "reliable",
-      "trusted",
-      "popular",
-      "quality",
-      "outstanding",
-      "superior",
-      "efficient",
-      "powerful",
-    ];
-    const negativeWords = [
-      "worst",
-      "bad",
-      "poor",
-      "avoid",
-      "issues",
-      "problems",
-      "unreliable",
-      "expensive",
-      "disappointing",
-      "lacking",
-      "inferior",
-      "slow",
-      "buggy",
-    ];
-
-    let positiveScore = 0;
-    let negativeScore = 0;
-
-    for (const word of positiveWords) {
-      if (combinedText.includes(word)) positiveScore++;
-    }
-    for (const word of negativeWords) {
-      if (combinedText.includes(word)) negativeScore++;
+    for (const keyword of negativeKeywords) {
+      if (contentLower.includes(keyword)) negativeCount++;
     }
 
-    if (positiveScore > negativeScore) return "positive";
-    if (negativeScore > positiveScore) return "negative";
+    if (positiveCount > 0 && negativeCount > 0) return "mixed";
+    if (positiveCount > negativeCount) return "positive";
+    if (negativeCount > positiveCount) return "negative";
     return "neutral";
   }
 }
 
-/**
- * Factory function to create Gemini scraper
- */
-export function createGeminiScraper(
-  config?: Partial<ScraperConfig>
-): GeminiScraper {
+// Factory function
+export function createGeminiScraper(config?: Partial<ScraperConfig>): GeminiScraper {
   return new GeminiScraper(config);
 }
+
+export default GeminiScraper;
