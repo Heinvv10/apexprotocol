@@ -71,16 +71,65 @@ export interface UpdateRecommendationData {
   dueDate?: Date | null;
 }
 
+export type DuplicateHandling = "skip" | "error" | "allow";
+
+export interface CreateRecommendationOptions {
+  /**
+   * How to handle duplicate recommendations (same brandId, title, category)
+   * - "skip": Skip insertion silently and return null
+   * - "error": Throw an error if duplicate exists
+   * - "allow": Insert regardless of duplicates (default behavior)
+   */
+  duplicateHandling?: DuplicateHandling;
+}
+
+export interface CreateRecommendationsResult {
+  /** Successfully created recommendations */
+  created: Recommendation[];
+  /** Recommendations that were skipped due to duplicates */
+  skipped: NewRecommendation[];
+  /** Total count of created recommendations */
+  createdCount: number;
+  /** Total count of skipped recommendations */
+  skippedCount: number;
+}
+
 // ============================================================================
 // Create Operations
 // ============================================================================
 
 /**
- * Create a single recommendation
+ * Create a single recommendation with optional duplicate detection
+ * @param data - The recommendation data to insert
+ * @param options - Options for handling duplicates
+ * @returns The created recommendation, or null if skipped due to duplicate
+ * @throws Error if duplicateHandling is "error" and duplicate exists
  */
 export async function createRecommendation(
-  data: NewRecommendation
-): Promise<Recommendation> {
+  data: NewRecommendation,
+  options: CreateRecommendationOptions = {}
+): Promise<Recommendation | null> {
+  const { duplicateHandling = "allow" } = options;
+
+  // Check for duplicates if not allowing them
+  if (duplicateHandling !== "allow") {
+    const existing = await findSimilarRecommendation(
+      data.brandId,
+      data.title,
+      data.category
+    );
+
+    if (existing) {
+      if (duplicateHandling === "error") {
+        throw new Error(
+          `Duplicate recommendation exists: "${data.title}" for brand ${data.brandId} in category ${data.category}`
+        );
+      }
+      // duplicateHandling === "skip"
+      return null;
+    }
+  }
+
   const [recommendation] = await db
     .insert(recommendations)
     .values({
@@ -94,7 +143,8 @@ export async function createRecommendation(
 }
 
 /**
- * Create multiple recommendations in a batch
+ * Create multiple recommendations in a batch (no duplicate detection)
+ * Use createRecommendationsWithDuplicateDetection for duplicate handling
  */
 export async function createRecommendations(
   data: NewRecommendation[]
@@ -116,6 +166,117 @@ export async function createRecommendations(
     .returning();
 
   return createdRecommendations;
+}
+
+/**
+ * Create multiple recommendations with duplicate detection
+ * Efficiently checks for existing duplicates and skips them
+ * @param data - Array of recommendations to create
+ * @returns Result object with created recommendations and skipped duplicates
+ */
+export async function createRecommendationsWithDuplicateDetection(
+  data: NewRecommendation[]
+): Promise<CreateRecommendationsResult> {
+  if (data.length === 0) {
+    return {
+      created: [],
+      skipped: [],
+      createdCount: 0,
+      skippedCount: 0,
+    };
+  }
+
+  // Find existing duplicates efficiently
+  const existingDuplicates = await findExistingDuplicates(data);
+
+  // Create a set of duplicate keys for fast lookup
+  const duplicateKeys = new Set(
+    existingDuplicates.map((rec) =>
+      buildDuplicateKey(rec.brandId, rec.title, rec.category)
+    )
+  );
+
+  // Separate new recommendations from duplicates
+  const toCreate: NewRecommendation[] = [];
+  const skipped: NewRecommendation[] = [];
+
+  for (const rec of data) {
+    const key = buildDuplicateKey(rec.brandId, rec.title, rec.category);
+    if (duplicateKeys.has(key)) {
+      skipped.push(rec);
+    } else {
+      toCreate.push(rec);
+      // Also add to duplicateKeys to handle duplicates within the input array
+      duplicateKeys.add(key);
+    }
+  }
+
+  // Create non-duplicate recommendations
+  const created = toCreate.length > 0
+    ? await createRecommendations(toCreate)
+    : [];
+
+  return {
+    created,
+    skipped,
+    createdCount: created.length,
+    skippedCount: skipped.length,
+  };
+}
+
+/**
+ * Build a normalized key for duplicate detection
+ * Uses brandId + normalized title (lowercase) + category
+ */
+function buildDuplicateKey(
+  brandId: string,
+  title: string,
+  category: string
+): string {
+  return `${brandId}::${title.toLowerCase().trim()}::${category}`;
+}
+
+/**
+ * Find existing recommendations that match any of the input recommendations
+ * Used for efficient batch duplicate detection
+ */
+async function findExistingDuplicates(
+  data: NewRecommendation[]
+): Promise<Pick<Recommendation, "brandId" | "title" | "category">[]> {
+  if (data.length === 0) {
+    return [];
+  }
+
+  // Get unique brand IDs
+  const brandIds = [...new Set(data.map((r) => r.brandId))];
+
+  // Get unique categories
+  const categories = [...new Set(data.map((r) => r.category))];
+
+  // Get all potential matches (brand + category combinations)
+  // Then filter in memory for title matches
+  const potentialMatches = await db
+    .select({
+      brandId: recommendations.brandId,
+      title: recommendations.title,
+      category: recommendations.category,
+    })
+    .from(recommendations)
+    .where(
+      and(
+        inArray(recommendations.brandId, brandIds),
+        inArray(recommendations.category, categories)
+      )
+    );
+
+  // Filter to only exact title matches (case-insensitive)
+  const inputTitlesLower = new Set(
+    data.map((r) => r.title.toLowerCase().trim())
+  );
+
+  return potentialMatches.filter((match) =>
+    inputTitlesLower.has(match.title.toLowerCase().trim())
+  );
 }
 
 // ============================================================================
@@ -590,8 +751,21 @@ function buildOrderByClause(
   return direction === "asc" ? asc(column) : desc(column);
 }
 
+// ============================================================================
+// Duplicate Detection
+// ============================================================================
+
 /**
  * Check if a similar recommendation exists (for duplicate detection)
+ * A recommendation is considered a duplicate if it matches:
+ * - Same brandId
+ * - Same category
+ * - Same title (case-insensitive match)
+ *
+ * @param brandId - The brand ID to check
+ * @param title - The recommendation title to check (case-insensitive)
+ * @param category - The recommendation category
+ * @returns The existing recommendation if found, or null
  */
 export async function findSimilarRecommendation(
   brandId: string,
@@ -611,4 +785,43 @@ export async function findSimilarRecommendation(
     .limit(1);
 
   return existing ?? null;
+}
+
+/**
+ * Check if a recommendation would be a duplicate
+ * Convenience function that returns a boolean instead of the existing recommendation
+ *
+ * @param brandId - The brand ID to check
+ * @param title - The recommendation title to check (case-insensitive)
+ * @param category - The recommendation category
+ * @returns true if a similar recommendation already exists
+ */
+export async function isDuplicateRecommendation(
+  brandId: string,
+  title: string,
+  category: RecommendationCategory
+): Promise<boolean> {
+  const existing = await findSimilarRecommendation(brandId, title, category);
+  return existing !== null;
+}
+
+/**
+ * Check if a NewRecommendation would be a duplicate
+ * Convenience overload that accepts a NewRecommendation object
+ *
+ * @param data - The recommendation data to check
+ * @returns true if a similar recommendation already exists
+ */
+export async function checkRecommendationDuplicate(
+  data: Pick<NewRecommendation, "brandId" | "title" | "category">
+): Promise<{ isDuplicate: boolean; existing: Recommendation | null }> {
+  const existing = await findSimilarRecommendation(
+    data.brandId,
+    data.title,
+    data.category
+  );
+  return {
+    isDuplicate: existing !== null,
+    existing,
+  };
 }
