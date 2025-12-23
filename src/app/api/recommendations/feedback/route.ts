@@ -1,72 +1,35 @@
 /**
  * Recommendation Feedback API (F113)
  * POST /api/recommendations/feedback - Submit or update feedback
- * GET /api/recommendations/feedback - Get feedback statistics
+ * GET /api/recommendations/feedback - Get feedback for recommendations
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { db } from "@/lib/db";
+import { recommendations, brands } from "@/lib/db/schema";
+import { eq, and, isNotNull } from "drizzle-orm";
 import { z } from "zod";
-import {
-  feedbackManager,
-  formatFeedbackResponse,
-  type FeedbackRating,
-  type FeedbackTag,
-} from "@/lib/recommendations";
+import { getOrganizationId } from "@/lib/auth";
 
-// Request schemas
+// Validation schema for feedback submission
 const submitFeedbackSchema = z.object({
+  action: z.literal("submit").optional(),
   recommendationId: z.string().min(1),
-  brandId: z.string().min(1),
-  rating: z.number().min(1).max(5) as z.ZodType<FeedbackRating>,
-  helpful: z.boolean(),
-  comment: z.string().optional(),
-  tags: z
-    .array(
-      z.enum([
-        "too_complex",
-        "not_relevant",
-        "already_done",
-        "not_actionable",
-        "missing_context",
-        "incorrect",
-        "helpful",
-        "accurate",
-        "easy_to_implement",
-        "high_impact",
-      ])
-    )
-    .optional(),
+  rating: z.number().int().min(1).max(5),
+  feedback: z.string().optional(),
 });
 
-const updateOutcomeSchema = z.object({
-  feedbackId: z.string().min(1),
-  outcome: z.object({
-    implemented: z.boolean(),
-    implementedAt: z.string().datetime().optional(),
-    success: z.boolean(),
-    impactMeasured: z.number().min(0).max(100).optional(),
-    notes: z.string().optional(),
-  }),
-});
-
-const updateMetricsSchema = z.object({
-  feedbackId: z.string().min(1),
-  metrics: z.object({
-    beforeScore: z.number().optional(),
-    afterScore: z.number().optional(),
-    timeToImplement: z.number().optional(),
-    effortRating: z.number().min(1).max(5).optional(),
-  }),
-});
-
+/**
+ * GET /api/recommendations/feedback
+ * Gets feedback for recommendations (by brandId or recommendationId)
+ */
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const orgId = await getOrganizationId();
 
-    if (!userId) {
+    if (!orgId) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { success: false, error: "Organization not found" },
         { status: 401 }
       );
     }
@@ -74,229 +37,208 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const brandId = searchParams.get("brandId");
     const recommendationId = searchParams.get("recommendationId");
-    const statsOnly = searchParams.get("statsOnly") === "true";
 
-    // Get statistics
-    if (statsOnly) {
-      let stats;
-      if (recommendationId) {
-        stats = feedbackManager.getRecommendationStats(recommendationId);
-      } else if (brandId) {
-        stats = feedbackManager.getBrandStats(brandId);
-      } else {
-        stats = feedbackManager.getGlobalStats();
+    // Get feedback for a specific recommendation
+    if (recommendationId) {
+      const rec = await db
+        .select({
+          id: recommendations.id,
+          title: recommendations.title,
+          userRating: recommendations.userRating,
+          userFeedback: recommendations.userFeedback,
+          feedbackAt: recommendations.feedbackAt,
+        })
+        .from(recommendations)
+        .innerJoin(brands, eq(recommendations.brandId, brands.id))
+        .where(
+          and(
+            eq(recommendations.id, recommendationId),
+            eq(brands.organizationId, orgId),
+            eq(brands.isActive, true)
+          )
+        )
+        .limit(1);
+
+      if (rec.length === 0) {
+        return NextResponse.json(
+          { success: false, error: "Recommendation not found" },
+          { status: 404 }
+        );
       }
 
       return NextResponse.json({
         success: true,
-        scope: recommendationId
-          ? "recommendation"
-          : brandId
-            ? "brand"
-            : "global",
-        stats: {
-          totalFeedback: stats.totalFeedback,
-          averageRating: Math.round(stats.averageRating * 100) / 100,
-          helpfulPercentage: Math.round(stats.helpfulPercentage),
-          implementationRate: Math.round(stats.implementationRate),
-          successRate: Math.round(stats.successRate),
-          averageImpact: Math.round(stats.averageImpact),
-          tagDistribution: stats.tagDistribution,
-        },
+        feedback: rec[0].userRating
+          ? {
+              recommendationId: rec[0].id,
+              title: rec[0].title,
+              rating: rec[0].userRating,
+              feedback: rec[0].userFeedback,
+              feedbackAt: rec[0].feedbackAt?.toISOString(),
+            }
+          : null,
       });
     }
 
-    // Get feedback list
-    let feedback;
-    if (recommendationId) {
-      feedback = feedbackManager.getRecommendationFeedback(recommendationId);
-    } else if (brandId) {
-      feedback = feedbackManager.getBrandFeedback(brandId);
-    } else {
-      return NextResponse.json(
-        { error: "Provide brandId or recommendationId" },
-        { status: 400 }
-      );
+    // Get all feedback for a brand
+    if (brandId) {
+      // Verify brand belongs to organization
+      const brand = await db
+        .select()
+        .from(brands)
+        .where(
+          and(
+            eq(brands.id, brandId),
+            eq(brands.organizationId, orgId),
+            eq(brands.isActive, true)
+          )
+        )
+        .limit(1);
+
+      if (brand.length === 0) {
+        return NextResponse.json(
+          { success: false, error: "Brand not found" },
+          { status: 404 }
+        );
+      }
+
+      const feedbackList = await db
+        .select({
+          id: recommendations.id,
+          title: recommendations.title,
+          userRating: recommendations.userRating,
+          userFeedback: recommendations.userFeedback,
+          feedbackAt: recommendations.feedbackAt,
+        })
+        .from(recommendations)
+        .where(
+          and(
+            eq(recommendations.brandId, brandId),
+            isNotNull(recommendations.userRating)
+          )
+        );
+
+      return NextResponse.json({
+        success: true,
+        count: feedbackList.length,
+        feedback: feedbackList.map((rec) => ({
+          recommendationId: rec.id,
+          title: rec.title,
+          rating: rec.userRating,
+          feedback: rec.userFeedback,
+          feedbackAt: rec.feedbackAt?.toISOString(),
+        })),
+      });
     }
 
-    return NextResponse.json({
-      success: true,
-      count: feedback.length,
-      feedback: feedback.map(formatFeedbackResponse),
-    });
-  } catch (error) {
     return NextResponse.json(
-      {
-        error: "Failed to fetch feedback",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { success: false, error: "Provide brandId or recommendationId" },
+      { status: 400 }
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch feedback", details: message },
       { status: 500 }
     );
   }
 }
 
+/**
+ * POST /api/recommendations/feedback
+ * Submits feedback for a recommendation
+ */
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const orgId = await getOrganizationId();
 
-    if (!userId) {
+    if (!orgId) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { success: false, error: "Organization not found" },
         { status: 401 }
       );
     }
 
     const body = await request.json();
-    const action = body.action || "submit";
+    const validatedData = submitFeedbackSchema.parse(body);
 
-    switch (action) {
-      case "submit":
-        return handleSubmitFeedback(body, userId);
+    // Get existing recommendation
+    const existingRec = await db
+      .select()
+      .from(recommendations)
+      .where(eq(recommendations.id, validatedData.recommendationId))
+      .limit(1);
 
-      case "updateOutcome":
-        return handleUpdateOutcome(body);
-
-      case "updateMetrics":
-        return handleUpdateMetrics(body);
-
-      case "export":
-        return handleExportForTraining();
-
-      case "needsReview":
-        return handleGetNeedsReview(body);
-
-      default:
-        return NextResponse.json(
-          { error: "Invalid action. Use: submit, updateOutcome, updateMetrics, export, or needsReview" },
-          { status: 400 }
-        );
+    if (existingRec.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "Recommendation not found" },
+        { status: 404 }
+      );
     }
+
+    // Verify brand belongs to organization
+    const brand = await db
+      .select()
+      .from(brands)
+      .where(
+        and(
+          eq(brands.id, existingRec[0].brandId),
+          eq(brands.organizationId, orgId),
+          eq(brands.isActive, true)
+        )
+      )
+      .limit(1);
+
+    if (brand.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "Recommendation not found" },
+        { status: 404 }
+      );
+    }
+
+    // Update recommendation with feedback
+    const feedbackAt = new Date();
+    const updatedRec = await db
+      .update(recommendations)
+      .set({
+        userRating: validatedData.rating,
+        userFeedback: validatedData.feedback || null,
+        feedbackAt,
+        updatedAt: feedbackAt,
+      })
+      .where(eq(recommendations.id, validatedData.recommendationId))
+      .returning();
+
+    return NextResponse.json({
+      success: true,
+      message: "Feedback submitted successfully",
+      data: {
+        recommendationId: updatedRec[0].id,
+        title: updatedRec[0].title,
+        rating: updatedRec[0].userRating,
+        feedback: updatedRec[0].userFeedback,
+        feedbackAt: updatedRec[0].feedbackAt?.toISOString(),
+      },
+      meta: {
+        timestamp: feedbackAt.toISOString(),
+      },
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.issues },
+        {
+          success: false,
+          error: "Validation error",
+          details: error.issues,
+        },
         { status: 400 }
       );
     }
 
+    const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      {
-        error: "Feedback operation failed",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { success: false, error: "Feedback operation failed", details: message },
       { status: 500 }
     );
   }
-}
-
-async function handleSubmitFeedback(body: unknown, userId: string) {
-  const { recommendationId, brandId, rating, helpful, comment, tags } =
-    submitFeedbackSchema.parse(body);
-
-  const feedback = feedbackManager.submitFeedback({
-    recommendationId,
-    brandId,
-    userId,
-    rating,
-    helpful,
-    comment,
-    tags: tags as FeedbackTag[],
-  });
-
-  return NextResponse.json({
-    success: true,
-    message: "Feedback submitted successfully",
-    feedback: formatFeedbackResponse(feedback),
-  });
-}
-
-async function handleUpdateOutcome(body: unknown) {
-  const { feedbackId, outcome } = updateOutcomeSchema.parse(body);
-
-  const updated = feedbackManager.updateOutcome(feedbackId, {
-    implemented: outcome.implemented,
-    implementedAt: outcome.implementedAt ? new Date(outcome.implementedAt) : undefined,
-    success: outcome.success,
-    impactMeasured: outcome.impactMeasured,
-    notes: outcome.notes,
-  });
-
-  if (!updated) {
-    return NextResponse.json(
-      { error: "Feedback not found", feedbackId },
-      { status: 404 }
-    );
-  }
-
-  return NextResponse.json({
-    success: true,
-    message: "Outcome updated successfully",
-    feedback: formatFeedbackResponse(updated),
-  });
-}
-
-async function handleUpdateMetrics(body: unknown) {
-  const { feedbackId, metrics } = updateMetricsSchema.parse(body);
-
-  const updated = feedbackManager.updateMetrics(feedbackId, metrics);
-
-  if (!updated) {
-    return NextResponse.json(
-      { error: "Feedback not found", feedbackId },
-      { status: 404 }
-    );
-  }
-
-  return NextResponse.json({
-    success: true,
-    message: "Metrics updated successfully",
-    feedback: formatFeedbackResponse(updated),
-  });
-}
-
-async function handleExportForTraining() {
-  const trainingData = feedbackManager.exportForTraining();
-
-  return NextResponse.json({
-    success: true,
-    count: trainingData.length,
-    data: trainingData,
-    summary: {
-      totalSamples: trainingData.length,
-      implemented: trainingData.filter((d) => d.implemented).length,
-      successful: trainingData.filter((d) => d.success).length,
-      averageRating:
-        trainingData.length > 0
-          ? trainingData.reduce((sum, d) => sum + d.rating, 0) / trainingData.length
-          : 0,
-      avgImpact:
-        trainingData.filter((d) => d.impact !== undefined).length > 0
-          ? trainingData
-              .filter((d) => d.impact !== undefined)
-              .reduce((sum, d) => sum + d.impact!, 0) /
-            trainingData.filter((d) => d.impact !== undefined).length
-          : null,
-    },
-  });
-}
-
-async function handleGetNeedsReview(body: unknown) {
-  const schema = z.object({
-    threshold: z.number().min(1).max(5).default(3),
-  });
-
-  const { threshold } = schema.parse(body);
-
-  const recommendations = feedbackManager.getRecommendationsNeedingReview(threshold);
-
-  return NextResponse.json({
-    success: true,
-    threshold,
-    count: recommendations.length,
-    recommendations,
-    message:
-      recommendations.length > 0
-        ? `Found ${recommendations.length} recommendations with average rating below ${threshold}`
-        : "No recommendations need review",
-  });
 }
