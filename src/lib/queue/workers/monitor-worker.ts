@@ -9,6 +9,8 @@ import { db } from "../../db";
 import { brandMentions, monitoringJobs, brands } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
+import { onMentionCreated } from "../../notifications/triggers";
+import { getOrganizationMembers } from "../../auth";
 
 // Worker configuration
 const WORKER_CONFIG = {
@@ -88,6 +90,22 @@ export async function processMonitorJob(job: Job): Promise<MonitorJobResult> {
         );
 
         if (scrapeResult.success && scrapeResult.mentions.length > 0) {
+          // Get organization ID from job payload
+          const orgId = (job.payload as { orgId?: string }).orgId;
+
+          // Fetch organization members for notification distribution
+          let orgMembers: Array<{ userId?: string }> = [];
+          if (orgId) {
+            try {
+              orgMembers = await getOrganizationMembers(orgId);
+            } catch (error) {
+              console.error(
+                "[MonitorWorker] Failed to fetch organization members:",
+                error
+              );
+            }
+          }
+
           // Store mentions in database
           for (const mention of scrapeResult.mentions) {
             // Map sentiment - convert "mixed" to "neutral" as DB only supports positive/neutral/negative
@@ -95,7 +113,7 @@ export async function processMonitorJob(job: Job): Promise<MonitorJobResult> {
               ? "neutral"
               : (mention.sentiment ?? "neutral") as "positive" | "neutral" | "negative";
 
-            await db.insert(brandMentions).values({
+            const [newMention] = await db.insert(brandMentions).values({
               id: createId(),
               brandId,
               platform: mention.platform as "chatgpt" | "claude" | "gemini" | "perplexity" | "grok" | "deepseek" | "copilot",
@@ -105,8 +123,30 @@ export async function processMonitorJob(job: Job): Promise<MonitorJobResult> {
               position: null, // Can be calculated separately
               citationUrl: null,
               metadata: mention.metadata as Record<string, unknown>,
-            });
+            }).returning();
             result.mentionsFound++;
+
+            // Trigger notifications for all organization members
+            if (orgId && orgMembers.length > 0) {
+              for (const member of orgMembers) {
+                if (member.userId) {
+                  try {
+                    await onMentionCreated({
+                      mention: newMention,
+                      userId: member.userId,
+                      organizationId: orgId,
+                    });
+                  } catch (notificationError) {
+                    // Log error but don't fail the job
+                    console.error(
+                      "[MonitorWorker] Failed to create notification for user:",
+                      member.userId,
+                      notificationError
+                    );
+                  }
+                }
+              }
+            }
           }
         }
 

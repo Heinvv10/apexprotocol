@@ -226,6 +226,7 @@ function StatCard({
   description,
   trend,
   color = "primary",
+  href,
 }: {
   icon: React.ElementType;
   label: string;
@@ -233,6 +234,7 @@ function StatCard({
   description?: string;
   trend?: "up" | "down" | "stable";
   color?: "primary" | "warning" | "error" | "success";
+  href?: string;
 }) {
   const colorMap = {
     primary: "bg-primary/10 text-primary border-primary/30",
@@ -241,8 +243,8 @@ function StatCard({
     success: "bg-success/10 text-success border-success/30",
   };
 
-  return (
-    <div className="card-secondary p-5">
+  const content = (
+    <>
       <div className="flex items-start justify-between">
         <div className={`w-10 h-10 rounded-lg border flex items-center justify-center ${colorMap[color]}`}>
           <Icon className="w-5 h-5" />
@@ -260,6 +262,28 @@ function StatCard({
         <div className="text-sm text-muted-foreground">{label}</div>
         {description && <div className="text-xs text-muted-foreground/70">{description}</div>}
       </div>
+      {href && (
+        <div className="mt-3 pt-3 border-t border-white/5">
+          <div className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors">
+            <span>View Details</span>
+            <ArrowRight className="w-3 h-3" />
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className="card-secondary p-5 block hover:bg-white/5 transition-colors group">
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="card-secondary p-5">
+      {content}
     </div>
   );
 }
@@ -355,7 +379,7 @@ export default function CompetitivePage() {
   if (!selectedBrand) {
     return (
       <div className="space-y-6 relative">
-        <PageHeader />
+        <PageHeader brandId={brandId} />
         <SelectBrandPrompt />
         <DecorativeStar />
       </div>
@@ -365,7 +389,7 @@ export default function CompetitivePage() {
   if (summaryLoading) {
     return (
       <div className="space-y-6 relative">
-        <PageHeader />
+        <PageHeader brandId={brandId} />
         <LoadingState />
         <DecorativeStar />
       </div>
@@ -375,7 +399,7 @@ export default function CompetitivePage() {
   if (summaryError) {
     return (
       <div className="space-y-6 relative">
-        <PageHeader />
+        <PageHeader brandId={brandId} />
         <ErrorState error={summaryError as Error} onRetry={() => refetchSummary()} />
         <DecorativeStar />
       </div>
@@ -394,7 +418,7 @@ export default function CompetitivePage() {
 
   return (
     <div className="space-y-6 relative">
-      <PageHeader />
+      <PageHeader brandId={brandId} />
 
       <div className="space-y-6">
         {/* Top Row - SOV and Key Metrics */}
@@ -407,6 +431,7 @@ export default function CompetitivePage() {
             value={summaryData.competitorCount}
             description="Active in your space"
             color="primary"
+            href={`/dashboard/${brandId}/competitors`}
           />
 
           <StatCard
@@ -424,6 +449,31 @@ export default function CompetitivePage() {
             description="Require attention"
             color={summaryData.alertCount > 5 ? "error" : summaryData.alertCount > 0 ? "warning" : "success"}
           />
+        </div>
+
+        {/* Competitor Dashboard CTA */}
+        <div className="card-primary p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 opacity-5">
+            <Target className="w-full h-full text-primary" />
+          </div>
+          <div className="relative z-10 flex items-center justify-between gap-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="w-5 h-5 text-primary" />
+                <h3 className="text-lg font-semibold text-foreground">Detailed Competitor Analysis</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                View in-depth competitor tracking, manage your competitor list, and analyze trends over time with interactive charts.
+              </p>
+            </div>
+            <Link
+              href={`/dashboard/${brandId}/competitors`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl whitespace-nowrap"
+            >
+              View Dashboard
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
 
         {/* Phase 9.1: Benchmark Section - Gated to Professional+ */}
@@ -509,7 +559,7 @@ export default function CompetitivePage() {
                 <ul className="space-y-2">
                   {gapsData.recommendations.slice(0, 3).map((rec: string, i: number) => (
                     <li key={i} className="text-xs text-muted-foreground/80 flex items-start gap-2">
-                      <span className="text-primary">•</span>
+                      <span className="text-primary">â€¢</span>
                       {rec}
                     </li>
                   ))}
@@ -618,7 +668,7 @@ function DecorativeStar() {
 }
 
 // Page Header Component
-function PageHeader() {
+function PageHeader({ brandId }: { brandId?: string }) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
@@ -639,11 +689,24 @@ function PageHeader() {
         <span className="text-xl font-light text-foreground ml-1">Competitive</span>
       </div>
 
-      {/* AI Status */}
-      <div className="flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-        <span className="text-xs text-muted-foreground">AI Status:</span>
-        <span className="text-xs text-primary font-medium">Active</span>
+      <div className="flex items-center gap-4">
+        {/* Competitor Dashboard Link */}
+        {brandId && (
+          <Link
+            href={`/dashboard/${brandId}/competitors`}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary border border-primary/30 font-medium hover:bg-primary/20 transition-all text-sm"
+          >
+            <Users className="w-4 h-4" />
+            Manage Competitors
+          </Link>
+        )}
+
+        {/* AI Status */}
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-xs text-muted-foreground">AI Status:</span>
+          <span className="text-xs text-primary font-medium">Active</span>
+        </div>
       </div>
     </div>
   );

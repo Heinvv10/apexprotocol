@@ -18,8 +18,11 @@ import {
   BellOff,
   Loader2,
 } from "lucide-react";
+import { useRealtime } from "@upstash/realtime/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { useNotificationBell, useArchiveNotification } from "@/hooks/useNotifications";
+import { invalidateQueries } from "@/lib/query/client";
 
 // Notification types
 type NotificationType = "success" | "warning" | "info" | "alert" | "insight";
@@ -81,6 +84,7 @@ function formatTimestamp(dateStr: string): string {
 export function NotificationsBell({ initialNotifications }: NotificationsBellProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
   // Fetch notifications from API
   const {
@@ -91,6 +95,20 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
     isMarkingAllAsRead,
   } = useNotificationBell();
   const archiveNotification = useArchiveNotification();
+
+  // Real-time notification updates via Upstash Realtime SSE
+  const { status } = useRealtime({
+    onData: (data: unknown) => {
+      // New notification received via SSE - invalidate queries to refetch
+      invalidateQueries.notifications(queryClient);
+    },
+    onStatusChange: (newStatus) => {
+      // Refetch missed notifications on reconnect
+      if (newStatus === "connected") {
+        invalidateQueries.notifications(queryClient);
+      }
+    },
+  });
 
   // Transform API notifications to component format
   const notifications: Notification[] = React.useMemo(() => {

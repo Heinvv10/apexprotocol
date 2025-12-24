@@ -6,6 +6,27 @@ const CLERK_CONFIGURED =
   !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "pk_test_placeholder";
 
+/**
+ * Custom headers set for API key authenticated requests.
+ * These headers allow API routes to identify API key auth vs session auth.
+ */
+const API_KEY_AUTH_HEADERS = {
+  /** Indicates request was authenticated via API key */
+  AUTH_TYPE: "x-apex-auth-type",
+  /** The API key record ID (for audit logging) */
+  KEY_ID: "x-apex-key-id",
+  /** The authenticated user's ID */
+  USER_ID: "x-apex-user-id",
+  /** The organization ID for the request */
+  ORG_ID: "x-apex-org-id",
+  /** User's email (if available) */
+  USER_EMAIL: "x-apex-user-email",
+  /** User's name (if available) */
+  USER_NAME: "x-apex-user-name",
+  /** Organization name (if available) */
+  ORG_NAME: "x-apex-org-name",
+} as const;
+
 // Simple matcher function for development mode
 function matchesPattern(pathname: string, patterns: string[]): boolean {
   return patterns.some((pattern) => {
@@ -36,9 +57,120 @@ const publicRoutes = [
   "/sitemap.xml",
 ];
 
+/**
+ * API routes that support API key authentication for programmatic access.
+ * These routes can be accessed with either session auth (Clerk) or API key auth.
+ *
+ * Note: Admin routes (/api/admin/*) are NOT included - they require session auth
+ * with super-admin privileges.
+ */
+const apiKeyAuthRoutes = [
+  "/api/brands(.*)",
+  "/api/content(.*)",
+  "/api/audit(.*)",
+  "/api/recommendations(.*)",
+  "/api/monitor(.*)",
+  "/api/competitive(.*)",
+  "/api/portfolios(.*)",
+  "/api/analytics(.*)",
+  "/api/export(.*)",
+  "/api/locations(.*)",
+  "/api/opportunities(.*)",
+  "/api/people(.*)",
+  "/api/integrations(.*)",
+];
+
+/**
+ * Extract Bearer token from Authorization header
+ * Must start with "Bearer " (case-insensitive per RFC 6750)
+ */
+function extractBearerToken(authHeader: string | null): string | null {
+  if (!authHeader) {
+    return null;
+  }
+  const bearerMatch = authHeader.match(/^Bearer\s+(.+)$/i);
+  return bearerMatch ? bearerMatch[1].trim() : null;
+}
+
+/**
+ * Check if a token is an Apex API key (starts with apx_)
+ */
+function isApexApiKey(token: string | null): boolean {
+  return token ? token.startsWith("apx_") : false;
+}
+
+/**
+ * Create an unauthorized response for API routes
+ */
+function createUnauthorizedResponse(message: string, reason: string): NextResponse {
+  return NextResponse.json(
+    {
+      error: "Unauthorized",
+      message,
+      reason,
+    },
+    { status: 401 }
+  );
+}
+
 // Development mode middleware (when Clerk is not configured)
 async function devMiddleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Check if this route supports API key authentication
+  const isApiKeyRoute = matchesPattern(pathname, apiKeyAuthRoutes);
+  const authHeader = request.headers.get("authorization");
+  const token = extractBearerToken(authHeader);
+
+  // If this is an API route with an Apex API key, validate it
+  if (isApiKeyRoute && isApexApiKey(token)) {
+    // Dynamically import API key auth to avoid issues in Edge runtime
+    try {
+      const { validateApiKey } = await import("@/lib/auth/api-key-auth");
+      const result = await validateApiKey(token!);
+
+      if (!result.valid) {
+        return createUnauthorizedResponse(result.message, result.reason);
+      }
+
+      // API key is valid - add auth context headers to request
+      // Note: We clone the request with modified headers to pass context to API routes
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set(API_KEY_AUTH_HEADERS.AUTH_TYPE, "api-key");
+      requestHeaders.set(API_KEY_AUTH_HEADERS.KEY_ID, result.keyId);
+      requestHeaders.set(API_KEY_AUTH_HEADERS.USER_ID, result.userId);
+      requestHeaders.set(API_KEY_AUTH_HEADERS.ORG_ID, result.organizationId);
+
+      if (result.userEmail) {
+        requestHeaders.set(API_KEY_AUTH_HEADERS.USER_EMAIL, result.userEmail);
+      }
+      if (result.userName) {
+        requestHeaders.set(API_KEY_AUTH_HEADERS.USER_NAME, result.userName);
+      }
+      if (result.organizationName) {
+        requestHeaders.set(API_KEY_AUTH_HEADERS.ORG_NAME, result.organizationName);
+      }
+
+      // Continue to the route with API key auth context in request headers
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
+    } catch (_error) {
+      // If API key validation fails due to system error, return 500
+      if (process.env.NODE_ENV === "development") {
+        console.error("[Middleware] API key validation error:", _error);
+      }
+      return NextResponse.json(
+        {
+          error: "Internal Server Error",
+          message: "Failed to validate API key",
+        },
+        { status: 500 }
+      );
+    }
+  }
 
   // Check if this is a super-admin route
   const isSuperAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
@@ -61,6 +193,63 @@ async function devMiddleware(request: NextRequest) {
 
 // Production middleware with Clerk authentication
 async function productionMiddleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Check if this route supports API key authentication
+  const isApiKeyRoute = matchesPattern(pathname, apiKeyAuthRoutes);
+  const authHeader = request.headers.get("authorization");
+  const token = extractBearerToken(authHeader);
+
+  // If this is an API route with an Apex API key, validate it and bypass Clerk
+  if (isApiKeyRoute && isApexApiKey(token)) {
+    try {
+      const { validateApiKey } = await import("@/lib/auth/api-key-auth");
+      const result = await validateApiKey(token!);
+
+      if (!result.valid) {
+        return createUnauthorizedResponse(result.message, result.reason);
+      }
+
+      // API key is valid - add auth context headers and continue
+      // Note: We clone the request with modified headers to pass context
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set(API_KEY_AUTH_HEADERS.AUTH_TYPE, "api-key");
+      requestHeaders.set(API_KEY_AUTH_HEADERS.KEY_ID, result.keyId);
+      requestHeaders.set(API_KEY_AUTH_HEADERS.USER_ID, result.userId);
+      requestHeaders.set(API_KEY_AUTH_HEADERS.ORG_ID, result.organizationId);
+
+      if (result.userEmail) {
+        requestHeaders.set(API_KEY_AUTH_HEADERS.USER_EMAIL, result.userEmail);
+      }
+      if (result.userName) {
+        requestHeaders.set(API_KEY_AUTH_HEADERS.USER_NAME, result.userName);
+      }
+      if (result.organizationName) {
+        requestHeaders.set(API_KEY_AUTH_HEADERS.ORG_NAME, result.organizationName);
+      }
+
+      // Continue to the route with API key auth context in headers
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
+    } catch (_error) {
+      // If API key validation fails due to system error, return 500
+      if (process.env.NODE_ENV === "development") {
+        console.error("[Middleware] API key validation error:", _error);
+      }
+      return NextResponse.json(
+        {
+          error: "Internal Server Error",
+          message: "Failed to validate API key",
+        },
+        { status: 500 }
+      );
+    }
+  }
+
+  // For non-API key requests, use Clerk authentication
   // Dynamically import Clerk middleware only when configured
   const { clerkMiddleware, createRouteMatcher } = await import(
     "@clerk/nextjs/server"

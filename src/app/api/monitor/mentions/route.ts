@@ -3,7 +3,8 @@ import { db } from "@/lib/db";
 import { brandMentions, brands } from "@/lib/db/schema";
 import { eq, and, desc, gte, lte, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { getOrganizationId } from "@/lib/auth";
+import { getOrganizationId, getUserId } from "@/lib/auth";
+import { onMentionCreated } from "@/lib/notifications/triggers";
 
 // Validation schema for mention query parameters
 const querySchema = z.object({
@@ -179,8 +180,9 @@ const createMentionSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const orgId = await getOrganizationId();
+    const userId = await getUserId();
 
-    if (!orgId) {
+    if (!orgId || !userId) {
       return NextResponse.json(
         { success: false, error: "Organization not found" },
         { status: 401 }
@@ -226,6 +228,21 @@ export async function POST(request: NextRequest) {
         metadata: validatedData.metadata ?? {},
       })
       .returning();
+
+    // Trigger notification for new mention
+    try {
+      await onMentionCreated({
+        mention: newMention[0],
+        userId,
+        organizationId: orgId,
+      });
+    } catch (notificationError) {
+      // Log error but don't fail the request
+      console.error(
+        "[MentionsAPI] Failed to create notification:",
+        notificationError
+      );
+    }
 
     return NextResponse.json(
       {

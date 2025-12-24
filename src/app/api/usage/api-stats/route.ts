@@ -53,7 +53,7 @@ export async function GET() {
       .where(
         and(
           eq(apiKeys.organizationId, organizationId),
-          eq(apiKeys.status, "active")
+          eq(apiKeys.isActive, true)
         )
       );
 

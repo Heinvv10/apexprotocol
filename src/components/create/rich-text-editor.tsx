@@ -21,9 +21,14 @@ import {
   Undo,
   Redo,
   RemoveFormatting,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useOptimizationStore, useHasSuggestions, useIsAnalyzing, useOptimizationError, useAnalysisResult } from "@/lib/stores/optimization-store";
+import { applySuggestion, type Suggestion } from "@/lib/ai/content-analyzer";
+import { SuggestionPanel } from "@/components/optimization/suggestion-panel";
 
 interface ToolbarButtonProps {
   onClick: () => void;
@@ -58,9 +63,11 @@ function ToolbarDivider() {
 
 interface EditorToolbarProps {
   editor: Editor | null;
+  onOptimize: () => Promise<void>;
+  isOptimizing: boolean;
 }
 
-function EditorToolbar({ editor }: EditorToolbarProps) {
+function EditorToolbar({ editor, onOptimize, isOptimizing }: EditorToolbarProps) {
   if (!editor) return null;
 
   const setLink = () => {
@@ -204,6 +211,21 @@ function EditorToolbar({ editor }: EditorToolbarProps) {
       >
         <RemoveFormatting className="h-4 w-4" />
       </ToolbarButton>
+
+      <ToolbarDivider />
+
+      {/* Optimize for GEO */}
+      <ToolbarButton
+        onClick={onOptimize}
+        disabled={isOptimizing}
+        title="Optimize for GEO"
+      >
+        {isOptimizing ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Sparkles className="h-4 w-4" />
+        )}
+      </ToolbarButton>
     </div>
   );
 }
@@ -216,13 +238,31 @@ interface RichTextEditorProps {
   editable?: boolean;
 }
 
-export function RichTextEditor({
-  content = "",
-  onChange,
-  placeholder = "Start writing your content...",
-  className,
-  editable = true,
-}: RichTextEditorProps) {
+export interface RichTextEditorHandle {
+  applySuggestion: (suggestion: Suggestion) => void;
+}
+
+export const RichTextEditor = React.forwardRef<RichTextEditorHandle, RichTextEditorProps>(
+  function RichTextEditor({
+    content = "",
+    onChange,
+    placeholder = "Start writing your content...",
+    className,
+    editable = true,
+  }: RichTextEditorProps, ref) {
+  // Optimization store hooks
+  const hasSuggestions = useHasSuggestions();
+  const isAnalyzing = useIsAnalyzing();
+  const error = useOptimizationError();
+  const analysisResult = useAnalysisResult();
+  const { clearSuggestions, setAnalysisResult, setSuggestions, setAnalyzing, setError } = useOptimizationStore();
+
+  // Local state for optimization
+  const [isOptimizing, setIsOptimizing] = React.useState(false);
+
+  // Determine if panel should be shown
+  const showPanel = hasSuggestions || isAnalyzing || error !== null || analysisResult !== null;
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -264,15 +304,124 @@ export function RichTextEditor({
     },
   });
 
+  // Handler for optimizing content
+  const handleOptimize = React.useCallback(async () => {
+    if (!editor) return;
+
+    try {
+      setIsOptimizing(true);
+      setAnalyzing(true);
+      setError(null);
+
+      const content = editor.getHTML();
+
+      const response = await fetch("/api/optimize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Failed to analyze content" }));
+        throw new Error(errorData.error || "Failed to analyze content");
+      }
+
+      const data = await response.json();
+
+      if (data.suggestions) {
+        setSuggestions(data.suggestions);
+      }
+
+      if (data.analysis) {
+        setAnalysisResult(data.analysis);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to optimize content";
+      setError(errorMessage);
+    } finally {
+      setIsOptimizing(false);
+      setAnalyzing(false);
+    }
+  }, [editor, setAnalyzing, setError, setSuggestions, setAnalysisResult]);
+
+  // Expose applySuggestion method to parent via ref
+  React.useImperativeHandle(ref, () => ({
+    applySuggestion: (suggestion: Suggestion) => {
+      if (!editor) {
+        console.error("Editor not initialized");
+        return;
+      }
+
+      try {
+        const currentContent = editor.getHTML();
+        const updatedContent = applySuggestion(currentContent, suggestion);
+
+        // Update editor content
+        editor.commands.setContent(updatedContent);
+
+        // Trigger onChange to sync with parent state
+        onChange?.(updatedContent);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to apply suggestion";
+        console.error("Error applying suggestion:", errorMessage);
+        throw error;
+      }
+    },
+  }), [editor, onChange]);
+
+  // Handler for applying suggestions from the panel
+  const handleApplySuggestion = (suggestion: Suggestion) => {
+    if (!editor) {
+      console.error("Editor not initialized");
+      return;
+    }
+
+    try {
+      const currentContent = editor.getHTML();
+      const updatedContent = applySuggestion(currentContent, suggestion);
+
+      // Update editor content
+      editor.commands.setContent(updatedContent);
+
+      // Trigger onChange to sync with parent state
+      onChange?.(updatedContent);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to apply suggestion";
+      console.error("Error applying suggestion:", errorMessage);
+    }
+  };
+
+  // Handler for closing the suggestion panel
+  const handleClosePanel = () => {
+    clearSuggestions();
+  };
+
   return (
-    <div className={cn("card-secondary rounded-lg overflow-hidden", className)}>
-      <EditorToolbar editor={editor} />
-      <EditorContent editor={editor} />
-      {editor?.isEmpty && (
-        <div className="absolute top-[60px] left-4 text-muted-foreground pointer-events-none">
-          {placeholder}
-        </div>
+    <div className={cn("space-y-4", className)}>
+      <div className="card-secondary rounded-lg overflow-hidden">
+        <EditorToolbar
+          editor={editor}
+          onOptimize={handleOptimize}
+          isOptimizing={isOptimizing}
+        />
+        <EditorContent editor={editor} />
+        {editor?.isEmpty && (
+          <div className="absolute top-[60px] left-4 text-muted-foreground pointer-events-none">
+            {placeholder}
+          </div>
+        )}
+      </div>
+
+      {/* Suggestion Panel - appears after optimization */}
+      {showPanel && (
+        <SuggestionPanel
+          onApplySuggestion={handleApplySuggestion}
+          onClose={handleClosePanel}
+          onRetry={handleOptimize}
+        />
       )}
     </div>
   );
-}
+});

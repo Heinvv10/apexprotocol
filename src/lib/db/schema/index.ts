@@ -101,6 +101,21 @@ export {
   type NewScheduledJob,
 } from "./jobs";
 
+export {
+  notifications,
+  notificationPreferences,
+  notificationReads,
+  notificationTypeEnum,
+  emailDigestFrequencyEnum,
+  type Notification,
+  type NewNotification,
+  type NotificationPreference,
+  type NewNotificationPreference,
+  type NotificationRead,
+  type NewNotificationRead,
+  type NotificationMetadata,
+} from "./notifications";
+
 // Relations
 export { organizationsRelations } from "./organizations";
 export { usersRelations } from "./users";
@@ -112,6 +127,11 @@ export { recommendationsRelations } from "./recommendations";
 export { apiKeysRelations } from "./api-keys";
 export { aiUsageRelations } from "./ai-usage";
 export { monitoringJobsRelations, scheduledJobsRelations } from "./jobs";
+export {
+  notificationsRelations,
+  notificationReadsRelations,
+  notificationPreferencesRelations,
+} from "./notifications";
 
 export {
   serpFeatures,

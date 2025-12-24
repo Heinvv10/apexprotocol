@@ -5,6 +5,7 @@ import { ClerkProvider } from "@/components/providers/clerk-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ToastProvider, Toaster } from "@/components/toast";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { RealtimeProvider } from "@/components/providers/realtime-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -50,10 +51,12 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <QueryProvider>
-              <ToastProvider>
-                {children}
-                <Toaster />
-              </ToastProvider>
+              <RealtimeProvider>
+                <ToastProvider>
+                  {children}
+                  <Toaster />
+                </ToastProvider>
+              </RealtimeProvider>
             </QueryProvider>
           </ThemeProvider>
         </ClerkProvider>

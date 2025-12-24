@@ -13,43 +13,33 @@ import { useCallback, useEffect } from "react";
 // =============================================================================
 
 export type NotificationType =
-  | "mention_detected"
-  | "audit_completed"
-  | "audit_failed"
-  | "recommendation_generated"
-  | "content_published"
-  | "team_invite"
-  | "achievement_unlocked"
-  | "usage_warning"
-  | "billing_alert"
-  | "system_announcement"
-  | "crisis_alert";
+  | "mention"
+  | "score_change"
+  | "recommendation"
+  | "important";
 
-export type NotificationPriority = "low" | "normal" | "high" | "urgent";
 export type NotificationStatus = "unread" | "read" | "archived";
 
 export interface Notification {
   id: string;
   userId: string;
+  organizationId: string;
   type: NotificationType;
   title: string;
   message: string;
-  priority: NotificationPriority;
-  status: NotificationStatus;
-  actionUrl?: string;
-  actionLabel?: string;
-  icon?: string;
-  data?: Record<string, unknown>;
-  groupId?: string;
-  expiresAt?: string;
+  metadata?: Record<string, unknown>;
+  isRead: boolean;
+  readAt?: string | null;
+  isArchived: boolean;
+  archivedAt?: string | null;
   createdAt: string;
-  readAt?: string;
+  // Computed status for backward compatibility with UI components
+  status?: NotificationStatus;
 }
 
 export interface NotificationFilters {
   status?: NotificationStatus;
   type?: NotificationType;
-  priority?: NotificationPriority;
   since?: string;
   page?: number;
   limit?: number;
@@ -64,20 +54,17 @@ export interface NotificationListResponse {
 }
 
 export interface NotificationPreferences {
-  email: {
-    enabled: boolean;
-    digest: "instant" | "daily" | "weekly" | "never";
-    types: NotificationType[];
-  };
-  push: {
-    enabled: boolean;
-    types: NotificationType[];
-  };
-  inApp: {
-    enabled: boolean;
-    sound: boolean;
-    types: NotificationType[];
-  };
+  id?: string;
+  userId: string;
+  organizationId: string;
+  emailEnabled: boolean;
+  emailDigestFrequency: "none" | "daily" | "weekly";
+  emailDigestHour: number;
+  inAppEnabled: boolean;
+  notificationTypes: NotificationType[];
+  timezone: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // =============================================================================
@@ -98,7 +85,19 @@ async function fetchNotifications(
   if (!response.ok) {
     throw new Error("Failed to fetch notifications");
   }
-  return response.json();
+  const data = await response.json();
+
+  // Transform API response to include computed status field for UI compatibility
+  if (data.success && data.data?.notifications) {
+    data.data.notifications = data.data.notifications.map((n: Notification) => ({
+      ...n,
+      status: n.isArchived ? "archived" : n.isRead ? "read" : "unread",
+      actionUrl: n.metadata?.linkUrl,
+    }));
+    return data.data;
+  }
+
+  return data;
 }
 
 async function fetchUnreadCount(): Promise<number> {
@@ -107,7 +106,7 @@ async function fetchUnreadCount(): Promise<number> {
     throw new Error("Failed to fetch unread count");
   }
   const data = await response.json();
-  return data.count;
+  return data.success ? data.data.count : 0;
 }
 
 // =============================================================================
@@ -182,7 +181,7 @@ export function useMarkAsRead() {
   return useMutation({
     mutationFn: async (id: string) => {
       const response = await fetch(`/api/notifications/${id}/read`, {
-        method: "POST",
+        method: "PATCH",
       });
       if (!response.ok) {
         throw new Error("Failed to mark as read");
@@ -202,7 +201,12 @@ export function useMarkAsRead() {
         queryKeys.notifications.detail(id),
         (old) =>
           old
-            ? { ...old, status: "read" as NotificationStatus, readAt: new Date().toISOString() }
+            ? {
+                ...old,
+                isRead: true,
+                status: "read" as NotificationStatus,
+                readAt: new Date().toISOString()
+              }
             : old
       );
 
@@ -237,7 +241,7 @@ export function useMarkAllAsRead() {
   return useMutation({
     mutationFn: async () => {
       const response = await fetch("/api/notifications/read-all", {
-        method: "POST",
+        method: "PATCH",
       });
       if (!response.ok) {
         throw new Error("Failed to mark all as read");
@@ -270,7 +274,7 @@ export function useArchiveNotification() {
   return useMutation({
     mutationFn: async (id: string) => {
       const response = await fetch(`/api/notifications/${id}/archive`, {
-        method: "POST",
+        method: "PATCH",
       });
       if (!response.ok) {
         throw new Error("Failed to archive notification");
@@ -515,31 +519,32 @@ export function useRequestPushPermission() {
 
 /**
  * Hook for notification bell component
+ * Provides recent unread notifications and actions for the notification bell dropdown
  */
 export function useNotificationBell() {
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
-  const { data } = useNotifications({ status: "unread", limit: 5 });
-  const markAsRead = useMarkAsRead();
-  const markAllAsRead = useMarkAllAsRead();
+  const { data } = useNotifications({ limit: 10 });
+  const markAsReadMutation = useMarkAsRead();
+  const markAllAsReadMutation = useMarkAllAsRead();
 
   const handleMarkAsRead = useCallback(
     (id: string) => {
-      markAsRead.mutate(id);
+      markAsReadMutation.mutate(id);
     },
-    [markAsRead]
+    [markAsReadMutation]
   );
 
   const handleMarkAllAsRead = useCallback(() => {
-    markAllAsRead.mutate();
-  }, [markAllAsRead]);
+    markAllAsReadMutation.mutate();
+  }, [markAllAsReadMutation]);
 
   return {
     unreadCount,
     recentNotifications: data?.notifications ?? [],
     markAsRead: handleMarkAsRead,
     markAllAsRead: handleMarkAllAsRead,
-    isMarkingAsRead: markAsRead.isPending,
-    isMarkingAllAsRead: markAllAsRead.isPending,
+    isMarkingAsRead: markAsReadMutation.isPending,
+    isMarkingAllAsRead: markAllAsReadMutation.isPending,
   };
 }
 

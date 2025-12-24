@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useClerk, useUser } from "@clerk/nextjs";
-import { Bell, Search, User, LogOut, CreditCard, Users } from "lucide-react";
+import { Search, User, LogOut, CreditCard, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "./theme-toggle";
 import { BrandSelector } from "./brand-selector";
+import { NotificationsBell } from "@/components/notifications/notifications-bell";
 
 interface HeaderProps {
   title?: string;
@@ -66,14 +67,7 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
       {/* Right side - Actions */}
       <div className="flex items-center gap-2">
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-lg">
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-1 right-1 flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-          </span>
-          <span className="sr-only">Notifications</span>
-        </Button>
+        <NotificationsBell />
 
         {/* Theme Toggle */}
         <ThemeToggle />

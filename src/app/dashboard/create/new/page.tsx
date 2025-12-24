@@ -26,8 +26,18 @@ export default function NewContentPage() {
   const [content, setContent] = React.useState("");
   const [isSaving, setIsSaving] = React.useState(false);
   const [showPreview, setShowPreview] = React.useState(false);
+  const [debouncedContent, setDebouncedContent] = React.useState("");
 
   const selectedType = contentTypes.find((t) => t.value === contentType);
+
+  // Debounce content changes for AI suggestions (3 second delay)
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedContent(content);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [content]);
 
   const handleSave = async (status: "draft" | "published") => {
     setIsSaving(true);
@@ -42,6 +52,12 @@ export default function NewContentPage() {
     const text = content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
     return text ? text.split(" ").length : 0;
   }, [content]);
+
+  // Memoize suggestions input for AI panel
+  const suggestionsInput = React.useMemo(() => ({
+    content: debouncedContent,
+    type: contentType as "blog" | "social" | "faq" | "product" | "landing" | "email",
+  }), [debouncedContent, contentType]);
 
   return (
     <div className="space-y-6">
@@ -147,23 +163,23 @@ export default function NewContentPage() {
             <div className="font-medium">AI Optimization Tips</div>
             <ul className="text-sm text-muted-foreground space-y-2">
               <li className="flex items-start gap-2">
-                <span className="text-success mt-1">•</span>
+                <span className="text-success mt-1">â€¢</span>
                 Use clear, descriptive headings
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-success mt-1">•</span>
+                <span className="text-success mt-1">â€¢</span>
                 Include FAQ-style Q&A sections
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-success mt-1">•</span>
+                <span className="text-success mt-1">â€¢</span>
                 Add structured data markup
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-success mt-1">•</span>
+                <span className="text-success mt-1">â€¢</span>
                 Keep paragraphs concise
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-success mt-1">•</span>
+                <span className="text-success mt-1">â€¢</span>
                 Use bullet points for lists
               </li>
             </ul>
@@ -187,6 +203,7 @@ export default function NewContentPage() {
 
           {/* AI Suggestions Panel */}
           <AISuggestionsPanel
+            suggestionsInput={suggestionsInput}
             onInsertSuggestion={(suggestion) => {
               setContent((prev) => prev + "\n\n" + suggestion);
             }}

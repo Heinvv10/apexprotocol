@@ -1,25 +1,25 @@
 {
   "active": true,
-  "spec": "005-monitor-section-api-integration",
+  "spec": "013-real-time-notifications-system",
   "state": "building",
   "subtasks": {
-    "completed": 15,
-    "total": 16,
+    "completed": 20,
+    "total": 23,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Documentation & Cleanup",
+    "current": "System Integration",
     "id": null,
-    "total": 2
+    "total": 3
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 4,
-    "started_at": "2025-12-23T23:19:58.629901"
+    "number": 21,
+    "started_at": "2025-12-24T16:53:26.620638"
   },
-  "last_update": "2025-12-24T00:14:01.116844"
+  "last_update": "2025-12-24T19:13:13.813080"
 }

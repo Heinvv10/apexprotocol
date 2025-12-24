@@ -7,8 +7,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { brandMentions, audits, brands } from "@/lib/db/schema";
+import { brandMentions, audits, brands, geoScoreHistory } from "@/lib/db/schema";
 import { eq, count, sql, desc } from "drizzle-orm";
+import { getUserId, getOrganizationId } from "@/lib/auth";
+import { onScoreChange } from "@/lib/notifications/triggers";
 
 export async function GET(request: NextRequest) {
   try {
@@ -89,6 +91,67 @@ export async function GET(request: NextRequest) {
       authorityScore * 0.25 +
       aiReadinessScore * 0.25
     );
+
+    // Get previous score from history for score change detection
+    const lastScoreHistory = await db.query.geoScoreHistory.findFirst({
+      where: eq(geoScoreHistory.brandId, brandId),
+      orderBy: [desc(geoScoreHistory.calculatedAt)],
+    });
+
+    // Calculate score change and determine if notification should be triggered
+    const previousScore = lastScoreHistory?.overallScore ?? overall;
+    const scoreChange = overall - previousScore;
+    const absChange = Math.abs(scoreChange);
+
+    // Trigger score change notification if change is Â±5 or more
+    if (absChange >= 5) {
+      try {
+        // Get user context for notification
+        const notificationUserId = await getUserId();
+        const organizationId = await getOrganizationId();
+
+        if (notificationUserId && organizationId) {
+          // Create score history record
+          const trend = scoreChange > 0 ? "up" : scoreChange < 0 ? "down" : "stable";
+
+          const [scoreHistoryRecord] = await db
+            .insert(geoScoreHistory)
+            .values({
+              brandId,
+              overallScore: overall,
+              visibilityScore: aiReadinessScore,
+              sentimentScore: contentScore,
+              recommendationScore: authorityScore,
+              competitorGapScore: null,
+              previousScore,
+              scoreChange,
+              trend,
+              mentionCount: totalMentions,
+              positiveMentions,
+              negativeMentions: 0,
+              neutralMentions: totalMentions - positiveMentions,
+              recommendationCount: null,
+              completedRecommendations: null,
+              calculationNotes: `Score ${trend} by ${absChange.toFixed(1)} points`,
+              dataQuality: totalMentions > 10 ? 90 : totalMentions > 5 ? 75 : 60,
+            })
+            .returning();
+
+          // Trigger notification
+          await onScoreChange({
+            scoreHistory: scoreHistoryRecord,
+            userId: notificationUserId,
+            organizationId,
+          });
+        }
+      } catch (notificationError) {
+        // Log error but don't fail the API request
+        console.error(
+          "[GEO Score API] Failed to create score change notification:",
+          notificationError
+        );
+      }
+    }
 
     // Build breakdown
     const breakdown = [
