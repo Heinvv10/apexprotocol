@@ -1,15 +1,15 @@
 {
   "active": true,
-  "spec": "007-recommendations-kanban-calendar-data-wiring",
+  "spec": "005-monitor-section-api-integration",
   "state": "building",
   "subtasks": {
-    "completed": 7,
-    "total": 10,
+    "completed": 15,
+    "total": 16,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Kanban Refinements (Optional)",
+    "current": "Documentation & Cleanup",
     "id": null,
     "total": 2
   },
@@ -18,8 +18,8 @@
     "max": 1
   },
   "session": {
-    "number": 8,
-    "started_at": "2025-12-23T15:32:18.329246"
+    "number": 4,
+    "started_at": "2025-12-23T23:19:58.629901"
   },
-  "last_update": "2025-12-23T16:20:11.849849"
+  "last_update": "2025-12-24T00:14:01.116844"
 }

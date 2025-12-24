@@ -1,12 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, TrendingUp, TrendingDown, MessageSquare, Sparkles, Settings, ArrowRight, Loader2, RefreshCw } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, MessageSquare, Sparkles, Settings, ArrowRight, Loader2, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { MentionCard, MentionFilters, PlatformId, SentimentType } from "@/components/monitor";
+import { MentionCard, MentionFilters, PlatformId, SentimentType, LastUpdatedTimestamp } from "@/components/monitor";
 import { Button } from "@/components/ui/button";
-import { useMentions, useMentionsByBrand, useRefreshMentions } from "@/hooks/useMonitor";
+import { useMentions, useRefreshMentions } from "@/hooks/useMonitor";
 import { useSelectedBrand } from "@/stores";
+
+// Pagination constants
+const DEFAULT_PAGE_SIZE = 20;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 // Mention interface (for UI display)
 export interface Mention {
@@ -116,9 +120,18 @@ export default function MentionsPage() {
   const [selectedSentiments, setSelectedSentiments] = React.useState<SentimentType[]>([]);
   const [dateRange, setDateRange] = React.useState<"24h" | "7d" | "30d" | "all">("all");
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(DEFAULT_PAGE_SIZE);
+
+  // Reset to first page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedBrand?.id, selectedPlatforms, selectedSentiments, dateRange]);
+
   // Build API filters from UI state
   const apiFilters = React.useMemo(() => {
-    const filters: Record<string, string | undefined> = {};
+    const filters: Record<string, string | number | undefined> = {};
 
     if (selectedBrand?.id) {
       filters.brandId = selectedBrand.id;
@@ -150,12 +163,34 @@ export default function MentionsPage() {
       filters.startDate = startDate.toISOString();
     }
 
+    // Add pagination parameters
+    filters.limit = pageSize;
+    filters.offset = (currentPage - 1) * pageSize;
+
     return filters;
-  }, [selectedBrand?.id, selectedPlatforms, selectedSentiments, dateRange]);
+  }, [selectedBrand?.id, selectedPlatforms, selectedSentiments, dateRange, currentPage, pageSize]);
 
   // Fetch mentions from API
-  const { data: mentionsData, isLoading, error, refetch } = useMentions(apiFilters);
+  const { data: mentionsData, isLoading, isFetching, dataUpdatedAt } = useMentions(apiFilters);
   const refreshMentions = useRefreshMentions();
+
+  // Calculate pagination info
+  const totalItems = mentionsData?.total ?? 0;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, totalItems);
+
+  // Pagination handlers
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
 
   // Transform API data to UI format
   const mentions: Mention[] = React.useMemo(() => {
@@ -163,47 +198,19 @@ export default function MentionsPage() {
     return mentionsData.mentions.map(transformMention);
   }, [mentionsData]);
 
-  // Handle loading state
+  // Handle loading state (only show full loading on initial load)
   if (isLoading && mentions.length === 0) {
     return <MentionsLoadingState />;
   }
 
   // Handle empty state (no brand selected or no data)
-  if (!selectedBrand && mentions.length === 0) {
+  if (!selectedBrand && mentions.length === 0 && !isLoading) {
     return <MentionsEmptyState />;
   }
 
-  // Filter logic
-  const filteredMentions = React.useMemo(() => {
-    return mentions.filter((mention) => {
-      // Platform filter
-      if (selectedPlatforms.length > 0 && !selectedPlatforms.includes(mention.platformId)) {
-        return false;
-      }
-
-      // Sentiment filter
-      if (selectedSentiments.length > 0 && !selectedSentiments.includes(mention.sentiment)) {
-        return false;
-      }
-
-      // Date range filter
-      const maxHours = {
-        "24h": 24,
-        "7d": 168,
-        "30d": 720,
-        all: Infinity,
-      }[dateRange];
-
-      if (mention.hoursAgo > maxHours) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [mentions, selectedPlatforms, selectedSentiments, dateRange]);
-
-  // Calculate stats from filtered mentions
-  const sentimentCounts = filteredMentions.reduce(
+  // Calculate stats from current page mentions
+  // Note: For accurate totals, we'd need a separate stats endpoint
+  const sentimentCounts = mentions.reduce(
     (acc, mention) => {
       acc[mention.sentiment]++;
       return acc;
@@ -211,7 +218,7 @@ export default function MentionsPage() {
     { positive: 0, neutral: 0, negative: 0 }
   );
 
-  const platformCounts = filteredMentions.reduce(
+  const platformCounts = mentions.reduce(
     (acc, mention) => {
       acc[mention.platformId] = (acc[mention.platformId] || 0) + 1;
       return acc;
@@ -242,15 +249,18 @@ export default function MentionsPage() {
             </p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => selectedBrand?.id && refreshMentions.mutate(selectedBrand.id)}
-          disabled={refreshMentions.isPending || !selectedBrand}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${refreshMentions.isPending ? "animate-spin" : ""}`} />
-          {refreshMentions.isPending ? "Refreshing..." : "Refresh"}
-        </Button>
+        <div className="flex items-center gap-3">
+          <LastUpdatedTimestamp lastUpdated={dataUpdatedAt} isFetching={isFetching} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => selectedBrand?.id && refreshMentions.mutate(selectedBrand.id)}
+            disabled={refreshMentions.isPending || !selectedBrand}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshMentions.isPending ? "animate-spin" : ""}`} />
+            {refreshMentions.isPending ? "Refreshing..." : "Refresh"}
+          </Button>
+        </div>
       </div>
 
       {/* Stats Overview */}
@@ -261,11 +271,9 @@ export default function MentionsPage() {
               <MessageSquare className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{filteredMentions.length}</p>
+              <p className="text-2xl font-bold">{totalItems}</p>
               <p className="text-xs text-muted-foreground">
-                {filteredMentions.length !== mentions.length
-                  ? `of ${mentions.length} Mentions`
-                  : "Total Mentions"}
+                Total Mentions
               </p>
             </div>
           </div>
@@ -324,11 +332,16 @@ export default function MentionsPage() {
       {/* Mentions List */}
       <div className="card-secondary">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold">
-            {filteredMentions.length === 0
-              ? "No mentions found"
-              : `${filteredMentions.length} Mention${filteredMentions.length !== 1 ? "s" : ""}`}
-          </h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-lg font-semibold">
+              {totalItems === 0
+                ? "No mentions found"
+                : `${totalItems} Mention${totalItems !== 1 ? "s" : ""}`}
+            </h3>
+            {isFetching && !isLoading && (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            )}
+          </div>
           {dateRange !== "all" && (
             <span className="text-sm text-muted-foreground">
               {dateRange === "24h"
@@ -340,7 +353,7 @@ export default function MentionsPage() {
           )}
         </div>
 
-        {filteredMentions.length === 0 ? (
+        {mentions.length === 0 && !isLoading ? (
           <div className="text-center py-12 text-muted-foreground">
             <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No mentions match your current filters.</p>
@@ -353,19 +366,119 @@ export default function MentionsPage() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
-            {filteredMentions.map((mention) => (
-              <MentionCard
-                key={mention.id}
-                platformId={mention.platformId}
-                text={mention.text}
-                sentiment={mention.sentiment}
-                timestamp={mention.timestamp}
-                source={mention.source}
-                sourceUrl={mention.sourceUrl}
-              />
-            ))}
-          </div>
+          <>
+            <div className="space-y-4">
+              {mentions.map((mention) => (
+                <MentionCard
+                  key={mention.id}
+                  platformId={mention.platformId}
+                  text={mention.text}
+                  sentiment={mention.sentiment}
+                  timestamp={mention.timestamp}
+                  source={mention.source}
+                  sourceUrl={mention.sourceUrl}
+                />
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t border-border">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-muted-foreground">
+                    Showing {startItem} to {endItem} of {totalItems} mentions
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="pageSize" className="text-sm text-muted-foreground">
+                      Per page:
+                    </label>
+                    <select
+                      id="pageSize"
+                      value={pageSize}
+                      onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                      className="px-2 py-1 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      {PAGE_SIZE_OPTIONS.map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(1)}
+                    disabled={currentPage === 1 || isFetching}
+                    className="hidden sm:flex"
+                  >
+                    First
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1 || isFetching}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </Button>
+
+                  <div className="flex items-center gap-1">
+                    {/* Page number buttons */}
+                    {(() => {
+                      const pages = [];
+                      const showPages = 5;
+                      let start = Math.max(1, currentPage - Math.floor(showPages / 2));
+                      const end = Math.min(totalPages, start + showPages - 1);
+
+                      if (end - start + 1 < showPages) {
+                        start = Math.max(1, end - showPages + 1);
+                      }
+
+                      for (let i = start; i <= end; i++) {
+                        pages.push(
+                          <Button
+                            key={i}
+                            variant={i === currentPage ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => goToPage(i)}
+                            disabled={isFetching}
+                            className="min-w-[36px]"
+                          >
+                            {i}
+                          </Button>
+                        );
+                      }
+                      return pages;
+                    })()}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages || isFetching}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(totalPages)}
+                    disabled={currentPage === totalPages || isFetching}
+                    className="hidden sm:flex"
+                  >
+                    Last
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 

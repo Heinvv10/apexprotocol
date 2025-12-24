@@ -29,6 +29,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DataRefreshIndicator } from "@/components/monitor";
 import { useCitations, CitationData as APICitationData, CitationTrendPoint as APICitationTrendPoint } from "@/hooks/useMonitor";
 import { useSelectedBrand } from "@/stores";
 
@@ -136,7 +137,7 @@ export default function CitationsPage() {
   const selectedBrand = useSelectedBrand();
 
   // Fetch citations from API
-  const { data: citationsData, isLoading } = useCitations(selectedBrand?.id);
+  const { data: citationsData, isLoading, refetch, isFetching, dataUpdatedAt } = useCitations(selectedBrand?.id);
 
   // Transform API data to UI format
   const citations: CitationData[] = React.useMemo(() => {
@@ -266,6 +267,14 @@ export default function CitationsPage() {
             </p>
           </div>
         </div>
+
+        {/* Refresh Indicator */}
+        <DataRefreshIndicator
+          lastUpdated={dataUpdatedAt}
+          isFetching={isFetching}
+          onRefresh={() => refetch()}
+          size="sm"
+        />
       </div>
 
       {/* Stats Row */}

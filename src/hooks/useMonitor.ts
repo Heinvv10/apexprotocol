@@ -68,9 +68,12 @@ export interface MentionFilters {
   status?: string;
   dateFrom?: string;
   dateTo?: string;
+  startDate?: string;
+  endDate?: string;
   search?: string;
   page?: number;
   limit?: number;
+  offset?: number;
   sort?: string;
   order?: "asc" | "desc";
 }
@@ -110,26 +113,84 @@ async function updatePlatformConfig(config: PlatformConfig): Promise<Platform> {
 }
 
 async function fetchBrandConfig(brandId: string): Promise<BrandConfig> {
-  const response = await fetch(`/api/monitor/brand/${brandId}`);
+  const response = await fetch(`/api/monitor/brands/${brandId}`);
   if (!response.ok) {
     throw new Error("Failed to fetch brand config");
   }
-  return response.json();
+  const result = await response.json();
+  // API returns { success: true, data: brand }, extract the data field
+  const brand = result.data || result;
+
+  // Convert competitors from BrandCompetitor[] to string[]
+  // API returns { name, url, reason } objects, interface expects strings
+  const competitorNames = (brand.competitors || []).map(
+    (c: { name: string } | string) => (typeof c === "string" ? c : c.name)
+  );
+
+  // Map API fields to BrandConfig interface
+  return {
+    id: brand.id,
+    name: brand.name,
+    domain: brand.domain,
+    description: brand.description,
+    keywords: brand.keywords || [],
+    competitors: competitorNames,
+    trackingEnabled: brand.monitoringEnabled ?? true,
+    alertsEnabled: true, // Default value since API doesn't have this field
+    platforms: brand.monitoringPlatforms || [],
+    settings: brand.settings,
+  };
 }
 
 async function saveBrandConfig(config: BrandConfig): Promise<BrandConfig> {
   const method = config.id ? "PUT" : "POST";
-  const url = config.id ? `/api/monitor/brand/${config.id}` : "/api/monitor/brand";
+  const url = config.id ? `/api/monitor/brands/${config.id}` : "/api/monitor/brands";
+
+  // Map BrandConfig fields to API fields
+  // Handle competitors - convert string[] to BrandCompetitor[] if needed
+  const competitors = Array.isArray(config.competitors)
+    ? config.competitors.map((c) =>
+        typeof c === "string"
+          ? { name: c, url: "", reason: "Competitor" }
+          : c
+      )
+    : [];
+
+  const apiPayload = {
+    name: config.name,
+    domain: config.domain,
+    description: config.description,
+    keywords: config.keywords,
+    competitors,
+    monitoringEnabled: config.trackingEnabled,
+    monitoringPlatforms: config.platforms,
+  };
 
   const response = await fetch(url, {
     method,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(config),
+    body: JSON.stringify(apiPayload),
   });
   if (!response.ok) {
     throw new Error("Failed to save brand config");
   }
-  return response.json();
+  const result = await response.json();
+  // API returns { success: true, data: brand }, extract the data field
+  const brand = result.data || result;
+
+  // Map API response back to BrandConfig
+  return {
+    id: brand.id,
+    name: brand.name,
+    domain: brand.domain,
+    description: brand.description,
+    keywords: brand.keywords || [],
+    competitors: brand.competitors || [],
+    trackingEnabled: brand.monitoringEnabled ?? true,
+    alertsEnabled: true,
+    platforms: brand.monitoringPlatforms || [],
+    settings: brand.settings,
+  };
 }
 
 async function fetchMentions(filters: MentionFilters = {}): Promise<MentionListResponse> {
@@ -144,7 +205,26 @@ async function fetchMentions(filters: MentionFilters = {}): Promise<MentionListR
   if (!response.ok) {
     throw new Error("Failed to fetch mentions");
   }
-  return response.json();
+
+  const data = await response.json();
+
+  // Map API response to expected format
+  // API returns: { success, data, meta: { total, limit, offset } }
+  // We need: { mentions, total, page, limit, totalPages, filters }
+  const limit = data.meta?.limit ?? filters.limit ?? 50;
+  const offset = data.meta?.offset ?? filters.offset ?? 0;
+  const total = data.meta?.total ?? 0;
+  const page = Math.floor(offset / limit) + 1;
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    mentions: data.data || [],
+    total,
+    page,
+    limit,
+    totalPages,
+    filters,
+  };
 }
 
 async function fetchMention(id: string): Promise<Mention> {
@@ -288,7 +368,7 @@ export function useUpdateBrandKeywords(brandId: string) {
 
   return useMutation({
     mutationFn: async (keywords: string[]) => {
-      const response = await fetch(`/api/monitor/brand/${brandId}/keywords`, {
+      const response = await fetch(`/api/monitor/brands/${brandId}/keywords`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ keywords }),
@@ -314,7 +394,7 @@ export function useUpdateBrandCompetitors(brandId: string) {
 
   return useMutation({
     mutationFn: async (competitors: string[]) => {
-      const response = await fetch(`/api/monitor/brand/${brandId}/competitors`, {
+      const response = await fetch(`/api/monitor/brands/${brandId}/competitors`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ competitors }),

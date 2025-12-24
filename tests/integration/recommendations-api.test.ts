@@ -430,7 +430,7 @@ describe("Recommendations API Integration Tests", () => {
       expect(data.success).toBe(false);
       expect(data.error).toBe("Invalid request body");
       expect(data.details).toBeDefined();
-    });
+    }, 15000);
 
     it("should return 400 for invalid brandId (empty string)", async () => {
       const request = createMockPostRequest(

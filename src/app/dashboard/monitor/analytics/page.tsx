@@ -31,6 +31,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DataRefreshIndicator } from "@/components/monitor";
 import { useMentionAnalytics } from "@/hooks/useMonitor";
 import { useSelectedBrand } from "@/stores";
 
@@ -145,7 +146,7 @@ export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = React.useState<TimeRange>("30d");
 
   // Fetch analytics data from API
-  const { data: analyticsResponse, isLoading, error } = useMentionAnalytics(
+  const { data: analyticsResponse, isLoading, error, refetch, isFetching, dataUpdatedAt } = useMentionAnalytics(
     selectedBrand?.id,
     timeRange
   );
@@ -328,6 +329,13 @@ export default function AnalyticsPage() {
 
         {/* Actions */}
         <div className="flex items-center gap-4">
+          <DataRefreshIndicator
+            lastUpdated={dataUpdatedAt}
+            isFetching={isFetching}
+            onRefresh={() => refetch()}
+            size="sm"
+          />
+
           <Link href="/dashboard/monitor/analytics/citations">
             <Button variant="outline" size="sm">
               <Link2 className="h-4 w-4 mr-2" />

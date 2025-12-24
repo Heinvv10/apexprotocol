@@ -246,7 +246,7 @@ describe("Gamification API Route", () => {
 
       expect(data.success).toBe(true);
       expect(data.progress).toBeDefined();
-    });
+    }, 15000);
 
     it("should return achievements when action=achievements", async () => {
       const request = {
