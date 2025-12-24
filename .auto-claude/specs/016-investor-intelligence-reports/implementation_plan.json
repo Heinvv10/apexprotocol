@@ -1,0 +1,553 @@
+{
+  "feature": "Investor Intelligence Reports",
+  "workflow_type": "feature",
+  "workflow_rationale": "New investor-focused PDF reporting capability extending existing infrastructure. Requires API endpoints, database queries, PDF generation components, and UI interface while leveraging established @react-pdf/renderer, Drizzle ORM, and portfolio management systems.",
+  "phases": [
+    {
+      "id": "phase-1-schema",
+      "name": "Database Schema Extension",
+      "type": "implementation",
+      "description": "Extend portfolio schema to support investor report data structures including benchmark data, GEO trends, Impact Index breakdown, and competitive intelligence",
+      "depends_on": [],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-1-1",
+          "description": "Extend ReportContent interface in portfolios.ts with InvestorReportContent fields",
+          "service": "main",
+          "files_to_modify": [
+            "src/lib/db/schema/portfolios.ts"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/lib/db/schema/portfolios.ts"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "npm run db:generate",
+            "expected": "Schema generation succeeds without errors"
+          },
+          "status": "pending",
+          "notes": "Add benchmarkData, geoTrends, impactIndexBreakdown, competitiveIntelligence to existing ReportContent interface"
+        }
+      ]
+    },
+    {
+      "id": "phase-2-queries",
+      "name": "Database Query Layer",
+      "type": "implementation",
+      "description": "Build Drizzle ORM query functions to aggregate portfolio metrics, GEO visibility data, brand performance, and competitive benchmarks",
+      "depends_on": [
+        "phase-1-schema"
+      ],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-2-1",
+          "description": "Create investor-reports.ts query file with getInvestorReportData function",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [
+            "src/lib/db/queries/investor-reports.ts"
+          ],
+          "patterns_from": [
+            "src/app/api/reports/route.ts"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "npx tsc --noEmit",
+            "expected": "TypeScript compilation succeeds"
+          },
+          "status": "pending",
+          "notes": "Query portfolios + portfolioBrands + brands + geoScoreHistory with proper joins, filters by date range, aggregates metrics"
+        },
+        {
+          "id": "subtask-2-2",
+          "description": "Implement calculateBenchmarks function for industry comparisons",
+          "service": "main",
+          "files_to_modify": [
+            "src/lib/db/queries/investor-reports.ts"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/app/api/reports/route.ts"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "npx tsc --noEmit",
+            "expected": "TypeScript compilation succeeds"
+          },
+          "status": "pending",
+          "notes": "Calculate industry median, percentile rankings, handle edge case of insufficient benchmark data (< 3 businesses)"
+        }
+      ]
+    },
+    {
+      "id": "phase-3-charts",
+      "name": "Chart Generation (recharts-to-png)",
+      "type": "implementation",
+      "description": "CRITICAL: Install recharts-to-png and build chart components with useCurrentPng hook to convert Recharts to base64 PNG for PDF embedding",
+      "depends_on": [
+        "phase-2-queries"
+      ],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-3-1",
+          "description": "Install recharts-to-png dependency",
+          "service": "main",
+          "files_to_modify": [
+            "package.json"
+          ],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "npm list recharts-to-png",
+            "expected": "recharts-to-png package installed successfully"
+          },
+          "status": "pending",
+          "notes": "CRITICAL: Run npm install recharts-to-png before proceeding. This library is REQUIRED for chart-to-PDF conversion."
+        },
+        {
+          "id": "subtask-3-2",
+          "description": "Create GeoVisibilityChart component with useCurrentPng hook",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [
+            "src/lib/reports/charts/geo-visibility-chart.tsx"
+          ],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "npx tsc --noEmit",
+            "expected": "TypeScript compilation succeeds"
+          },
+          "status": "pending",
+          "notes": "Use useCurrentPng({ backgroundColor: '#fff', scale: 2 }), attach ref to container div, implement blobToBase64 utility. Workflow: Recharts → useCurrentPng() → await getPng() → blobToBase64() → PDF Image"
+        }
+      ]
+    },
+    {
+      "id": "phase-4-pdf",
+      "name": "PDF Document Template",
+      "type": "implementation",
+      "description": "Build InvestorReportDocument component using @react-pdf/renderer with all required sections: cover, summary, trends, benchmarks, Impact Index, appendix",
+      "depends_on": [
+        "phase-3-charts"
+      ],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-4-1",
+          "description": "Create InvestorReportDocument component scaffold with cover page and executive summary",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [
+            "src/lib/reports/investor-report.tsx"
+          ],
+          "patterns_from": [
+            "src/lib/reports/pdf-generator.tsx"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "npx tsc --noEmit",
+            "expected": "TypeScript compilation succeeds"
+          },
+          "status": "pending",
+          "notes": "Follow ExecutiveReportDocument pattern: Document/Page/View/Text, StyleSheet.create(), Apex color palette, Inter font"
+        },
+        {
+          "id": "subtask-4-2",
+          "description": "Implement GEO Trends section with embedded chart images",
+          "service": "main",
+          "files_to_modify": [
+            "src/lib/reports/investor-report.tsx"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/lib/reports/pdf-generator.tsx"
+          ],
+          "verification": {
+            "type": "manual",
+            "instructions": "Generate test PDF and verify chart renders correctly"
+          },
+          "status": "pending",
+          "notes": "Use Image component with base64 chart data from phase 3, add 30/60/90-day trend indicators"
+        },
+        {
+          "id": "subtask-4-3",
+          "description": "Implement Benchmark Comparison and Impact Index sections",
+          "service": "main",
+          "files_to_modify": [
+            "src/lib/reports/investor-report.tsx"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/lib/reports/pdf-generator.tsx"
+          ],
+          "verification": {
+            "type": "manual",
+            "instructions": "Verify benchmark table and Impact Index breakdown render correctly in PDF"
+          },
+          "status": "pending",
+          "notes": "Use table layouts, handle insufficient benchmark data edge case, display all Impact Index sub-metrics with weightings"
+        },
+        {
+          "id": "subtask-4-4",
+          "description": "Add generateInvestorReportPDF helper function",
+          "service": "main",
+          "files_to_modify": [
+            "src/lib/reports/investor-report.tsx"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/lib/reports/pdf-generator.tsx"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "npx tsc --noEmit",
+            "expected": "TypeScript compilation succeeds, function signature correct"
+          },
+          "status": "pending",
+          "notes": "Export async function generateInvestorReportPDF(props): Promise<Buffer> that calls renderToBuffer()"
+        }
+      ]
+    },
+    {
+      "id": "phase-5-api",
+      "name": "API Endpoint",
+      "type": "implementation",
+      "description": "Create /api/reports/investor POST endpoint handling authentication, parameter validation, PDF generation, and response streaming",
+      "depends_on": [
+        "phase-4-pdf"
+      ],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-5-1",
+          "description": "Create API route with authentication and parameter validation",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [
+            "src/app/api/reports/investor/route.ts"
+          ],
+          "patterns_from": [
+            "src/app/api/reports/[id]/pdf/route.ts"
+          ],
+          "verification": {
+            "type": "api",
+            "method": "POST",
+            "url": "http://localhost:3000/api/reports/investor",
+            "body": {},
+            "expected_status": 401
+          },
+          "status": "pending",
+          "notes": "Use getOrganizationId() for auth, Zod schema for validation (portfolioId, dateRange), return 401 if unauthorized"
+        },
+        {
+          "id": "subtask-5-2",
+          "description": "Implement report generation flow and error handling",
+          "service": "main",
+          "files_to_modify": [
+            "src/app/api/reports/investor/route.ts"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/app/api/reports/[id]/pdf/route.ts"
+          ],
+          "verification": {
+            "type": "api",
+            "method": "POST",
+            "url": "http://localhost:3000/api/reports/investor",
+            "body": {
+              "portfolioId": "test-id",
+              "dateRange": {
+                "start": "2024-10-01",
+                "end": "2024-12-31"
+              }
+            },
+            "expected_status": 200
+          },
+          "status": "pending",
+          "notes": "Call getInvestorReportData(), generate charts, renderToBuffer(), return PDF buffer. Handle edge cases: empty portfolio (400), missing GEO data (200 with 'Data Not Available'), unauthorized (403)"
+        }
+      ]
+    },
+    {
+      "id": "phase-6-ui",
+      "name": "Dashboard UI",
+      "type": "implementation",
+      "description": "Build /dashboard/reports/investor UI page with portfolio selector, date range picker, and PDF download functionality",
+      "depends_on": [
+        "phase-5-api"
+      ],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-6-1",
+          "description": "Create reports page with portfolio dropdown and date range picker",
+          "service": "main",
+          "files_to_modify": [],
+          "files_to_create": [
+            "src/app/dashboard/reports/investor/page.tsx"
+          ],
+          "patterns_from": [
+            "src/app/dashboard/reports/page.tsx"
+          ],
+          "verification": {
+            "type": "browser",
+            "url": "http://localhost:3000/dashboard/reports/investor",
+            "checks": [
+              "Page renders without errors",
+              "Portfolio dropdown populated",
+              "Date range picker functional"
+            ]
+          },
+          "status": "pending",
+          "notes": "Use existing UI components (Select, Input), fetch portfolios via useQuery, implement date validation"
+        },
+        {
+          "id": "subtask-6-2",
+          "description": "Implement Generate Report button with loading state and PDF download",
+          "service": "main",
+          "files_to_modify": [
+            "src/app/dashboard/reports/investor/page.tsx"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/app/dashboard/reports/page.tsx"
+          ],
+          "verification": {
+            "type": "browser",
+            "url": "http://localhost:3000/dashboard/reports/investor",
+            "checks": [
+              "Generate button triggers API call",
+              "Loading spinner shown",
+              "PDF downloads automatically"
+            ]
+          },
+          "status": "pending",
+          "notes": "Use useMutation, show loading state, trigger browser download with blob URL, filename: investor-report-{portfolioName}-{date}.pdf. Handle errors with toast notifications."
+        }
+      ]
+    },
+    {
+      "id": "phase-7-integration",
+      "name": "End-to-End Integration",
+      "type": "integration",
+      "description": "Verify complete flow from UI to PDF generation, test edge cases, ensure professional PDF quality",
+      "depends_on": [
+        "phase-6-ui"
+      ],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-7-1",
+          "description": "End-to-end happy path verification",
+          "all_services": true,
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "e2e",
+            "steps": [
+              "Login to dashboard",
+              "Navigate to /dashboard/reports/investor",
+              "Select portfolio from dropdown",
+              "Choose 90-day date range",
+              "Click Generate Report",
+              "Verify PDF downloads",
+              "Open PDF and verify all sections present"
+            ]
+          },
+          "status": "pending",
+          "notes": "Full flow test: UI → API → Database → Charts → PDF → Download. Verify all sections: cover, summary, trends, benchmarks, Impact Index, appendix."
+        },
+        {
+          "id": "subtask-7-2",
+          "description": "Edge case testing and PDF quality verification",
+          "all_services": true,
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "manual",
+            "instructions": "Test edge cases: missing GEO data, empty portfolio, insufficient benchmarks. Verify PDF quality: professional appearance, Apex branding, Inter font, chart rendering, page breaks, page numbers, table of contents."
+          },
+          "status": "pending",
+          "notes": "Verify all edge cases from spec and ensure PDF meets investor-grade quality standards"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_phases": 7,
+    "total_subtasks": 18,
+    "services_involved": [
+      "main"
+    ],
+    "parallelism": {
+      "max_parallel_phases": 1,
+      "parallel_groups": [
+        {
+          "phases": [
+            "phase-2-queries",
+            "phase-3-charts"
+          ],
+          "reason": "Both depend only on phase-1-schema, work on different file sets (queries vs charts)"
+        }
+      ],
+      "recommended_workers": 1,
+      "speedup_estimate": "1.2x faster with early parallelism in phases 2-3"
+    },
+    "startup_command": "npm run dev"
+  },
+  "verification_strategy": {
+    "risk_level": "high",
+    "skip_validation": false,
+    "test_creation_phase": "post_implementation",
+    "test_types_required": [
+      "unit",
+      "integration",
+      "e2e"
+    ],
+    "security_scanning_required": false,
+    "staging_deployment_required": false,
+    "acceptance_criteria": [
+      "All unit tests pass for data aggregation, benchmark calculations, and chart generation",
+      "Integration tests verify API endpoint returns valid PDF buffer with correct headers",
+      "E2E tests confirm full UI → API → PDF flow works without errors",
+      "PDF contains all required sections with professional formatting",
+      "Edge cases handled gracefully (missing data, empty portfolios, unauthorized access)",
+      "No regressions in existing functionality",
+      "Performance targets met: < 10s generation, < 5 MB file size",
+      "recharts-to-png library installed and chart embedding works correctly"
+    ],
+    "verification_steps": [
+      {
+        "name": "Unit Tests",
+        "command": "npm run test",
+        "expected_outcome": "All unit tests pass including data aggregation, benchmark calculations, chart generation",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "Integration Tests",
+        "command": "npm run test:integration",
+        "expected_outcome": "API endpoint integration tests pass, database queries performant",
+        "type": "test",
+        "required": false,
+        "blocking": false
+      },
+      {
+        "name": "E2E Tests",
+        "command": "npx playwright test",
+        "expected_outcome": "End-to-end report generation flow works without errors",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "Build Verification",
+        "command": "npm run build",
+        "expected_outcome": "Production build succeeds without errors",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      }
+    ],
+    "reasoning": "High-risk investor-facing feature requires comprehensive testing. Data accuracy critical for investment decisions. Unit tests verify business logic. Integration tests ensure API/database correctness. E2E tests validate complete user flow and PDF quality."
+  },
+  "qa_acceptance": {
+    "unit_tests": {
+      "required": true,
+      "commands": [
+        "npm run test"
+      ],
+      "minimum_coverage": 80,
+      "critical_files": [
+        "src/lib/db/queries/investor-reports.ts",
+        "src/lib/reports/charts/geo-visibility-chart.tsx",
+        "src/lib/reports/investor-report.tsx"
+      ]
+    },
+    "integration_tests": {
+      "required": false,
+      "commands": [
+        "npm run test:integration"
+      ],
+      "services_to_test": [
+        "main"
+      ],
+      "critical_flows": [
+        "POST /api/reports/investor returns valid PDF",
+        "Database query performance < 5s for 10 brands, 90 days data"
+      ]
+    },
+    "e2e_tests": {
+      "required": true,
+      "commands": [
+        "npx playwright test"
+      ],
+      "flows": [
+        "Generate investor report happy path",
+        "Handle missing GEO data gracefully",
+        "Unauthorized access returns 403"
+      ]
+    },
+    "browser_verification": {
+      "required": true,
+      "pages": [
+        {
+          "url": "http://localhost:3000/dashboard/reports/investor",
+          "checks": [
+            "Page renders without errors",
+            "Portfolio dropdown populated",
+            "Date range picker functional",
+            "Generate Report button works",
+            "PDF downloads successfully",
+            "No console errors"
+          ]
+        }
+      ]
+    },
+    "database_verification": {
+      "required": true,
+      "checks": [
+        "geoScoreHistory table contains test data",
+        "Portfolio metrics aggregated correctly",
+        "Benchmark data available for test industry (>= 3 portfolios)"
+      ]
+    },
+    "performance_verification": {
+      "required": true,
+      "metrics": [
+        {
+          "name": "PDF generation time",
+          "target": "< 10 seconds for standard report (10 brands, 90 days)",
+          "measurement": "API response time"
+        },
+        {
+          "name": "PDF file size",
+          "target": "< 5 MB",
+          "measurement": "Generated PDF file size"
+        }
+      ]
+    },
+    "manual_verification": {
+      "required": true,
+      "checks": [
+        "PDF quality: professional appearance, Apex branding, Inter font",
+        "All sections present: cover, summary, trends, benchmarks, Impact Index, appendix",
+        "Charts render clearly in PDF",
+        "Data accuracy: matches database values"
+      ]
+    }
+  },
+  "qa_signoff": null,
+  "status": "human_review",
+  "planStatus": "review",
+  "updated_at": "2025-12-24T21:23:09.201Z"
+}

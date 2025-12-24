@@ -1,0 +1,132 @@
+=== AUTO-BUILD PROGRESS ===
+
+Project: Apex - Investor Intelligence Reports
+Workspace: C:\Jarvis\AI Workspace\Apex
+Started: 2025-12-24 23:00 UTC
+
+Workflow Type: feature
+Rationale: New capability extending existing PDF generation infrastructure to create investor-focused reports. Requires new API endpoints, database queries, PDF templates with embedded charts, and UI components.
+
+Session 1 (Planner):
+- Completed deep codebase investigation (Phase 0)
+- Created comprehensive implementation_plan.json
+- Updated init.sh setup script with dependency checks
+- Created context.json with file references
+- Phases: 7
+- Total subtasks: 18
+
+CRITICAL DEPENDENCIES:
+⚠️  recharts-to-png - REQUIRED for chart-to-PDF conversion
+   - Must be installed before Phase 3 (Chart Generation)
+   - Workflow: Recharts → useCurrentPng() → getPng() → blobToBase64() → PDF Image
+   - NOT using manual canvas rendering or html2canvas
+
+Phase Summary:
+- Phase 1 (Database Schema Extension): 2 subtasks, no dependencies
+- Phase 2 (Data Layer - Queries): 2 subtasks, depends on phase-1-schema
+- Phase 3 (Chart Generation - recharts-to-png): 3 subtasks, depends on phase-1-schema
+  * CRITICAL: Install recharts-to-png first
+- Phase 4 (PDF Template): 3 subtasks, depends on phase-2-queries + phase-3-charts
+- Phase 5 (API Endpoint): 2 subtasks, depends on phase-4-pdf
+- Phase 6 (Frontend UI): 3 subtasks, depends on phase-5-api
+- Phase 7 (Testing & Verification): 3 subtasks, depends on phase-6-ui
+
+Services Involved:
+- main (Next.js): Single service containing all components
+
+Technology Stack:
+- Next.js 16.0.8 (App Router) with TypeScript
+- @react-pdf/renderer v4.3.1 (INSTALLED)
+- recharts-to-png (CRITICAL - must install)
+- Recharts v3.5.1 (INSTALLED)
+- Drizzle ORM v0.45.0 with PostgreSQL (Neon)
+- Clerk authentication
+- Zustand state management
+- Tailwind CSS v4 styling
+- Vitest (unit tests) + Playwright (e2e)
+
+Files to Create:
+1. src/lib/db/queries/investor-reports.ts - Database queries for investor data
+2. src/lib/reports/charts/geo-visibility-chart.tsx - GEO visibility chart component
+3. src/lib/reports/charts/impact-index-chart.tsx - Impact Index breakdown chart
+4. src/lib/reports/charts/benchmark-chart.tsx - Benchmark comparison chart
+5. src/lib/reports/investor-report.tsx - Complete investor PDF template
+6. src/app/api/reports/investor/route.ts - POST endpoint for report generation
+7. src/app/api/reports/investor/[id]/route.ts - GET endpoint for report retrieval
+8. src/app/dashboard/reports/investor/page.tsx - Investor reports UI page
+9. src/components/reports/investor-report-form.tsx - Report generation form
+10. src/components/reports/investor-report-preview.tsx - Report preview component
+11. src/__tests__/lib/db/queries/investor-reports.test.ts - Query unit tests
+12. src/__tests__/lib/reports/investor-report.test.ts - PDF generation tests
+13. src/__tests__/e2e/investor-reports.spec.ts - E2E tests
+
+Files to Modify:
+1. src/lib/db/schema/portfolios.ts - Add InvestorReportContent interface
+
+Reference Files Analyzed:
+- src/lib/reports/pdf-generator.tsx - ExecutiveReportDocument pattern
+- src/lib/db/schema/portfolios.ts - ReportContent interface, PortfolioMetrics
+- src/lib/db/schema/feedback.ts - geoScoreHistory table (GEO data source)
+- src/app/api/reports/route.ts - API route patterns
+- src/app/api/reports/[id]/pdf/route.ts - PDF generation API pattern
+- src/app/dashboard/reports/page.tsx - Reports UI patterns
+
+Parallelism Analysis:
+- Max parallel phases: 2
+- Recommended workers: 1-2
+- Parallel opportunities:
+  * Phases 2 & 3 can run in parallel (both depend only on Phase 1)
+  * Sequential execution recommended for Phases 4-7 due to dependencies
+- Speedup estimate: 10-15% with parallel execution of Phases 2-3
+
+Critical Path:
+Phase 1 (schema) → Phase 2 (queries) + Phase 3 (charts) → Phase 4 (PDF) → Phase 5 (API) → Phase 6 (UI) → Phase 7 (tests)
+
+=== STARTUP COMMAND ===
+
+To continue building this spec, run:
+
+  cd "C:\Jarvis\AI Workspace\Apex"
+  bash ./.auto-claude/specs/016-investor-intelligence-reports/init.sh
+
+Or manually start Next.js:
+
+  npm run dev
+
+The init.sh script will:
+1. Check for node_modules and run npm install if needed
+2. Verify @react-pdf/renderer is installed
+3. AUTO-INSTALL recharts-to-png if missing (CRITICAL)
+4. Start Next.js development server
+5. Display service URLs and feature access points
+
+=== VERIFICATION STRATEGY ===
+
+Risk Level: HIGH (investor-facing, data accuracy critical)
+Test Requirements:
+- Unit tests (REQUIRED):
+  * Database queries (investor-reports.test.ts)
+  * PDF component rendering (investor-report.test.ts)
+  * Chart generation with recharts-to-png
+- Integration tests (REQUIRED):
+  * API endpoint functionality
+  * Database query performance
+  * PDF buffer generation
+- E2E tests (REQUIRED):
+  * Full report generation flow (investor-reports.spec.ts)
+  * Download functionality
+  * Error handling
+- Security:
+  * Clerk authentication enforcement verified
+  * Organization-scoped data access only
+- Performance targets:
+  * PDF generation < 15 seconds
+  * Database queries < 5 seconds
+  * PDF file size < 10 MB
+  * Chart rendering < 2 seconds per chart
+- Coverage minimum: 80%
+
+=== END SESSION 1 ===
+
+Status: Planning complete ✓
+Next: Builder agent (Session 2) will execute subtasks sequentially
