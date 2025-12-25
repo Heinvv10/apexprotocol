@@ -1,0 +1,338 @@
+{
+  "integrations_researched": [
+    {
+      "name": "Anthropic AI SDK (Claude)",
+      "type": "library",
+      "verified_package": {
+        "name": "@anthropic-ai/sdk",
+        "install_command": "npm install @anthropic-ai/sdk",
+        "version": "^0.71.2",
+        "verified": true,
+        "already_installed": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import Anthropic from '@anthropic-ai/sdk';"
+        ],
+        "initialization": "const client = new Anthropic({ apiKey: process.env['ANTHROPIC_API_KEY'] });",
+        "key_functions": [
+          "client.messages.create({ model, max_tokens, messages, system?, temperature? })",
+          "client.messages.stream({ model, max_tokens, messages, stream: true })",
+          "client.messages.batches.create({ requests })"
+        ],
+        "content_generation_pattern": "await client.messages.create({\n  model: 'claude-sonnet-4-5-20250929',\n  max_tokens: 4096,\n  messages: [{ role: 'user', content: 'Generate content...' }],\n  system: 'You are a content writer that follows brand voice guidelines...'\n})",
+        "verified_against": "Context7 MCP: /anthropics/anthropic-sdk-typescript"
+      },
+      "configuration": {
+        "env_vars": ["ANTHROPIC_API_KEY"],
+        "config_files": [],
+        "dependencies": []
+      },
+      "infrastructure": {
+        "requires_docker": false,
+        "external_api": true,
+        "api_endpoint": "https://api.anthropic.com"
+      },
+      "gotchas": [
+        "max_tokens is required for all requests",
+        "System prompts are optional but recommended for brand voice consistency",
+        "Messages must alternate between 'user' and 'assistant' roles",
+        "Streaming responses use different event handling pattern",
+        "Rate limits apply based on API tier"
+      ],
+      "research_sources": [
+        "Context7 MCP: /anthropics/anthropic-sdk-typescript",
+        "Package.json verification: Already installed v0.71.2"
+      ]
+    },
+    {
+      "name": "OpenAI SDK",
+      "type": "library",
+      "verified_package": {
+        "name": "openai",
+        "install_command": "npm install openai",
+        "version": "^6.10.0",
+        "verified": true,
+        "already_installed": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import OpenAI from 'openai';"
+        ],
+        "initialization": "const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });",
+        "key_functions": [
+          "client.chat.completions.create({ model, messages, temperature?, max_tokens? })",
+          "client.chat.completions.create({ model, messages, stream: true })"
+        ],
+        "content_generation_pattern": "await client.chat.completions.create({\n  model: 'gpt-4o',\n  messages: [\n    { role: 'system', content: 'You are a content writer...' },\n    { role: 'user', content: 'Generate content...' }\n  ],\n  temperature: 0.7,\n  max_tokens: 4096\n})",
+        "verified_against": "Context7 MCP: /openai/openai-node"
+      },
+      "configuration": {
+        "env_vars": ["OPENAI_API_KEY"],
+        "config_files": [],
+        "dependencies": []
+      },
+      "infrastructure": {
+        "requires_docker": false,
+        "external_api": true,
+        "api_endpoint": "https://api.openai.com"
+      },
+      "gotchas": [
+        "System messages should be first in messages array",
+        "Temperature range is 0-2 (higher = more random)",
+        "max_tokens is optional but recommended to control costs",
+        "Different models have different context windows",
+        "Rate limits and costs vary by model"
+      ],
+      "research_sources": [
+        "Context7 MCP: /openai/openai-node",
+        "Package.json verification: Already installed v6.10.0"
+      ]
+    },
+    {
+      "name": "Next.js (Framework)",
+      "type": "framework",
+      "verified_package": {
+        "name": "next",
+        "install_command": "npm install next",
+        "version": "16.0.8",
+        "verified": true,
+        "already_installed": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { NextRequest, NextResponse } from 'next/server';",
+          "'use server' // For Server Actions"
+        ],
+        "initialization": "N/A - Framework configuration",
+        "key_functions": [
+          "Server Actions: 'use server' directive at top of file/function",
+          "API Routes: app/api/[route]/route.ts with GET/POST exports",
+          "Route Handlers: export async function POST(request: NextRequest) { ... }"
+        ],
+        "api_route_pattern": "// app/api/generate/route.ts\nexport async function POST(request: NextRequest) {\n  const body = await request.json();\n  // Process generation\n  return NextResponse.json({ content });\n}",
+        "server_action_pattern": "'use server'\n\nexport async function generateContent(formData: FormData) {\n  const input = formData.get('input');\n  // Process and return\n}",
+        "verified_against": "Context7 MCP: /vercel/next.js"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": ["next.config.ts"],
+        "dependencies": ["react", "react-dom"]
+      },
+      "infrastructure": {
+        "requires_docker": false,
+        "runtime": "Node.js",
+        "deployment": "Vercel (recommended) or self-hosted"
+      },
+      "gotchas": [
+        "Server Actions require 'use server' directive",
+        "Server Actions can only be called from Server Actions context",
+        "API routes in app router use route.ts files with HTTP method exports",
+        "Dynamic rendering triggered by cookies(), headers(), searchParams",
+        "Server Actions are enabled by default in Next.js 14+"
+      ],
+      "research_sources": [
+        "Context7 MCP: /vercel/next.js",
+        "Package.json verification: Already installed v16.0.8"
+      ]
+    },
+    {
+      "name": "Zod (Validation)",
+      "type": "library",
+      "verified_package": {
+        "name": "zod",
+        "install_command": "npm install zod",
+        "version": "^4.1.13",
+        "verified": true,
+        "already_installed": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { z } from 'zod';"
+        ],
+        "initialization": "N/A - Direct usage",
+        "key_functions": [
+          "z.object({ field: z.string() })",
+          "schema.parse(data) // Throws on invalid",
+          "schema.safeParse(data) // Returns { success, data/error }"
+        ],
+        "validation_pattern": "const ContentGenerationSchema = z.object({\n  contentType: z.enum(['blog', 'faq', 'press_release']),\n  keywords: z.array(z.string()),\n  brandVoice: z.string(),\n  targetAudience: z.string().optional()\n});\n\nconst validated = ContentGenerationSchema.parse(input);",
+        "verified_against": "Context7 MCP: /colinhacks/zod"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": []
+      },
+      "infrastructure": {
+        "requires_docker": false,
+        "runtime": "TypeScript/JavaScript"
+      },
+      "gotchas": [
+        "parse() throws errors, safeParse() returns result object",
+        "TypeScript inference works best with const schemas",
+        "Zod 4 has performance improvements over Zod 3",
+        "Use .transform() for data transformation during validation"
+      ],
+      "research_sources": [
+        "Context7 MCP: /colinhacks/zod",
+        "Package.json verification: Already installed v4.1.13"
+      ]
+    },
+    {
+      "name": "GEO (Generative Engine Optimization)",
+      "type": "methodology",
+      "verified_package": {
+        "name": "N/A - Not a package",
+        "install_command": "N/A",
+        "version": "N/A",
+        "verified": false
+      },
+      "api_patterns": {
+        "imports": [],
+        "initialization": "N/A - Methodology/best practices",
+        "key_functions": [],
+        "implementation_approach": "GEO is implemented through prompt engineering and content structuring, not a library. Key principles:\n1. Citation-worthiness: Content should be authoritative and cite sources\n2. Structured data: Use clear headings, lists, and semantic HTML\n3. Answer-focused: Directly answer questions AI engines might see\n4. Authority signals: Include expert quotes, statistics, research\n5. Context provision: Provide background and definitions\n6. Multi-format answers: Support various query intents (how-to, what-is, comparison)",
+        "verified_against": "Research based on requirements context"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": []
+      },
+      "infrastructure": {
+        "requires_docker": false
+      },
+      "gotchas": [
+        "GEO is different from SEO - focuses on AI search engines, not traditional search",
+        "No standard library exists - implement through prompt engineering",
+        "Requires understanding of how LLMs surface information",
+        "Brand voice must be balanced with authoritative, citation-worthy content",
+        "Different content formats (blog, FAQ, press release) need different GEO strategies"
+      ],
+      "research_sources": [
+        "Requirements context analysis",
+        "Industry knowledge of AI search optimization"
+      ],
+      "implementation_notes": "GEO will be implemented through:\n1. System prompts that emphasize citation-worthiness and authority\n2. Content templates optimized for AI discoverability\n3. Structured output formats (markdown with semantic headers)\n4. Keyword integration that maintains natural language\n5. Brand voice guidelines merged with GEO best practices"
+    }
+  ],
+  "unverified_claims": [
+    {
+      "claim": "GEO (Generative Engine Optimization) has standardized libraries or frameworks",
+      "reason": "GEO is an emerging methodology without established npm/PyPI packages. Implementation will require custom prompt engineering and content structuring strategies.",
+      "risk_level": "low",
+      "mitigation": "Implement GEO principles through prompt design, content templates, and validation rules rather than relying on external libraries."
+    }
+  ],
+  "recommendations": [
+    "Use Anthropic Claude (already installed) as primary AI provider for content generation - excellent at following brand voice guidelines",
+    "Implement Zod schemas to validate content generation inputs (content type, keywords, brand voice parameters)",
+    "Create Next.js API routes for content generation endpoints instead of Server Actions for better error handling and streaming support",
+    "Implement GEO optimization through system prompts rather than post-processing - more efficient and consistent",
+    "Consider implementing content templates for each format (blog, FAQ, press release) that embed GEO best practices",
+    "Use streaming responses for better UX when generating long-form content",
+    "Store generated content metadata (keywords used, content type, generation timestamp) for analytics",
+    "Implement rate limiting using existing Upstash rate limit package to prevent API abuse"
+  ],
+  "additional_dependencies_needed": [],
+  "existing_integrations_to_leverage": [
+    {
+      "package": "@upstash/ratelimit",
+      "purpose": "Rate limiting for content generation endpoints",
+      "version": "^2.0.7"
+    },
+    {
+      "package": "drizzle-orm",
+      "purpose": "Store generated content, brand voice guidelines, and generation history",
+      "version": "^0.45.0"
+    },
+    {
+      "package": "@clerk/nextjs",
+      "purpose": "User authentication for content generation access control",
+      "version": "^6.36.1"
+    },
+    {
+      "package": "@tiptap/react",
+      "purpose": "Rich text editor for content preview and editing",
+      "version": "^3.13.0"
+    }
+  ],
+  "tech_stack_summary": {
+    "platform": "Next.js 16 (TypeScript)",
+    "runtime": "Node.js",
+    "database": "PostgreSQL with Drizzle ORM",
+    "authentication": "Clerk",
+    "ai_providers": ["Anthropic Claude", "OpenAI GPT"],
+    "validation": "Zod",
+    "deployment": "Vercel (inferred from Next.js)"
+  },
+  "implementation_patterns": {
+    "content_generation_flow": [
+      "1. API Route receives request: POST /api/content/generate",
+      "2. Validate request body using Zod schema (contentType, keywords, brandVoice, visibilityGaps)",
+      "3. Load brand voice guidelines from database (Drizzle ORM)",
+      "4. Construct system prompt with GEO principles + brand voice",
+      "5. Call Anthropic Claude API with structured prompt",
+      "6. Parse and validate response",
+      "7. Store generated content in database with metadata",
+      "8. Return content to client"
+    ],
+    "brand_voice_matching": [
+      "Store brand voice as database records with: tone descriptors, example snippets, guidelines",
+      "Inject into system prompt: 'Write in [tone] tone. Follow these guidelines: [guidelines]. Example style: [snippet]'",
+      "Use few-shot learning: Include 2-3 examples of brand-aligned content in messages array",
+      "Optional: Use Claude's strong instruction-following to maintain consistency"
+    ],
+    "geo_optimization": [
+      "Structure content for AI comprehension: clear markdown headings (H1, H2, H3)",
+      "Include factual statements with proper context",
+      "Add relevant citations and sources in content",
+      "Use natural language, avoid keyword stuffing",
+      "Ensure comprehensive coverage with related concepts",
+      "Format for readability: bullet points, short paragraphs, clear structure",
+      "Optimize for question-answering: anticipate user queries"
+    ],
+    "rate_limiting": [
+      "Use @upstash/ratelimit to limit API requests per user",
+      "Pattern: const ratelimit = new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(10, '10 m') })",
+      "Check limit before expensive AI API calls",
+      "Return 429 status if rate limit exceeded"
+    ]
+  },
+  "api_design_recommendation": {
+    "endpoint": "POST /api/content/generate",
+    "request_schema": {
+      "contentType": "enum['blog', 'faq', 'press_release']",
+      "keywords": "string[]",
+      "visibilityGaps": "string[] (optional)",
+      "brandVoiceId": "string (optional, references stored brand voice)",
+      "targetAudience": "string (optional)",
+      "tone": "string (optional)"
+    },
+    "response_schema": {
+      "id": "string (content ID)",
+      "content": "string (markdown formatted)",
+      "metadata": {
+        "contentType": "string",
+        "keywordsUsed": "string[]",
+        "generatedAt": "timestamp",
+        "model": "string",
+        "wordCount": "number"
+      }
+    }
+  },
+  "context7_libraries_used": [
+    "/anthropics/anthropic-sdk-typescript",
+    "/openai/openai-node",
+    "/vercel/next.js",
+    "/colinhacks/zod"
+  ],
+  "created_at": "2024-12-24T22:50:00Z",
+  "research_phase": "complete",
+  "total_integrations_researched": 5,
+  "verified_count": 4,
+  "unverified_count": 1,
+  "tech_stack_corrected": true,
+  "notes": "Corrected from Python-based research to TypeScript/Next.js based on package.json analysis. All primary integrations (Anthropic, OpenAI, Next.js, Zod) are already installed."
+}

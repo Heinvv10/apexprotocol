@@ -1,0 +1,74 @@
+{
+  "complexity": "complex",
+  "workflow_type": "feature",
+  "confidence": 0.88,
+  "reasoning": "Greenfield AI content generation system requiring new architectural patterns for multi-format support (blog, FAQ, press release), GEO optimization research (specialized domain), database schema design, and brand voice matching. Cross-cutting changes span UI, API, database, and AI integration layers.",
+
+  "analysis": {
+    "scope": {
+      "estimated_files": 15,
+      "estimated_services": 1,
+      "is_cross_cutting": true,
+      "notes": "Single Next.js app but touches UI components, API routes, database schema, and AI service layer. Multi-format support (blog, FAQ, press release) requires flexible architecture."
+    },
+    "integrations": {
+      "external_services": ["OpenAI/Anthropic"],
+      "new_dependencies": [],
+      "research_needed": true,
+      "notes": "Already has @anthropic-ai/sdk and OPENAI_API_KEY configured. Research needed for GEO optimization patterns (distinct from traditional SEO) and brand voice matching techniques."
+    },
+    "infrastructure": {
+      "docker_changes": false,
+      "database_changes": true,
+      "config_changes": true,
+      "notes": "Database schema changes needed for brand voice guidelines, generated content storage, visibility gap data, and content templates. May need new env vars for generation settings (max tokens, temperature, etc.)."
+    },
+    "knowledge": {
+      "patterns_exist": true,
+      "research_required": true,
+      "unfamiliar_tech": ["GEO optimization", "brand voice consistency algorithms"],
+      "notes": "Codebase has AI integration patterns (Anthropic SDK exists) but GEO optimization is specialized domain requiring research. Brand voice matching and visibility gap analysis are new patterns."
+    },
+    "risk": {
+      "level": "medium",
+      "concerns": [
+        "Brand voice consistency and quality control",
+        "GEO optimization effectiveness validation",
+        "AI API cost management for bulk generation",
+        "Database schema design for multi-format content",
+        "Integration with existing visibility gap data sources",
+        "Content approval workflow requirements"
+      ],
+      "notes": "Medium risk due to database schema changes, AI quality assurance needs, and integration with existing GEO monitoring workflow. This is a content drafting tool (not auto-publishing), so quality risks are manageable. Main concerns are cost management, brand voice accuracy, and data integration patterns."
+    }
+  },
+
+  "recommended_phases": [
+    "discovery",
+    "requirements",
+    "research",
+    "context",
+    "spec_writing",
+    "self_critique",
+    "planning",
+    "validation"
+  ],
+
+  "flags": {
+    "needs_research": true,
+    "needs_self_critique": true,
+    "needs_infrastructure_setup": false
+  },
+
+  "validation_recommendations": {
+    "risk_level": "medium",
+    "skip_validation": false,
+    "minimal_mode": false,
+    "test_types_required": ["unit", "integration"],
+    "security_scan_required": false,
+    "staging_deployment_required": false,
+    "reasoning": "Database schema changes and AI integration require unit tests for content generation logic and integration tests for API endpoints and database operations. While AI-generated content has quality risks, this is a content drafting tool (not publishing), so security scan not critical. No auth, payment, or user data security changes involved."
+  },
+
+  "created_at": "2025-12-24T00:00:00.000Z"
+}

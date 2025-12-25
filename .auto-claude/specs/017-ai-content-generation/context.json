@@ -1,0 +1,54 @@
+{
+  "task_description": "# AI Content Generation\n\nImplement AI-powered content generation that creates GEO-optimized content based on brand voice, target keywords, and visibility gaps.\n\n## Rationale\nProactive content creation completes the GEO workflow from monitoring to optimization to generation. Reduces effort for users to improve visibility.\n\n## User Stories\n- As a content manager, I want AI-generated content drafts so that I can create more content faster\n- As a marketing team, I want GEO-optimized content so that every piece we publish improves visibility\n\n## Acceptance Criteria\n- [ ] AI generates content optimized for AI search visibility\n- [ ] Content matches brand voice and tone guidelines\n- [ ] Targets identified visibility gaps and keywords\n- [ ] Multiple format support (blog, FAQ, press release)\n",
+  "scoped_services": ["main"],
+  "files_to_modify": {
+    "main": [
+      "src/lib/validations/content.ts",
+      "src/lib/ai/index.ts"
+    ]
+  },
+  "files_to_create": {
+    "main": [
+      "src/app/api/generate/route.ts",
+      "src/lib/ai/content-generator.ts",
+      "src/lib/ai/prompts/geo-templates.ts",
+      "src/components/features/content/GenerateContentForm.tsx",
+      "src/types/content-generation.ts"
+    ]
+  },
+  "files_to_reference": [
+    "src/app/api/create/content/route.ts",
+    "src/lib/ai/claude.ts",
+    "src/lib/ai/openai.ts",
+    "src/lib/ai/prompts/brand-analysis.ts",
+    "src/lib/validations/content.ts",
+    "src/components/auth/sign-in-form.tsx"
+  ],
+  "patterns": {
+    "api_route": "API routes use NextRequest/NextResponse with try-catch error handling, Zod validation with safeParse(), getOrganizationId() for auth, and standard JSON response format { success, data, error }",
+    "validation": "Zod schemas define strict enums for controlled values, use .optional() for optional fields, and safeParse() returns flattened errors for better UX",
+    "ai_claude": "Singleton client pattern with getClaudeClient(), REQUIRED max_tokens parameter, optional system field for brand voice, CLAUDE_MODELS constants for model selection",
+    "ai_openai": "Singleton client pattern with getOpenAIClient(), system message goes FIRST in messages array, temperature controls creativity (0-2), GPT_MODELS constants",
+    "components": "Client components use 'use client' directive, Tailwind classes with cn() utility, lucide-react icons, React.useState for local state, error handling with error state display",
+    "prompts": "Comprehensive system prompts with detailed instructions, user prompts built dynamically from input data, JSON response parsing with fallback handling, validation of AI output"
+  },
+  "existing_implementations": {
+    "description": "Codebase has comprehensive AI infrastructure with both Anthropic Claude and OpenAI clients, existing content management with content type enums, and sophisticated prompt engineering patterns for brand analysis",
+    "relevant_files": [
+      "src/lib/ai/claude.ts",
+      "src/lib/ai/openai.ts",
+      "src/lib/ai/prompts/brand-analysis.ts",
+      "src/lib/validations/content.ts",
+      "src/app/api/create/content/route.ts"
+    ],
+    "ai_infrastructure": {
+      "providers": ["Anthropic Claude", "OpenAI GPT"],
+      "existing_models": {
+        "claude": ["SONNET_3_5", "HAIKU_3_5", "OPUS_3", "SONNET_3", "HAIKU_3"],
+        "openai": ["GPT4O", "GPT4O_MINI", "GPT4_TURBO", "GPT35_TURBO"]
+      },
+      "content_types_supported": ["blog_post", "social_post", "product_description", "faq", "landing_page", "email", "ad_copy", "press_release"]
+    }
+  },
+  "created_at": "2025-12-24T22:41:51.406669"
+}
