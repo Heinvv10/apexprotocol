@@ -16,6 +16,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
 import { DiscoverySuggestionItem } from "./discovery-suggestion-item";
 
 // Types
@@ -37,66 +39,6 @@ export interface DiscoveredCompetitor {
 interface CompetitorDiscoveryCardProps {
   brandId: string;
   className?: string;
-}
-
-// Empty state component
-function DiscoveryEmptyState({ onDiscover }: { onDiscover: () => void }) {
-  return (
-    <div className="flex items-center justify-center min-h-[300px]">
-      <div className="text-center max-w-md space-y-4">
-        <div className="relative mx-auto w-16 h-16">
-          <div
-            className="absolute inset-0 rounded-full opacity-20"
-            style={{
-              background: "radial-gradient(circle, rgba(0, 229, 204, 0.4) 0%, transparent 70%)",
-              filter: "blur(20px)",
-              animation: "pulse-glow 3s ease-in-out infinite",
-            }}
-          />
-          <div className="relative w-16 h-16 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center">
-            <Sparkles className="w-8 h-8 text-primary" />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <h3 className="text-lg font-bold text-foreground">Discover Competitors</h3>
-          <p className="text-muted-foreground text-sm">
-            Our AI analyzes your brand mentions and keywords to automatically discover
-            competitors you might be missing.
-          </p>
-        </div>
-
-        <button
-          onClick={onDiscover}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all text-sm"
-        >
-          <Search className="w-4 h-4" />
-          Start Discovery
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// Loading state
-function DiscoveryLoadingState() {
-  return (
-    <div className="flex items-center justify-center min-h-[300px]">
-      <div className="text-center space-y-4">
-        <div className="relative mx-auto w-16 h-16">
-          <div className="relative w-16 h-16 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center animate-pulse">
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <h3 className="text-lg font-bold text-foreground">Analyzing Your Market</h3>
-          <p className="text-muted-foreground text-sm">
-            Scanning AI mentions and keyword patterns to discover competitors...
-          </p>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export function CompetitorDiscoveryCard({ brandId, className }: CompetitorDiscoveryCardProps) {
@@ -245,11 +187,31 @@ export function CompetitorDiscoveryCard({ brandId, className }: CompetitorDiscov
 
       {/* Content */}
       {isLoading ? (
-        <DiscoveryLoadingState />
+        <LoadingState
+          title="Analyzing Your Market"
+          description="Scanning AI mentions and keyword patterns to discover competitors..."
+          minHeight="300px"
+        />
       ) : isDiscovering ? (
-        <DiscoveryLoadingState />
+        <LoadingState
+          title="Analyzing Your Market"
+          description="Scanning AI mentions and keyword patterns to discover competitors..."
+          minHeight="300px"
+        />
       ) : !hasDiscoveries ? (
-        <DiscoveryEmptyState onDiscover={runDiscovery} />
+        <EmptyState
+          icon={Sparkles}
+          title="Discover Competitors"
+          description="Our AI analyzes your brand mentions and keywords to automatically discover competitors you might be missing."
+          theme="primary"
+          withGlow={true}
+          minHeight="300px"
+          primaryAction={{
+            label: "Start Discovery",
+            icon: Search,
+            onClick: runDiscovery,
+          }}
+        />
       ) : (
         <div className="p-4 space-y-4">
           {/* Pending discoveries */}
