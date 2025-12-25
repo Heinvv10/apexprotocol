@@ -5,8 +5,10 @@ import {
   ChevronDown,
   ChevronUp,
   MoreHorizontal,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export interface QueryRow {
   id: string;
@@ -290,9 +292,14 @@ export function SmartTable({ data, className }: SmartTableProps) {
 
       {/* Empty State */}
       {data.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <p className="text-sm">No queries match your filters</p>
-        </div>
+        <EmptyState
+          icon={Search}
+          title="No queries match your filters"
+          description="Try adjusting your filter criteria to see more results."
+          theme="muted"
+          variant="compact"
+          size="sm"
+        />
       )}
     </div>
   );
