@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { EmptyState, LoadingState } from "@/components/ui/empty-states";
 
 // Types
 export interface TrackedCompetitor {
@@ -40,66 +41,6 @@ interface CompetitorManagerProps {
   className?: string;
   onCompetitorAdded?: () => void;
   onCompetitorRemoved?: () => void;
-}
-
-// Empty state component
-function EmptyState({ onAdd }: { onAdd: () => void }) {
-  return (
-    <div className="flex items-center justify-center min-h-[200px]">
-      <div className="text-center max-w-md space-y-4">
-        <div className="relative mx-auto w-16 h-16">
-          <div
-            className="absolute inset-0 rounded-full opacity-20"
-            style={{
-              background: "radial-gradient(circle, rgba(0, 229, 204, 0.4) 0%, transparent 70%)",
-              filter: "blur(20px)",
-              animation: "pulse-glow 3s ease-in-out infinite",
-            }}
-          />
-          <div className="relative w-16 h-16 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center">
-            <Users className="w-8 h-8 text-primary" />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <h3 className="text-lg font-bold text-foreground">Track Your Competitors</h3>
-          <p className="text-muted-foreground text-sm">
-            Add up to 10 competitors to monitor their GEO scores, AI mentions, and market
-            positioning over time.
-          </p>
-        </div>
-
-        <button
-          onClick={onAdd}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all text-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Add First Competitor
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// Loading state
-function LoadingState() {
-  return (
-    <div className="flex items-center justify-center min-h-[200px]">
-      <div className="text-center space-y-4">
-        <div className="relative mx-auto w-16 h-16">
-          <div className="relative w-16 h-16 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center animate-pulse">
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <h3 className="text-lg font-bold text-foreground">Loading Competitors</h3>
-          <p className="text-muted-foreground text-sm">
-            Fetching your tracked competitors...
-          </p>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // Competitor card item
@@ -386,9 +327,22 @@ export function CompetitorManager({
 
       {/* Competitors list */}
       {isLoading ? (
-        <LoadingState />
+        <LoadingState
+          title="Loading Competitors"
+          description="Fetching your tracked competitors..."
+        />
       ) : competitors.length === 0 ? (
-        <EmptyState onAdd={() => setIsDialogOpen(true)} />
+        <EmptyState
+          icon={Users}
+          title="Track Your Competitors"
+          description="Add up to 10 competitors to monitor their GEO scores, AI mentions, and market positioning over time."
+          theme="primary"
+          primaryAction={{
+            label: "Add First Competitor",
+            icon: Plus,
+            onClick: () => setIsDialogOpen(true),
+          }}
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {competitors.map((competitor) => (
