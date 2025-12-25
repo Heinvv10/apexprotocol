@@ -10,9 +10,9 @@ import {
   ChevronDown,
   ChevronUp,
   Users,
-  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EmptyState, LoadingState, ErrorState } from "@/components/ui/empty-states";
 
 // Platform colors
 const platformColors = {
@@ -41,41 +41,6 @@ export interface CompetitorData {
     perplexity: number;
   };
   isYou?: boolean;
-}
-
-// Empty state component
-function CompetitorEmptyState() {
-  return (
-    <div className="flex items-center justify-center min-h-[300px]">
-      <div className="text-center max-w-md space-y-4">
-        <div className="relative mx-auto w-16 h-16">
-          <div
-            className="absolute inset-0 rounded-full opacity-20"
-            style={{
-              background: "radial-gradient(circle, rgba(0, 229, 204, 0.4) 0%, transparent 70%)",
-              filter: "blur(20px)",
-              animation: "pulse-glow 3s ease-in-out infinite",
-            }}
-          />
-          <div className="relative w-16 h-16 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center">
-            <Users className="w-8 h-8 text-primary" />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <h3 className="text-lg font-bold text-foreground">No Competitors Added</h3>
-          <p className="text-muted-foreground text-sm">
-            Add competitors to track how your brand compares in AI visibility.
-          </p>
-        </div>
-
-        <button className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all text-sm">
-          <Plus className="w-4 h-4" />
-          Add First Competitor
-        </button>
-      </div>
-    </div>
-  );
 }
 
 // Move SortIcon outside to avoid "Cannot create components during render" error
@@ -155,9 +120,10 @@ export function CompetitorComparison({ className, brandId, data }: CompetitorCom
   if (isLoading) {
     return (
       <div className={cn("card-secondary overflow-hidden", className)}>
-        <div className="flex items-center justify-center min-h-[300px]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+        <LoadingState
+          title="Loading Competitor Data"
+          description="Fetching competitor comparison metrics..."
+        />
       </div>
     );
   }
@@ -166,14 +132,10 @@ export function CompetitorComparison({ className, brandId, data }: CompetitorCom
   if (error) {
     return (
       <div className={cn("card-secondary overflow-hidden", className)}>
-        <div className="flex items-center justify-center min-h-[300px]">
-          <div className="text-center space-y-2">
-            <p className="text-error">Failed to load competitor data</p>
-            <p className="text-sm text-muted-foreground">
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-          </div>
-        </div>
+        <ErrorState
+          title="Failed to Load Competitor Data"
+          error={error}
+        />
       </div>
     );
   }
@@ -196,7 +158,17 @@ export function CompetitorComparison({ className, brandId, data }: CompetitorCom
             Add Competitor
           </button>
         </div>
-        <CompetitorEmptyState />
+        <EmptyState
+          icon={Users}
+          title="No Competitors Added"
+          description="Add competitors to track how your brand compares in AI visibility."
+          theme="primary"
+          primaryAction={{
+            label: "Add First Competitor",
+            icon: Plus,
+            onClick: () => {},
+          }}
+        />
       </div>
     );
   }
