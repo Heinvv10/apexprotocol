@@ -2742,6 +2742,33 @@
 }
 
 /* ============================================
+   EMPTY STATE ANIMATIONS
+   For unified EmptyState component system
+   ============================================ */
+
+/* Icon Glow Pulse - Subtle ambient glow effect for empty state icons */
+@keyframes empty-state-glow-pulse {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.05);
+  }
+}
+
+/* Accessibility: Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes empty-state-glow-pulse {
+    0%, 100% {
+      opacity: 0.3;
+      transform: scale(1);
+    }
+  }
+}
+
+/* ============================================
    MONITOR PAGE V2 - Reference Design Match
    Reference: docs/images UI/Monitor.png
    ============================================ */
