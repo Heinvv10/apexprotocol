@@ -12,7 +12,9 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { EmptyState, LoadingState, ErrorState } from "@/components/ui/empty-states";
+import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
 
 // Platform colors
 const platformColors = {
