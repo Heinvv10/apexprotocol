@@ -210,6 +210,51 @@ describe("PrioritizedRecommendations Component", () => {
 
       expect(screen.getByText("Prioritized Recommendations")).toBeInTheDocument();
     });
+
+    it("should render LoadingState component with proper accessibility attributes", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+        error: null,
+      });
+
+      render(<PrioritizedRecommendations />);
+
+      const loadingState = screen.getByRole("status");
+      expect(loadingState).toHaveAttribute("aria-live", "polite");
+      expect(loadingState).toHaveAttribute("aria-label", "Loading: Loading recommendations...");
+    });
+
+    it("should display loading icon in LoadingState", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+        error: null,
+      });
+
+      render(<PrioritizedRecommendations />);
+
+      const loadingState = screen.getByRole("status");
+      const svg = loadingState.querySelector("svg");
+      expect(svg).toBeInTheDocument();
+    });
+
+    it("should use compact variant and small size in LoadingState", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+        error: null,
+      });
+
+      const { container } = render(<PrioritizedRecommendations />);
+
+      const loadingState = screen.getByRole("status");
+      // Check for min-h-0 class from compact variant
+      expect(loadingState).toHaveClass("min-h-0");
+    });
   });
 
   describe("Error State", () => {
@@ -239,17 +284,75 @@ describe("PrioritizedRecommendations Component", () => {
       expect(screen.getByText("Database connection failed")).toBeInTheDocument();
     });
 
-    it("should show fallback error message when error has no message", () => {
+    it("should render ErrorState component with proper accessibility attributes", () => {
       mockUseRecommendations.mockReturnValue({
         data: undefined,
         isLoading: false,
         isError: true,
-        error: null,
+        error: new Error("Network error"),
       });
 
       render(<PrioritizedRecommendations />);
 
-      expect(screen.getByText("Please try again later")).toBeInTheDocument();
+      const errorState = screen.getByRole("alert");
+      expect(errorState).toHaveAttribute("aria-live", "assertive");
+      expect(errorState).toHaveAttribute("aria-label", "Error: Failed to load recommendations");
+    });
+
+    it("should display error icon in ErrorState", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        isError: true,
+        error: new Error("Test error"),
+      });
+
+      render(<PrioritizedRecommendations />);
+
+      const errorState = screen.getByRole("alert");
+      const svg = errorState.querySelector("svg");
+      expect(svg).toBeInTheDocument();
+    });
+
+    it("should use compact variant and small size in ErrorState", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        isError: true,
+        error: new Error("Test error"),
+      });
+
+      const { container } = render(<PrioritizedRecommendations />);
+
+      const errorState = screen.getByRole("alert");
+      // Check for min-h-0 class from compact variant
+      expect(errorState).toHaveClass("min-h-0");
+    });
+
+    it("should handle Error object in ErrorState", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        isError: true,
+        error: new Error("Connection timeout"),
+      });
+
+      render(<PrioritizedRecommendations />);
+
+      expect(screen.getByText("Connection timeout")).toBeInTheDocument();
+    });
+
+    it("should handle string error in ErrorState", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        isError: true,
+        error: "Custom error message",
+      });
+
+      render(<PrioritizedRecommendations />);
+
+      expect(screen.getByText("Custom error message")).toBeInTheDocument();
     });
   });
 
@@ -280,6 +383,82 @@ describe("PrioritizedRecommendations Component", () => {
       expect(
         screen.getByText("No pending recommendations. Great job!")
       ).toBeInTheDocument();
+    });
+
+    it("should render EmptyState component with proper accessibility attributes", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: { ...mockRecommendationsData, recommendations: [] },
+        isLoading: false,
+        isError: false,
+        error: null,
+      });
+
+      render(<PrioritizedRecommendations />);
+
+      const emptyState = screen.getByRole("region");
+      expect(emptyState).toHaveAttribute("aria-live", "polite");
+      expect(emptyState).toHaveAttribute("aria-label", "All caught up!");
+    });
+
+    it("should display success icon in empty state", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: { ...mockRecommendationsData, recommendations: [] },
+        isLoading: false,
+        isError: false,
+        error: null,
+      });
+
+      render(<PrioritizedRecommendations />);
+
+      const emptyState = screen.getByRole("region");
+      const svg = emptyState.querySelector("svg");
+      expect(svg).toBeInTheDocument();
+    });
+
+    it("should use success theme in empty state", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: { ...mockRecommendationsData, recommendations: [] },
+        isLoading: false,
+        isError: false,
+        error: null,
+      });
+
+      const { container } = render(<PrioritizedRecommendations />);
+
+      const emptyState = screen.getByRole("region");
+      // Icon container should have success theme classes
+      const iconContainer = emptyState.querySelector('[class*="bg-success"]');
+      expect(iconContainer).toBeInTheDocument();
+    });
+
+    it("should use compact variant and small size in empty state", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: { ...mockRecommendationsData, recommendations: [] },
+        isLoading: false,
+        isError: false,
+        error: null,
+      });
+
+      const { container } = render(<PrioritizedRecommendations />);
+
+      const emptyState = screen.getByRole("region");
+      // Check for min-h-0 class from compact variant
+      expect(emptyState).toHaveClass("min-h-0");
+    });
+
+    it("should not display action buttons in empty state", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: { ...mockRecommendationsData, recommendations: [] },
+        isLoading: false,
+        isError: false,
+        error: null,
+      });
+
+      render(<PrioritizedRecommendations />);
+
+      // Empty state should not have any buttons (all caught up state is informational only)
+      const buttons = screen.queryAllByRole("button");
+      expect(buttons.length).toBe(0);
     });
   });
 

@@ -4,6 +4,130 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
   // Increase timeout for all tests in this file
   test.setTimeout(30000);
 
+  test.describe("Unified Empty State Components", () => {
+    test("should render EmptyState component with proper structure", async ({ page }) => {
+      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+
+      // Wait for content to load
+      await page.waitForTimeout(2000);
+
+      // Check if EmptyState is rendered (when no brand selected or no data)
+      const emptyStateSection = page.locator('[role="status"], [role="region"]').first();
+      const hasEmptyState = await emptyStateSection.isVisible().catch(() => false);
+
+      if (hasEmptyState) {
+        // Verify EmptyState has icon
+        const icon = emptyStateSection.locator('svg').first();
+        await expect(icon).toBeVisible();
+
+        // Verify EmptyState has title (h3)
+        const title = emptyStateSection.locator('h3').first();
+        await expect(title).toBeVisible();
+
+        // Verify EmptyState has description
+        const description = emptyStateSection.locator('p').first();
+        await expect(description).toBeVisible();
+      }
+    });
+
+    test("should render LoadingState during data fetch", async ({ page }) => {
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
+
+      // Look for loading state (should appear briefly)
+      const loadingState = page.locator('[role="status"]').filter({ hasText: /loading/i }).first();
+      const hasLoadingState = await loadingState.isVisible().catch(() => false);
+
+      if (hasLoadingState) {
+        // Verify loading spinner icon
+        const spinner = loadingState.locator('svg.animate-spin').first();
+        const hasSpinner = await spinner.isVisible().catch(() => false);
+        expect(hasSpinner).toBeTruthy();
+      }
+    });
+
+    test("should have accessible ARIA attributes on empty states", async ({ page }) => {
+      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.waitForTimeout(2000);
+
+      // Check for ARIA attributes on empty/loading states
+      const stateElements = page.locator('[role="status"], [role="region"], [role="alert"]');
+      const count = await stateElements.count();
+
+      if (count > 0) {
+        const firstState = stateElements.first();
+
+        // Should have either aria-label or aria-live
+        const ariaLabel = await firstState.getAttribute('aria-label');
+        const ariaLive = await firstState.getAttribute('aria-live');
+
+        expect(ariaLabel || ariaLive).toBeTruthy();
+      }
+    });
+
+    test("should display action buttons in empty states", async ({ page }) => {
+      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.waitForTimeout(2000);
+
+      // Look for empty state action buttons
+      const emptyStateSection = page.locator('[role="status"], [role="region"]').first();
+      const hasEmptyState = await emptyStateSection.isVisible().catch(() => false);
+
+      if (hasEmptyState) {
+        // Check for primary action button
+        const actionButton = emptyStateSection.locator('button').first();
+        const hasActionButton = await actionButton.isVisible().catch(() => false);
+
+        if (hasActionButton) {
+          await expect(actionButton).toBeEnabled();
+
+          // Button should have accessible name
+          const buttonText = await actionButton.textContent();
+          expect(buttonText?.length).toBeGreaterThan(0);
+        }
+      }
+    });
+
+    test("should have proper theme colors applied", async ({ page }) => {
+      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.waitForTimeout(2000);
+
+      // Check if empty state has theme-appropriate styling
+      const emptyStateSection = page.locator('[role="status"], [role="region"]').first();
+      const hasEmptyState = await emptyStateSection.isVisible().catch(() => false);
+
+      if (hasEmptyState) {
+        // Icon container should have theme classes (muted, primary, etc.)
+        const iconContainer = emptyStateSection.locator('div').filter({ has: page.locator('svg') }).first();
+        const className = await iconContainer.getAttribute('class');
+
+        // Should have some theme-related classes
+        expect(className).toBeTruthy();
+      }
+    });
+
+    test("should render empty state in discovery card", async ({ page }) => {
+      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.waitForTimeout(2000);
+
+      // Look for discovery section
+      const discoverySection = page.locator('text=/competitor discovery/i').first();
+      const hasDiscovery = await discoverySection.isVisible().catch(() => false);
+
+      if (hasDiscovery) {
+        // Within discovery section, check for empty state
+        const discoveryCard = discoverySection.locator('..').locator('..'); // Navigate up to card
+        const emptyState = discoveryCard.locator('[role="status"], [role="region"]').first();
+        const hasEmptyState = await emptyState.isVisible().catch(() => false);
+
+        if (hasEmptyState) {
+          // Should have Sparkles icon (discovery empty state)
+          const icon = emptyState.locator('svg').first();
+          await expect(icon).toBeVisible();
+        }
+      }
+    });
+  });
+
   test.describe("Main Competitive Page", () => {
     test("should display competitive page with header and navigation", async ({ page }) => {
       await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });

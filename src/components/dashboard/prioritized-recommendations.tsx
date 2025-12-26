@@ -1,10 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { ChevronRight, Zap, Clock, AlertTriangle, CheckCircle2, Lightbulb, Loader2, AlertCircle } from "lucide-react";
+import { ChevronRight, Zap, Clock, AlertTriangle, CheckCircle2, Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRecommendations } from "@/hooks/useRecommendations";
 import { useSelectedBrand } from "@/stores";
+import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
 
 // Export interface for API integration
 export interface Recommendation {
@@ -107,12 +110,11 @@ export function PrioritizedRecommendations({
             Prioritized Recommendations
           </h3>
         </div>
-        <div className="flex items-center justify-center py-8">
-          <div className="text-center">
-            <Loader2 className="h-6 w-6 mx-auto text-primary animate-spin mb-2" />
-            <p className="text-xs text-muted-foreground">Loading recommendations...</p>
-          </div>
-        </div>
+        <LoadingState
+          title="Loading recommendations..."
+          size="sm"
+          variant="compact"
+        />
       </div>
     );
   }
@@ -126,15 +128,12 @@ export function PrioritizedRecommendations({
             Prioritized Recommendations
           </h3>
         </div>
-        <div className="flex items-center justify-center py-8">
-          <div className="text-center">
-            <AlertCircle className="h-8 w-8 mx-auto text-error mb-2" />
-            <p className="text-sm text-error font-medium">Failed to load recommendations</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {error instanceof Error ? error.message : "Please try again later"}
-            </p>
-          </div>
-        </div>
+        <ErrorState
+          title="Failed to load recommendations"
+          error={error}
+          size="sm"
+          variant="compact"
+        />
       </div>
     );
   }
@@ -148,13 +147,14 @@ export function PrioritizedRecommendations({
             Prioritized Recommendations
           </h3>
         </div>
-        <div className="flex items-center justify-center py-8">
-          <div className="text-center">
-            <CheckCircle2 className="h-8 w-8 mx-auto text-success mb-2" />
-            <p className="text-sm text-foreground font-medium">All caught up!</p>
-            <p className="text-xs text-muted-foreground mt-1">No pending recommendations. Great job!</p>
-          </div>
-        </div>
+        <EmptyState
+          icon={CheckCircle2}
+          theme="success"
+          title="All caught up!"
+          description="No pending recommendations. Great job!"
+          size="sm"
+          variant="compact"
+        />
       </div>
     );
   }

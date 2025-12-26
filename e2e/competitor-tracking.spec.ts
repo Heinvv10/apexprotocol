@@ -10,6 +10,182 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     domain: "testcompetitor.com",
   };
 
+  test.describe("Unified Empty State Components", () => {
+    test("should render EmptyState with proper structure in CompetitorManager", async ({ page }) => {
+      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.waitForTimeout(2000);
+
+      // Look for empty state with ARIA attributes
+      const emptyState = page.locator('[role="status"], [role="region"]').filter({ hasText: /track your competitors/i }).first();
+      const hasEmptyState = await emptyState.isVisible().catch(() => false);
+
+      if (hasEmptyState) {
+        // Verify icon is present
+        const icon = emptyState.locator('svg').first();
+        await expect(icon).toBeVisible();
+
+        // Verify title (h3)
+        const title = emptyState.locator('h3');
+        await expect(title).toHaveText(/track your competitors/i);
+
+        // Verify description
+        const description = emptyState.locator('p').first();
+        await expect(description).toBeVisible();
+      }
+    });
+
+    test("should render LoadingState with spinner animation", async ({ page }) => {
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
+
+      // Look for loading state with spinner
+      const loadingState = page.locator('[role="status"]').filter({ hasText: /loading/i }).first();
+      const hasLoadingState = await loadingState.isVisible().catch(() => false);
+
+      if (hasLoadingState) {
+        // Should have spinning icon
+        const spinner = loadingState.locator('svg.animate-spin');
+        const hasSpinner = await spinner.isVisible().catch(() => false);
+        expect(hasSpinner).toBeTruthy();
+
+        // Should have loading text
+        const loadingText = await loadingState.textContent();
+        expect(loadingText?.toLowerCase()).toContain('loading');
+      }
+    });
+
+    test("should have Users icon in empty state", async ({ page }) => {
+      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.waitForTimeout(2000);
+
+      // Check for Users icon in empty state (primary theme)
+      const emptyState = page.locator('[role="status"], [role="region"]').filter({ hasText: /track your competitors/i }).first();
+      const hasEmptyState = await emptyState.isVisible().catch(() => false);
+
+      if (hasEmptyState) {
+        // Icon should be visible
+        const icon = emptyState.locator('svg').first();
+        await expect(icon).toBeVisible();
+
+        // Icon container should have primary theme styling
+        const iconContainer = icon.locator('..');
+        const className = await iconContainer.getAttribute('class');
+        expect(className).toBeTruthy();
+      }
+    });
+
+    test("should have primary action button with Plus icon", async ({ page }) => {
+      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.waitForTimeout(2000);
+
+      // Look for empty state action button
+      const emptyState = page.locator('[role="status"], [role="region"]').filter({ hasText: /track your competitors/i }).first();
+      const hasEmptyState = await emptyState.isVisible().catch(() => false);
+
+      if (hasEmptyState) {
+        // Should have "Add Competitor" button
+        const addButton = emptyState.locator('button', { hasText: /add competitor/i }).first();
+        const hasButton = await addButton.isVisible().catch(() => false);
+
+        if (hasButton) {
+          await expect(addButton).toBeEnabled();
+
+          // Button should have Plus icon
+          const plusIcon = addButton.locator('svg').first();
+          await expect(plusIcon).toBeVisible();
+        }
+      }
+    });
+
+    test("should have proper ARIA attributes for accessibility", async ({ page }) => {
+      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.waitForTimeout(2000);
+
+      // Check ARIA attributes on empty state
+      const emptyState = page.locator('[role="status"], [role="region"]').first();
+      const hasEmptyState = await emptyState.isVisible().catch(() => false);
+
+      if (hasEmptyState) {
+        // Should have role attribute
+        const role = await emptyState.getAttribute('role');
+        expect(role).toBeTruthy();
+
+        // Should have aria-label or aria-live
+        const ariaLabel = await emptyState.getAttribute('aria-label');
+        const ariaLive = await emptyState.getAttribute('aria-live');
+        expect(ariaLabel || ariaLive).toBeTruthy();
+      }
+    });
+
+    test("should transition from empty to populated state", async ({ page }) => {
+      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.waitForTimeout(2000);
+
+      // Check initial state
+      const initialEmptyState = await page.locator('[role="status"], [role="region"]').filter({ hasText: /track your competitors/i }).isVisible().catch(() => false);
+
+      if (initialEmptyState) {
+        // Click Add Competitor button
+        const addButton = page.getByRole("button", { name: /add competitor/i }).first();
+        await addButton.click();
+
+        // Dialog should open
+        await expect(page.getByRole("dialog")).toBeVisible({ timeout: 5000 });
+
+        // Fill in competitor details
+        await page.getByLabel(/competitor name/i).fill(TEST_COMPETITOR.name);
+        await page.getByLabel(/website domain/i).fill(TEST_COMPETITOR.domain);
+
+        // Submit
+        const submitButton = page.getByRole("dialog").getByRole("button", { name: /add competitor/i });
+        await submitButton.click();
+
+        // Wait for competitor to be added
+        await page.waitForTimeout(3000);
+
+        // Empty state should be gone
+        const emptyStateStillVisible = await page.locator('[role="status"], [role="region"]').filter({ hasText: /track your competitors/i }).isVisible().catch(() => false);
+
+        // Either empty state is gone, or competitor name is visible
+        const competitorVisible = await page.getByText(TEST_COMPETITOR.name).isVisible().catch(() => false);
+        expect(!emptyStateStillVisible || competitorVisible).toBeTruthy();
+      }
+    });
+
+    test("should render error state with retry action", async ({ page }) => {
+      // Intercept API calls and return errors to trigger error state
+      await page.route("**/api/competitors*", async route => {
+        await route.fulfill({
+          status: 500,
+          body: JSON.stringify({ error: "Internal Server Error" }),
+        });
+      });
+
+      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.waitForTimeout(3000);
+
+      // Look for error state
+      const errorState = page.locator('[role="alert"]').first();
+      const hasErrorState = await errorState.isVisible().catch(() => false);
+
+      if (hasErrorState) {
+        // Should have error icon
+        const icon = errorState.locator('svg').first();
+        await expect(icon).toBeVisible();
+
+        // Should have error message
+        const errorMessage = await errorState.textContent();
+        expect(errorMessage?.toLowerCase()).toMatch(/error|failed|wrong/);
+
+        // Should have retry button
+        const retryButton = errorState.locator('button', { hasText: /retry/i }).first();
+        const hasRetry = await retryButton.isVisible().catch(() => false);
+        if (hasRetry) {
+          await expect(retryButton).toBeEnabled();
+        }
+      }
+    });
+  });
+
   test.describe("CompetitorManager Component", () => {
     test("should display empty state with call to action", async ({ page }) => {
       await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });

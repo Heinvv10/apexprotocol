@@ -20,6 +20,9 @@ import {
   type LocationData,
 } from "./location-card";
 import { ReviewsSummary, type ReviewData, type SentimentStats } from "./reviews-summary";
+import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
 
 // ============================================================================
 // Types
@@ -228,11 +231,11 @@ export function LocationsSection({
             <h3 className="font-semibold">Locations</h3>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[...Array(2)].map((_, i) => (
-            <LocationCardSkeleton key={i} />
-          ))}
-        </div>
+        <LoadingState
+          title="Loading locations"
+          description="Fetching location data..."
+          size="md"
+        />
       </div>
     );
   }
@@ -247,13 +250,12 @@ export function LocationsSection({
             <h3 className="font-semibold">Locations</h3>
           </div>
         </div>
-        <div className="card-tertiary p-6 text-center">
-          <AlertCircle className="w-10 h-10 text-error mx-auto mb-3" />
-          <p className="text-sm text-error mb-4">{error}</p>
-          <Button variant="outline" size="sm" onClick={fetchData}>
-            Try Again
-          </Button>
-        </div>
+        <ErrorState
+          title="Failed to load locations"
+          error={error}
+          onRetry={fetchData}
+          size="md"
+        />
       </div>
     );
   }
@@ -352,37 +354,37 @@ export function LocationsSection({
 
       {/* Empty State */}
       {locations.length === 0 && (
-        <div className="card-secondary p-8 text-center">
-          <MapPin className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-          <h4 className="text-lg font-medium text-foreground mb-2">
-            No locations found
-          </h4>
-          <p className="text-sm text-muted-foreground mb-4">
-            {googleConfigured
+        <EmptyState
+          icon={MapPin}
+          title="No locations found"
+          description={
+            googleConfigured
               ? `Discover ${brandName || "your brand"}'s locations from Google Places or add them manually.`
-              : "Add Google Places API key to enable location discovery, or add locations manually."}
-          </p>
-          <div className="flex items-center justify-center gap-3">
-            {googleConfigured && (
-              <Button
-                onClick={handleAutoDiscover}
-                disabled={isSyncing}
-                className="gap-2"
-              >
-                {isSyncing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Globe className="w-4 h-4" />
-                )}
-                Discover Locations
-              </Button>
-            )}
-            <Button variant="outline" className="gap-2">
-              <Plus className="w-4 h-4" />
-              Add Manually
-            </Button>
-          </div>
-        </div>
+              : "Add Google Places API key to enable location discovery, or add locations manually."
+          }
+          theme="primary"
+          variant="card"
+          size="md"
+          primaryAction={
+            googleConfigured
+              ? {
+                  label: "Discover Locations",
+                  icon: Globe,
+                  onClick: handleAutoDiscover,
+                  disabled: isSyncing,
+                  loading: isSyncing,
+                }
+              : undefined
+          }
+          secondaryAction={{
+            label: "Add Manually",
+            icon: Plus,
+            onClick: () => {
+              // TODO: Implement manual add location
+            },
+            variant: "outline",
+          }}
+        />
       )}
 
       {/* Locations Grid */}
