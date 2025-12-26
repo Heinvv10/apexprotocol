@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { LucideIcon, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,10 @@ interface StatCardProps {
   };
   variant?: "primary" | "secondary" | "tertiary";
   className?: string;
+  // Interactive props
+  onClick?: () => void;
+  href?: string;
+  ariaLabel?: string;
 }
 
 export function StatCard({
@@ -25,6 +30,9 @@ export function StatCard({
   trend,
   variant = "secondary",
   className,
+  onClick,
+  href,
+  ariaLabel,
 }: StatCardProps) {
   const cardClass = {
     primary: "card-primary",
@@ -44,8 +52,17 @@ export function StatCard({
     neutral: "text-muted-foreground",
   }[trend?.direction || "neutral"];
 
-  return (
-    <div className={cn(cardClass, className)}>
+  // Determine if the card is interactive
+  const isInteractive = Boolean(onClick || href);
+
+  // Interactive styling - add focus indicators and hover effects
+  const interactiveClass = isInteractive
+    ? "cursor-pointer hover:bg-card-hover transition-colors focus-ring-primary"
+    : "";
+
+  // Card content
+  const content = (
+    <>
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
@@ -71,6 +88,39 @@ export function StatCard({
           )}
         </div>
       )}
+    </>
+  );
+
+  // If href is provided, wrap in Link
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={cn(cardClass, interactiveClass, className)}
+        aria-label={ariaLabel || `View ${title} details`}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  // If onClick is provided, use button element
+  if (onClick) {
+    return (
+      <button
+        onClick={onClick}
+        className={cn(cardClass, interactiveClass, "text-left w-full", className)}
+        aria-label={ariaLabel || title}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  // Non-interactive card - regular div (not focusable)
+  return (
+    <div className={cn(cardClass, className)}>
+      {content}
     </div>
   );
 }

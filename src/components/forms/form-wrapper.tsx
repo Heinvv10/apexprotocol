@@ -75,8 +75,7 @@ export function FormWrapper({
               "w-full h-11 rounded-lg font-medium",
               "bg-primary text-primary-foreground",
               "hover:bg-primary/90 active:bg-primary/80",
-              "focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background",
-              "transition-all duration-150",
+              "focus-ring-offset",
               "disabled:opacity-50 disabled:cursor-not-allowed",
               "flex items-center justify-center gap-2",
               submitClassName

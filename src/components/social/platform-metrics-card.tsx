@@ -160,7 +160,8 @@ export function PlatformMetricsCard({
               href={profileUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+              className="text-xs text-muted-foreground hover:text-primary focus-ring-primary rounded flex items-center gap-1 w-fit"
+              aria-label={`View ${config.name} profile for @${handle}`}
             >
               @{handle}
               <ExternalLink className="h-3 w-3" />

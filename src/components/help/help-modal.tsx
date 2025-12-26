@@ -103,12 +103,46 @@ const helpCategories = [
 
 // Keyboard shortcuts
 const keyboardShortcuts = [
-  { keys: ["⌘", "K"], description: "Open command palette" },
-  { keys: ["⌘", "/"], description: "Open help" },
-  { keys: ["⌘", "B"], description: "Toggle sidebar" },
-  { keys: ["⌘", "S"], description: "Save changes" },
-  { keys: ["⌘", "N"], description: "New content" },
-  { keys: ["Esc"], description: "Close modal" },
+  {
+    category: "Global Navigation",
+    shortcuts: [
+      { keys: ["Tab"], description: "Move to next interactive element" },
+      { keys: ["Shift", "Tab"], description: "Move to previous element" },
+      { keys: ["Enter"], description: "Activate focused button or link" },
+      { keys: ["Esc"], description: "Close modal or dropdown" },
+      { keys: ["⌘", "K"], description: "Open command palette" },
+      { keys: ["⌘", "/"], description: "Open help" },
+      { keys: ["⌘", "B"], description: "Toggle sidebar" },
+    ]
+  },
+  {
+    category: "Navigation",
+    shortcuts: [
+      { keys: ["Tab"], description: "Navigate through sidebar items" },
+      { keys: ["Enter"], description: "Go to selected page" },
+      { keys: ["Esc"], description: "Close mobile menu" },
+    ]
+  },
+  {
+    category: "Dropdown Menus",
+    shortcuts: [
+      { keys: ["↓"], description: "Next menu item" },
+      { keys: ["↑"], description: "Previous menu item" },
+      { keys: ["Home"], description: "First menu item" },
+      { keys: ["End"], description: "Last menu item" },
+      { keys: ["Enter"], description: "Select item" },
+    ]
+  },
+  {
+    category: "Forms & Content",
+    shortcuts: [
+      { keys: ["Tab"], description: "Move between form fields" },
+      { keys: ["Space"], description: "Toggle checkbox or switch" },
+      { keys: ["⌘", "S"], description: "Save changes" },
+      { keys: ["⌘", "N"], description: "New content" },
+      { keys: ["Enter"], description: "Submit form" },
+    ]
+  },
 ];
 
 // Quick actions
@@ -138,18 +172,77 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
   const [activeCategory, setActiveCategory] = React.useState<string | null>(null);
   const [activeTab, setActiveTab] = React.useState<"docs" | "shortcuts">("docs");
 
-  // Close on Escape
+  // Refs for focus management
+  const modalRef = React.useRef<HTMLDivElement>(null);
+  const previousFocusRef = React.useRef<HTMLElement | null>(null);
+
+  // Focus trap and keyboard handling
   React.useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+    if (!isOpen) return;
+
+    // Save the currently focused element
+    previousFocusRef.current = document.activeElement as HTMLElement;
+
+    // Lock body scroll
+    document.body.style.overflow = "hidden";
+
+    // Focus first element when modal opens
+    const focusFirstElement = () => {
+      const focusableElements = modalRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusableElements && focusableElements.length > 0) {
+        focusableElements[0].focus();
+      }
     };
-    if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
-      document.body.style.overflow = "hidden";
-    }
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(focusFirstElement, 100);
+
+    // Focus trap handler
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      if (e.key === "Tab") {
+        const focusableElements = modalRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+
+        if (!focusableElements || focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          // Shift+Tab: moving backward
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          // Tab: moving forward
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
     return () => {
-      document.removeEventListener("keydown", handleEscape);
+      clearTimeout(timer);
+      document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
+
+      // Restore focus to the element that opened the modal
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+      }
     };
   }, [isOpen, onClose]);
 
@@ -180,10 +273,17 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-3xl max-h-[80vh] bg-card border border-border/50 rounded-xl shadow-2xl overflow-hidden flex flex-col">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Help & Documentation"
+        className="relative w-full max-w-3xl max-h-[80vh] bg-card border border-border/50 rounded-xl shadow-2xl overflow-hidden flex flex-col"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border/30">
           <div className="flex items-center gap-3">
@@ -201,7 +301,8 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors"
+            className="p-2 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors focus-ring-primary"
+            aria-label="Close help modal"
           >
             <X className="w-5 h-5" />
           </button>
@@ -216,7 +317,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search help articles..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-background border border-border/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-background border border-border/50 text-foreground placeholder:text-muted-foreground focus-ring-input transition-all"
               autoFocus
             />
           </div>
@@ -226,7 +327,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
             <button
               onClick={() => setActiveTab("docs")}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors focus-ring-primary",
                 activeTab === "docs"
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-white/5"
@@ -237,7 +338,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
             <button
               onClick={() => setActiveTab("shortcuts")}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors focus-ring-primary",
                 activeTab === "shortcuts"
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-white/5"
@@ -262,7 +363,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                       <a
                         key={action.title}
                         href={action.href}
-                        className="card-tertiary p-4 hover:bg-white/5 transition-colors group"
+                        className="card-tertiary p-4 hover:bg-white/5 transition-colors group focus-ring-primary rounded-lg"
                       >
                         <Icon className="w-5 h-5 text-primary mb-2" />
                         <h4 className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
@@ -302,7 +403,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                         <button
                           key={category.id}
                           onClick={() => setActiveCategory(category.id)}
-                          className="w-full flex items-center gap-4 p-4 rounded-lg hover:bg-white/5 transition-colors text-left group"
+                          className="w-full flex items-center gap-4 p-4 rounded-lg hover:bg-white/5 transition-colors text-left group focus-ring-primary"
                         >
                           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                             <Icon className="w-5 h-5 text-primary" />
@@ -333,7 +434,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
               Can&apos;t find what you need?{" "}
-              <a href="#" className="text-primary hover:underline">
+              <a href="#" className="text-primary hover:underline focus-ring-primary rounded">
                 Contact support
               </a>
             </p>
@@ -368,7 +469,7 @@ function CategoryDetail({
     <div>
       <button
         onClick={onBack}
-        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
+        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors focus-ring-primary rounded-lg"
       >
         <ChevronRight className="w-4 h-4 rotate-180" />
         Back to topics
@@ -391,7 +492,7 @@ function CategoryDetail({
           <a
             key={index}
             href="#"
-            className="flex items-center justify-between p-4 rounded-lg hover:bg-white/5 transition-colors group"
+            className="flex items-center justify-between p-4 rounded-lg hover:bg-white/5 transition-colors group focus-ring-primary"
           >
             <div className="flex items-center gap-3">
               <BookOpen className="w-4 h-4 text-muted-foreground" />
@@ -415,36 +516,48 @@ function CategoryDetail({
 // Keyboard shortcuts view
 function KeyboardShortcuts() {
   return (
-    <div>
-      <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">
-        Keyboard Shortcuts
-      </h3>
+    <div className="space-y-6">
+      {keyboardShortcuts.map((category, categoryIndex) => (
+        <div key={categoryIndex}>
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+            {category.category}
+          </h3>
 
-      <div className="space-y-2">
-        {keyboardShortcuts.map((shortcut, index) => (
-          <div
-            key={index}
-            className="flex items-center justify-between p-3 rounded-lg bg-muted/10"
-          >
-            <span className="text-sm text-foreground">{shortcut.description}</span>
-            <div className="flex items-center gap-1">
-              {shortcut.keys.map((key, keyIndex) => (
-                <React.Fragment key={keyIndex}>
-                  <kbd className="px-2 py-1 rounded bg-muted/30 border border-border/50 text-xs font-mono text-foreground min-w-[28px] text-center">
-                    {key}
-                  </kbd>
-                  {keyIndex < shortcut.keys.length - 1 && (
-                    <span className="text-muted-foreground text-xs">+</span>
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
+          <div className="space-y-2">
+            {category.shortcuts.map((shortcut, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-3 rounded-lg bg-muted/10"
+              >
+                <span className="text-sm text-foreground">{shortcut.description}</span>
+                <div className="flex items-center gap-1">
+                  {shortcut.keys.map((key, keyIndex) => (
+                    <React.Fragment key={keyIndex}>
+                      <kbd className="px-2 py-1 rounded bg-muted/30 border border-border/50 text-xs font-mono text-foreground min-w-[28px] text-center">
+                        {key}
+                      </kbd>
+                      {keyIndex < shortcut.keys.length - 1 && (
+                        <span className="text-muted-foreground text-xs">+</span>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
 
       <p className="text-xs text-muted-foreground mt-4 text-center">
-        Use these shortcuts to navigate Apex faster
+        Use these shortcuts to navigate Apex faster. For complete keyboard navigation guide, see{" "}
+        <a
+          href="/docs/accessibility/keyboard-navigation"
+          className="text-primary hover:underline focus-ring-primary rounded"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Keyboard Navigation Documentation
+        </a>
       </p>
     </div>
   );
@@ -479,7 +592,8 @@ export function HelpButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors focus-ring-primary"
+      aria-label="Open help modal"
     >
       <HelpCircle className="w-4 h-4" />
       <span>Help</span>

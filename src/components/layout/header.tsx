@@ -44,7 +44,7 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 flex items-center justify-between h-16 px-6 header-gradient">
+    <header aria-label="Site header" className="sticky top-0 z-40 flex items-center justify-between h-16 px-6 header-gradient">
       {/* Left side - Brand Selector and Page title */}
       <div className="flex items-center gap-4">
         <BrandSelector />
@@ -59,7 +59,7 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
           <Input
             type="search"
             placeholder="Search..."
-            className="w-full pl-10 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary"
+            className="w-full pl-10 bg-muted/50 border-0 focus-ring-input"
           />
         </div>
       </div>
@@ -79,7 +79,7 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 rounded-lg"
+                className="h-9 w-9 rounded-lg focus-ring-primary"
               >
                 <div className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-primary">
                   <User className="h-4 w-4" />

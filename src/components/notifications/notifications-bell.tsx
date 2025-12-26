@@ -186,7 +186,7 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "relative p-2 rounded-lg transition-colors",
+          "relative p-2 rounded-lg transition-colors focus-ring-primary",
           isOpen
             ? "bg-white/10 text-foreground"
             : "text-muted-foreground hover:text-foreground hover:bg-white/5"
@@ -225,14 +225,15 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
                 <button
                   onClick={handleMarkAllAsRead}
                   disabled={isMarkingAllAsRead}
-                  className="p-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  className="p-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 rounded focus-ring-primary"
                 >
                   {isMarkingAllAsRead ? "Marking..." : "Mark all read"}
                 </button>
               )}
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors"
+                className="p-1.5 rounded hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors focus-ring-primary"
+                aria-label="Close notifications"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -265,7 +266,7 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
                         handleMarkAsRead(notification.id);
                         setIsOpen(false);
                       }}
-                      className="flex items-start gap-3 px-4 py-3 hover:bg-white/5 transition-colors"
+                      className="flex items-start gap-3 px-4 py-3 hover:bg-white/5 transition-colors rounded focus-ring-primary"
                     >
                       {/* Icon */}
                       <div
@@ -307,15 +308,15 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
                     </Link>
 
                     {/* Actions on hover */}
-                    <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                       <button
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           handleClearNotification(notification.id);
                         }}
-                        className="p-1 rounded hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
-                        title="Dismiss"
+                        className="p-1 rounded hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors focus-ring-primary"
+                        aria-label="Dismiss notification"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -331,7 +332,7 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
             <Link
               href="/dashboard/settings"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors rounded focus-ring-primary"
             >
               <Settings className="w-3.5 h-3.5" />
               Notification settings
@@ -339,7 +340,7 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
             <Link
               href="/dashboard/feedback"
               onClick={() => setIsOpen(false)}
-              className="text-xs text-primary hover:text-primary/80 transition-colors"
+              className="text-xs text-primary hover:text-primary/80 transition-colors rounded focus-ring-primary"
             >
               View all
             </Link>

@@ -225,12 +225,15 @@ export default function NotificationPreferencesPage() {
 
                   {/* Email Digest Toggle */}
                   <button
-                    className="settings-toggle-row w-full"
+                    className="settings-toggle-row w-full focus-ring-primary"
                     onClick={() => setEmailEnabled(!emailEnabled)}
                     disabled={isLoading}
+                    role="switch"
+                    aria-checked={emailEnabled}
+                    aria-label="Enable email notifications to receive digest emails with notification summaries"
                   >
                     <span className="text-xs text-muted-foreground text-left">Enable email notifications<br/>Receive digest emails with notification summaries</span>
-                    <div className={`settings-toggle ${emailEnabled ? "active" : ""}`}>
+                    <div className={`settings-toggle ${emailEnabled ? "active" : ""}`} aria-hidden="true">
                       <div className="settings-toggle-knob" />
                     </div>
                   </button>
@@ -239,25 +242,30 @@ export default function NotificationPreferencesPage() {
                   {emailEnabled && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Digest Frequency</span>
+                        <span id="digest-frequency-label" className="text-sm text-muted-foreground">Digest Frequency</span>
                         <div className="relative">
                           <button
-                            className="settings-dropdown"
+                            className="settings-dropdown focus-ring-primary"
                             onClick={() => {
                               setFrequencyDropdownOpen(!frequencyDropdownOpen);
                               setHourDropdownOpen(false);
                             }}
                             disabled={isLoading}
+                            aria-expanded={frequencyDropdownOpen}
+                            aria-haspopup="listbox"
+                            aria-labelledby="digest-frequency-label"
                           >
                             <span>{DIGEST_FREQUENCIES.find(f => f.code === emailDigestFrequency)?.name || "Select frequency"}</span>
-                            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${frequencyDropdownOpen ? "rotate-180" : ""}`} />
+                            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${frequencyDropdownOpen ? "rotate-180" : ""}`} aria-hidden="true" />
                           </button>
                           {frequencyDropdownOpen && (
-                            <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-white/10 rounded-lg shadow-lg z-50 py-1">
+                            <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-white/10 rounded-lg shadow-lg z-50 py-1" role="listbox" aria-labelledby="digest-frequency-label">
                               {DIGEST_FREQUENCIES.map((freq) => (
                                 <button
                                   key={freq.code}
-                                  className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors ${emailDigestFrequency === freq.code ? "text-primary" : "text-muted-foreground"}`}
+                                  role="option"
+                                  aria-selected={emailDigestFrequency === freq.code}
+                                  className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors focus-ring-menu ${emailDigestFrequency === freq.code ? "text-primary" : "text-muted-foreground"}`}
                                   onClick={() => {
                                     setEmailDigestFrequency(freq.code as "none" | "daily" | "weekly");
                                     setFrequencyDropdownOpen(false);
@@ -274,25 +282,30 @@ export default function NotificationPreferencesPage() {
                       {/* Digest Hour - Only show when frequency is not "none" */}
                       {emailDigestFrequency !== "none" && (
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Delivery Time</span>
+                          <span id="delivery-time-label" className="text-sm text-muted-foreground">Delivery Time</span>
                           <div className="relative">
                             <button
-                              className="settings-dropdown"
+                              className="settings-dropdown focus-ring-primary"
                               onClick={() => {
                                 setHourDropdownOpen(!hourDropdownOpen);
                                 setFrequencyDropdownOpen(false);
                               }}
                               disabled={isLoading}
+                              aria-expanded={hourDropdownOpen}
+                              aria-haspopup="listbox"
+                              aria-labelledby="delivery-time-label"
                             >
                               <span>{DIGEST_HOURS.find(h => h.value === digestHour)?.display || "9:00 AM"}</span>
-                              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${hourDropdownOpen ? "rotate-180" : ""}`} />
+                              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${hourDropdownOpen ? "rotate-180" : ""}`} aria-hidden="true" />
                             </button>
                             {hourDropdownOpen && (
-                              <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-white/10 rounded-lg shadow-lg z-50 py-1 max-h-60 overflow-y-auto">
+                              <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-white/10 rounded-lg shadow-lg z-50 py-1 max-h-60 overflow-y-auto" role="listbox" aria-labelledby="delivery-time-label">
                                 {DIGEST_HOURS.map((hour) => (
                                   <button
                                     key={hour.value}
-                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors ${digestHour === hour.value ? "text-primary" : "text-muted-foreground"}`}
+                                    role="option"
+                                    aria-selected={digestHour === hour.value}
+                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors focus-ring-menu ${digestHour === hour.value ? "text-primary" : "text-muted-foreground"}`}
                                     onClick={() => {
                                       setDigestHour(hour.value);
                                       setHourDropdownOpen(false);
@@ -309,13 +322,14 @@ export default function NotificationPreferencesPage() {
 
                       {/* Email Address Override */}
                       <div className="space-y-2">
-                        <label className="text-sm text-muted-foreground">Email Address (optional)</label>
+                        <label htmlFor="email-address-override" className="text-sm text-muted-foreground">Email Address (optional)</label>
                         <input
+                          id="email-address-override"
                           type="email"
                           value={emailAddress}
                           onChange={(e) => setEmailAddress(e.target.value)}
                           placeholder="Override default email"
-                          className="settings-input w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
+                          className="settings-input w-full bg-transparent text-foreground placeholder:text-muted-foreground focus-ring-input"
                           disabled={isLoading}
                         />
                         <p className="text-xs text-muted-foreground/70">
@@ -330,12 +344,15 @@ export default function NotificationPreferencesPage() {
                 <div className="space-y-4">
                   <h3 className="text-sm font-medium text-foreground">In-App Notifications</h3>
                   <button
-                    className="settings-toggle-row w-full"
+                    className="settings-toggle-row w-full focus-ring-primary"
                     onClick={() => setInAppEnabled(!inAppEnabled)}
                     disabled={isLoading}
+                    role="switch"
+                    aria-checked={inAppEnabled}
+                    aria-label="Enable in-app notifications to show real-time notifications in the dashboard"
                   >
                     <span className="text-xs text-muted-foreground text-left">Enable in-app notifications<br/>Show real-time notifications in the dashboard</span>
-                    <div className={`settings-toggle ${inAppEnabled ? "active" : ""}`}>
+                    <div className={`settings-toggle ${inAppEnabled ? "active" : ""}`} aria-hidden="true">
                       <div className="settings-toggle-knob" />
                     </div>
                   </button>
@@ -352,48 +369,60 @@ export default function NotificationPreferencesPage() {
 
                   {/* Mention Notifications */}
                   <button
-                    className="settings-toggle-row w-full"
+                    className="settings-toggle-row w-full focus-ring-primary"
                     onClick={() => setMentionNotifications(!mentionNotifications)}
                     disabled={isLoading}
+                    role="switch"
+                    aria-checked={mentionNotifications}
+                    aria-label="Get notified when your brand is mentioned"
                   >
                     <span className="text-xs text-muted-foreground text-left">Brand mentions<br/>Get notified when your brand is mentioned</span>
-                    <div className={`settings-toggle ${mentionNotifications ? "active" : ""}`}>
+                    <div className={`settings-toggle ${mentionNotifications ? "active" : ""}`} aria-hidden="true">
                       <div className="settings-toggle-knob" />
                     </div>
                   </button>
 
                   {/* Score Change Notifications */}
                   <button
-                    className="settings-toggle-row w-full"
+                    className="settings-toggle-row w-full focus-ring-primary"
                     onClick={() => setScoreChangeNotifications(!scoreChangeNotifications)}
                     disabled={isLoading}
+                    role="switch"
+                    aria-checked={scoreChangeNotifications}
+                    aria-label="Alert when your performance scores change"
                   >
                     <span className="text-xs text-muted-foreground text-left">Score changes<br/>Alert when your performance scores change</span>
-                    <div className={`settings-toggle ${scoreChangeNotifications ? "active" : ""}`}>
+                    <div className={`settings-toggle ${scoreChangeNotifications ? "active" : ""}`} aria-hidden="true">
                       <div className="settings-toggle-knob" />
                     </div>
                   </button>
 
                   {/* Recommendation Notifications */}
                   <button
-                    className="settings-toggle-row w-full"
+                    className="settings-toggle-row w-full focus-ring-primary"
                     onClick={() => setRecommendationNotifications(!recommendationNotifications)}
                     disabled={isLoading}
+                    role="switch"
+                    aria-checked={recommendationNotifications}
+                    aria-label="Alert for new optimization suggestions"
                   >
                     <span className="text-xs text-muted-foreground text-left">New recommendations<br/>Alert for new optimization suggestions</span>
-                    <div className={`settings-toggle ${recommendationNotifications ? "active" : ""}`}>
+                    <div className={`settings-toggle ${recommendationNotifications ? "active" : ""}`} aria-hidden="true">
                       <div className="settings-toggle-knob" />
                     </div>
                   </button>
 
                   {/* Important Notifications */}
                   <button
-                    className="settings-toggle-row w-full"
+                    className="settings-toggle-row w-full focus-ring-primary"
                     onClick={() => setImportantNotifications(!importantNotifications)}
                     disabled={isLoading}
+                    role="switch"
+                    aria-checked={importantNotifications}
+                    aria-label="Critical notifications and system alerts"
                   >
                     <span className="text-xs text-muted-foreground text-left">Important alerts<br/>Critical notifications and system alerts</span>
-                    <div className={`settings-toggle ${importantNotifications ? "active" : ""}`}>
+                    <div className={`settings-toggle ${importantNotifications ? "active" : ""}`} aria-hidden="true">
                       <div className="settings-toggle-knob" />
                     </div>
                   </button>
@@ -431,7 +460,7 @@ export default function NotificationPreferencesPage() {
                 </div>
               )}
               <button
-                className="settings-save-btn flex items-center gap-2"
+                className="settings-save-btn flex items-center gap-2 focus-ring-offset"
                 onClick={handleSavePreferences}
                 disabled={isSaving || isLoading}
               >

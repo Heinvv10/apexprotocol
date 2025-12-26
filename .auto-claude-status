@@ -1,25 +1,25 @@
 {
-  "active": true,
-  "spec": "027-create-unified-empty-state-component-system",
-  "state": "building",
+  "active": false,
+  "spec": "031-enhance-keyboard-focus-indicators-and-tab-navigati",
+  "state": "complete",
   "subtasks": {
-    "completed": 0,
-    "total": 0,
-    "in_progress": 1,
+    "completed": 25,
+    "total": 25,
+    "in_progress": 0,
     "failed": 0
   },
   "phase": {
-    "current": "",
-    "id": 0,
-    "total": 0
+    "current": "completed",
+    "id": 25,
+    "total": 25
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 25,
-    "started_at": "2025-12-25T21:52:20.042005"
+    "number": 26,
+    "started_at": "2025-12-25T21:52:33.275122"
   },
-  "last_update": "2025-12-26T00:24:52.942914"
+  "last_update": "2025-12-26T07:23:03.557Z"
 }

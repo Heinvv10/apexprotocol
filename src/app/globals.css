@@ -64,6 +64,18 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* Focus Ring System */
+  --color-focus-ring-primary: var(--focus-ring-primary);
+  --color-focus-ring-input: var(--focus-ring-input);
+  --color-focus-ring-destructive: var(--focus-ring-destructive);
+  --color-focus-ring-offset: var(--focus-ring-offset-color);
+  --color-focus-border-primary: var(--focus-border-primary);
+  --color-focus-border-input: var(--focus-border-input);
+  --color-focus-border-destructive: var(--focus-border-destructive);
+  --color-focus-bg-menu: var(--focus-bg-menu);
+  --color-focus-bg-menu-foreground: var(--focus-bg-menu-foreground);
+  --color-focus-outline: var(--focus-outline-color);
+
   /* Border Radius */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -223,6 +235,44 @@
   --space-10: 40px;
   --space-12: 48px;
   --space-16: 64px;
+
+  /* ============================================
+     FOCUS INDICATOR DESIGN TOKENS
+     Establishes consistent focus ring system
+     Subtask 1.3: Focus ring colors, thickness, and offset values
+     ============================================ */
+
+  /* Focus Ring Thickness */
+  --focus-ring-width-default: 3px;      /* Standard ring width for most elements */
+  --focus-ring-width-offset: 2px;       /* Thinner ring when using offset */
+  --focus-ring-width-strong: 3px;       /* Ring width for strong indicators */
+
+  /* Focus Ring Offset */
+  --focus-ring-offset-default: 0px;     /* No offset for standard rings */
+  --focus-ring-offset-gap: 2px;         /* Offset gap for densely packed elements */
+
+  /* Focus Ring Colors - Dark Mode (default) */
+  --focus-ring-primary: 170 100% 45%;          /* Cyan - standard focus color */
+  --focus-ring-primary-opacity: 0.5;           /* 50% opacity for primary rings */
+  --focus-ring-input: 170 100% 45%;            /* Cyan - input focus color */
+  --focus-ring-input-opacity: 0.3;             /* 30% opacity for inputs (less prominent) */
+  --focus-ring-destructive: 0 84% 60%;         /* Red - for destructive actions */
+  --focus-ring-destructive-opacity: 0.4;       /* 40% opacity in dark mode */
+  --focus-ring-offset-color: 170 100% 45%;     /* Cyan - for offset rings */
+  --focus-ring-offset-opacity: 1;              /* Full opacity for offset rings */
+
+  /* Focus Border Colors */
+  --focus-border-primary: 170 100% 45%;        /* Cyan - border change on focus */
+  --focus-border-input: 170 100% 45%;          /* Cyan - input border on focus */
+  --focus-border-destructive: 0 84% 60%;       /* Red - destructive border on focus */
+
+  /* Focus Background Colors (for menu items) */
+  --focus-bg-menu: 232 40% 15%;                /* Accent background for menu items */
+  --focus-bg-menu-foreground: 0 0% 100%;       /* White text on menu focus */
+
+  /* Focus Outline (for layered indicators) */
+  --focus-outline-width: 1px;                  /* Outline width for strong indicators */
+  --focus-outline-color: 170 100% 45%;         /* Cyan - outline color */
 }
 
 /* Light Theme Override (optional) */
@@ -252,6 +302,28 @@
   --sidebar-accent-foreground: 235 79% 3%;
   --sidebar-border: 235 20% 90%;
   --sidebar-ring: 180 100% 35%;
+
+  /* Focus Ring Colors - Light Mode Overrides */
+  --focus-ring-primary: 180 100% 35%;          /* Darker cyan for better contrast on light backgrounds */
+  --focus-ring-primary-opacity: 0.5;           /* 50% opacity (same as dark mode) */
+  --focus-ring-input: 180 100% 35%;            /* Darker cyan for inputs */
+  --focus-ring-input-opacity: 0.3;             /* 30% opacity (same as dark mode) */
+  --focus-ring-destructive: 0 84% 60%;         /* Red (same as dark mode) */
+  --focus-ring-destructive-opacity: 0.2;       /* 20% opacity in light mode (lighter) */
+  --focus-ring-offset-color: 180 100% 35%;     /* Darker cyan for offset rings */
+  --focus-ring-offset-opacity: 1;              /* Full opacity (same as dark mode) */
+
+  /* Focus Border Colors - Light Mode */
+  --focus-border-primary: 180 100% 35%;        /* Darker cyan */
+  --focus-border-input: 180 100% 35%;          /* Darker cyan */
+  --focus-border-destructive: 0 84% 60%;       /* Red (same as dark mode) */
+
+  /* Focus Background Colors - Light Mode */
+  --focus-bg-menu: 235 20% 95%;                /* Light accent for menu items */
+  --focus-bg-menu-foreground: 235 79% 3%;      /* Dark text on menu focus */
+
+  /* Focus Outline - Light Mode */
+  --focus-outline-color: 180 100% 35%;         /* Darker cyan */
 }
 
 /* Dark class - Inherits from :root (no overrides needed)
@@ -850,9 +922,166 @@
    FORM ENHANCEMENTS
    ============================================ */
 
-/* Focus ring style */
+/* ============================================
+   FOCUS INDICATOR UTILITIES
+   Standardized focus rings for keyboard navigation
+   Based on audit findings (Subtask 1.1)
+   ============================================ */
+
+/*
+ * Primary Focus Ring - Standard for most interactive elements
+ * Matches Button component pattern: 3px ring, 50% opacity
+ * Use this for: buttons, links, navigation items, interactive cards
+ */
+.focus-ring-primary {
+  @apply outline-none;
+  @apply focus-visible:border-ring;
+  @apply focus-visible:ring-ring/50;
+  @apply focus-visible:ring-[3px];
+  @apply transition-[color,box-shadow];
+}
+
+/*
+ * Input Focus Ring - For form inputs and text fields
+ * Matches Input component pattern: 3px ring, 30% opacity
+ * Use this for: text inputs, textareas, search fields
+ */
+.focus-ring-input {
+  @apply outline-none;
+  @apply focus-visible:border-primary;
+  @apply focus-visible:ring-primary/30;
+  @apply focus-visible:ring-[3px];
+  @apply transition-[color,box-shadow];
+}
+
+/*
+ * Focus Ring with Offset - For densely packed or overlapping elements
+ * Adds 2px gap between element and ring
+ * Use this for: switches, badges, close buttons in dialogs
+ */
+.focus-ring-offset {
+  @apply outline-none;
+  @apply focus-visible:ring-ring;
+  @apply focus-visible:ring-2;
+  @apply focus-visible:ring-offset-2;
+  @apply ring-offset-background;
+  @apply transition-[color,box-shadow];
+}
+
+/*
+ * Destructive Focus Ring - For destructive actions
+ * Matches destructive button pattern with dark mode support
+ * Use this for: delete buttons, cancel actions, destructive operations
+ */
+.focus-ring-destructive {
+  @apply outline-none;
+  @apply focus-visible:border-destructive;
+  @apply focus-visible:ring-destructive/20;
+  @apply dark:focus-visible:ring-destructive/40;
+  @apply focus-visible:ring-[3px];
+  @apply transition-[color,box-shadow];
+}
+
+/*
+ * Strong Focus Ring - Maximum visibility for critical elements
+ * Combined ring and outline for enhanced visibility
+ * Use this for: primary CTAs, main navigation, critical controls
+ */
+.focus-ring-strong {
+  @apply outline-none;
+  @apply focus-visible:border-ring;
+  @apply focus-visible:ring-ring/50;
+  @apply focus-visible:ring-[3px];
+  @apply focus-visible:outline-ring;
+  @apply focus-visible:outline-1;
+  @apply transition-[color,box-shadow];
+}
+
+/*
+ * Menu Item Focus - For dropdown and menu items
+ * Uses background color change instead of ring
+ * Use this for: dropdown menu items, select options, combobox items
+ */
+.focus-ring-menu {
+  @apply outline-none;
+  @apply focus-visible:bg-accent;
+  @apply focus-visible:text-accent-foreground;
+  @apply transition-colors;
+}
+
+/*
+ * Legacy focus-ring - Deprecated, use .focus-ring-primary instead
+ * Kept for backwards compatibility, will be removed in future version
+ * @deprecated Use .focus-ring-primary or other specific variants
+ */
 .focus-ring {
   @apply outline-none ring-2 ring-primary/20 ring-offset-2 ring-offset-background;
+}
+
+/*
+ * High Contrast Mode Support
+ * Ensures focus indicators are visible in Windows High Contrast Mode
+ * Uses outline as fallback for forced-colors mode
+ */
+@media (forced-colors: active) {
+  .focus-ring-primary,
+  .focus-ring-input,
+  .focus-ring-offset,
+  .focus-ring-destructive,
+  .focus-ring-strong,
+  .focus-ring {
+    @apply focus-visible:outline;
+    @apply focus-visible:outline-2;
+    @apply focus-visible:outline-offset-2;
+  }
+}
+
+/*
+ * Skip Navigation Links - For keyboard accessibility
+ * Visually hidden by default, becomes visible on focus
+ * Use this for: skip to main content, skip to navigation links
+ * WCAG 2.4.1 Bypass Blocks (Level A)
+ */
+.skip-link {
+  @apply fixed top-0 left-0 z-[9999];
+  @apply px-6 py-4 rounded-lg text-sm font-medium;
+  @apply bg-primary text-primary-foreground;
+  @apply outline-none;
+  @apply transition-transform;
+  transform: translateY(-100%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.skip-link:focus-visible {
+  @apply border-ring;
+  @apply ring-ring/50;
+  @apply ring-[3px];
+}
+
+/* Skip links container - ensures proper stacking and spacing */
+.skip-links {
+  @apply fixed top-4 left-4 z-[9999] flex flex-col gap-2;
+}
+
+.skip-links .skip-link {
+  @apply relative;
+  transform: translateX(-200%);
+}
+
+.skip-links .skip-link:focus {
+  transform: translateX(0);
+}
+
+/* High contrast mode support for skip links */
+@media (forced-colors: active) {
+  .skip-link:focus-visible {
+    @apply outline;
+    @apply outline-2;
+    @apply outline-offset-2;
+  }
 }
 
 /* Input with icon */

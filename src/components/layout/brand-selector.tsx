@@ -88,19 +88,21 @@ export function BrandSelector({ className }: BrandSelectorProps) {
         <Button
           variant="ghost"
           className={cn(
-            "gap-2 h-9 px-3 hover:bg-muted/50",
+            "gap-2 h-9 px-3 hover:bg-muted/50 focus-ring-primary",
             className
           )}
+          aria-label={selectedBrand?.name ? `Selected brand: ${selectedBrand.name}` : "Select a brand"}
         >
           {/* Brand Avatar */}
           <div
             className="flex items-center justify-center h-6 w-6 rounded-md text-xs font-semibold text-white"
             style={{ backgroundColor: getBrandColor(selectedBrand || {}) }}
+            aria-hidden="true"
           >
             {selectedBrand?.logoUrl ? (
               <img
                 src={selectedBrand.logoUrl}
-                alt={selectedBrand.name}
+                alt=""
                 className="h-full w-full rounded-md object-cover"
               />
             ) : (
@@ -114,7 +116,7 @@ export function BrandSelector({ className }: BrandSelectorProps) {
           </span>
 
           {/* Chevron */}
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
 
@@ -128,7 +130,7 @@ export function BrandSelector({ className }: BrandSelectorProps) {
         <DropdownMenuSeparator />
 
         {/* Brand List */}
-        <div className="max-h-[240px] overflow-y-auto">
+        <div className="max-h-[240px] overflow-y-auto" role="group" aria-label="Available brands">
           {brands.map((brand) => (
             <DropdownMenuItem
               key={brand.id}
@@ -137,16 +139,18 @@ export function BrandSelector({ className }: BrandSelectorProps) {
                 "gap-3 cursor-pointer",
                 selectedBrand?.id === brand.id && "bg-primary/10"
               )}
+              aria-current={selectedBrand?.id === brand.id ? "true" : undefined}
             >
               {/* Brand Avatar */}
               <div
                 className="flex items-center justify-center h-8 w-8 rounded-md text-xs font-semibold text-white shrink-0"
                 style={{ backgroundColor: getBrandColor(brand) }}
+                aria-hidden="true"
               >
                 {brand.logoUrl ? (
                   <img
                     src={brand.logoUrl}
-                    alt={brand.name}
+                    alt=""
                     className="h-full w-full rounded-md object-cover"
                   />
                 ) : (
@@ -166,7 +170,7 @@ export function BrandSelector({ className }: BrandSelectorProps) {
 
               {/* Selected Indicator */}
               {selectedBrand?.id === brand.id && (
-                <div className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                <div className="h-2 w-2 rounded-full bg-primary shrink-0" aria-label="Currently selected" />
               )}
             </DropdownMenuItem>
           ))}
@@ -187,7 +191,11 @@ export function BrandSelector({ className }: BrandSelectorProps) {
           <div className="px-2 py-2 text-xs text-muted-foreground">
             <p>
               Brand limit reached ({meta?.limit}).{" "}
-              <a href="/dashboard/settings?tab=billing" className="text-primary hover:underline">
+              <a
+                href="/dashboard/settings?tab=billing"
+                className="text-primary hover:underline focus-ring-primary rounded-sm"
+                aria-label="Upgrade to add more brands"
+              >
                 Upgrade
               </a>{" "}
               for more.

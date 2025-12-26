@@ -87,11 +87,13 @@ export function FormField<
                 placeholder={placeholder}
                 disabled={disabled}
                 rows={rows}
+                aria-invalid={!!error}
+                aria-describedby={errorMessage ? `${name}-error` : description ? `${name}-description` : undefined}
                 className={cn(
                   "w-full rounded-lg px-4 py-3",
                   "bg-muted/50 border text-foreground placeholder:text-muted-foreground",
-                  "focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary",
-                  "transition-all duration-150 resize-none",
+                  "focus-ring-input",
+                  "resize-none",
                   "disabled:opacity-50 disabled:cursor-not-allowed",
                   error ? "border-error" : "border-border",
                   icon && "pl-10",
@@ -106,11 +108,12 @@ export function FormField<
                 placeholder={placeholder}
                 disabled={disabled}
                 autoComplete={autoComplete}
+                aria-invalid={!!error}
+                aria-describedby={errorMessage ? `${name}-error` : description ? `${name}-description` : undefined}
                 className={cn(
                   "w-full h-11 rounded-lg px-4",
                   "bg-muted/50 border text-foreground placeholder:text-muted-foreground",
-                  "focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary",
-                  "transition-all duration-150",
+                  "focus-ring-input",
                   "disabled:opacity-50 disabled:cursor-not-allowed",
                   error ? "border-error" : "border-border",
                   icon && "pl-10",
@@ -124,7 +127,8 @@ export function FormField<
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus-ring-primary rounded"
               >
                 {showPassword ? (
                   <EyeOff className="w-4 h-4" />
@@ -136,11 +140,11 @@ export function FormField<
           </div>
 
           {description && !errorMessage && (
-            <p className="text-xs text-muted-foreground">{description}</p>
+            <p id={`${name}-description`} className="text-xs text-muted-foreground">{description}</p>
           )}
 
           {errorMessage && (
-            <p className="text-xs text-error flex items-center gap-1">
+            <p id={`${name}-error`} className="text-xs text-error flex items-center gap-1" role="alert">
               <AlertCircle className="w-3 h-3" />
               {errorMessage}
             </p>

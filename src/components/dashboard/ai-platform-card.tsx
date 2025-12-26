@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +11,9 @@ interface AIPlatformCardProps {
   change?: number;
   mentions?: number;
   className?: string;
+  onClick?: () => void;
+  href?: string;
+  ariaLabel?: string;
 }
 
 const platformConfig = {
@@ -51,6 +55,9 @@ export function AIPlatformCard({
   change = 0,
   mentions = 0,
   className,
+  onClick,
+  href,
+  ariaLabel,
 }: AIPlatformCardProps) {
   const config = platformConfig[platform];
   const [displayScore, setDisplayScore] = React.useState(0);
@@ -85,8 +92,18 @@ export function AIPlatformCard({
     return "text-muted-foreground";
   };
 
-  return (
-    <div className={cn("card-tertiary group hover:card-secondary transition-all duration-200", className)}>
+  const isInteractive = !!(onClick || href);
+  const cardClass = cn(
+    "card-tertiary group hover:card-secondary transition-all duration-200",
+    className
+  );
+  const interactiveClass = cn(
+    cardClass,
+    "focus-ring-primary cursor-pointer"
+  );
+
+  const cardContent = (
+    <>
       {/* Platform Header */}
       <div className="flex items-center gap-3 mb-3">
         <div
@@ -121,6 +138,39 @@ export function AIPlatformCard({
           style={{ width: `${score}%` }}
         />
       </div>
+    </>
+  );
+
+  // Interactive card with href (navigation)
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={interactiveClass}
+        aria-label={ariaLabel || `View ${config.name} details`}
+      >
+        {cardContent}
+      </Link>
+    );
+  }
+
+  // Interactive card with onClick (action)
+  if (onClick) {
+    return (
+      <button
+        onClick={onClick}
+        className={cn(interactiveClass, "text-left w-full")}
+        aria-label={ariaLabel || `Select ${config.name}`}
+      >
+        {cardContent}
+      </button>
+    );
+  }
+
+  // Non-interactive card
+  return (
+    <div className={cardClass}>
+      {cardContent}
     </div>
   );
 }

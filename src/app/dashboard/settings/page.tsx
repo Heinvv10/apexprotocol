@@ -295,7 +295,8 @@ export default function SettingsPage() {
                   <button
                     key={item.id}
                     onClick={() => handleSectionChange(item.id)}
-                    className={`settings-nav-item ${isActive ? "active" : ""}`}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`settings-nav-item focus-ring-primary ${isActive ? "active" : ""}`}
                   >
                     <Icon className="w-4 h-4" />
                     <span>{item.label}</span>
@@ -378,26 +379,28 @@ export default function SettingsPage() {
 
                 {/* Brand Name */}
                 <div className="space-y-3">
-                  <label className="text-sm font-medium text-foreground">Brand Name</label>
+                  <label htmlFor="brand-name" className="text-sm font-medium text-foreground">Brand Name</label>
                   <input
+                    id="brand-name"
                     type="text"
                     value={brandName}
                     onChange={(e) => setBrandName(e.target.value)}
                     placeholder="Enter your brand name"
-                    className="settings-input w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
+                    className="settings-input w-full bg-transparent text-foreground placeholder:text-muted-foreground focus-ring-input"
                     disabled={isLoading}
                   />
                 </div>
 
                 {/* Website URL */}
                 <div className="space-y-3">
-                  <label className="text-sm font-medium text-foreground">Website URL</label>
+                  <label htmlFor="website-url" className="text-sm font-medium text-foreground">Website URL</label>
                   <input
+                    id="website-url"
                     type="url"
                     value={websiteUrl}
                     onChange={(e) => setWebsiteUrl(e.target.value)}
                     placeholder="https://example.com"
-                    className="settings-input w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
+                    className="settings-input w-full bg-transparent text-foreground placeholder:text-muted-foreground focus-ring-input"
                     disabled={isLoading}
                   />
                 </div>
@@ -409,25 +412,30 @@ export default function SettingsPage() {
                   <div className="space-y-3">
                     {/* Language Dropdown */}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Language</span>
+                      <span id="language-label" className="text-sm text-muted-foreground">Language</span>
                       <div className="relative">
                         <button
-                          className="settings-dropdown"
+                          className="settings-dropdown focus-ring-primary"
                           onClick={() => {
                             setLanguageDropdownOpen(!languageDropdownOpen);
                             setTimezoneDropdownOpen(false);
                           }}
                           disabled={isLoading}
+                          aria-expanded={languageDropdownOpen}
+                          aria-haspopup="listbox"
+                          aria-labelledby="language-label"
                         >
                           <span>{LANGUAGES.find(l => l.code === language)?.name || "Select language"}</span>
-                          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${languageDropdownOpen ? "rotate-180" : ""}`} />
+                          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${languageDropdownOpen ? "rotate-180" : ""}`} aria-hidden="true" />
                         </button>
                         {languageDropdownOpen && (
-                          <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-white/10 rounded-lg shadow-lg z-50 py-1 max-h-60 overflow-y-auto">
+                          <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-white/10 rounded-lg shadow-lg z-50 py-1 max-h-60 overflow-y-auto" role="listbox" aria-labelledby="language-label">
                             {LANGUAGES.map((lang) => (
                               <button
                                 key={lang.code}
-                                className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors ${language === lang.code ? "text-primary" : "text-muted-foreground"}`}
+                                role="option"
+                                aria-selected={language === lang.code}
+                                className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors focus-ring-menu ${language === lang.code ? "text-primary" : "text-muted-foreground"}`}
                                 onClick={() => {
                                   setLanguage(lang.code);
                                   setLanguageDropdownOpen(false);
@@ -443,25 +451,30 @@ export default function SettingsPage() {
 
                     {/* Timezone Dropdown */}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Timezone</span>
+                      <span id="timezone-label" className="text-sm text-muted-foreground">Timezone</span>
                       <div className="relative">
                         <button
-                          className="settings-dropdown"
+                          className="settings-dropdown focus-ring-primary"
                           onClick={() => {
                             setTimezoneDropdownOpen(!timezoneDropdownOpen);
                             setLanguageDropdownOpen(false);
                           }}
                           disabled={isLoading}
+                          aria-expanded={timezoneDropdownOpen}
+                          aria-haspopup="listbox"
+                          aria-labelledby="timezone-label"
                         >
                           <span>{TIMEZONES.find(t => t.code === timezone)?.name || "Select timezone"}</span>
-                          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${timezoneDropdownOpen ? "rotate-180" : ""}`} />
+                          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${timezoneDropdownOpen ? "rotate-180" : ""}`} aria-hidden="true" />
                         </button>
                         {timezoneDropdownOpen && (
-                          <div className="absolute right-0 top-full mt-1 w-64 bg-card border border-white/10 rounded-lg shadow-lg z-50 py-1 max-h-60 overflow-y-auto">
+                          <div className="absolute right-0 top-full mt-1 w-64 bg-card border border-white/10 rounded-lg shadow-lg z-50 py-1 max-h-60 overflow-y-auto" role="listbox" aria-labelledby="timezone-label">
                             {TIMEZONES.map((tz) => (
                               <button
                                 key={tz.code}
-                                className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors ${timezone === tz.code ? "text-primary" : "text-muted-foreground"}`}
+                                role="option"
+                                aria-selected={timezone === tz.code}
+                                className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors focus-ring-menu ${timezone === tz.code ? "text-primary" : "text-muted-foreground"}`}
                                 onClick={() => {
                                   setTimezone(tz.code);
                                   setTimezoneDropdownOpen(false);
@@ -539,34 +552,43 @@ export default function SettingsPage() {
 
                   <div className="space-y-3">
                     <button
-                      className="settings-toggle-row w-full"
+                      className="settings-toggle-row w-full focus-ring-primary"
                       onClick={() => setShareUsageData(!shareUsageData)}
                       disabled={isLoading}
+                      role="switch"
+                      aria-checked={shareUsageData}
+                      aria-label="Share anonymous usage data to help improve the platform"
                     >
                       <span className="text-xs text-muted-foreground text-left">Share anonymous usage data<br/>Help improve the platform</span>
-                      <div className={`settings-toggle ${shareUsageData ? "active" : ""}`}>
+                      <div className={`settings-toggle ${shareUsageData ? "active" : ""}`} aria-hidden="true">
                         <div className="settings-toggle-knob" />
                       </div>
                     </button>
 
                     <button
-                      className="settings-toggle-row w-full"
+                      className="settings-toggle-row w-full focus-ring-primary"
                       onClick={() => setAiModelFeedback(!aiModelFeedback)}
                       disabled={isLoading}
+                      role="switch"
+                      aria-checked={aiModelFeedback}
+                      aria-label="Allow AI to learn from your usage for model feedback"
                     >
                       <span className="text-xs text-muted-foreground text-left">AI model feedback<br/>Allow AI to learn from your usage</span>
-                      <div className={`settings-toggle ${aiModelFeedback ? "active" : ""}`}>
+                      <div className={`settings-toggle ${aiModelFeedback ? "active" : ""}`} aria-hidden="true">
                         <div className="settings-toggle-knob" />
                       </div>
                     </button>
 
                     <button
-                      className="settings-toggle-row w-full"
+                      className="settings-toggle-row w-full focus-ring-primary"
                       onClick={() => setMarketingComms(!marketingComms)}
                       disabled={isLoading}
+                      role="switch"
+                      aria-checked={marketingComms}
+                      aria-label="Receive product updates and marketing communications"
                     >
                       <span className="text-xs text-muted-foreground text-left">Marketing communications<br/>Receive product updates and tips</span>
-                      <div className={`settings-toggle ${marketingComms ? "active" : ""}`}>
+                      <div className={`settings-toggle ${marketingComms ? "active" : ""}`} aria-hidden="true">
                         <div className="settings-toggle-knob" />
                       </div>
                     </button>
@@ -590,7 +612,7 @@ export default function SettingsPage() {
                 </div>
               )}
               <button
-                className="settings-save-btn flex items-center gap-2"
+                className="settings-save-btn flex items-center gap-2 focus-ring-offset"
                 onClick={handleSaveSettings}
                 disabled={isSaving || isLoading}
               >
@@ -634,10 +656,11 @@ export default function SettingsPage() {
           <div className="bg-card border border-white/10 rounded-xl w-full max-w-md shadow-2xl">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <h2 className="text-lg font-semibold text-foreground">Configure Brand</h2>
+              <h2 id="brand-modal-title" className="text-lg font-semibold text-foreground">Configure Brand</h2>
               <button
                 onClick={() => setBrandModalOpen(false)}
-                className="p-1 rounded hover:bg-white/10 transition-colors"
+                aria-label="Close brand configuration modal"
+                className="p-1 rounded hover:bg-white/10 transition-colors focus-ring-primary"
               >
                 <X className="w-5 h-5 text-muted-foreground" />
               </button>
@@ -653,6 +676,7 @@ export default function SettingsPage() {
                   <div
                     className="w-20 h-20 rounded-lg border border-white/10 flex items-center justify-center overflow-hidden"
                     style={{ background: `linear-gradient(135deg, ${primaryColor}22, ${accentColor}22)` }}
+                    aria-hidden="true"
                   >
                     {logoUrl ? (
                       <img
@@ -671,12 +695,13 @@ export default function SettingsPage() {
                       type="file"
                       accept="image/*"
                       onChange={handleLogoUpload}
+                      aria-label="Upload brand logo"
                       className="hidden"
                     />
                     <button
                       onClick={() => logoInputRef.current?.click()}
                       disabled={isUploadingLogo}
-                      className="w-full px-4 py-2 text-sm bg-white/5 border border-white/10 rounded-lg text-foreground hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+                      className="w-full px-4 py-2 text-sm bg-white/5 border border-white/10 rounded-lg text-foreground hover:bg-white/10 transition-colors flex items-center justify-center gap-2 focus-ring-primary"
                     >
                       {isUploadingLogo ? (
                         <>
@@ -693,7 +718,7 @@ export default function SettingsPage() {
                     {logoUrl && (
                       <button
                         onClick={() => setLogoUrl(null)}
-                        className="w-full px-4 py-1.5 text-xs text-error hover:text-error/80 transition-colors"
+                        className="w-full px-4 py-1.5 text-xs text-error hover:text-error/80 transition-colors focus-ring-destructive"
                       >
                         Remove Logo
                       </button>
@@ -705,50 +730,59 @@ export default function SettingsPage() {
 
               {/* App Name */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">App Name</label>
+                <label htmlFor="app-name" className="text-sm font-medium text-foreground">App Name</label>
                 <input
+                  id="app-name"
                   type="text"
                   value={appName}
                   onChange={(e) => setAppName(e.target.value)}
                   placeholder="Your brand name"
-                  className="settings-input w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
+                  className="settings-input w-full bg-transparent text-foreground placeholder:text-muted-foreground focus-ring-input"
                 />
               </div>
 
               {/* Primary Color */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Primary Color</label>
+                <label htmlFor="primary-color" className="text-sm font-medium text-foreground">Primary Color</label>
                 <div className="flex items-center gap-3">
                   <input
+                    id="primary-color-picker"
                     type="color"
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}
-                    className="w-10 h-10 rounded cursor-pointer border-0 bg-transparent"
+                    aria-label="Select primary color"
+                    className="w-10 h-10 rounded cursor-pointer border-0 bg-transparent focus-ring-primary"
                   />
                   <input
+                    id="primary-color"
                     type="text"
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}
-                    className="settings-input flex-1 bg-transparent text-foreground placeholder:text-muted-foreground outline-none uppercase"
+                    placeholder="#4926FA"
+                    className="settings-input flex-1 bg-transparent text-foreground placeholder:text-muted-foreground focus-ring-input uppercase"
                   />
                 </div>
               </div>
 
               {/* Accent Color */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Accent Color</label>
+                <label htmlFor="accent-color" className="text-sm font-medium text-foreground">Accent Color</label>
                 <div className="flex items-center gap-3">
                   <input
+                    id="accent-color-picker"
                     type="color"
                     value={accentColor}
                     onChange={(e) => setAccentColor(e.target.value)}
-                    className="w-10 h-10 rounded cursor-pointer border-0 bg-transparent"
+                    aria-label="Select accent color"
+                    className="w-10 h-10 rounded cursor-pointer border-0 bg-transparent focus-ring-primary"
                   />
                   <input
+                    id="accent-color"
                     type="text"
                     value={accentColor}
                     onChange={(e) => setAccentColor(e.target.value)}
-                    className="settings-input flex-1 bg-transparent text-foreground placeholder:text-muted-foreground outline-none uppercase"
+                    placeholder="#D82F71"
+                    className="settings-input flex-1 bg-transparent text-foreground placeholder:text-muted-foreground focus-ring-input uppercase"
                   />
                 </div>
               </div>
@@ -776,13 +810,13 @@ export default function SettingsPage() {
             <div className="flex items-center justify-end gap-3 p-4 border-t border-white/10">
               <button
                 onClick={() => setBrandModalOpen(false)}
-                className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors focus-ring-primary rounded"
               >
                 Cancel
               </button>
               <button
                 onClick={() => setBrandModalOpen(false)}
-                className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors focus-ring-offset"
               >
                 Apply
               </button>

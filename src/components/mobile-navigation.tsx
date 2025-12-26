@@ -61,6 +61,7 @@ export function MobileBottomNav() {
               className={cn(
                 "flex flex-col items-center justify-center gap-1 w-16 h-full min-h-[44px] min-w-[44px]",
                 "transition-colors duration-150",
+                "focus-ring-primary rounded-lg",
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
@@ -90,7 +91,7 @@ export function MobileMenuTrigger({
   return (
     <button
       onClick={onToggle}
-      className="lg:hidden flex items-center justify-center w-10 h-10 min-w-[44px] min-h-[44px] rounded-lg hover:bg-white/5 transition-colors"
+      className="lg:hidden flex items-center justify-center w-10 h-10 min-w-[44px] min-h-[44px] rounded-lg hover:bg-white/5 transition-colors focus-ring-primary"
       aria-label={isOpen ? "Close menu" : "Open menu"}
     >
       {isOpen ? (
@@ -169,7 +170,8 @@ export function MobileSidebarDrawer({
           </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/5"
+            className="w-10 h-10 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/5 focus-ring-primary"
+            aria-label="Close menu"
           >
             <X className="w-5 h-5 text-muted-foreground" />
           </button>
@@ -188,6 +190,7 @@ export function MobileSidebarDrawer({
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-lg min-h-[44px]",
                   "transition-colors duration-150",
+                  "focus-ring-primary",
                   isActive
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:text-foreground hover:bg-white/5"
@@ -203,7 +206,7 @@ export function MobileSidebarDrawer({
 
         {/* Footer - Integrated with Clerk */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
-          <Link href="/user-profile" className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-white/5 transition-colors">
+          <Link href="/user-profile" className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-white/5 transition-colors focus-ring-primary" aria-label="View user profile">
             {isUserLoaded && user ? (
               <>
                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
@@ -296,6 +299,7 @@ interface SwipeableCardProps {
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
   className?: string;
+  ariaLabel?: string;
 }
 
 export function SwipeableCard({
@@ -303,10 +307,12 @@ export function SwipeableCard({
   onSwipeLeft,
   onSwipeRight,
   className,
+  ariaLabel = "Swipeable card - Use arrow keys or swipe to interact",
 }: SwipeableCardProps) {
   const [startX, setStartX] = React.useState(0);
   const [offsetX, setOffsetX] = React.useState(0);
   const [isSwiping, setIsSwiping] = React.useState(false);
+  const [announcement, setAnnouncement] = React.useState("");
 
   const threshold = 80; // Minimum swipe distance
 
@@ -326,29 +332,81 @@ export function SwipeableCard({
     if (Math.abs(offsetX) > threshold) {
       if (offsetX > 0 && onSwipeRight) {
         onSwipeRight();
+        setAnnouncement("Swiped right - accepted");
       } else if (offsetX < 0 && onSwipeLeft) {
         onSwipeLeft();
+        setAnnouncement("Swiped left - dismissed");
       }
     }
     setOffsetX(0);
     setIsSwiping(false);
   };
 
+  // Keyboard navigation support
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Arrow Right or Enter for accept/swipe right
+    if ((e.key === "ArrowRight" || e.key === "Enter") && onSwipeRight) {
+      e.preventDefault();
+      onSwipeRight();
+      setAnnouncement("Accepted");
+      // Visual feedback for keyboard action
+      setOffsetX(150);
+      setTimeout(() => setOffsetX(0), 200);
+    }
+    // Arrow Left or Delete/Backspace for dismiss/swipe left
+    else if ((e.key === "ArrowLeft" || e.key === "Delete" || e.key === "Backspace") && onSwipeLeft) {
+      e.preventDefault();
+      onSwipeLeft();
+      setAnnouncement("Dismissed");
+      // Visual feedback for keyboard action
+      setOffsetX(-150);
+      setTimeout(() => setOffsetX(0), 200);
+    }
+  };
+
+  // Build keyboard instructions for aria-label
+  const keyboardInstructions = React.useMemo(() => {
+    const instructions: string[] = [];
+    if (onSwipeRight) {
+      instructions.push("Press right arrow or Enter to accept");
+    }
+    if (onSwipeLeft) {
+      instructions.push("Press left arrow or Delete to dismiss");
+    }
+    return instructions.join(". ");
+  }, [onSwipeRight, onSwipeLeft]);
+
+  const fullAriaLabel = `${ariaLabel}. ${keyboardInstructions}`;
+
   return (
     <div
-      className={cn("relative touch-pan-y", className)}
+      className={cn("relative touch-pan-y focus-ring-primary rounded-lg", className)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="group"
+      aria-label={fullAriaLabel}
     >
+      {/* ARIA live region for screen reader announcements */}
+      <div
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {announcement}
+      </div>
+
       {/* Swipe indicators */}
       {offsetX > threshold / 2 && (
-        <div className="absolute left-0 top-0 bottom-0 w-16 bg-success/20 rounded-l-lg flex items-center justify-center">
+        <div className="absolute left-0 top-0 bottom-0 w-16 bg-success/20 rounded-l-lg flex items-center justify-center" aria-hidden="true">
           <span className="text-success text-lg">✓</span>
         </div>
       )}
       {offsetX < -threshold / 2 && (
-        <div className="absolute right-0 top-0 bottom-0 w-16 bg-error/20 rounded-r-lg flex items-center justify-center">
+        <div className="absolute right-0 top-0 bottom-0 w-16 bg-error/20 rounded-r-lg flex items-center justify-center" aria-hidden="true">
           <span className="text-error text-lg">✕</span>
         </div>
       )}
@@ -375,6 +433,9 @@ interface BottomSheetProps {
 }
 
 export function BottomSheet({ isOpen, onClose, title, children }: BottomSheetProps) {
+  const sheetRef = React.useRef<HTMLDivElement>(null);
+  const previousFocusRef = React.useRef<HTMLElement | null>(null);
+
   // Prevent body scroll when open
   React.useEffect(() => {
     if (isOpen) {
@@ -387,6 +448,72 @@ export function BottomSheet({ isOpen, onClose, title, children }: BottomSheetPro
     };
   }, [isOpen]);
 
+  // Handle Escape key to close
+  React.useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isOpen, onClose]);
+
+  // Focus management: trap focus within sheet and restore on close
+  React.useEffect(() => {
+    if (isOpen && sheetRef.current) {
+      // Save currently focused element
+      previousFocusRef.current = document.activeElement as HTMLElement;
+
+      // Move focus to first focusable element in sheet
+      const focusableElements = sheetRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+
+      if (focusableElements.length > 0) {
+        focusableElements[0].focus();
+      }
+
+      // Focus trap: cycle focus within sheet
+      const handleTabKey = (event: KeyboardEvent) => {
+        if (event.key !== "Tab" || !sheetRef.current) return;
+
+        const focusableElements = Array.from(
+          sheetRef.current.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          )
+        );
+
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        // Shift + Tab
+        if (event.shiftKey) {
+          if (document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          // Tab
+          if (document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+          }
+        }
+      };
+
+      document.addEventListener("keydown", handleTabKey);
+      return () => document.removeEventListener("keydown", handleTabKey);
+    } else if (!isOpen && previousFocusRef.current) {
+      // Restore focus to previously focused element
+      previousFocusRef.current.focus();
+      previousFocusRef.current = null;
+    }
+  }, [isOpen]);
+
   return (
     <>
       {/* Backdrop */}
@@ -396,10 +523,15 @@ export function BottomSheet({ isOpen, onClose, title, children }: BottomSheetPro
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Sheet */}
       <div
+        ref={sheetRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title || "Bottom sheet"}
         className={cn(
           "lg:hidden fixed bottom-0 left-0 right-0 z-50",
           "bg-[#0A0D1A] rounded-t-2xl border-t border-white/10",
@@ -408,8 +540,8 @@ export function BottomSheet({ isOpen, onClose, title, children }: BottomSheetPro
           isOpen ? "translate-y-0" : "translate-y-full"
         )}
       >
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-2">
+        {/* Handle - decorative only, not focusable */}
+        <div className="flex justify-center pt-3 pb-2" aria-hidden="true">
           <div className="w-10 h-1 bg-white/20 rounded-full" />
         </div>
 

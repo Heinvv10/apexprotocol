@@ -2,18 +2,64 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card"
-      className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
-        className
-      )}
-      {...props}
-    />
-  )
+interface CardProps extends React.ComponentProps<"div"> {
+  /**
+   * Makes the card interactive with focus indicators and hover effects
+   * Automatically detected if onClick is provided
+   */
+  interactive?: boolean;
+  /**
+   * Optional onClick handler - automatically makes card interactive
+   */
+  onClick?: () => void;
+  /**
+   * ARIA label for interactive cards
+   */
+  "aria-label"?: string;
+  /**
+   * Custom element type or component to render as (e.g., Link)
+   * Defaults to "div" for non-interactive, "button" for interactive with onClick
+   */
+  as?: React.ElementType;
 }
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, interactive, onClick, as, ...props }, ref) => {
+    // Determine if card is interactive
+    const isInteractive = interactive || Boolean(onClick);
+
+    // Determine the component to render
+    const Component = as || (onClick ? "button" : "div");
+
+    // Interactive styling - add focus indicators and hover effects
+    const interactiveClass = isInteractive
+      ? "cursor-pointer hover:bg-card-hover transition-colors focus-ring-primary"
+      : "";
+
+    // Add proper role for interactive cards when using div or custom component
+    const role = isInteractive && Component === "div" ? "button" : undefined;
+    const tabIndex = isInteractive && Component === "div" ? 0 : undefined;
+
+    return (
+      <Component
+        ref={ref}
+        data-slot="card"
+        className={cn(
+          "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
+          interactiveClass,
+          onClick && "text-left w-full", // Ensure button cards are left-aligned and full-width
+          className
+        )}
+        onClick={onClick}
+        role={role}
+        tabIndex={tabIndex}
+        {...props}
+      />
+    );
+  }
+);
+
+Card.displayName = "Card";
 
 function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (

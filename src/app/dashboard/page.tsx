@@ -271,7 +271,7 @@ function EmptyStateDashboard() {
             <Link
               key={step.id}
               href={step.href}
-              className="group"
+              className="group focus-ring-primary rounded-xl"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div
@@ -408,7 +408,7 @@ function EmptyStateDashboard() {
         <div className="text-center pb-8">
           <Link
             href="/dashboard/brands"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all shadow-[0_0_25px_rgba(0,229,204,0.4)] hover:shadow-[0_0_35px_rgba(0,229,204,0.5)]"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all shadow-[0_0_25px_rgba(0,229,204,0.4)] hover:shadow-[0_0_35px_rgba(0,229,204,0.5)] focus-ring-primary"
           >
             <Activity className="w-5 h-5" />
             Get Started
@@ -500,7 +500,7 @@ function MetricCard({
   accentColor: string;
 }) {
   return (
-    <Link href={href} className="group">
+    <Link href={href} className="group focus-ring-primary rounded-xl">
       <div className="card-secondary h-full transition-all duration-300 hover:border-primary/40">
         <div className="flex items-start justify-between">
           <div
@@ -546,7 +546,7 @@ function QuickLink({
   icon: React.ElementType;
 }) {
   return (
-    <Link href={href} className="group">
+    <Link href={href} className="group focus-ring-primary rounded-lg">
       <div className="card-tertiary h-full transition-all hover:border-primary/30">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary/20 transition-colors">
@@ -769,7 +769,7 @@ function PopulatedDashboard({ brandId, brandName }: { brandId: string; brandName
               <h2 className="text-lg font-semibold text-foreground">Top Recommendations</h2>
               <Link
                 href="/dashboard/recommendations"
-                className="text-sm text-primary hover:underline"
+                className="text-sm text-primary hover:underline focus-ring-primary rounded"
               >
                 View all
               </Link>

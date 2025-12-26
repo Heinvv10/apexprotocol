@@ -151,7 +151,7 @@ export function Sidebar({ collapsed = false, onCollapsedChange }: SidebarProps) 
       <Link
         href={item.href}
         className={cn(
-          "sidebar-nav-item relative group",
+          "sidebar-nav-item relative group focus-ring-primary",
           isActive && "active"
         )}
       >
@@ -195,6 +195,7 @@ export function Sidebar({ collapsed = false, onCollapsedChange }: SidebarProps) 
   return (
     <TooltipProvider>
       <aside
+        aria-label="Main sidebar"
         className={cn(
           "flex flex-col h-screen border-r border-sidebar-border sidebar-gradient transition-all duration-300 ease-in-out",
           collapsed ? "w-[68px]" : "w-[240px]"
@@ -202,7 +203,7 @@ export function Sidebar({ collapsed = false, onCollapsedChange }: SidebarProps) 
       >
         {/* Logo/Brand */}
         <div className="flex items-center h-16 px-4 border-b border-sidebar-border">
-          <Link href="/dashboard" className="flex items-center gap-3">
+          <Link href="/dashboard" className="flex items-center gap-3 rounded-lg focus-ring-primary">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg gradient-primary">
               <Zap className="h-5 w-5 text-white" />
             </div>
@@ -214,7 +215,7 @@ export function Sidebar({ collapsed = false, onCollapsedChange }: SidebarProps) 
 
         {/* Main Navigation */}
         <ScrollArea className="flex-1 px-3 py-4">
-          <nav className="space-y-1">
+          <nav id="primary-navigation" aria-label="Primary navigation" className="space-y-1">
             {mainNavItems.map((item) => (
               <NavLink key={item.href} item={item} />
             ))}
@@ -222,7 +223,7 @@ export function Sidebar({ collapsed = false, onCollapsedChange }: SidebarProps) 
 
           <Separator className="my-4 bg-sidebar-border" />
 
-          <nav className="space-y-1">
+          <nav aria-label="Secondary navigation" className="space-y-1">
             {secondaryNavItems.map((item) => (
               <NavLink key={item.href} item={item} />
             ))}
@@ -236,9 +237,10 @@ export function Sidebar({ collapsed = false, onCollapsedChange }: SidebarProps) 
             size="sm"
             onClick={() => onCollapsedChange?.(!collapsed)}
             className={cn(
-              "w-full justify-center transition-all duration-150 ease-in-out",
+              "w-full justify-center transition-all duration-150 ease-in-out focus-ring-primary",
               !collapsed && "justify-start"
             )}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? (
               <ChevronRight className="h-4 w-4" />

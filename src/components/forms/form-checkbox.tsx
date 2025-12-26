@@ -58,7 +58,9 @@ export function FormCheckbox<
                 onChange={field.onChange}
                 onBlur={field.onBlur}
                 disabled={disabled}
-                className="sr-only peer"
+                aria-invalid={!!error}
+                aria-describedby={errorMessage ? `${name}-error` : description ? `${name}-description` : undefined}
+                className="sr-only peer focus-ring-offset"
               />
               <div
                 className={cn(
@@ -67,7 +69,8 @@ export function FormCheckbox<
                   field.value
                     ? "bg-primary border-primary"
                     : "bg-muted/50 border-border group-hover:border-primary/50",
-                  error && "border-error"
+                  error && "border-error",
+                  "peer-focus-visible:ring-ring peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background"
                 )}
               >
                 {field.value && (
@@ -78,8 +81,8 @@ export function FormCheckbox<
 
             <div className="flex-1 min-w-0">
               <span className="text-sm text-foreground">{label}</span>
-              {description && (
-                <p className="text-xs text-muted-foreground mt-0.5">
+              {description && !errorMessage && (
+                <p id={`${name}-description`} className="text-xs text-muted-foreground mt-0.5">
                   {description}
                 </p>
               )}
@@ -87,7 +90,7 @@ export function FormCheckbox<
           </label>
 
           {errorMessage && (
-            <p className="text-xs text-error flex items-center gap-1 ml-8">
+            <p id={`${name}-error`} className="text-xs text-error flex items-center gap-1 ml-8" role="alert">
               <AlertCircle className="w-3 h-3" />
               {errorMessage}
             </p>
@@ -160,19 +163,19 @@ export function FormCheckboxGroup<
         };
 
         return (
-          <div className={cn("space-y-3", className)}>
+          <fieldset className={cn("space-y-3", className)}>
             {label && (
-              <label className="text-sm font-medium text-foreground flex items-center gap-1">
+              <legend className="text-sm font-medium text-foreground flex items-center gap-1">
                 {label}
                 {required && <span className="text-error">*</span>}
-              </label>
+              </legend>
             )}
 
-            {description && (
-              <p className="text-xs text-muted-foreground">{description}</p>
+            {description && !errorMessage && (
+              <p id={`${name}-description`} className="text-xs text-muted-foreground">{description}</p>
             )}
 
-            <div className={cn("grid gap-3", gridCols[columns])}>
+            <div className={cn("grid gap-3", gridCols[columns])} role="group" aria-describedby={errorMessage ? `${name}-error` : description ? `${name}-description` : undefined}>
               {options.map((option) => (
                 <label
                   key={option.value}
@@ -190,7 +193,8 @@ export function FormCheckboxGroup<
                       checked={values.includes(option.value)}
                       onChange={(e) => handleChange(option.value, e.target.checked)}
                       disabled={disabled}
-                      className="sr-only"
+                      aria-invalid={!!error}
+                      className="sr-only peer"
                     />
                     <div
                       className={cn(
@@ -198,7 +202,8 @@ export function FormCheckboxGroup<
                         "flex items-center justify-center",
                         values.includes(option.value)
                           ? "bg-primary border-primary"
-                          : "bg-muted/50 border-border group-hover:border-primary/50"
+                          : "bg-muted/50 border-border group-hover:border-primary/50",
+                        "peer-focus-visible:ring-ring peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background"
                       )}
                     >
                       {values.includes(option.value) && (
@@ -222,12 +227,12 @@ export function FormCheckboxGroup<
             </div>
 
             {errorMessage && (
-              <p className="text-xs text-error flex items-center gap-1">
+              <p id={`${name}-error`} className="text-xs text-error flex items-center gap-1" role="alert">
                 <AlertCircle className="w-3 h-3" />
                 {errorMessage}
               </p>
             )}
-          </div>
+          </fieldset>
         );
       }}
     />
