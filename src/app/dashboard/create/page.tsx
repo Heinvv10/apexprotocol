@@ -220,6 +220,7 @@ function BrandVoicePanel({ brand }: { brand: { voice?: { tone?: string; targetAu
 function CreateEmptyState() {
   const contentTypes = [
     { icon: FileCheck, title: "Content Briefs", description: "AI-optimized briefs with headers, questions, entities", href: "/dashboard/create/brief" },
+    { icon: Bot, title: "Generate AI Content", description: "Create blog posts, FAQs, and press releases with AI", href: "/dashboard/create/generate" },
     { icon: FileText, title: "Articles", description: "Long-form content optimized for AI citation", href: "/dashboard/create/new" },
     { icon: LayoutTemplate, title: "Landing Pages", description: "Conversion-focused pages with structured data", href: "/dashboard/create/new" },
     { icon: Wand2, title: "FAQs", description: "Question-answer format for AI comprehension", href: "/dashboard/create/new" },
@@ -435,6 +436,12 @@ export default function CreatePage() {
           <Button variant="outline">
             <FileCheck className="mr-2 h-4 w-4" />
             Generate Brief
+          </Button>
+        </Link>
+        <Link href="/dashboard/create/generate">
+          <Button variant="outline">
+            <Bot className="mr-2 h-4 w-4" />
+            Generate AI Content
           </Button>
         </Link>
         <Link href="/dashboard/create/new">

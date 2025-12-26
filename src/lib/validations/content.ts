@@ -96,3 +96,16 @@ export const contentFeedbackSchema = z.object({
 });
 
 export type ContentFeedbackFormData = z.infer<typeof contentFeedbackSchema>;
+
+// Content generation schema for AI content generation form
+export const generateContentSchema = z.object({
+  contentType: contentTypeEnum,
+  keywords: z
+    .array(z.string().max(50))
+    .min(1, "Add at least one keyword")
+    .max(10, "Maximum 10 keywords allowed"),
+  brandVoice: z.enum(["professional", "casual", "friendly", "authoritative", "playful"]),
+  aiProvider: z.enum(["chatgpt", "claude"]), // ChatGPT and Claude supported
+});
+
+export type GenerateContentFormData = z.infer<typeof generateContentSchema>;

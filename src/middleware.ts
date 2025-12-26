@@ -46,6 +46,7 @@ const publicRoutes = [
   "/onboarding(.*)",  // Allow onboarding wizard for testing
   "/dashboard(.*)",  // Allow dashboard for testing
   "/api/onboarding(.*)",  // Allow all onboarding APIs
+  "/api/generate",  // Allow content generation API for testing
   "/api/webhooks(.*)",
   "/api/health",
   "/api/status",
