@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useRealtime } from "@upstash/realtime/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { cn } from "@/lib/utils";
+import { cn, formatRelativeTime } from "@/lib/utils";
 import { useNotificationBell, useArchiveNotification } from "@/hooks/useNotifications";
 import { invalidateQueries } from "@/lib/query/client";
 
@@ -66,21 +66,6 @@ function mapNotificationType(apiType: string): NotificationType {
   }
 }
 
-// Format timestamp for display
-function formatTimestamp(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffHours < 1) return "Just now";
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
 export function NotificationsBell({ initialNotifications }: NotificationsBellProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -121,7 +106,7 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
       type: mapNotificationType(n.type),
       title: n.title,
       message: n.message,
-      timestamp: formatTimestamp(n.createdAt),
+      timestamp: formatRelativeTime(n.createdAt),
       read: n.status === "read",
       href: n.actionUrl,
     }));
@@ -333,7 +318,7 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
               href="/dashboard/settings"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors rounded focus-ring-primary"
-            >
+>
               <Settings className="w-3.5 h-3.5" />
               Notification settings
             </Link>

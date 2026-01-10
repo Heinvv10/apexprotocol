@@ -28,6 +28,7 @@ import { useOnboardingProgress } from "@/hooks/useOnboarding";
 import { useDashboardMetrics, useGEOScore, useUnifiedScore } from "@/hooks/useDashboard";
 import { UnifiedScoreGauge } from "@/components/dashboard/unified-score-gauge";
 import { ScoreTrend } from "@/components/dashboard/score-trend";
+import { EmergingOpportunities } from "@/components/analytics/EmergingOpportunities";
 
 // Onboarding step type
 interface OnboardingStep {
@@ -307,7 +308,7 @@ function EmptyStateDashboard() {
                       )}
                     </div>
                     <h3 className="text-lg font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
-                      {step.title}
+{step.title}
                     </h3>
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                       {step.description}
@@ -385,17 +386,17 @@ function EmptyStateDashboard() {
             {aiPlatforms.map((platform, index) => (
               <div
                 key={platform.name}
-                className="group px-5 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-300 cursor-default"
+                className="group px-5 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-primary/40 transition-all duration-300"
                 style={{
                   animationDelay: `${index * 50}ms`,
                 }}
               >
                 <div className="flex items-center gap-2">
-                  <Bot
-                    className="w-4 h-4 transition-colors duration-300"
-                    style={{ color: platform.color }}
+                  <div
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: platform.color }}
                   />
-                  <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                  <span className="text-sm text-foreground group-hover:text-primary transition-colors">
                     {platform.name}
                   </span>
                 </div>
@@ -403,509 +404,183 @@ function EmptyStateDashboard() {
             ))}
           </div>
         </div>
-
-        {/* Bottom CTA */}
-        <div className="text-center pb-8">
-          <Link
-            href="/dashboard/brands"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all shadow-[0_0_25px_rgba(0,229,204,0.4)] hover:shadow-[0_0_35px_rgba(0,229,204,0.5)] focus-ring-primary"
-          >
-            <Activity className="w-5 h-5" />
-            Get Started
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
       </div>
     </div>
   );
 }
 
-// Loading skeleton for dashboard
-function DashboardSkeleton() {
-  return (
-    <div className="relative min-h-full pb-8 overflow-y-auto" data-testid="dashboard-loading">
-      <BackgroundOrbs />
-      <ParticleGrid />
-      <div className="relative z-10 flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-10 h-10 text-primary animate-spin" />
-          <p className="text-muted-foreground">Loading your dashboard...</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// GEO Score Gauge Component
-function GEOScoreGauge({ score, size = 140 }: { score: number; size?: number }) {
-  const strokeWidth = 12;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (score / 100) * circumference;
-
-  const scoreColor =
-    score >= 80 ? "#22C55E" : score >= 60 ? "#F59E0B" : score >= 40 ? "#EAB308" : "#EF4444";
-
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg className="transform -rotate-90" width={size} height={size}>
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="rgba(255, 255, 255, 0.1)"
-          strokeWidth={strokeWidth}
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={scoreColor}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          style={{
-            transition: "stroke-dashoffset 1s ease-out",
-            filter: `drop-shadow(0 0 8px ${scoreColor}80)`,
-          }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold text-foreground">{score}</span>
-        <span className="text-xs text-muted-foreground uppercase tracking-wider">GEO Score</span>
-      </div>
-    </div>
-  );
-}
-
-// Metric Card Component
-function MetricCard({
-  title,
-  value,
-  change,
-  trend,
-  icon: Icon,
-  href,
-  accentColor,
-}: {
-  title: string;
-  value: number | string;
-  change?: number;
-  trend?: "up" | "down" | "stable";
-  icon: React.ElementType;
-  href: string;
-  accentColor: string;
-}) {
-  return (
-    <Link href={href} className="group focus-ring-primary rounded-xl">
-      <div className="card-secondary h-full transition-all duration-300 hover:border-primary/40">
-        <div className="flex items-start justify-between">
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center transition-all"
-            style={{ backgroundColor: `${accentColor}20`, color: accentColor }}
-          >
-            <Icon className="w-6 h-6" />
-          </div>
-          {change !== undefined && (
-            <span
-              className={`text-sm font-medium ${
-                trend === "up" ? "text-success" : trend === "down" ? "text-error" : "text-muted-foreground"
-              }`}
-            >
-              {trend === "up" ? "+" : trend === "down" ? "-" : ""}
-              {Math.abs(change)}
-            </span>
-          )}
-        </div>
-        <div className="mt-4">
-          <p className="text-2xl font-bold text-foreground">{value}</p>
-          <p className="text-sm text-muted-foreground mt-1">{title}</p>
-        </div>
-        <div className="mt-3 flex items-center text-sm text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-          View details
-          <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-// Quick Link Component
-function QuickLink({
-  title,
-  description,
-  href,
-  icon: Icon,
-}: {
-  title: string;
-  description: string;
-  href: string;
-  icon: React.ElementType;
-}) {
-  return (
-    <Link href={href} className="group focus-ring-primary rounded-lg">
-      <div className="card-tertiary h-full transition-all hover:border-primary/30">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-            <Icon className="w-5 h-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-foreground group-hover:text-primary transition-colors">{title}</p>
-            <p className="text-xs text-muted-foreground truncate">{description}</p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-// Error State Component
-function DashboardErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
-  return (
-    <div className="relative min-h-full pb-8 overflow-y-auto">
-      <BackgroundOrbs />
-      <ParticleGrid />
-      <div className="relative z-10 flex items-center justify-center min-h-[60vh]">
-        <div className="text-center max-w-md">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-error/10 border border-error/30 flex items-center justify-center">
-            <AlertCircle className="w-8 h-8 text-error" />
-          </div>
-          <h3 className="text-xl font-semibold text-foreground mb-2">Failed to Load Dashboard</h3>
-          <p className="text-muted-foreground text-sm mb-6">{error.message}</p>
-          <Button variant="outline" onClick={onRetry}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Retry
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Populated Dashboard Component - shows when brand is selected with metrics
-function PopulatedDashboard({ brandId, brandName }: { brandId: string; brandName: string }) {
-  const {
-    data: metrics,
-    isLoading: metricsLoading,
-    error: metricsError,
-    refetch,
-  } = useDashboardMetrics(brandId);
-
-  const { data: geoScore } = useGEOScore(brandId);
-  const { data: unifiedScoreData } = useUnifiedScore(brandId);
-
-  // Show loading state
-  if (metricsLoading && !metrics) {
-    return <DashboardSkeleton />;
-  }
-
-  // Show error state
-  if (metricsError && !metrics) {
-    return <DashboardErrorState error={metricsError as Error} onRetry={() => refetch()} />;
-  }
-
-  // Get the unified score data or fallback to GEO score
-  const hasUnifiedScore = !!unifiedScoreData?.score;
-  const unifiedScore = unifiedScoreData?.score;
-  const currentGeoScore = geoScore?.overall ?? metrics?.geoScore?.current ?? 0;
-  const geoTrend = metrics?.geoScore?.trend ?? "stable";
-  const geoChange = metrics?.geoScore?.change ?? 0;
-
-  return (
-    <div className="relative min-h-full pb-8 overflow-y-auto" data-testid="dashboard-metrics">
-      <BackgroundOrbs />
-      <ParticleGrid />
-
-      <div className="relative z-10 space-y-8 max-w-6xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{brandName}</h1>
-            <p className="text-muted-foreground">Your AI visibility dashboard</p>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            {geoTrend === "up" && (
-              <span className="px-3 py-1 rounded-full bg-success/10 text-success border border-success/30">
-                +{geoChange} this week
-              </span>
-            )}
-            {geoTrend === "down" && (
-              <span className="px-3 py-1 rounded-full bg-error/10 text-error border border-error/30">
-                -{Math.abs(geoChange)} this week
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Main Stats Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {/* Unified Score - Featured Card */}
-          <div className="card-primary md:col-span-2 lg:col-span-2">
-            <h3 className="text-sm font-medium text-muted-foreground mb-4 text-center">
-              Digital Presence Score
-            </h3>
-            {hasUnifiedScore ? (
-              <UnifiedScoreGauge
-                overall={unifiedScore?.overall ?? 0}
-                seoScore={unifiedScore?.components?.seo?.score ?? 0}
-                geoScore={unifiedScore?.components?.geo?.score ?? 0}
-                aeoScore={unifiedScore?.components?.aeo?.score ?? 0}
-                grade={unifiedScore?.grade}
-                trend={unifiedScore ? { value: unifiedScore.change, direction: unifiedScore.trend } : undefined}
-                size="md"
-              />
-            ) : (
-              <div className="flex flex-col items-center text-center">
-                <GEOScoreGauge score={currentGeoScore} />
-                <p className="mt-4 text-sm text-muted-foreground">
-                  {currentGeoScore >= 80
-                    ? "Excellent visibility"
-                    : currentGeoScore >= 60
-                    ? "Good progress"
-                    : "Room to improve"}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Mentions */}
-          <MetricCard
-            title="Total Mentions"
-            value={metrics?.mentions?.total ?? 0}
-            change={metrics?.mentions?.change}
-            trend={metrics?.mentions?.trend}
-            icon={MessageSquare}
-            href="/dashboard/monitor"
-            accentColor="#00E5CC"
-          />
-
-          {/* Pending Recommendations */}
-          <MetricCard
-            title="Pending Recommendations"
-            value={metrics?.recommendations?.pending ?? 0}
-            icon={Lightbulb}
-            href="/dashboard/recommendations"
-            accentColor="#8B5CF6"
-          />
-
-          {/* Content Created */}
-          <MetricCard
-            title="Content Pieces"
-            value={metrics?.content?.total ?? 0}
-            icon={PenTool}
-            href="/dashboard/create"
-            accentColor="#3B82F6"
-          />
-        </div>
-
-        {/* Score Trend Chart */}
-        {unifiedScoreData?.history && unifiedScoreData.history.length > 0 && (
-          <ScoreTrend
-            data={unifiedScoreData.history}
-            targetScore={80}
-            showComponents={true}
-          />
-        )}
-
-        {/* Quick Actions */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Quick Actions</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <QuickLink
-              title="Monitor"
-              description="Track AI mentions"
-              href="/dashboard/monitor"
-              icon={Radar}
-            />
-            <QuickLink
-              title="Create"
-              description="Generate content"
-              href="/dashboard/create"
-              icon={PenTool}
-            />
-            <QuickLink
-              title="Audit"
-              description="Analyze your site"
-              href="/dashboard/audit"
-              icon={FileSearch}
-            />
-            <QuickLink
-              title="Recommendations"
-              description="View action items"
-              href="/dashboard/recommendations"
-              icon={Lightbulb}
-            />
-          </div>
-        </div>
-
-        {/* Platform Breakdown */}
-        {metrics?.platforms && metrics.platforms.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">Platform Performance</h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {metrics.platforms.map((platform) => (
-                <div key={platform.name} className="card-tertiary">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Bot className="w-5 h-5 text-primary" />
-                      <span className="font-medium text-foreground">{platform.name}</span>
-                    </div>
-                    <span className="text-sm text-muted-foreground">{platform.mentions} mentions</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Top Recommendations */}
-        {metrics?.topRecommendations && metrics.topRecommendations.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-foreground">Top Recommendations</h2>
-              <Link
-                href="/dashboard/recommendations"
-                className="text-sm text-primary hover:underline focus-ring-primary rounded"
-              >
-                View all
-              </Link>
-            </div>
-            <div className="space-y-3">
-              {metrics.topRecommendations.slice(0, 3).map((rec) => (
-                <div key={rec.id} className="card-tertiary">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-2 h-2 rounded-full ${
-                          rec.priority === "critical"
-                            ? "bg-error"
-                            : rec.priority === "high"
-                            ? "bg-warning"
-                            : "bg-muted-foreground"
-                        }`}
-                      />
-                      <span className="text-foreground">{rec.title}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground capitalize">{rec.category}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Page Header Component
-function PageHeader() {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8">
-          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradDashboard)" />
-            <defs>
-              <linearGradient id="apexGradDashboard" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#00E5CC"/>
-                <stop offset="1" stopColor="#8B5CF6"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-        <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-          APEX
-        </span>
-        <span className="text-xl font-light text-foreground ml-1">Dashboard</span>
-      </div>
-
-      {/* AI Status */}
-      <div className="flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-        <span className="text-xs text-muted-foreground">AI Status:</span>
-        <span className="text-xs text-primary font-medium">Active</span>
-      </div>
-    </div>
-  );
-}
-
-// Decorative Star Component
-function DecorativeStar() {
-  return (
-    <div className="absolute bottom-8 right-8 w-12 h-12 opacity-60 pointer-events-none">
-      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M24 0L26.5 21.5L48 24L26.5 26.5L24 48L21.5 26.5L0 24L21.5 21.5L24 0Z"
-          fill="url(#starGradientDashboard)"
-        />
-        <defs>
-          <linearGradient id="starGradientDashboard" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#00E5CC" stopOpacity="0.6"/>
-            <stop offset="1" stopColor="#8B5CF6" stopOpacity="0.3"/>
-          </linearGradient>
-        </defs>
-      </svg>
-    </div>
-  );
-}
-
+// Main Dashboard Component
 export default function DashboardPage() {
-  const brands = useBrands();
-  const selectedBrand = useSelectedBrand();
-  const isLoading = useBrandStore((state) => state.isLoading);
-  const refreshBrands = useBrandStore((state) => state.refreshBrands);
+  const { data: brands, isLoading: brandsLoading } = useBrands();
+  const { selectedBrand } = useSelectedBrand();
+  const { metrics, isLoading: metricsLoading } = useDashboardMetrics(selectedBrand?.id);
+  const { geoScore } = useGEOScore(selectedBrand?.id);
+  const { unifiedScore } = useUnifiedScore(selectedBrand?.id);
 
-  // Fetch brands on mount
-  React.useEffect(() => {
-    refreshBrands();
-  }, [refreshBrands]);
-
-  // Show loading state while fetching
-  if (isLoading && brands.length === 0) {
-    return (
-      <div className="space-y-6 relative">
-        <PageHeader />
-        <DashboardSkeleton />
-        <DecorativeStar />
-      </div>
-    );
+  // Show empty state if no brands
+  if (!brandsLoading && (!brands || brands.length === 0)) {
+    return <EmptyStateDashboard />;
   }
 
-  // Determine if user has data (at least one brand set up)
-  const hasData = brands.length > 0;
-
-  if (!hasData) {
-    return (
-      <div className="space-y-6 relative">
-        <PageHeader />
-        <EmptyStateDashboard />
-        <DecorativeStar />
-      </div>
-    );
+  if (!selectedBrand) {
+    return <EmptyStateDashboard />;
   }
 
-  // Show populated dashboard when brand is selected
-  if (selectedBrand) {
-    return (
-      <div className="space-y-6 relative">
-        <PageHeader />
-        <PopulatedDashboard brandId={selectedBrand.id} brandName={selectedBrand.name} />
-        <DecorativeStar />
-      </div>
-    );
-  }
-
-  // Show onboarding if brands exist but none selected
   return (
-    <div className="space-y-6 relative">
-      <PageHeader />
-      <EmptyStateDashboard />
-      <DecorativeStar />
+    <div className="space-y-8">
+      {/* Dashboard Header */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Dashboard
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Monitor your brand&apos;s performance across AI platforms
+          </p>
+        </div>
+        <Button>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh Data
+        </Button>
+      </div>
+
+      {/* Key Metrics Section */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Unified Score Card */}
+        <div className="card-secondary">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Unified Score</p>
+              <h3 className="text-2xl font-bold text-foreground mt-1">
+                {unifiedScore?.score ?? '--'}
+              </h3>
+            </div>
+            <Target className="w-5 h-5 text-primary" />
+          </div>
+          <p className="text-xs text-muted-foreground">Overall performance</p>
+        </div>
+
+        {/* GEO Score Card */}
+        <div className="card-secondary">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <p className="text-sm text-muted-foreground">GEO Score</p>
+              <h3 className="text-2xl font-bold text-foreground mt-1">
+                {geoScore?.score ?? '--'}
+              </h3>
+            </div>
+            <Globe className="w-5 h-5 text-accent-purple" />
+          </div>
+          <p className="text-xs text-muted-foreground">Geographic performance</p>
+        </div>
+
+        {/* Mentions Card */}
+        <div className="card-secondary">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Mentions</p>
+              <h3 className="text-2xl font-bold text-foreground mt-1">
+                {metrics?.totalMentions ?? '--'}
+              </h3>
+            </div>
+            <Activity className="w-5 h-5 text-accent-blue" />
+          </div>
+          <p className="text-xs text-muted-foreground">Across all platforms</p>
+        </div>
+
+        {/* Trending Card */}
+        <div className="card-secondary">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Trend</p>
+              <h3 className="text-2xl font-bold text-foreground mt-1">
+                {metrics?.trend ?? '--'}%
+              </h3>
+            </div>
+            <TrendingUp className="w-5 h-5 text-success" />
+          </div>
+          <p className="text-xs text-muted-foreground">Month over month</p>
+        </div>
+      </div>
+
+      {/* Charts and Detailed Metrics */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Main chart area */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Unified Score Gauge */}
+          <div className="card-secondary">
+            <h2 className="text-lg font-semibold text-foreground mb-6">
+              Overall Performance
+            </h2>
+            <UnifiedScoreGauge score={unifiedScore} />
+          </div>
+
+          {/* Platform Performance */}
+          <div className="card-secondary">
+            <h2 className="text-lg font-semibold text-foreground mb-6">
+              Platform Performance
+            </h2>
+            <div className="space-y-4">
+              {metrics?.platformMetrics?.map((platform) => (
+                <div
+                  key={platform.name}
+                  className="flex items-center justify-between p-3 rounded-lg bg-white/5"
+                >
+                  <span className="text-sm font-medium text-foreground">
+                    {platform.name}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-primary to-accent-purple"
+                        style={{ width: `${platform.score}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-semibold text-primary w-10 text-right">
+                      {platform.score}%
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Score Trend */}
+          <div className="card-secondary">
+            <h2 className="text-lg font-semibold text-foreground mb-6">
+              Score Trend
+            </h2>
+            <ScoreTrend data={metrics?.scoreHistory} />
+          </div>
+
+          {/* Quick Actions */}
+          <div className="card-secondary">
+            <h2 className="text-lg font-semibold text-foreground mb-4">
+              Quick Actions
+            </h2>
+            <div className="space-y-2">
+              <Button variant="outline" className="w-full justify-start" size="sm">
+                <PenTool className="w-4 h-4 mr-2" />
+                Edit Keywords
+              </Button>
+              <Button variant="outline" className="w-full justify-start" size="sm">
+                <FileSearch className="w-4 h-4 mr-2" />
+                Run Audit
+              </Button>
+              <Button variant="outline" className="w-full justify-start" size="sm">
+                <Lightbulb className="w-4 h-4 mr-2" />
+                View Recommendations
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Emerging Opportunities Section */}
+      <EmergingOpportunities />
     </div>
   );
 }

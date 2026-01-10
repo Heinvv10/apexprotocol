@@ -4,6 +4,7 @@
  */
 
 import { getClaudeClient, CLAUDE_MODELS } from "./claude";
+import { retry, isNonRetryableError } from "../utils/retry";
 
 // ============================================================================
 // Types
@@ -214,127 +215,140 @@ export async function generateAIRecommendations(
     }
   );
 
-  // Call Claude with retry logic
-  let lastError: Error | null = null;
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    const attemptStartTime = Date.now();
+  // ðŸŸ¢ WORKING: Call Claude with retry utility (replaces manual retry loop)
+  // Preserves all existing behavior: same retry config, error classification, and logging
+  try {
+    const result = await retry(
+      async () => {
+        const attemptStartTime = Date.now();
+        const apiResult = await callClaudeForRecommendations(userPrompt);
+        const aiResponseTime = Date.now() - attemptStartTime;
 
-    try {
-      if (attempt > 1) {
+        // Log AI response metrics (preserved from original)
         console.info(
-          `${LOG_PREFIX} Retry attempt ${attempt}/${MAX_RETRIES}`,
-          { brandId: visibilityData.brandId }
+          `${LOG_PREFIX} AI response received`,
+          {
+            brandId: visibilityData.brandId,
+            responseTimeMs: aiResponseTime,
+            inputTokens: apiResult.usage.input,
+            outputTokens: apiResult.usage.output,
+            totalTokens: apiResult.usage.input + apiResult.usage.output,
+            responseLength: apiResult.text.length,
+          }
         );
-      }
 
-      const result = await callClaudeForRecommendations(userPrompt);
-      const aiResponseTime = Date.now() - attemptStartTime;
-
-      // Log AI response metrics
-      console.info(
-        `${LOG_PREFIX} AI response received`,
-        {
-          brandId: visibilityData.brandId,
-          responseTimeMs: aiResponseTime,
-          inputTokens: result.usage.input,
-          outputTokens: result.usage.output,
-          totalTokens: result.usage.input + result.usage.output,
-          responseLength: result.text.length,
-        }
-      );
-
-      // Parse and validate recommendations
-      const recommendations = parseAndValidateRecommendations(
-        result.text,
-        visibilityData
-      );
-
-      // Calculate impact scores and filter
-      const scoredRecommendations = recommendations
-        .map((rec) => ({
-          ...rec,
-          impactScore: calculateRecommendationImpactScore(rec, visibilityData),
-        }))
-        .filter((rec) => rec.impactScore >= minImpactThreshold)
-        .sort((a, b) => b.impactScore - a.impactScore)
-        .slice(0, maxRecommendations);
-
-      const totalTime = Date.now() - generationStartTime;
-
-      // Log successful generation summary
-      console.info(
-        `${LOG_PREFIX} Generation completed successfully`,
-        {
-          brandId: visibilityData.brandId,
-          totalTimeMs: totalTime,
-          aiResponseTimeMs: aiResponseTime,
-          rawRecommendations: recommendations.length,
-          filteredRecommendations: scoredRecommendations.length,
-          inputTokens: result.usage.input,
-          outputTokens: result.usage.output,
-          priorityBreakdown: {
-            critical: scoredRecommendations.filter((r) => r.priority === "critical").length,
-            high: scoredRecommendations.filter((r) => r.priority === "high").length,
-            medium: scoredRecommendations.filter((r) => r.priority === "medium").length,
-            low: scoredRecommendations.filter((r) => r.priority === "low").length,
-          },
-        }
-      );
-
-      return {
-        success: true,
-        recommendations: scoredRecommendations,
-        tokenUsage: result.usage,
-      };
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      const attemptTime = Date.now() - attemptStartTime;
-
-      console.warn(
-        `${LOG_PREFIX} AI call failed (attempt ${attempt}/${MAX_RETRIES})`,
-        {
-          brandId: visibilityData.brandId,
-          attemptTimeMs: attemptTime,
-          error: lastError.message,
-        }
-      );
-
-      // Don't retry on validation errors
-      if (lastError.message.includes("Invalid JSON")) {
-        console.error(
-          `${LOG_PREFIX} Invalid JSON response from AI - not retrying`,
-          { brandId: visibilityData.brandId }
+        // Parse and validate recommendations
+        const recommendations = parseAndValidateRecommendations(
+          apiResult.text,
+          visibilityData
         );
-        break;
-      }
 
-      // Wait before retry with exponential backoff
-      if (attempt < MAX_RETRIES) {
-        const backoffMs = RETRY_DELAY_MS * Math.pow(2, attempt - 1);
-        console.info(
-          `${LOG_PREFIX} Waiting ${backoffMs}ms before retry`,
-          { brandId: visibilityData.brandId }
-        );
-        await sleep(backoffMs);
+        // Return result with metadata for success handling
+        return {
+          recommendations,
+          usage: apiResult.usage,
+          aiResponseTime,
+        };
+      },
+      {
+        // Same retry configuration as original (MAX_RETRIES=3, RETRY_DELAY_MS=1000ms)
+        maxRetries: MAX_RETRIES,
+        baseDelay: RETRY_DELAY_MS,
+        backoffMultiplier: 2,
+
+        // Preserve error classification: don't retry on Invalid JSON (line 303 pattern)
+        shouldRetry: (error) => !isNonRetryableError(error),
+
+        // Preserve retry attempt logging (line 224-227 pattern)
+        onRetry: (info) => {
+          console.info(
+            `${LOG_PREFIX} Retry attempt ${info.attempt}/${info.maxAttempts}`,
+            { brandId: visibilityData.brandId }
+          );
+          console.info(
+            `${LOG_PREFIX} Waiting ${info.delayMs}ms before retry`,
+            { brandId: visibilityData.brandId }
+          );
+        },
+
+        // Preserve error logging (line 293-300 pattern)
+        onError: (error, attempt) => {
+          console.warn(
+            `${LOG_PREFIX} AI call failed (attempt ${attempt}/${MAX_RETRIES + 1})`,
+            {
+              brandId: visibilityData.brandId,
+              error: error.message,
+            }
+          );
+
+          // Log when non-retryable error is detected (line 304-308 pattern)
+          if (isNonRetryableError(error)) {
+            console.error(
+              `${LOG_PREFIX} Invalid JSON response from AI - not retrying`,
+              { brandId: visibilityData.brandId }
+            );
+          }
+        },
       }
-    }
+    );
+
+    // Calculate impact scores and filter (preserved from original)
+    const scoredRecommendations = result.recommendations
+      .map((rec) => ({
+        ...rec,
+        impactScore: calculateRecommendationImpactScore(rec, visibilityData),
+      }))
+      .filter((rec) => rec.impactScore >= minImpactThreshold)
+      .sort((a, b) => b.impactScore - a.impactScore)
+      .slice(0, maxRecommendations);
+
+    const totalTime = Date.now() - generationStartTime;
+
+    // Log successful generation summary (preserved from original line 265-282)
+    console.info(
+      `${LOG_PREFIX} Generation completed successfully`,
+      {
+        brandId: visibilityData.brandId,
+        totalTimeMs: totalTime,
+        aiResponseTimeMs: result.aiResponseTime,
+        rawRecommendations: result.recommendations.length,
+        filteredRecommendations: scoredRecommendations.length,
+        inputTokens: result.usage.input,
+        outputTokens: result.usage.output,
+        priorityBreakdown: {
+          critical: scoredRecommendations.filter((r) => r.priority === "critical").length,
+          high: scoredRecommendations.filter((r) => r.priority === "high").length,
+          medium: scoredRecommendations.filter((r) => r.priority === "medium").length,
+          low: scoredRecommendations.filter((r) => r.priority === "low").length,
+        },
+      }
+    );
+
+    return {
+      success: true,
+      recommendations: scoredRecommendations,
+      tokenUsage: result.usage,
+    };
+  } catch (error) {
+    // Handle retry exhaustion (preserved from original line 323-337)
+    const lastError = error instanceof Error ? error : new Error(String(error));
+    const totalTime = Date.now() - generationStartTime;
+
+    console.error(
+      `${LOG_PREFIX} Generation failed after all retries`,
+      {
+        brandId: visibilityData.brandId,
+        totalTimeMs: totalTime,
+        error: lastError.message,
+      }
+    );
+
+    return {
+      success: false,
+      recommendations: [],
+      error: lastError.message || "Failed to generate recommendations",
+    };
   }
-
-  const totalTime = Date.now() - generationStartTime;
-  console.error(
-    `${LOG_PREFIX} Generation failed after all retries`,
-    {
-      brandId: visibilityData.brandId,
-      totalTimeMs: totalTime,
-      error: lastError?.message,
-    }
-  );
-
-  return {
-    success: false,
-    recommendations: [],
-    error: lastError?.message || "Failed to generate recommendations",
-  };
 }
 
 /**
@@ -958,13 +972,6 @@ export function calculateRecommendationImpactScore(
 // ============================================================================
 // Utilities
 // ============================================================================
-
-/**
- * Sleep utility for retry delays
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 /**
  * Deduplicate recommendations by fuzzy title matching

@@ -394,3 +394,22 @@ export {
   type StorageTracking,
   type NewStorageTracking,
 } from "./usage-tracking";
+
+// AI Platform Insights (Phase 018)
+export {
+  platformQueries,
+  platformInsights,
+  citationRecords,
+  citationTypeEnum,
+  platformQueriesRelations,
+  platformInsightsRelations,
+  citationRecordsRelations,
+  type PlatformQuery,
+  type NewPlatformQuery,
+  type PlatformInsight,
+  type NewPlatformInsight,
+  type CitationRecord,
+  type NewCitationRecord,
+  type ContentTypePerformance,
+  type InsightMetadata,
+} from "./ai-platform-insights";

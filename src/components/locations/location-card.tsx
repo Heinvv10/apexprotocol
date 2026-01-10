@@ -14,7 +14,7 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatLocationType as formatLocationTypeCentralized, formatLastSynced as formatLastSyncedCentralized } from "@/lib/utils";
 import { RatingBadge, RatingBadgeCompact } from "./rating-badge";
 
 // ============================================================================
@@ -61,20 +61,14 @@ interface LocationCardProps {
 // Helper Functions
 // ============================================================================
 
+// ðŸŸ¢ WORKING: Migrated to centralized formatters
+// formatLocationType now uses the centralized version from @/lib/utils
 function formatLocationType(type: string | null | undefined): string {
-  if (!type) return "Location";
-  const typeMap: Record<string, string> = {
-    headquarters: "Headquarters",
-    branch: "Branch",
-    store: "Store",
-    office: "Office",
-    warehouse: "Warehouse",
-    factory: "Factory",
-    distribution_center: "Distribution Center",
-  };
-  return typeMap[type] || type;
+  // Use centralized formatter with custom default
+  return formatLocationTypeCentralized(type) === "Unknown" ? "Location" : formatLocationTypeCentralized(type);
 }
 
+// ðŸŸ¢ WORKING: Custom address formatter (includes country, not in centralized version)
 function formatAddress(location: LocationData): string {
   const parts = [
     location.address,
@@ -86,8 +80,14 @@ function formatAddress(location: LocationData): string {
   return parts.join(", ") || "No address provided";
 }
 
+// ðŸŸ¢ WORKING: Enhanced last synced formatter with custom messaging
 function formatLastSynced(date: string | null | undefined): string {
-  if (!date) return "Never synced";
+  // Use centralized formatter but with custom "Never synced" default
+  const formatted = formatLastSyncedCentralized(date);
+
+  if (!date || formatted === "Never") return "Never synced";
+
+  // Enhanced formatting for sync status
   const syncDate = new Date(date);
   const now = new Date();
   const diffMs = now.getTime() - syncDate.getTime();

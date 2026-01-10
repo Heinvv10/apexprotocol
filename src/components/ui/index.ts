@@ -99,6 +99,9 @@ export type { BadgeProps } from "./badge"
 
 export { Progress } from "./progress"
 
+export { Skeleton, skeletonVariants, SkeletonText, SkeletonCard, SkeletonTable, SkeletonList } from "./skeleton"
+export type { SkeletonProps, SkeletonTextProps, SkeletonCardProps, SkeletonTableProps, SkeletonListProps } from "./skeleton"
+
 // ==================== Empty State Components ====================
 export { EmptyState, emptyStateVariants } from "./empty-states"
 export type {

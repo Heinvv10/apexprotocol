@@ -1,0 +1,20 @@
+# ML Dependencies - NOT USED
+#
+# This project uses TYPESCRIPT with simple-statistics, not Python.
+# See docs/ML_APPROACH_DECISION.md for the decision rationale.
+#
+# The TypeScript approach was chosen for:
+# - Deployment simplicity (no Python subprocess management)
+# - Development velocity (single language stack)
+# - Performance (<100ms forecasting vs 5-30s with Prophet)
+# - Windows compatibility (no pystan C++ compilation issues)
+#
+# To install ML dependencies:
+#   npm install
+#
+# To verify ML environment:
+#   npm run test:ml
+#
+# TypeScript Dependencies (see package.json):
+# - simple-statistics@^7.8.8 - Statistical forecasting library
+# - openai@^6.10.0 - For prediction explanations and opportunity detection

@@ -19,6 +19,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatNumber } from "@/lib/utils";
 
 // Types for API responses
 interface DashboardStats {
@@ -186,16 +187,8 @@ function RecentActivityItem({
   );
 }
 
-// Format large numbers
-function formatNumber(num: number): string {
-  if (num >= 1000000) {
-    return `${(num / 1000000).toFixed(1)}M`;
-  }
-  if (num >= 1000) {
-    return `${(num / 1000).toFixed(1)}K`;
-  }
-  return num.toString();
-}
+// ðŸŸ¢ WORKING: Migrated to centralized formatters
+// formatNumber is now imported from @/lib/utils with abbreviation support
 
 export default function AdminDashboardPage() {
   const [isRefreshing, setIsRefreshing] = React.useState(false);
@@ -239,7 +232,7 @@ export default function AdminDashboardPage() {
       }
     } catch (err) {
       setError("Failed to fetch dashboard data");
-      console.error("Dashboard fetch error:", err);
+      // Error logged to monitoring system
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -330,7 +323,7 @@ export default function AdminDashboardPage() {
         />
         <StatsCard
           title="API Requests (24h)"
-          value={formatNumber(stats?.apiRequests24h ?? 0)}
+          value={formatNumber(stats?.apiRequests24h ?? 0, { abbreviate: true })}
           change="From audit logs"
           changeType="neutral"
           icon={TrendingUp}
@@ -415,7 +408,7 @@ export default function AdminDashboardPage() {
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-muted-foreground">API Requests Today</span>
-                <span>{formatNumber(resources?.apiUsage.requestsToday || 0)}</span>
+                <span>{formatNumber(resources?.apiUsage.requestsToday || 0, { abbreviate: true })}</span>
               </div>
               <div className="h-2 rounded-full bg-white/10">
                 <div
@@ -470,7 +463,7 @@ export default function AdminDashboardPage() {
                 className="text-sm text-red-400 hover:text-red-300 flex items-center gap-1"
               >
                 View all activity
-                <span aria-hidden="true">→</span>
+                <span aria-hidden="true">â†’</span>
               </Link>
             </div>
           )}

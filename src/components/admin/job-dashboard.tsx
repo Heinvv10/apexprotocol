@@ -20,7 +20,8 @@ import {
   MoreVertical,
   Loader2,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+// ðŸŸ¢ WORKING: Using centralized formatters
+import { cn, formatTimestamp } from "@/lib/utils";
 import {
   useJobs,
   useRetryJob,
@@ -493,16 +494,18 @@ function JobCard({
             {job.startedAt && (
               <div>
                 <p className="text-muted-foreground mb-1">Started At</p>
+                {/* ðŸŸ¢ WORKING: Using centralized formatTimestamp */}
                 <p className="text-foreground">
-                  {new Date(job.startedAt).toLocaleString()}
+                  {formatTimestamp(job.startedAt)}
                 </p>
               </div>
             )}
             {job.completedAt && (
               <div>
                 <p className="text-muted-foreground mb-1">Completed At</p>
+                {/* ðŸŸ¢ WORKING: Using centralized formatTimestamp */}
                 <p className="text-foreground">
-                  {new Date(job.completedAt).toLocaleString()}
+                  {formatTimestamp(job.completedAt)}
                 </p>
               </div>
             )}

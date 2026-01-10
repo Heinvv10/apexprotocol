@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
 
 interface AIPlatformCardProps {
   platform: "chatgpt" | "claude" | "gemini" | "perplexity" | "grok";
@@ -128,7 +128,7 @@ export function AIPlatformCard({
 
       {/* Mentions */}
       <p className="text-xs text-muted-foreground">
-        {mentions.toLocaleString()} mentions this week
+        {formatNumber(mentions)} mentions this week
       </p>
 
       {/* Progress Bar */}

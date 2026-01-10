@@ -8,7 +8,8 @@
  */
 
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+// ðŸŸ¢ WORKING: Using centralized formatters
+import { cn, formatNumber, formatDate } from "@/lib/utils";
 import {
   InfluenceScoreBadge,
   InfluenceInlineBadge,
@@ -573,8 +574,8 @@ export function EnrichedProfileCard({
             </Button>
             {enrichment?.lastEnrichedAt && (
               <p className="text-xs text-muted-foreground text-center mt-2">
-                Last enriched:{" "}
-                {new Date(enrichment.lastEnrichedAt).toLocaleDateString()}
+                {/* ðŸŸ¢ WORKING: Using centralized formatDate */}
+                Last enriched: {formatDate(enrichment.lastEnrichedAt)}
               </p>
             )}
           </div>
@@ -691,11 +692,7 @@ function StatItem({
   );
 }
 
-function formatNumber(num: number): string {
-  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-  return num.toString();
-}
+// ðŸŸ¢ WORKING: Removed inline formatNumber - now using centralized utility from @/lib/utils
 
 // Detail Dialog for inline/compact variants
 function DetailDialog({

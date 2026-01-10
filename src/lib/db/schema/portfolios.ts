@@ -213,6 +213,84 @@ export interface ReportContent {
   }[];
 }
 
+// Investor Report content interface (extends executive reports for investor intelligence)
+export interface InvestorReportContent extends ReportContent {
+  // Brand credibility and investment readiness
+  credibilitySummary: {
+    credibilityScore: number; // 0-100
+    impactIndexRating: number; // 0-100
+    strengths: string[]; // Top 3 strengths
+    risks: string[]; // Top 3 risks
+    investmentRecommendation: string; // 1-paragraph assessment
+  };
+
+  // GEO visibility trends over time
+  geoTrends: {
+    dateRange: {
+      start: string;
+      end: string;
+    };
+    metrics: {
+      date: string;
+      impressions: number;
+      clicks: number;
+      ctr: number;
+      avgRanking: number;
+    }[];
+    trendDirection: "up" | "down" | "stable";
+    periodComparison: {
+      currentPeriod: { impressions: number; clicks: number; ctr: number };
+      previousPeriod: { impressions: number; clicks: number; ctr: number };
+      percentChange: { impressions: number; clicks: number; ctr: number };
+    };
+  };
+
+  // Industry benchmark comparisons
+  benchmarkData: {
+    industryMedian: {
+      unifiedScore: number;
+      geoScore: number;
+      credibilityScore: number;
+    };
+    subjectBusiness: {
+      unifiedScore: number;
+      geoScore: number;
+      credibilityScore: number;
+    };
+    percentileRanking: number; // 0-100 (e.g., 75 = top 25%)
+    delta: {
+      unifiedScore: number; // Percentage difference
+      geoScore: number;
+      credibilityScore: number;
+    };
+    comparableBusinessesCount: number;
+  };
+
+  // Impact Index detailed breakdown
+  impactIndexBreakdown: {
+    overallScore: number;
+    components: {
+      name: string; // e.g., "Quality", "Relevance", "Authority"
+      score: number; // 0-100
+      weight: number; // Percentage weight in overall score
+      rawData: string; // Source/evidence
+    }[];
+    methodology: string; // Calculation methodology explanation
+  };
+
+  // Competitive intelligence (optional - if available)
+  competitiveIntelligence?: {
+    directCompetitors: {
+      name: string;
+      unifiedScore: number;
+      geoScore: number;
+      marketShare: number;
+    }[];
+    competitiveAdvantages: string[];
+    threats: string[];
+  };
+}
+
 // Scheduled Reports table (for automated report generation)
 export const scheduledReports = pgTable("scheduled_reports", {
   id: text("id")

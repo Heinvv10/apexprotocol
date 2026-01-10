@@ -1,10 +1,12 @@
 /**
  * Notification Triggers
  * Phase 2.2: Integration hooks for mention and score change events
+ * Phase 6.2: Integration hooks for predictive alerts
  *
  * This module provides trigger functions that create notifications when:
  * - New brand mentions are detected across AI platforms
- * - GEO scores change by significant thresholds (Â±5 points)
+ * - GEO scores change by significant thresholds (Ã‚Â±5 points)
+ * - Predicted GEO score drops are forecasted by ML model
  */
 
 import { db } from "@/lib/db";
@@ -17,12 +19,20 @@ import {
   type GeoScoreHistory,
 } from "@/lib/db/schema/feedback";
 import { brands } from "@/lib/db/schema/brands";
-import { eq } from "drizzle-orm";
+import { predictions, type Prediction } from "@/lib/db/schema/predictions";
+import { eq, and, desc, gte } from "drizzle-orm";
 import { createNotification } from "./service";
+import {
+  shouldTriggerPredictiveAlert,
+  generateAlertTitle,
+  generateAlertMessage,
+  generateActionRecommendation,
+} from "@/lib/alerts/predictive-alerts";
 
 // Constants
 const SCORE_CHANGE_THRESHOLD = 5; // Minimum score change to trigger notification
 const SCORE_CHANGE_RATE_LIMIT_HOURS = 1; // Max 1 score change notification per hour per brand
+const PREDICTIVE_ALERT_RATE_LIMIT_DAYS = 7; // Max 1 predictive alert per week per brand (unless HIGH severity)
 
 // Types
 export interface MentionTriggerInput {
@@ -33,6 +43,13 @@ export interface MentionTriggerInput {
 
 export interface ScoreChangeTriggerInput {
   scoreHistory: GeoScoreHistory;
+  userId: string;
+  organizationId: string;
+}
+
+export interface PredictiveTriggerInput {
+  prediction: Prediction;
+  currentScore: number;
   userId: string;
   organizationId: string;
 }
@@ -156,7 +173,7 @@ export async function onMentionCreated(
 /**
  * Trigger notification when GEO score changes significantly
  *
- * Creates a notification when score changes by Â±5 points or more.
+ * Creates a notification when score changes by Ã‚Â±5 points or more.
  * Rate limited to max 1 notification per hour per brand.
  *
  * @param input - Score change trigger input with score history and user info
@@ -197,7 +214,7 @@ export async function onScoreChange(
 
     // Determine trend and format message
     const direction = scoreChange > 0 ? "increased" : "decreased";
-    const emoji = scoreChange > 0 ? "ðŸ“ˆ" : "ðŸ“‰";
+    const emoji = scoreChange > 0 ? "Ã°Å¸â€œË†" : "Ã°Å¸â€œâ€°";
     const oldScore = scoreHistory.previousScore ?? 0;
     const newScore = scoreHistory.overallScore;
 
@@ -269,6 +286,132 @@ export async function onScoreChange(
 }
 
 /**
+ * Trigger notification when a predicted GEO score drop is forecasted
+ *
+ * Creates a notification when the ML model predicts a significant GEO score drop.
+ * Only triggers when:
+ * - Predicted drop is >20% with >70% confidence
+ * - Rate limited to max 1 notification per week per brand (unless HIGH severity)
+ *
+ * @param input - Predictive trigger input with prediction, current score, and user info
+ * @returns Result indicating success, notification ID, or skip reason
+ */
+export async function onPredictedScoreDrop(
+  input: PredictiveTriggerInput
+): Promise<TriggerResult> {
+  try {
+    const { prediction, currentScore, userId, organizationId } = input;
+
+    // Evaluate if alert should be triggered
+    const evaluation = shouldTriggerPredictiveAlert({
+      prediction,
+      currentScore,
+    });
+
+    if (!evaluation.trigger) {
+      return {
+        success: true,
+        skipped: true,
+        reason: evaluation.reason || "Prediction does not meet alert criteria",
+      };
+    }
+
+    // Get brand details for context
+    const brand = await db.query.brands.findFirst({
+      where: eq(brands.id, prediction.brandId),
+    });
+
+    if (!brand) {
+      console.error(
+        `[NotificationTriggers] Brand not found for prediction: ${prediction.brandId}`
+      );
+      return {
+        success: false,
+        reason: "Brand not found",
+      };
+    }
+
+    // Check rate limiting (max 1 per week unless HIGH severity)
+    if (evaluation.severity !== "high") {
+      const rateLimitDate = new Date();
+      rateLimitDate.setDate(
+        rateLimitDate.getDate() - PREDICTIVE_ALERT_RATE_LIMIT_DAYS
+      );
+
+      // Query for recent predictive alerts for this brand
+      const recentAlerts = await db.query.notifications.findFirst({
+        where: and(
+          eq(db.query.notifications.organizationId, organizationId),
+          eq(db.query.notifications.type, "predictive_alert"),
+          gte(db.query.notifications.createdAt, rateLimitDate)
+        ),
+        orderBy: [desc(db.query.notifications.createdAt)],
+      });
+
+      if (recentAlerts) {
+        return {
+          success: true,
+          skipped: true,
+          reason: `Rate limited: Recent predictive alert sent within ${PREDICTIVE_ALERT_RATE_LIMIT_DAYS} days`,
+        };
+      }
+    }
+
+    // Generate notification content
+    const title = generateAlertTitle(evaluation);
+    const message = generateAlertMessage(brand.name, currentScore, prediction, evaluation);
+    const actionRecommendation = generateActionRecommendation(evaluation);
+
+    // Create notification
+    const result = await createNotification({
+      userId,
+      organizationId,
+      type: "predictive_alert",
+      title,
+      message,
+      metadata: {
+        brandId: prediction.brandId,
+        brandName: brand.name,
+        predictionId: prediction.id,
+        currentScore,
+        predictedValue: prediction.predictedValue,
+        predictedDrop: evaluation.predictedDrop,
+        confidence: prediction.confidence,
+        leadTime: evaluation.leadTime,
+        targetDate: prediction.targetDate,
+        severity: evaluation.severity,
+        explanation: prediction.explanation || message,
+        actionRecommendation,
+        linkUrl: `/dashboard/brands/${prediction.brandId}/predictions`,
+        linkText: "View prediction details",
+      },
+    });
+
+    if (result.deduplicated) {
+      return {
+        success: true,
+        skipped: true,
+        reason: "Duplicate notification within deduplication window",
+      };
+    }
+
+    return {
+      success: true,
+      notificationId: result.id,
+    };
+  } catch (error) {
+    console.error(
+      "[NotificationTriggers] Error in onPredictedScoreDrop:",
+      error
+    );
+    return {
+      success: false,
+      reason: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
  * Batch trigger for multiple mentions
  * Useful for bulk import or monitoring operations
  */
@@ -318,6 +461,7 @@ export async function onScoreChanges(
 export const NotificationTriggers = {
   onMentionCreated,
   onScoreChange,
+  onPredictedScoreDrop,
   onMentionsCreated,
   onScoreChanges,
 };

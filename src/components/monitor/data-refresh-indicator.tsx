@@ -3,6 +3,8 @@
 import * as React from "react";
 import { RefreshCw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+// ðŸŸ¢ WORKING: Using centralized formatters
+import { formatRelativeTime } from "@/lib/utils";
 
 interface DataRefreshIndicatorProps {
   /**
@@ -31,36 +33,7 @@ interface DataRefreshIndicatorProps {
   size?: "sm" | "default";
 }
 
-/**
- * Format a timestamp into a relative time string
- */
-function formatRelativeTime(timestamp: number): string {
-  const now = Date.now();
-  const diff = now - timestamp;
-
-  const seconds = Math.floor(diff / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-
-  if (seconds < 5) {
-    return "Just now";
-  } else if (seconds < 60) {
-    return `${seconds}s ago`;
-  } else if (minutes < 60) {
-    return `${minutes}m ago`;
-  } else if (hours < 24) {
-    return `${hours}h ago`;
-  } else {
-    // Format as date/time for older data
-    const date = new Date(timestamp);
-    return date.toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  }
-}
+// ðŸŸ¢ WORKING: Removed inline formatRelativeTime - now using centralized utility from @/lib/utils
 
 /**
  * Component that displays the last updated timestamp and a manual refresh button.

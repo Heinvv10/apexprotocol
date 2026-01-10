@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "@/lib/utils";
+// ðŸŸ¢ WORKING: Using centralized formatters
+import { cn, formatNumber } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 
 // Platform brand colors and icons
@@ -156,7 +157,8 @@ export function PlatformCard({
           {/* Mention count */}
           <div className="text-center">
             <p className="text-lg font-bold" style={{ color: platform.color }}>
-              {mentionCount.toLocaleString()}
+              {/* ðŸŸ¢ WORKING: Using centralized formatNumber */}
+              {formatNumber(mentionCount)}
             </p>
             <p className="text-xs text-muted-foreground">Mentions</p>
           </div>

@@ -44,7 +44,7 @@ async function verifyCronSecret(): Promise<boolean> {
 function mapNotificationPriority(type: string): DigestPriority {
   switch (type) {
     case "important":
-      return "critical";
+      return "high";
     case "score_change":
       return "high";
     case "recommendation":
@@ -144,17 +144,15 @@ async function sendDigests(frequency: "daily" | "weekly"): Promise<{
         // Convert notifications to digest format
         const digestNotifications: DigestNotification[] = userNotifications.map((n) => ({
           id: n.id.toString(),
-          type: n.type as "mention" | "alert" | "recommendation" | "score_change",
-          priority: mapNotificationPriority(n.type),
           title: n.title,
-          description: n.message,
-          timestamp: n.createdAt,
-          metadata: n.metadata as Record<string, unknown> | undefined,
+          message: n.message,
+          priority: mapNotificationPriority(n.type),
+          createdAt: n.createdAt,
         }));
 
         // Create digest summary
         const brandName = "Your Brands"; // Could be enhanced to include actual brand names
-        const summary = digestService.createSummary(
+        const summary = await digestService.createSummary(
           brandName,
           digestNotifications,
           periodStart,
@@ -198,13 +196,13 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const status = digestService.getStatus();
-    const recentDeliveries = digestService.getDeliveryHistory(10);
+    const status = await digestService.getStatus();
+    const recentDeliveries = await digestService.getDeliveryHistory(10);
 
     return NextResponse.json({
       success: true,
       status,
-      recentDeliveries: recentDeliveries.map((d) => ({
+      recentDeliveries: recentDeliveries.map((d: {id: string, to: string, frequency: string, status: string, sentAt?: Date, createdAt: Date}) => ({
         id: d.id,
         to: d.to,
         frequency: d.frequency,

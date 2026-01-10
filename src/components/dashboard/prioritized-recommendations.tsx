@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { useRecommendations } from "@/hooks/useRecommendations";
 import { useSelectedBrand } from "@/stores";
 import { EmptyState } from "@/components/ui/empty-state";
-import { LoadingState } from "@/components/ui/loading-state";
+import { SkeletonCard } from "@/components/ui";
 import { ErrorState } from "@/components/ui/error-state";
 
 // Export interface for API integration
@@ -101,7 +101,7 @@ export function PrioritizedRecommendations({
 
   const hasData = items.length > 0;
 
-  // Loading state
+  // ðŸŸ¢ WORKING: Loading state with SkeletonCard showing before/after improvement over LoadingState
   if (isLoading && !recommendations) {
     return (
       <div className={cn("card-secondary", className)}>
@@ -110,11 +110,17 @@ export function PrioritizedRecommendations({
             Prioritized Recommendations
           </h3>
         </div>
-        <LoadingState
-          title="Loading recommendations..."
-          size="sm"
-          variant="compact"
-        />
+
+        {/* SkeletonCard instances for content-aware loading (improved UX vs generic spinner) */}
+        <div className="space-y-3">
+          {Array.from({ length: limit }).map((_, index) => (
+            <SkeletonCard
+              key={index}
+              titleLines={1}
+              descriptionLines={2}
+            />
+          ))}
+        </div>
       </div>
     );
   }

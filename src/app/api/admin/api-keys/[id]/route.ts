@@ -6,6 +6,8 @@
  * Requires super-admin authentication
  */
 
+export const runtime = "nodejs";
+
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
@@ -320,7 +322,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         );
       }
 
-      const newKeyHash = hashApiKey(apiKey);
+      const newKeyHash = await hashApiKey(apiKey);
 
       // Check if the new key hash already exists (duplicate key)
       if (newKeyHash !== existingKey.keyHash) {
@@ -547,7 +549,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
               type: existingKey.type,
               isActive: existingKey.isActive,
             },
-            after: null,
+            after: undefined,
           },
           status: "success",
         },

@@ -20,7 +20,7 @@ import {
   CheckCircle2,
   Clock,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber, formatRelativeTime } from "@/lib/utils";
 
 // Platform icon components
 import {
@@ -88,32 +88,6 @@ const PLATFORM_CONFIG = {
     followerLabel: "Followers",
   },
 };
-
-function formatNumber(num: number): string {
-  if (num >= 1000000) {
-    return `${(num / 1000000).toFixed(1)}M`;
-  }
-  if (num >= 1000) {
-    return `${(num / 1000).toFixed(1)}K`;
-  }
-  return num.toString();
-}
-
-function formatDate(date: Date | string | null | undefined): string {
-  if (!date) return "Never";
-  const d = typeof date === "string" ? new Date(date) : date;
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMins = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return d.toLocaleDateString();
-}
 
 function getEngagementTrend(rate: number): "up" | "down" | "neutral" {
   // Placeholder - would compare to previous period
@@ -282,7 +256,7 @@ export function PlatformMetricsCard({
       <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Clock className="h-3 w-3" />
-          <span>Last scan: {formatDate(lastScanned)}</span>
+          <span>Last scan: {formatRelativeTime(lastScanned)}</span>
         </div>
         {onRescan && (
           <Button

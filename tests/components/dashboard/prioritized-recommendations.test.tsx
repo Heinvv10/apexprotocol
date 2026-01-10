@@ -185,18 +185,9 @@ describe("PrioritizedRecommendations Component", () => {
   });
 
   describe("Loading State", () => {
-    it("should show loading spinner while fetching data", () => {
-      mockUseRecommendations.mockReturnValue({
-        data: undefined,
-        isLoading: true,
-        isError: false,
-        error: null,
-      });
-
-      render(<PrioritizedRecommendations />);
-
-      expect(screen.getByText("Loading recommendations...")).toBeInTheDocument();
-    });
+    // ðŸŸ¢ WORKING: Tests verify SkeletonCard rendering (improved UX over generic LoadingState)
+    // SkeletonCard provides content-aware loading that matches the expected card layout,
+    // giving users a better visual preview of what content will appear.
 
     it("should display component title during loading", () => {
       mockUseRecommendations.mockReturnValue({
@@ -211,37 +202,7 @@ describe("PrioritizedRecommendations Component", () => {
       expect(screen.getByText("Prioritized Recommendations")).toBeInTheDocument();
     });
 
-    it("should render LoadingState component with proper accessibility attributes", () => {
-      mockUseRecommendations.mockReturnValue({
-        data: undefined,
-        isLoading: true,
-        isError: false,
-        error: null,
-      });
-
-      render(<PrioritizedRecommendations />);
-
-      const loadingState = screen.getByRole("status");
-      expect(loadingState).toHaveAttribute("aria-live", "polite");
-      expect(loadingState).toHaveAttribute("aria-label", "Loading: Loading recommendations...");
-    });
-
-    it("should display loading icon in LoadingState", () => {
-      mockUseRecommendations.mockReturnValue({
-        data: undefined,
-        isLoading: true,
-        isError: false,
-        error: null,
-      });
-
-      render(<PrioritizedRecommendations />);
-
-      const loadingState = screen.getByRole("status");
-      const svg = loadingState.querySelector("svg");
-      expect(svg).toBeInTheDocument();
-    });
-
-    it("should use compact variant and small size in LoadingState", () => {
+    it("should render SkeletonCard components instead of generic LoadingState", () => {
       mockUseRecommendations.mockReturnValue({
         data: undefined,
         isLoading: true,
@@ -251,9 +212,153 @@ describe("PrioritizedRecommendations Component", () => {
 
       const { container } = render(<PrioritizedRecommendations />);
 
-      const loadingState = screen.getByRole("status");
-      // Check for min-h-0 class from compact variant
-      expect(loadingState).toHaveClass("min-h-0");
+      // ðŸŸ¢ WORKING: Verify SkeletonCard instances are rendered (not generic spinner/LoadingState)
+      const skeletonCards = container.querySelectorAll('[data-slot="skeleton-card"]');
+      expect(skeletonCards.length).toBe(4); // Default limit is 4
+
+      // Verify no generic loading state is shown
+      const loadingState = container.querySelector('[role="status"][aria-label*="Loading"]');
+      expect(loadingState).not.toBeInTheDocument();
+    });
+
+    it("should render correct number of SkeletonCards based on limit prop", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+        error: null,
+      });
+
+      const { container } = render(<PrioritizedRecommendations limit={2} />);
+
+      // ðŸŸ¢ WORKING: Verify SkeletonCard count matches limit prop
+      const skeletonCards = container.querySelectorAll('[data-slot="skeleton-card"]');
+      expect(skeletonCards.length).toBe(2);
+    });
+
+    it("should render SkeletonCards with correct configuration", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+        error: null,
+      });
+
+      const { container } = render(<PrioritizedRecommendations />);
+
+      // ðŸŸ¢ WORKING: Verify SkeletonCard structure matches recommendation card layout
+      const skeletonCards = container.querySelectorAll('[data-slot="skeleton-card"]');
+      expect(skeletonCards.length).toBeGreaterThan(0);
+
+      // Each SkeletonCard should have skeleton text elements for title and description
+      // With titleLines={1} and descriptionLines={2}, we expect 3 text skeletons per card
+      const firstCard = skeletonCards[0];
+      const textSkeletons = firstCard.querySelectorAll('[data-slot="skeleton"]');
+      expect(textSkeletons.length).toBeGreaterThan(0);
+    });
+
+    it("should render SkeletonCards with proper card styling", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+        error: null,
+      });
+
+      const { container } = render(<PrioritizedRecommendations />);
+
+      // ðŸŸ¢ WORKING: Verify SkeletonCard has proper Card component styling
+      const skeletonCard = container.querySelector('[data-slot="skeleton-card"]');
+      expect(skeletonCard).toBeInTheDocument();
+      expect(skeletonCard).toHaveClass("rounded-xl", "border", "bg-card", "shadow-sm");
+    });
+
+    it("should render SkeletonCards with proper spacing", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+        error: null,
+      });
+
+      const { container } = render(<PrioritizedRecommendations />);
+
+      // ðŸŸ¢ WORKING: Verify skeleton cards container has proper spacing
+      const cardsContainer = container.querySelector('.space-y-3');
+      expect(cardsContainer).toBeInTheDocument();
+
+      // Verify skeleton cards are inside the spaced container
+      const skeletonCards = cardsContainer?.querySelectorAll('[data-slot="skeleton-card"]');
+      expect(skeletonCards?.length).toBe(4);
+    });
+
+    it("should render skeleton text lines within SkeletonCards", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+        error: null,
+      });
+
+      const { container } = render(<PrioritizedRecommendations />);
+
+      // ðŸŸ¢ WORKING: Verify skeleton text elements are present for title and description
+      const skeletonTexts = container.querySelectorAll('[data-slot="skeleton"]');
+      expect(skeletonTexts.length).toBeGreaterThan(0);
+
+      // With 4 cards, titleLines=1, descriptionLines=2, we expect at least 12 skeleton elements
+      expect(skeletonTexts.length).toBeGreaterThanOrEqual(12);
+    });
+
+    it("should not render SkeletonCards when recommendations prop is provided", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+        error: null,
+      });
+
+      const customRecommendations = [
+        {
+          id: "custom-1",
+          title: "Custom Recommendation",
+          description: "This is a custom recommendation",
+          priority: "high" as const,
+          impact: 8,
+          effort: "medium" as const,
+          category: "content",
+        },
+      ];
+
+      const { container } = render(
+        <PrioritizedRecommendations recommendations={customRecommendations} />
+      );
+
+      // ðŸŸ¢ WORKING: Should not show loading skeletons when data is provided via props
+      const skeletonCards = container.querySelectorAll('[data-slot="skeleton-card"]');
+      expect(skeletonCards.length).toBe(0);
+    });
+
+    it("should maintain component structure during loading state", () => {
+      mockUseRecommendations.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+        error: null,
+      });
+
+      const { container } = render(<PrioritizedRecommendations />);
+
+      // ðŸŸ¢ WORKING: Verify outer card container is present during loading
+      const outerCard = container.querySelector('.card-secondary');
+      expect(outerCard).toBeInTheDocument();
+
+      // Verify title is shown
+      expect(screen.getByText("Prioritized Recommendations")).toBeInTheDocument();
+
+      // Verify SkeletonCards are within the component structure
+      const skeletonCards = outerCard?.querySelectorAll('[data-slot="skeleton-card"]');
+      expect(skeletonCards?.length).toBe(4);
     });
   });
 

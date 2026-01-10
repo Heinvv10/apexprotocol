@@ -5,9 +5,26 @@
  * hashing keys for database lookup, and related cryptographic operations.
  *
  * All user-generated API keys use the `apx_` prefix format.
+ *
+ * Uses Web Crypto API for Edge Runtime compatibility.
  */
 
-import { randomBytes, createHash } from "crypto";
+// Check if we're in Edge runtime or Node.js runtime
+const isEdgeRuntime = typeof EdgeRuntime !== "undefined";
+
+// Import Node.js crypto only in Node.js runtime
+let nodeRandomBytes: (size: number) => Buffer;
+let nodeCreateHash: (algorithm: string) => any;
+
+if (!isEdgeRuntime) {
+  try {
+    const nodeCrypto = require("crypto");
+    nodeRandomBytes = nodeCrypto.randomBytes;
+    nodeCreateHash = nodeCrypto.createHash;
+  } catch {
+    // Fallback will be used
+  }
+}
 
 // Constants
 const API_KEY_PREFIX = "apx_";
@@ -26,16 +43,29 @@ const KEY_BYTES_LENGTH = 32; // 32 bytes = 256 bits of entropy
  * // key: "apx_Ht3D9nK..." (shown to user once)
  * // hash: "abc123..." (stored in database for lookup)
  */
-export function generateApiKey(): { key: string; hash: string } {
+export async function generateApiKey(): Promise<{ key: string; hash: string }> {
   // Generate cryptographically random bytes
-  const randomPart = randomBytes(KEY_BYTES_LENGTH);
+  let randomPart: string;
+
+  if (isEdgeRuntime || !nodeRandomBytes) {
+    // Use Web Crypto API in Edge runtime
+    const randomBytesArray = new Uint8Array(KEY_BYTES_LENGTH);
+    crypto.getRandomValues(randomBytesArray);
+    // Convert to base64url
+    const base64 = btoa(String.fromCharCode(...randomBytesArray));
+    randomPart = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  } else {
+    // Use Node.js crypto in Node runtime
+    const randomBytes = nodeRandomBytes(KEY_BYTES_LENGTH);
+    randomPart = randomBytes.toString("base64url");
+  }
 
   // Create the full API key with prefix and base64url encoding
   // base64url is URL-safe (uses - and _ instead of + and /)
-  const key = `${API_KEY_PREFIX}${randomPart.toString("base64url")}`;
+  const key = `${API_KEY_PREFIX}${randomPart}`;
 
   // Create SHA-256 hash for database lookup
-  const hash = hashApiKey(key);
+  const hash = await hashApiKey(key);
 
   return { key, hash };
 }
@@ -50,14 +80,25 @@ export function generateApiKey(): { key: string; hash: string } {
  * @returns Hex-encoded SHA-256 hash (64 characters)
  *
  * @example
- * const hash = hashApiKey("apx_abc123...");
+ * const hash = await hashApiKey("apx_abc123...");
  * // Returns: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
  */
-export function hashApiKey(key: string): string {
+export async function hashApiKey(key: string): Promise<string> {
   if (!key) {
     throw new Error("Cannot hash empty API key");
   }
-  return createHash("sha256").update(key).digest("hex");
+
+  if (isEdgeRuntime || !nodeCreateHash) {
+    // Use Web Crypto API in Edge runtime
+    const encoder = new TextEncoder();
+    const data = encoder.encode(key);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  } else {
+    // Use Node.js crypto in Node runtime
+    return nodeCreateHash("sha256").update(key).digest("hex");
+  }
 }
 
 /**
@@ -67,11 +108,12 @@ export function hashApiKey(key: string): string {
  * @param expectedHash - The expected SHA-256 hash
  * @returns true if the key matches the hash
  */
-export function verifyApiKeyHash(key: string, expectedHash: string): boolean {
+export async function verifyApiKeyHash(key: string, expectedHash: string): Promise<boolean> {
   if (!key || !expectedHash) {
     return false;
   }
-  return hashApiKey(key) === expectedHash;
+  const hash = await hashApiKey(key);
+  return hash === expectedHash;
 }
 
 /**
@@ -167,13 +209,23 @@ export function maskApiKey(key: string): string {
  * Utility function for generating cryptographically secure random data.
  *
  * @param length - Number of bytes to generate
- * @returns Buffer containing random bytes
+ * @returns Uint8Array containing random bytes
  */
-export function generateSecureRandom(length: number): Buffer {
+export function generateSecureRandom(length: number): Uint8Array {
   if (length <= 0) {
     throw new Error("Length must be positive");
   }
-  return randomBytes(length);
+
+  if (isEdgeRuntime || !nodeRandomBytes) {
+    // Use Web Crypto API
+    const randomBytes = new Uint8Array(length);
+    crypto.getRandomValues(randomBytes);
+    return randomBytes;
+  } else {
+    // Use Node.js crypto
+    const buffer = nodeRandomBytes(length);
+    return new Uint8Array(buffer);
+  }
 }
 
 /**
@@ -183,7 +235,8 @@ export function generateSecureRandom(length: number): Buffer {
  * @returns Hex-encoded random string
  */
 export function generateRandomHex(byteLength: number): string {
-  return generateSecureRandom(byteLength).toString("hex");
+  const randomBytes = generateSecureRandom(byteLength);
+  return Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 // Export constants for external use

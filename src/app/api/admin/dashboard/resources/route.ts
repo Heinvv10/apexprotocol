@@ -13,17 +13,9 @@ import { db } from "@/lib/db";
 import { systemAuditLogs } from "@/lib/db/schema";
 import { sql, gte } from "drizzle-orm";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
+import { formatBytes } from "@/lib/utils";
 
-/**
- * Format bytes to human-readable string
- */
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-}
+// ðŸŸ¢ WORKING: Migrated to use centralized formatBytes from @/lib/utils
 
 /**
  * Get database size
@@ -189,9 +181,12 @@ export async function GET(_request: NextRequest) {
       resources,
     });
   } catch (error) {
-    console.error("Resource check error:", error);
+    // ðŸŸ¢ WORKING: Proper error handling without console.error
     return NextResponse.json(
-      { error: "Failed to check resource usage" },
+      {
+        error: "Failed to check resource usage",
+        message: error instanceof Error ? error.message : "Unknown error"
+      },
       { status: 500 }
     );
   }

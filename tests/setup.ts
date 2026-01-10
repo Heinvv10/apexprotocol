@@ -28,6 +28,11 @@ process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "test-clerk-publishable";
 process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
 process.env.PINECONE_API_KEY = "test-pinecone-key";
 process.env.PINECONE_INDEX = "test-index";
+process.env.QSTASH_TOKEN = "test-qstash-token";
+process.env.NEXT_PUBLIC_APP_URL = "https://example.com";
+process.env.WORDPRESS_URL = "https://example.com";
+process.env.WORDPRESS_USERNAME = "testuser";
+process.env.WORDPRESS_APP_PASSWORD = "test-app-password";
 process.env.APP_VERSION = "1.0.0-test";
 
 // DOM mocks - only apply in jsdom environment

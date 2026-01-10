@@ -18,6 +18,7 @@ import {
   Zap,
   Target,
   FolderKanban,
+  Brain,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@clerk/nextjs";
@@ -40,6 +41,7 @@ const sidebarMenuItems = [
   { label: "Create", icon: FileText, href: "/dashboard/create" },
   { label: "Engine Room", icon: Zap, href: "/dashboard/engine-room" },
   { label: "Recommendations", icon: Lightbulb, href: "/dashboard/recommendations" },
+  { label: "Insights", icon: Brain, href: "/dashboard/insights" },
   { label: "Settings", icon: Settings, href: "/dashboard/settings" },
 ];
 
@@ -433,9 +435,6 @@ interface BottomSheetProps {
 }
 
 export function BottomSheet({ isOpen, onClose, title, children }: BottomSheetProps) {
-  const sheetRef = React.useRef<HTMLDivElement>(null);
-  const previousFocusRef = React.useRef<HTMLElement | null>(null);
-
   // Prevent body scroll when open
   React.useEffect(() => {
     if (isOpen) {
@@ -448,72 +447,6 @@ export function BottomSheet({ isOpen, onClose, title, children }: BottomSheetPro
     };
   }, [isOpen]);
 
-  // Handle Escape key to close
-  React.useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && isOpen) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose]);
-
-  // Focus management: trap focus within sheet and restore on close
-  React.useEffect(() => {
-    if (isOpen && sheetRef.current) {
-      // Save currently focused element
-      previousFocusRef.current = document.activeElement as HTMLElement;
-
-      // Move focus to first focusable element in sheet
-      const focusableElements = sheetRef.current.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-
-      if (focusableElements.length > 0) {
-        focusableElements[0].focus();
-      }
-
-      // Focus trap: cycle focus within sheet
-      const handleTabKey = (event: KeyboardEvent) => {
-        if (event.key !== "Tab" || !sheetRef.current) return;
-
-        const focusableElements = Array.from(
-          sheetRef.current.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-          )
-        );
-
-        if (focusableElements.length === 0) return;
-
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
-
-        // Shift + Tab
-        if (event.shiftKey) {
-          if (document.activeElement === firstElement) {
-            event.preventDefault();
-            lastElement.focus();
-          }
-        } else {
-          // Tab
-          if (document.activeElement === lastElement) {
-            event.preventDefault();
-            firstElement.focus();
-          }
-        }
-      };
-
-      document.addEventListener("keydown", handleTabKey);
-      return () => document.removeEventListener("keydown", handleTabKey);
-    } else if (!isOpen && previousFocusRef.current) {
-      // Restore focus to previously focused element
-      previousFocusRef.current.focus();
-      previousFocusRef.current = null;
-    }
-  }, [isOpen]);
-
   return (
     <>
       {/* Backdrop */}
@@ -523,15 +456,10 @@ export function BottomSheet({ isOpen, onClose, title, children }: BottomSheetPro
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
         onClick={onClose}
-        aria-hidden="true"
       />
 
       {/* Sheet */}
       <div
-        ref={sheetRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title || "Bottom sheet"}
         className={cn(
           "lg:hidden fixed bottom-0 left-0 right-0 z-50",
           "bg-[#0A0D1A] rounded-t-2xl border-t border-white/10",
@@ -540,8 +468,8 @@ export function BottomSheet({ isOpen, onClose, title, children }: BottomSheetPro
           isOpen ? "translate-y-0" : "translate-y-full"
         )}
       >
-        {/* Handle - decorative only, not focusable */}
-        <div className="flex justify-center pt-3 pb-2" aria-hidden="true">
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-2">
           <div className="w-10 h-1 bg-white/20 rounded-full" />
         </div>
 

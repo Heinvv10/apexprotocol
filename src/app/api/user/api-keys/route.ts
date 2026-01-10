@@ -259,7 +259,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate a new API key
-    const { key, hash } = generateApiKey();
+    const { key, hash } = await generateApiKey();
 
     // Encrypt the key for storage
     const encryptedKey = encryptApiKey(key);

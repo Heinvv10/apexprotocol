@@ -21,6 +21,7 @@ import {
   FolderKanban,
   Share2,
   Users,
+  Brain,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -107,6 +108,11 @@ const mainNavItems: NavItem[] = [
     href: "/dashboard/recommendations",
     icon: Lightbulb,
     badgeKey: "recommendations",
+  },
+  {
+    title: "Insights",
+    href: "/dashboard/insights",
+    icon: Brain,
   },
 ];
 

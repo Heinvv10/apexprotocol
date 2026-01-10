@@ -95,6 +95,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 }
 
 // Toast Container
+// ðŸŸ¢ WORKING: Added ARIA attributes for accessibility
 function ToastContainer({
   toasts,
   removeToast,
@@ -102,8 +103,17 @@ function ToastContainer({
   toasts: Toast[];
   removeToast: (id: string) => void;
 }) {
+  // Use aria-live='assertive' if any error toast is present, otherwise 'polite'
+  const hasErrorToast = toasts.some((toast) => toast.type === "error");
+  const ariaLive = hasErrorToast ? "assertive" : "polite";
+
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-md w-full pointer-events-none">
+    <div
+      role="region"
+      aria-live={ariaLive}
+      aria-label="Notifications"
+      className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-md w-full pointer-events-none"
+    >
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
       ))}
@@ -112,13 +122,35 @@ function ToastContainer({
 }
 
 // Individual Toast Item
+// ðŸŸ¢ WORKING: ARIA attributes for full screen reader accessibility
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
   const [isExiting, setIsExiting] = React.useState(false);
+  const toastRef = React.useRef<HTMLDivElement>(null);
 
-  const handleClose = () => {
+  const handleClose = React.useCallback(() => {
     setIsExiting(true);
     setTimeout(onClose, 200);
-  };
+  }, [onClose]);
+
+  // Add Escape key handler for keyboard accessibility
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle Escape key when toast or its children are focused
+      if (
+        event.key === "Escape" &&
+        toastRef.current &&
+        toastRef.current.contains(document.activeElement)
+      ) {
+        handleClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleClose]);
 
   const config = {
     success: {
@@ -149,8 +181,24 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
 
   const Icon = config.icon;
 
+  // Use role='alert' for errors/warnings (urgent), role='status' for info/success
+  const role = toast.type === "error" || toast.type === "warning" ? "alert" : "status";
+
+  // Use aria-live='assertive' for errors, 'polite' for others
+  const ariaLive = toast.type === "error" ? "assertive" : "polite";
+
+  // Create descriptive aria-label combining type, title, and description
+  const ariaLabel = toast.description
+    ? `${toast.type}: ${toast.title}. ${toast.description}`
+    : `${toast.type}: ${toast.title}`;
+
   return (
     <div
+      ref={toastRef}
+      role={role}
+      aria-live={ariaLive}
+      aria-atomic="true"
+      aria-label={ariaLabel}
       className={cn(
         "pointer-events-auto p-4 rounded-lg border shadow-lg backdrop-blur-sm",
         "transform transition-all duration-200",
@@ -175,7 +223,14 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
 
         <button
           onClick={handleClose}
-          className="flex-shrink-0 p-1 rounded hover:bg-white/10 transition-colors"
+          aria-label="Close notification"
+          className={cn(
+            "flex-shrink-0 p-1 rounded transition-colors",
+            "hover:bg-white/10",
+            // Focus indicators for keyboard navigation
+            "focus:outline-none focus:ring-2 focus:ring-offset-2",
+            "focus:ring-primary/50 focus:ring-offset-transparent"
+          )}
         >
           <X className="w-4 h-4 text-muted-foreground" />
         </button>

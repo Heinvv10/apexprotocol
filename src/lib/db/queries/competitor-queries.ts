@@ -33,6 +33,9 @@ import { eq, and, desc, asc, inArray, gte, lte, sql, or, between } from "drizzle
 // Types
 // ============================================================================
 
+// Re-export schema types for convenience
+export type { CompetitorSnapshot } from "@/lib/db/schema";
+
 export type DiscoveryMethod = "keyword_overlap" | "ai_co_occurrence" | "industry_match" | "search_overlap" | "manual";
 export type DiscoveryStatus = "pending" | "confirmed" | "rejected";
 export type SerpFeatureType = "featured_snippet" | "people_also_ask" | "ai_overview" | "knowledge_panel" | "local_pack" | "image_pack" | "video_carousel" | "top_stories";

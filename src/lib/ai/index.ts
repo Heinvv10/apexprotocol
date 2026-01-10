@@ -72,6 +72,7 @@ export {
 } from "./rate-limiter";
 
 // Token Tracker (F088)
+// Note: formatTokenCount and formatCost have been migrated to @/lib/utils centralized formatters
 export {
   recordTokenUsage,
   getUsageSummary,
@@ -79,8 +80,6 @@ export {
   getRemainingQuota,
   calculateCost,
   estimateTokens,
-  formatTokenCount,
-  formatCost,
   TOKEN_PRICING,
   type TokenUsageRecord,
 } from "./token-tracker";

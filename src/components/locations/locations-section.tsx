@@ -11,7 +11,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatScore, formatNumber } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -271,7 +271,7 @@ export function LocationsSection({
           <div>
             <h3 className="font-semibold text-foreground">Locations</h3>
             <p className="text-xs text-muted-foreground">
-              {summary?.totalLocations || 0} locations • {summary?.totalReviews || 0} reviews
+              {summary?.totalLocations || 0} locations â€¢ {summary?.totalReviews || 0} reviews
             </p>
           </div>
         </div>
@@ -313,13 +313,15 @@ export function LocationsSection({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="card-tertiary p-3 text-center">
             <p className="text-2xl font-bold text-primary">
-              {summary.avgRating?.toFixed(1) || "-"}
+              {/* ðŸŸ¢ WORKING: Using centralized formatScore */}
+              {summary.avgRating ? formatScore(summary.avgRating, 1) : "-"}
             </p>
             <p className="text-xs text-muted-foreground">Avg Rating</p>
           </div>
           <div className="card-tertiary p-3 text-center">
             <p className="text-2xl font-bold text-foreground">
-              {summary.totalReviews?.toLocaleString() || 0}
+              {/* ðŸŸ¢ WORKING: Using centralized formatNumber */}
+              {formatNumber(summary.totalReviews || 0)}
             </p>
             <p className="text-xs text-muted-foreground">Total Reviews</p>
           </div>
@@ -485,12 +487,13 @@ export function LocationsWidget({
       </div>
       {data.avgRating > 0 && (
         <>
-          <span className="text-muted-foreground/50">•</span>
+          <span className="text-muted-foreground/50">â€¢</span>
           <div className="flex items-center gap-1">
-            <span className="text-warning">★</span>
-            <span>{data.avgRating.toFixed(1)}</span>
+            <span className="text-warning">â˜…</span>
+            {/* ðŸŸ¢ WORKING: Using centralized formatScore and formatNumber */}
+            <span>{formatScore(data.avgRating, 1)}</span>
             <span className="text-muted-foreground">
-              ({data.totalReviews.toLocaleString()})
+              ({formatNumber(data.totalReviews)})
             </span>
           </div>
         </>

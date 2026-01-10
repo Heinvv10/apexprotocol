@@ -288,7 +288,7 @@ export async function POST(request: NextRequest) {
 
     // Encrypt the API key
     const encryptedKey = encryptApiKey(apiKey);
-    const keyHash = hashApiKey(apiKey);
+    const keyHash = await hashApiKey(apiKey);
 
     // Check for duplicate key hash (same key already exists)
     const existingKey = await db

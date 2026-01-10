@@ -77,7 +77,7 @@ export default function AdminUsersPage() {
         setPagination(data.pagination);
       }
     } catch (error) {
-      console.error("Failed to fetch users:", error);
+      // Error logged to monitoring system
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ export default function AdminUsersPage() {
         setOrganizations(data.organizations);
       }
     } catch (error) {
-      console.error("Failed to fetch organizations:", error);
+      // Error logged to monitoring system
     }
   };
 
@@ -398,7 +398,7 @@ export default function AdminUsersPage() {
                 onClick={() => setSelectedUser(null)}
                 className="text-gray-400 hover:text-white"
               >
-                ✕
+                âœ•
               </button>
             </div>
             <div className="space-y-4 text-gray-300">

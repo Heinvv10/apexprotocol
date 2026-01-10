@@ -48,3 +48,4 @@ CHROMIUM_*.md
 HEADED_*.md
 MCP_*.md
 PLAYWRIGHT_*.md
+coverage/

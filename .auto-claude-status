@@ -1,25 +1,25 @@
 {
-  "active": false,
-  "spec": "031-enhance-keyboard-focus-indicators-and-tab-navigati",
-  "state": "complete",
+  "active": true,
+  "spec": "028-enhance-toast-notifications-with-full-accessibilit",
+  "state": "building",
   "subtasks": {
-    "completed": 25,
-    "total": 25,
-    "in_progress": 0,
+    "completed": 0,
+    "total": 8,
+    "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "completed",
-    "id": 25,
-    "total": 25
+    "current": "",
+    "id": 0,
+    "total": 0
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 26,
-    "started_at": "2025-12-25T21:52:33.275122"
+    "number": 8,
+    "started_at": "2025-12-27T03:31:54.467718"
   },
-  "last_update": "2025-12-26T07:23:03.557Z"
+  "last_update": "2025-12-27T04:35:51.573828"
 }

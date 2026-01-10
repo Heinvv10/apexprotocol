@@ -8,7 +8,8 @@
  */
 
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+// ðŸŸ¢ WORKING: Using centralized formatters
+import { cn, formatDate, formatNumber } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -113,14 +114,7 @@ const STATUS_CONFIG = {
   expired: { label: "Expired", color: "bg-muted text-muted-foreground" },
 };
 
-function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return "TBD";
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+// ðŸŸ¢ WORKING: Removed inline formatDate - now using centralized utility from @/lib/utils
 
 function getDaysUntil(dateStr: string | null | undefined): number | null {
   if (!dateStr) return null;
@@ -379,7 +373,8 @@ function MatchCard({
             {opp.expectedAudienceSize && (
               <span className="flex items-center gap-1">
                 <Users className="h-3 w-3" />
-                {opp.expectedAudienceSize.toLocaleString()} attendees
+                {/* ðŸŸ¢ WORKING: Using centralized formatNumber */}
+                {formatNumber(opp.expectedAudienceSize)} attendees
               </span>
             )}
           </div>
@@ -460,7 +455,7 @@ function MatchDetailDialog({
               <DialogTitle>{opp.name}</DialogTitle>
               <DialogDescription>
                 {opp.organizer || config.label}
-                {opp.isFeatured && " • Featured Event"}
+                {opp.isFeatured && " â€¢ Featured Event"}
               </DialogDescription>
             </div>
           </div>
@@ -528,7 +523,8 @@ function MatchDetailDialog({
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">Audience</p>
-                  <p>{opp.expectedAudienceSize.toLocaleString()}</p>
+                  {/* ðŸŸ¢ WORKING: Using centralized formatNumber */}
+                  <p>{formatNumber(opp.expectedAudienceSize)}</p>
                 </div>
               </div>
             )}

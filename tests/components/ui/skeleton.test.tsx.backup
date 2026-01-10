@@ -1,0 +1,657 @@
+/**
+ * @vitest-environment jsdom
+ *
+ * Skeleton Component Tests
+ *
+ * Comprehensive tests for the Skeleton component covering:
+ * - Basic rendering with default props
+ * - Shape variants (rectangle, circle, text)
+ * - Size variants (sm, md, lg)
+ * - Animation behavior (enabled/disabled, speed variants)
+ * - Rounded variants (none, sm, md, lg, full)
+ * - Custom dimensions (width, height, aspectRatio)
+ * - Custom styling and className
+ * - data-slot attributes
+ */
+
+import { describe, it, expect } from "vitest";
+import { render } from "@testing-library/react";
+
+import { Skeleton } from "@/components/ui/skeleton";
+
+describe("Skeleton Component", () => {
+  describe("Basic Rendering", () => {
+    it("should render with default props", () => {
+      const { container } = render(<Skeleton />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toBeInTheDocument();
+    });
+
+    it("should render as div element", () => {
+      const { container } = render(<Skeleton />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton?.tagName).toBe("DIV");
+    });
+
+    it("should have data-slot attribute", () => {
+      const { container } = render(<Skeleton />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveAttribute("data-slot", "skeleton");
+    });
+
+    it("should have default background color", () => {
+      const { container } = render(<Skeleton />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("bg-muted");
+    });
+
+    it("should have pulse animation by default", () => {
+      const { container } = render(<Skeleton />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      const animationStyle = skeleton?.getAttribute("style");
+      expect(animationStyle).toContain("pulse");
+      expect(animationStyle).toContain("2s");
+      expect(animationStyle).toContain("infinite");
+    });
+  });
+
+  describe("Shape Variants", () => {
+    it("should render rectangle shape (default)", () => {
+      const { container } = render(<Skeleton shape="rectangle" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toBeInTheDocument();
+      // Rectangle doesn't add rounded-full class
+      expect(skeleton).not.toHaveClass("rounded-full");
+    });
+
+    it("should render circle shape with rounded-full", () => {
+      const { container } = render(<Skeleton shape="circle" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("rounded-full");
+    });
+
+    it("should render text shape with rounded-sm and h-4", () => {
+      const { container } = render(<Skeleton shape="text" size="sm" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      // Text shape applies rounded-sm, but rounded prop default (md) may override
+      // Size sm gives h-4
+      expect(skeleton).toHaveClass("h-4");
+    });
+
+    it("should override rounded variant when shape is circle", () => {
+      const { container } = render(<Skeleton shape="circle" rounded="md" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      // Circle shape should force rounded-full regardless of rounded prop
+      expect(skeleton).toHaveClass("rounded-full");
+      expect(skeleton).not.toHaveClass("rounded-md");
+    });
+
+    it("should default to rectangle shape when not specified", () => {
+      const { container } = render(<Skeleton />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      // Default rectangle doesn't have rounded-full or h-4 (text shape)
+      expect(skeleton).not.toHaveClass("rounded-full");
+      expect(skeleton).toHaveClass("rounded-md"); // Default rounded variant
+    });
+  });
+
+  describe("Size Variants", () => {
+    it("should render small size with h-4", () => {
+      const { container } = render(<Skeleton size="sm" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("h-4");
+    });
+
+    it("should render medium size with h-8 (default)", () => {
+      const { container } = render(<Skeleton size="md" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("h-8");
+    });
+
+    it("should render large size with h-12", () => {
+      const { container } = render(<Skeleton size="lg" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("h-12");
+    });
+
+    it("should default to medium size when not specified", () => {
+      const { container } = render(<Skeleton />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("h-8");
+    });
+
+    it("should apply size variant even with text shape", () => {
+      const { container } = render(<Skeleton shape="text" size="lg" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      // Size variant overrides text shape height
+      expect(skeleton).toHaveClass("h-12"); // From size lg
+    });
+  });
+
+  describe("Rounded Variants", () => {
+    it("should render with no rounding", () => {
+      const { container } = render(<Skeleton shape="rectangle" rounded="none" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("rounded-none");
+    });
+
+    it("should render with small rounding", () => {
+      const { container } = render(<Skeleton shape="rectangle" rounded="sm" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("rounded-sm");
+    });
+
+    it("should render with medium rounding (default)", () => {
+      const { container } = render(<Skeleton shape="rectangle" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("rounded-md");
+    });
+
+    it("should render with large rounding", () => {
+      const { container } = render(<Skeleton shape="rectangle" rounded="lg" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("rounded-lg");
+    });
+
+    it("should render with full rounding", () => {
+      const { container } = render(<Skeleton shape="rectangle" rounded="full" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("rounded-full");
+    });
+
+    it("should not apply rounded variant to circle shape", () => {
+      const { container } = render(<Skeleton shape="circle" rounded="sm" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      // Circle shape overrides rounded to always be full
+      expect(skeleton).toHaveClass("rounded-full");
+      expect(skeleton).not.toHaveClass("rounded-sm");
+    });
+  });
+
+  describe("Animation Behavior", () => {
+    it("should have pulse animation enabled by default", () => {
+      const { container } = render(<Skeleton />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      const animationStyle = skeleton?.getAttribute("style");
+      expect(animationStyle).toContain("pulse");
+      expect(animationStyle).toContain("2s");
+      expect(animationStyle).toContain("infinite");
+    });
+
+    it("should disable animation when disableAnimation is true", () => {
+      const { container } = render(<Skeleton disableAnimation={true} />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      // When animation is disabled, the style.animation should not be set or be empty
+      expect(skeleton).not.toHaveStyle({
+        animation: expect.stringContaining("pulse"),
+      });
+    });
+
+    it("should apply normal animation speed by default", () => {
+      const { container } = render(<Skeleton />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      const animationStyle = skeleton?.getAttribute("style");
+      expect(animationStyle).toContain("2s");
+    });
+
+    it("should apply slow animation speed", () => {
+      const { container } = render(<Skeleton speed="slow" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      const animationStyle = skeleton?.getAttribute("style");
+      expect(animationStyle).toContain("3s");
+    });
+
+    it("should apply fast animation speed", () => {
+      const { container } = render(<Skeleton speed="fast" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      const animationStyle = skeleton?.getAttribute("style");
+      expect(animationStyle).toContain("1s");
+    });
+
+    it("should not apply speed when animation is disabled", () => {
+      const { container } = render(
+        <Skeleton disableAnimation={true} speed="fast" />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).not.toHaveStyle({
+        animation: expect.stringContaining("pulse"),
+      });
+    });
+
+    it("should have cubic-bezier easing function", () => {
+      const { container } = render(<Skeleton />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      const animationStyle = skeleton?.getAttribute("style");
+      expect(animationStyle).toContain("cubic-bezier(0.4, 0, 0.6, 1)");
+    });
+
+    it("should have infinite animation", () => {
+      const { container } = render(<Skeleton />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      const animationStyle = skeleton?.getAttribute("style");
+      expect(animationStyle).toContain("infinite");
+    });
+  });
+
+  describe("Custom Dimensions", () => {
+    it("should apply custom width as string", () => {
+      const { container } = render(<Skeleton width="200px" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveStyle({ width: "200px" });
+    });
+
+    it("should apply custom width as number (converted to pixels)", () => {
+      const { container } = render(<Skeleton width={150} />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveStyle({ width: "150px" });
+    });
+
+    it("should apply custom height as string", () => {
+      const { container } = render(<Skeleton height="50px" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveStyle({ height: "50px" });
+    });
+
+    it("should apply custom height as number (converted to pixels)", () => {
+      const { container } = render(<Skeleton height={100} />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveStyle({ height: "100px" });
+    });
+
+    it("should apply both custom width and height", () => {
+      const { container } = render(<Skeleton width={200} height={100} />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveStyle({
+        width: "200px",
+        height: "100px",
+      });
+    });
+
+    it("should support CSS units for width", () => {
+      const { container } = render(<Skeleton width="50%" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveStyle({ width: "50%" });
+    });
+
+    it("should support CSS units for height", () => {
+      const { container } = render(<Skeleton height="10rem" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveStyle({ height: "10rem" });
+    });
+
+    it("should apply aspectRatio", () => {
+      const { container } = render(<Skeleton aspectRatio="16/9" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveStyle({ aspectRatio: "16/9" });
+    });
+
+    it("should apply aspectRatio with custom width", () => {
+      const { container } = render(
+        <Skeleton width={400} aspectRatio="4/3" />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveStyle({
+        width: "400px",
+        aspectRatio: "4/3",
+      });
+    });
+
+    it("should support 1/1 aspectRatio for square", () => {
+      const { container } = render(<Skeleton aspectRatio="1/1" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveStyle({ aspectRatio: "1/1" });
+    });
+  });
+
+  describe("Custom Styling", () => {
+    it("should apply custom className", () => {
+      const { container } = render(
+        <Skeleton className="custom-skeleton-class" />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("custom-skeleton-class");
+    });
+
+    it("should merge custom className with default classes", () => {
+      const { container } = render(
+        <Skeleton className="w-full border border-gray-300" />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("w-full");
+      expect(skeleton).toHaveClass("border");
+      expect(skeleton).toHaveClass("border-gray-300");
+      expect(skeleton).toHaveClass("bg-muted"); // Default class preserved
+    });
+
+    it("should apply custom style object", () => {
+      const { container } = render(
+        <Skeleton style={{ opacity: 0.5, borderRadius: "4px" }} />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveStyle({
+        opacity: "0.5",
+        borderRadius: "4px",
+      });
+    });
+
+    it("should merge custom style with dimension styles", () => {
+      const { container } = render(
+        <Skeleton
+          width={200}
+          height={100}
+          style={{ backgroundColor: "red", margin: "10px" }}
+        />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      const styleAttr = skeleton?.getAttribute("style");
+      expect(styleAttr).toContain("width: 200px");
+      expect(styleAttr).toContain("height: 100px");
+      expect(styleAttr).toContain("background-color: red");
+      expect(styleAttr).toContain("margin: 10px");
+    });
+
+    it("should merge custom style with animation styles", () => {
+      const { container } = render(
+        <Skeleton speed="slow" style={{ transform: "scale(1.1)" }} />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      const styleAttr = skeleton?.getAttribute("style");
+      expect(styleAttr).toContain("transform: scale(1.1)");
+      expect(styleAttr).toContain("pulse");
+      expect(styleAttr).toContain("3s");
+    });
+  });
+
+  describe("Variant Combinations", () => {
+    it("should work with all props combined", () => {
+      const { container } = render(
+        <Skeleton
+          shape="rectangle"
+          size="lg"
+          rounded="lg"
+          width={300}
+          height={200}
+          aspectRatio="3/2"
+          speed="slow"
+          className="custom-class"
+          style={{ margin: "20px" }}
+        />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("bg-muted");
+      expect(skeleton).toHaveClass("h-12"); // size lg
+      expect(skeleton).toHaveClass("rounded-lg");
+      expect(skeleton).toHaveClass("custom-class");
+      const styleAttr = skeleton?.getAttribute("style");
+      expect(styleAttr).toContain("width: 300px");
+      expect(styleAttr).toContain("height: 200px");
+      expect(styleAttr).toContain("aspect-ratio: 3/2");
+      expect(styleAttr).toContain("margin: 20px");
+      expect(styleAttr).toContain("3s");
+    });
+
+    it("should work with circle shape and custom dimensions", () => {
+      const { container } = render(
+        <Skeleton shape="circle" width={60} height={60} />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("rounded-full");
+      expect(skeleton).toHaveStyle({
+        width: "60px",
+        height: "60px",
+      });
+    });
+
+    it("should work with text shape and custom width", () => {
+      const { container } = render(
+        <Skeleton shape="text" size="sm" className="w-3/4" />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("h-4"); // size sm gives h-4
+      expect(skeleton).toHaveClass("w-3/4");
+    });
+
+    it("should handle size and height prop together", () => {
+      const { container } = render(<Skeleton size="lg" height={150} />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      // Custom height should override size height
+      expect(skeleton).toHaveStyle({ height: "150px" });
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle zero width", () => {
+      const { container } = render(<Skeleton width={0} />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveStyle({ width: "0px" });
+    });
+
+    it("should handle zero height", () => {
+      const { container } = render(<Skeleton height={0} />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveStyle({ height: "0px" });
+    });
+
+    it("should handle very large dimensions", () => {
+      const { container } = render(<Skeleton width={9999} height={9999} />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveStyle({
+        width: "9999px",
+        height: "9999px",
+      });
+    });
+
+    it("should handle empty className", () => {
+      const { container } = render(<Skeleton className="" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toBeInTheDocument();
+      expect(skeleton).toHaveClass("bg-muted"); // Default class still present
+    });
+
+    it("should handle empty style object", () => {
+      const { container } = render(<Skeleton style={{}} />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toBeInTheDocument();
+      // Should still have animation by default
+      expect(skeleton).toHaveStyle({
+        animation: expect.stringContaining("pulse"),
+      });
+    });
+
+    it("should handle all variants disabled/default", () => {
+      const { container } = render(
+        <Skeleton disableAnimation={true} />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toBeInTheDocument();
+      expect(skeleton).toHaveClass("bg-muted");
+      expect(skeleton).not.toHaveStyle({
+        animation: expect.stringContaining("pulse"),
+      });
+    });
+  });
+
+  describe("HTML Attributes", () => {
+    it("should support aria-label attribute", () => {
+      const { container } = render(
+        <Skeleton aria-label="Loading content" />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveAttribute("aria-label", "Loading content");
+    });
+
+    it("should support role attribute", () => {
+      const { container } = render(<Skeleton role="status" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveAttribute("role", "status");
+    });
+
+    it("should support id attribute", () => {
+      const { container } = render(<Skeleton id="skeleton-1" />);
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveAttribute("id", "skeleton-1");
+    });
+
+    it("should support data attributes", () => {
+      const { container } = render(
+        <Skeleton data-testid="custom-skeleton" data-index="5" />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveAttribute("data-testid", "custom-skeleton");
+      expect(skeleton).toHaveAttribute("data-index", "5");
+    });
+
+    it("should spread additional HTML attributes", () => {
+      const { container } = render(
+        <Skeleton title="Skeleton element" tabIndex={0} />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveAttribute("title", "Skeleton element");
+      expect(skeleton).toHaveAttribute("tabIndex", "0");
+    });
+  });
+
+  describe("Integration Scenarios", () => {
+    it("should work as avatar placeholder (circle)", () => {
+      const { container } = render(
+        <Skeleton shape="circle" width={40} height={40} />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("rounded-full");
+      expect(skeleton).toHaveStyle({
+        width: "40px",
+        height: "40px",
+      });
+    });
+
+    it("should work as text line placeholder", () => {
+      const { container } = render(
+        <Skeleton shape="text" className="w-full" />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("rounded-sm");
+      expect(skeleton).toHaveClass("h-4");
+      expect(skeleton).toHaveClass("w-full");
+    });
+
+    it("should work as image placeholder with aspect ratio", () => {
+      const { container } = render(
+        <Skeleton aspectRatio="16/9" className="w-full" rounded="lg" />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveStyle({ aspectRatio: "16/9" });
+      expect(skeleton).toHaveClass("w-full");
+      expect(skeleton).toHaveClass("rounded-lg");
+    });
+
+    it("should work as button placeholder", () => {
+      const { container } = render(
+        <Skeleton width={100} height={40} rounded="md" />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveStyle({
+        width: "100px",
+        height: "40px",
+      });
+      expect(skeleton).toHaveClass("rounded-md");
+    });
+
+    it("should work as card placeholder", () => {
+      const { container } = render(
+        <Skeleton
+          className="w-full"
+          height={200}
+          rounded="xl"
+          speed="slow"
+        />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("w-full");
+      expect(skeleton).toHaveClass("rounded-xl");
+      expect(skeleton).toHaveStyle({
+        height: "200px",
+        animation: expect.stringContaining("3s"),
+      });
+    });
+
+    it("should work in loading state without animation", () => {
+      const { container } = render(
+        <Skeleton
+          disableAnimation={true}
+          className="w-full h-32"
+        />
+      );
+
+      const skeleton = container.querySelector("[data-slot='skeleton']");
+      expect(skeleton).toHaveClass("w-full");
+      expect(skeleton).toHaveClass("h-32");
+      expect(skeleton).not.toHaveStyle({
+        animation: expect.stringContaining("pulse"),
+      });
+    });
+  });
+});

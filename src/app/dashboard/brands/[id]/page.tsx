@@ -30,6 +30,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PredictiveChart } from "@/components/analytics/PredictiveChart";
 
 // Type definitions
 interface Brand {
@@ -76,6 +77,52 @@ async function fetchGeoScore(brandId: string): Promise<GeoScoreData> {
   return data;
 }
 
+// Fetch predictions
+async function fetchPredictions(brandId: string) {
+  const res = await fetch(`/api/predictions?brandId=${brandId}&horizon=90`);
+  if (!res.ok) {
+    if (res.status === 400) {
+      // Insufficient data - return null
+      return null;
+    }
+    throw new Error("Failed to fetch predictions");
+  }
+  const data = await res.json();
+  return data;
+}
+
+// Transform predictions to chart data format
+function transformPredictionsToChartData(predictions: any, geoScore: GeoScoreData | undefined) {
+  const chartData = [];
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  // Add current score as the last historical data point
+  const now = new Date();
+  if (geoScore) {
+    chartData.push({
+      month: `${monthNames[now.getMonth()]} ${now.getDate()}`,
+      actual: geoScore.overall,
+      isPrediction: false,
+    });
+  }
+
+  // Add predicted data points
+  if (predictions.predictions && Array.isArray(predictions.predictions)) {
+    predictions.predictions.forEach((pred: any) => {
+      const predDate = new Date(pred.targetDate);
+      chartData.push({
+        month: `${monthNames[predDate.getMonth()]} ${predDate.getDate()}`,
+        predicted: pred.predictedValue,
+        confidenceLower: pred.confidenceLower,
+        confidenceUpper: pred.confidenceUpper,
+        isPrediction: true,
+      });
+    });
+  }
+
+  return chartData;
+}
+
 export default function BrandDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -100,6 +147,17 @@ export default function BrandDetailPage() {
     queryKey: ["geo-score", brandId],
     queryFn: () => fetchGeoScore(brandId),
     enabled: !!brand,
+  });
+
+  const {
+    data: predictions,
+    isLoading: isPredictionsLoading,
+    error: predictionsError,
+  } = useQuery({
+    queryKey: ["predictions", brandId],
+    queryFn: () => fetchPredictions(brandId),
+    enabled: !!brand,
+    retry: false, // Don't retry if insufficient data
   });
 
   const handleRefresh = () => {
@@ -190,7 +248,7 @@ export default function BrandDetailPage() {
                   )}
                   {brand.industry && (
                     <>
-                      <span>•</span>
+                      <span>â€¢</span>
                       <span className="capitalize">{brand.industry}</span>
                     </>
                   )}
@@ -332,6 +390,21 @@ export default function BrandDetailPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Predictive Analytics */}
+      {predictions && predictions.predictions && predictions.predictions.length > 0 && (
+        <PredictiveChart
+          data={transformPredictionsToChartData(predictions, geoScore)}
+          title="GEO Score Forecast"
+          description="Historical data and 90-day prediction with confidence intervals"
+          isLoading={isPredictionsLoading}
+          isError={!!predictionsError}
+          error={predictionsError as Error}
+          height={400}
+          showConfidenceBands={true}
+          showLegend={true}
+        />
       )}
 
       {/* Monitoring Status */}

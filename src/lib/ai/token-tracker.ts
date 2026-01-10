@@ -7,6 +7,7 @@ import { getDb } from "../db";
 import { aiUsage } from "../db/schema";
 import { eq, and, gte, lte, sql } from "drizzle-orm";
 import { LLMProvider } from "./router";
+import { formatTokenCount, formatCost } from "@/lib/utils";
 
 export interface TokenUsageRecord {
   orgId: string;
@@ -319,31 +320,9 @@ export function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
-/**
- * Format token count for display
- */
-export function formatTokenCount(tokens: number): string {
-  if (tokens >= 1000000) {
-    return `${(tokens / 1000000).toFixed(2)}M`;
-  }
-  if (tokens >= 1000) {
-    return `${(tokens / 1000).toFixed(1)}K`;
-  }
-  return tokens.toString();
-}
-
-/**
- * Format cost for display
- */
-export function formatCost(cost: number): string {
-  if (cost < 0.01) {
-    return `$${cost.toFixed(4)}`;
-  }
-  if (cost < 1) {
-    return `$${cost.toFixed(3)}`;
-  }
-  return `$${cost.toFixed(2)}`;
-}
+// ðŸŸ¢ WORKING: Migrated to centralized formatters in @/lib/utils
+// formatTokenCount and formatCost are now imported from centralized library
+// These functions were removed from this file and are available via import above
 
 /**
  * Simplified usage tracking interface

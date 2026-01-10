@@ -212,7 +212,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Generate new key hash
-    const newKeyHash = hashApiKey(newApiKey);
+    const newKeyHash = await hashApiKey(newApiKey);
 
     // Check if new key hash already exists (duplicate key)
     const [duplicateKey] = await db
