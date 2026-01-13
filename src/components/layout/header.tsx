@@ -18,6 +18,7 @@ import {
 import { ThemeToggle } from "./theme-toggle";
 import { BrandSelector } from "./brand-selector";
 import { NotificationsBell } from "@/components/notifications/notifications-bell";
+import { GeoAlertsBell } from "@/components/alerts/geo-alerts-bell";
 
 interface HeaderProps {
   title?: string;
@@ -79,6 +80,9 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
 
       {/* Right side - Actions */}
       <div className="flex items-center gap-2">
+        {/* GEO Alerts */}
+        <GeoAlertsBell />
+
         {/* Notifications */}
         <NotificationsBell />
 
