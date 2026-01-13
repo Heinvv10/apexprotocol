@@ -80,7 +80,18 @@ const querySchema = z.object({
  */
 export async function GET(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const devMode = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
+    let userId: string | null = null;
+    let orgId: string | null = null;
+
+    if (devMode) {
+      userId = "dev-user";
+      orgId = "dev-org";
+    } else {
+      const authResult = await auth();
+      userId = authResult.userId;
+      orgId = authResult.orgId;
+    }
 
     if (!userId || !orgId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -89,12 +100,12 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const query = querySchema.parse({
-      brandId: searchParams.get("brandId"),
+      brandId: searchParams.get("brandId") || undefined,
       type: searchParams.get("type") || "all",
       severity: searchParams.get("severity") || "all",
-      unreadOnly: searchParams.get("unreadOnly"),
-      includeExpired: searchParams.get("includeExpired"),
-      includeDismissed: searchParams.get("includeDismissed"),
+      unreadOnly: searchParams.get("unreadOnly") || undefined,
+      includeExpired: searchParams.get("includeExpired") || undefined,
+      includeDismissed: searchParams.get("includeDismissed") || undefined,
       limit: searchParams.get("limit") || "50",
       offset: searchParams.get("offset") || "0",
     });
@@ -210,7 +221,18 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const devMode = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
+    let userId: string | null = null;
+    let orgId: string | null = null;
+
+    if (devMode) {
+      userId = "dev-user";
+      orgId = "dev-org";
+    } else {
+      const authResult = await auth();
+      userId = authResult.userId;
+      orgId = authResult.orgId;
+    }
 
     if (!userId || !orgId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -261,7 +283,18 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const devMode = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
+    let userId: string | null = null;
+    let orgId: string | null = null;
+
+    if (devMode) {
+      userId = "dev-user";
+      orgId = "dev-org";
+    } else {
+      const authResult = await auth();
+      userId = authResult.userId;
+      orgId = authResult.orgId;
+    }
 
     if (!userId || !orgId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
