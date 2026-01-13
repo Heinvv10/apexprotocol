@@ -452,7 +452,7 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-muted-foreground">Unified Score</p>
               <h3 className="text-2xl font-bold text-foreground mt-1">
-                {typeof unifiedScore === 'object' && unifiedScore ? ((unifiedScore as any).score ?? '--') : ((unifiedScore as any) ?? '--')}
+                {unifiedScore?.score?.overall ?? '--'}
               </h3>
             </div>
             <Target className="w-5 h-5 text-primary" />
