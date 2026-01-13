@@ -318,7 +318,10 @@ export async function POST(request: NextRequest) {
           effort: rec.effort,
           status: "pending" as const,
           source: "monitoring" as const, // AI recommendations from visibility data
-          steps: rec.steps,
+          steps: (rec.steps || []).map((step, idx) => ({
+            stepNumber: idx + 1,
+            instruction: typeof step === 'string' ? step : (step as any).instruction || String(step),
+          })),
           estimatedTime: rec.estimatedTimeframe,
           notes: `AI-generated recommendation. Expected outcome: ${rec.expectedOutcome}. Impact score: ${rec.impactScore}`,
         })

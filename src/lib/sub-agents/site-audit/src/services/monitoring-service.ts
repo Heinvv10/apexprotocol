@@ -901,7 +901,7 @@ export class MonitoringService extends EventEmitter {
 
     // Check for recent snapshot
     const latestSnapshot = this.getLatestSnapshot(domain);
-    const hasRecentData = latestSnapshot && (Date.now() - latestSnapshot.timestamp.getTime()) < 86400000;
+    const hasRecentData = Boolean(latestSnapshot && (Date.now() - latestSnapshot.timestamp.getTime()) < 86400000);
     checks.push({
       name: 'Recent Data',
       passed: hasRecentData,

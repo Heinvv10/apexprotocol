@@ -254,7 +254,10 @@ export async function POST(request: NextRequest) {
         estimatedTime: validatedData.estimatedTime ?? null,
         source: validatedData.source,
         relatedMentionId: validatedData.relatedMentionId ?? null,
-        steps: validatedData.steps,
+        steps: validatedData.steps?.map((step, idx) => ({
+          stepNumber: idx + 1,
+          instruction: typeof step === 'string' ? step : (step as any).instruction || String(step),
+        })),
         notes: validatedData.notes ?? null,
         dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : null,
       })

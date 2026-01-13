@@ -19,7 +19,7 @@ export const BrandVoiceTrainingDataSchema = z.object({
     title: z.string().optional(),
     publishedDate: z.date().optional(),
     engagementScore: z.number().min(0).max(1).optional(),
-    performanceMetrics: z.record(z.number()).optional()
+    performanceMetrics: z.record(z.string(), z.number()).optional()
   }).optional(),
   tags: z.array(z.string()).optional()
 });

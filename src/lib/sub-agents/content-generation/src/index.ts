@@ -11,10 +11,15 @@ export {
   ContentGenerationSubAgent,
   createContentGenerationSubAgent,
   type ContentGenerationConfig,
-  type GenerationRequest,
-  type GenerationResult,
-  type GenerationJob,
-  type JobStatus
+  type ContentRequest,
+  type ContentGenerationResult,
+  type GeneratedContent,
+  type ContentType,
+  type Platform,
+  type ContentStatus,
+  type BrandVoiceProfile,
+  type PerformancePrediction,
+  type ABTestSuggestion,
 } from './content-generation-sub-agent';
 
 // All Services

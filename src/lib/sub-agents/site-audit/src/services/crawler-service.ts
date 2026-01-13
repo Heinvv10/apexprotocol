@@ -541,7 +541,8 @@ export class CrawlerService extends EventEmitter {
       const level = parseInt(match[1], 10);
       const text = match[2].replace(/<[^>]+>/g, '').trim();
 
-      result[`h${level}Count` as keyof HeadingStructure] = (result[`h${level}Count` as keyof HeadingStructure] as number) + 1;
+      const countKey = `h${level}Count` as 'h1Count' | 'h2Count' | 'h3Count' | 'h4Count' | 'h5Count' | 'h6Count';
+      result[countKey] = result[countKey] + 1;
       result.structure.push({ level, text });
 
       // Check hierarchy

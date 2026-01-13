@@ -8,13 +8,15 @@
 export {
   BrandVoiceService,
   createBrandVoiceService,
-  type BrandVoice,
+  type BrandVoiceTrainingData,
   type BrandVoiceConfig,
-  type VoiceAnalysisResult,
-  type TonePattern,
+  type ToneAnalysis,
+  type StyleAnalysis,
   type VocabularyProfile,
-  type ContentStyleProfile,
-  type VoiceAdaptationResult
+  type MessagingPatterns,
+  type PersonalityProfile,
+  type BrandVoiceAnalysis,
+  type ContentAnalysisResult
 } from './brand-voice-service';
 
 // Multi-Platform Content Optimizer
@@ -22,10 +24,11 @@ export {
   PlatformOptimizerService,
   createPlatformOptimizerService,
   type PlatformOptimizerConfig,
-  type ContentPlatform,
-  type OptimizedContent,
+  type Platform,
   type PlatformConstraints,
-  type OptimizationRequest,
+  type ContentToOptimize,
+  type OptimizedContent,
+  type PlatformBestPractices,
   type OptimizationResult,
   type BatchOptimizationResult
 } from './platform-optimizer-service';
@@ -36,11 +39,18 @@ export {
   createContentTypeHandlerService,
   type ContentTypeConfig,
   type ContentType,
-  type ContentLength,
-  type ContentGenerationRequest,
+  type BrandVoiceInput,
+  type ContentTypeInput,
+  type BlogPostConfig,
+  type SocialMediaConfig,
+  type MarketingCopyConfig,
+  type TechnicalDocsConfig,
+  type PressReleaseConfig,
+  type ContentTypeConfiguration,
+  type ContentTypeOutput,
   type ContentGenerationResult,
-  type ContentStructure,
-  type GeneratedSection
+  type ContentValidation,
+  type ContentTemplate
 } from './content-type-handler-service';
 
 // Research Service
@@ -58,6 +68,7 @@ export {
   type ContentOutline,
   type OutlineSection,
   type PlagiarismAnalysis,
+  type Citation,
   type Citations
 } from './research-service';
 
@@ -65,14 +76,15 @@ export {
 export {
   PerformancePredictionService,
   createPerformancePredictionService,
-  type PredictionConfig,
-  type PredictionRequest,
-  type PredictionResult,
-  type EngagementPrediction,
+  type PerformancePredictionConfig,
+  type ContentAnalysisInput,
   type ABTestSuggestion,
+  type EngagementFactors,
   type PlatformInsights,
+  type Recommendation,
   type BenchmarkComparison,
-  type ImprovementRecommendation
+  type PerformancePrediction,
+  type PredictionResult
 } from './performance-prediction-service';
 
 // Caching Service
