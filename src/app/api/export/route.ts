@@ -24,6 +24,18 @@ import {
   type RecommendationsReport,
   type AuditReport,
 } from "@/lib/export/pdf";
+import {
+  generateActionPlan,
+  formatActionPlanForPdf,
+  type ActionPlan,
+} from "@/lib/reports/action-plan-generator";
+import {
+  XLSXGenerator,
+  MentionsXLSX,
+  AuditsXLSX,
+  RecommendationsXLSX,
+  AnalyticsXLSX,
+} from "@/lib/export/xlsx";
 
 // In-memory export job storage (for simplicity)
 // In production, use Redis or database
@@ -53,6 +65,7 @@ const exportRequestSchema = z.object({
     "analytics",
     "competitors",
     "report",
+    "action_plan",
   ]),
   brandId: z.string().optional(),
   dateRange: z
@@ -110,11 +123,17 @@ export async function POST(request: NextRequest) {
         job.fileSize = new TextEncoder().encode(jsonData).length;
         job.status = "completed";
         job.completedAt = new Date().toISOString();
-      } else {
-        // For xlsx and other formats, return placeholder
+      } else if (params.format === "xlsx") {
+        const xlsxData = await generateXLSXExport(params);
+        job.data = xlsxData;
+        job.fileSize = new TextEncoder().encode(xlsxData).length;
         job.status = "completed";
         job.completedAt = new Date().toISOString();
-        job.data = "";
+        job.filename = `${params.dataType}_export_${Date.now()}.xml`; // SpreadsheetML XML format
+      } else {
+        // Unsupported format
+        job.status = "failed";
+        job.error = `Unsupported export format: ${params.format}`;
       }
     } catch (error) {
       job.status = "failed";
@@ -162,6 +181,283 @@ async function generateCSVExport(params: z.infer<typeof exportRequestSchema>): P
       const generator = new CSVGenerator();
       return generator.generate([{ message: "No data available for this export type" }]);
   }
+}
+
+/**
+ * Generate XLSX export based on data type
+ * Uses SpreadsheetML XML format for Excel compatibility
+ */
+async function generateXLSXExport(params: z.infer<typeof exportRequestSchema>): Promise<string> {
+  const { dataType, brandId, dateRange, filters } = params;
+
+  switch (dataType) {
+    case "mentions":
+      return generateMentionsXLSX(brandId, dateRange, filters);
+    case "audits":
+      return generateAuditsXLSX(brandId, dateRange, filters);
+    case "recommendations":
+      return generateRecommendationsXLSX(brandId, filters);
+    case "analytics":
+      return generateAnalyticsXLSX(brandId, dateRange);
+    default:
+      // Return empty workbook for unsupported types
+      const generator = new XLSXGenerator();
+      return generator.generate([{ message: "No data available for this export type" }]);
+  }
+}
+
+/**
+ * Generate mentions XLSX
+ */
+async function generateMentionsXLSX(
+  brandId?: string,
+  dateRange?: { start: string; end: string },
+  filters?: Record<string, unknown>
+): Promise<string> {
+  const conditions = [];
+
+  if (brandId) {
+    conditions.push(eq(brandMentions.brandId, brandId));
+  }
+
+  if (dateRange?.start) {
+    conditions.push(gte(brandMentions.createdAt, new Date(dateRange.start)));
+  }
+
+  if (dateRange?.end) {
+    conditions.push(lte(brandMentions.createdAt, new Date(dateRange.end)));
+  }
+
+  if (filters?.platforms && Array.isArray(filters.platforms) && filters.platforms.length > 0) {
+    const platformValues = filters.platforms as Array<"chatgpt" | "claude" | "gemini" | "perplexity" | "grok" | "deepseek" | "copilot">;
+    conditions.push(inArray(brandMentions.platform, platformValues));
+  }
+
+  if (filters?.sentiment && Array.isArray(filters.sentiment) && filters.sentiment.length > 0) {
+    const sentimentValues = filters.sentiment as Array<"positive" | "neutral" | "negative">;
+    conditions.push(inArray(brandMentions.sentiment, sentimentValues));
+  }
+
+  const mentions = await db
+    .select()
+    .from(brandMentions)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(brandMentions.createdAt))
+    .limit(10000);
+
+  const data = mentions.map((m) => ({
+    id: m.id,
+    brandId: m.brandId,
+    platform: m.platform,
+    query: m.query,
+    response: m.response?.substring(0, 500) || "",
+    sentiment: m.sentiment,
+    position: m.position,
+    citationUrl: m.citationUrl,
+    mentioned: m.position !== null ? "Yes" : "No",
+    timestamp: m.timestamp,
+    createdAt: m.createdAt,
+  }));
+
+  return MentionsXLSX.generate(data);
+}
+
+/**
+ * Generate audits XLSX
+ */
+async function generateAuditsXLSX(
+  brandId?: string,
+  dateRange?: { start: string; end: string },
+  _filters?: Record<string, unknown>
+): Promise<string> {
+  const conditions = [];
+
+  if (brandId) {
+    conditions.push(eq(audits.brandId, brandId));
+  }
+
+  if (dateRange?.start) {
+    conditions.push(gte(audits.createdAt, new Date(dateRange.start)));
+  }
+
+  if (dateRange?.end) {
+    conditions.push(lte(audits.createdAt, new Date(dateRange.end)));
+  }
+
+  const auditResults = await db
+    .select()
+    .from(audits)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(audits.createdAt))
+    .limit(1000);
+
+  const data = auditResults.map((a) => ({
+    id: a.id,
+    brandId: a.brandId,
+    url: a.url,
+    status: a.status,
+    overallScore: a.overallScore,
+    issueCount: a.issueCount,
+    criticalCount: a.criticalCount,
+    highCount: a.highCount,
+    mediumCount: a.mediumCount,
+    lowCount: a.lowCount,
+    startedAt: a.startedAt,
+    completedAt: a.completedAt,
+    createdAt: a.createdAt,
+  }));
+
+  return AuditsXLSX.generate(data);
+}
+
+/**
+ * Generate recommendations XLSX
+ */
+async function generateRecommendationsXLSX(
+  brandId?: string,
+  filters?: Record<string, unknown>
+): Promise<string> {
+  const conditions = [];
+
+  if (brandId) {
+    conditions.push(eq(recommendations.brandId, brandId));
+  }
+
+  if (filters?.status && Array.isArray(filters.status) && filters.status.length > 0) {
+    const statusValues = filters.status as Array<"pending" | "in_progress" | "completed" | "dismissed">;
+    conditions.push(inArray(recommendations.status, statusValues));
+  }
+
+  if (filters?.priority && Array.isArray(filters.priority) && filters.priority.length > 0) {
+    const priorityValues = filters.priority as Array<"critical" | "high" | "medium" | "low">;
+    conditions.push(inArray(recommendations.priority, priorityValues));
+  }
+
+  const recs = await db
+    .select()
+    .from(recommendations)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(recommendations.createdAt))
+    .limit(5000);
+
+  const data = recs.map((r) => ({
+    id: r.id,
+    brandId: r.brandId,
+    title: r.title,
+    description: r.description?.substring(0, 500) || "",
+    category: r.category,
+    priority: r.priority,
+    status: r.status,
+    impact: r.impact,
+    effort: r.effort,
+    source: r.source,
+    estimatedTime: r.estimatedTime,
+    dueDate: r.dueDate,
+    createdAt: r.createdAt,
+    completedAt: r.completedAt,
+  }));
+
+  return RecommendationsXLSX.generate(data);
+}
+
+/**
+ * Generate analytics XLSX (aggregated data)
+ */
+async function generateAnalyticsXLSX(
+  brandId?: string,
+  dateRange?: { start: string; end: string }
+): Promise<string> {
+  const conditions = [];
+
+  if (brandId) {
+    conditions.push(eq(brandMentions.brandId, brandId));
+  }
+
+  if (dateRange?.start) {
+    conditions.push(gte(brandMentions.createdAt, new Date(dateRange.start)));
+  }
+
+  if (dateRange?.end) {
+    conditions.push(lte(brandMentions.createdAt, new Date(dateRange.end)));
+  }
+
+  const mentions = await db
+    .select()
+    .from(brandMentions)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(brandMentions.createdAt));
+
+  // Aggregate by date
+  const dateMap = new Map<string, {
+    totalMentions: number;
+    positiveMentions: number;
+    neutralMentions: number;
+    negativeMentions: number;
+    totalSentiment: number;
+    totalPosition: number;
+    citationCount: number;
+    platforms: Set<string>;
+  }>();
+
+  for (const mention of mentions) {
+    const date = mention.createdAt?.toISOString().split("T")[0] || "unknown";
+
+    if (!dateMap.has(date)) {
+      dateMap.set(date, {
+        totalMentions: 0,
+        positiveMentions: 0,
+        neutralMentions: 0,
+        negativeMentions: 0,
+        totalSentiment: 0,
+        totalPosition: 0,
+        citationCount: 0,
+        platforms: new Set(),
+      });
+    }
+
+    const stats = dateMap.get(date)!;
+    stats.totalMentions++;
+    stats.platforms.add(mention.platform || "unknown");
+
+    if (mention.sentiment === "positive") {
+      stats.positiveMentions++;
+      stats.totalSentiment += 1.0;
+    } else if (mention.sentiment === "negative") {
+      stats.negativeMentions++;
+      stats.totalSentiment += 0.0;
+    } else {
+      stats.neutralMentions++;
+      stats.totalSentiment += 0.5;
+    }
+
+    if (mention.position) stats.totalPosition += mention.position;
+    if (mention.citationUrl) stats.citationCount++;
+  }
+
+  // Convert to XLSX data
+  const data = Array.from(dateMap.entries()).map(([date, stats]) => ({
+    date,
+    brandId: brandId || "all",
+    geoScore: Math.round(
+      ((stats.positiveMentions * 100 + stats.neutralMentions * 50) / stats.totalMentions) || 0
+    ),
+    totalMentions: stats.totalMentions,
+    positiveMentions: stats.positiveMentions,
+    neutralMentions: stats.neutralMentions,
+    negativeMentions: stats.negativeMentions,
+    avgSentiment: stats.totalMentions
+      ? (stats.totalSentiment / stats.totalMentions).toFixed(2)
+      : "0.00",
+    avgPosition: stats.totalMentions
+      ? (stats.totalPosition / stats.totalMentions).toFixed(1)
+      : "0.0",
+    citationRate: stats.totalMentions
+      ? ((stats.citationCount / stats.totalMentions) * 100).toFixed(1) + "%"
+      : "0.0%",
+    platformBreakdown: Array.from(stats.platforms).join(", "),
+  }));
+
+  return AnalyticsXLSX.generate(data);
 }
 
 /**
@@ -476,6 +772,11 @@ async function generatePDFExport(params: z.infer<typeof exportRequestSchema>): P
       report.addRecommendationsSection(allRecs);
       break;
 
+    case "action_plan":
+      // Generate Action Plan report (PRD-001)
+      const actionPlanData = await generateActionPlanExport(brandId);
+      return actionPlanData;
+
     default:
       // Return basic report structure
       break;
@@ -743,11 +1044,97 @@ async function generateJSONExport(params: z.infer<typeof exportRequestSchema>): 
     case "analytics":
       data = await getGEOScoreReportData(brandId, dateRange);
       break;
+    case "action_plan":
+      data = await getActionPlanData(brandId);
+      break;
     default:
       data = { message: "No data available for this export type" };
   }
 
   return JSON.stringify(data, null, 2);
+}
+
+/**
+ * Generate Action Plan export (PRD-001)
+ * Transforms recommendations into step-by-step action plan
+ */
+async function generateActionPlanExport(brandId?: string): Promise<string> {
+  // Fetch recommendations for the brand
+  const conditions = [];
+  if (brandId) {
+    conditions.push(eq(recommendations.brandId, brandId));
+  }
+
+  // Only include pending and in_progress recommendations
+  conditions.push(
+    inArray(recommendations.status, ["pending", "in_progress"])
+  );
+
+  const recs = await db
+    .select()
+    .from(recommendations)
+    .where(and(...conditions))
+    .orderBy(desc(recommendations.priority));
+
+  // Get brand name (if brandId provided)
+  let brandName = "Your Brand";
+  if (brandId) {
+    // For now, use brand ID as name - in production would fetch from brands table
+    brandName = brandId;
+  }
+
+  // Get current GEO score
+  const geoScore = await getGEOScoreReportData(brandId);
+
+  // Generate action plan
+  const actionPlan = generateActionPlan(
+    recs as any, // Type assertion needed due to recommendation schema differences
+    brandId || "all",
+    brandName,
+    geoScore.currentScore
+  );
+
+  // Format for PDF/text output
+  return formatActionPlanForPdf(actionPlan);
+}
+
+/**
+ * Get Action Plan data (for JSON export)
+ */
+async function getActionPlanData(brandId?: string): Promise<ActionPlan> {
+  // Fetch recommendations for the brand
+  const conditions = [];
+  if (brandId) {
+    conditions.push(eq(recommendations.brandId, brandId));
+  }
+
+  // Only include pending and in_progress recommendations
+  conditions.push(
+    inArray(recommendations.status, ["pending", "in_progress"])
+  );
+
+  const recs = await db
+    .select()
+    .from(recommendations)
+    .where(and(...conditions))
+    .orderBy(desc(recommendations.priority));
+
+  // Get brand name
+  let brandName = "Your Brand";
+  if (brandId) {
+    brandName = brandId;
+  }
+
+  // Get current GEO score
+  const geoScore = await getGEOScoreReportData(brandId);
+
+  // Generate and return action plan
+  return generateActionPlan(
+    recs as any,
+    brandId || "all",
+    brandName,
+    geoScore.currentScore
+  );
 }
 
 /**
