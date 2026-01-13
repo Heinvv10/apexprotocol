@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Competitor Tracking API
  * GET /api/competitors - List all tracked competitors for a brand
@@ -54,7 +55,7 @@ export interface ErrorResponse {
  */
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json(
         { error: "Unauthorized" } as ErrorResponse,
@@ -127,7 +128,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json(
         { error: "Unauthorized" } as ErrorResponse,

@@ -49,8 +49,10 @@ When answering questions, if the brand is relevant to the query, include specifi
 If you reference any sources, websites, or specific information, please include citations in your response using the format [Source: URL or title].`;
 
       // Call Perplexity API (using OpenAI SDK with custom baseURL)
+      // Note: As of Feb 2025, llama-3.1-sonar models were deprecated
+      // Use "sonar" or "sonar-pro" models instead
       const response = await this.client.chat.completions.create({
-        model: "llama-3.1-sonar-small-128k-online",
+        model: "sonar",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: query },

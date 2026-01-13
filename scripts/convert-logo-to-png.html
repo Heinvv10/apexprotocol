@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Convert Apex Logo to PNG</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #0d1224;
+            color: white;
+        }
+        #canvas {
+            border: 2px solid #06b6d4;
+            margin: 20px 0;
+        }
+        button {
+            background: #06b6d4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #0891b2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Apex Logo to PNG Converter</h1>
+    <canvas id="canvas" width="400" height="400"></canvas>
+    <br>
+    <button onclick="downloadPNG()">Download as PNG</button>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Draw background
+        ctx.fillStyle = '#0d1224';
+        ctx.fillRect(0, 0, 400, 400);
+
+        // Draw triangle
+        ctx.fillStyle = '#06b6d4';
+        ctx.strokeStyle = '#06b6d4';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(200, 100);  // Top point
+        ctx.lineTo(280, 220);  // Bottom right
+        ctx.lineTo(120, 220);  // Bottom left
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Draw APEX text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 56px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('APEX', 200, 280);
+
+        // Draw tagline
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '16px Arial';
+        ctx.fillText('AI Visibility Platform', 200, 320);
+
+        function downloadPNG() {
+            const link = document.createElement('a');
+            link.download = 'apex-linkedin-logo-400x400.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Auto-download on load
+        console.log('Ready! Click the button to download PNG');
+    </script>
+</body>
+</html>

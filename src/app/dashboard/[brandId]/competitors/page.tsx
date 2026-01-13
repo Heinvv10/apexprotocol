@@ -294,9 +294,10 @@ function AlertCard({ alert }: { alert: AlertItem }) {
 }
 
 // Main Page Component
-export default function BrandCompetitorsPage({ params }: { params: { brandId: string } }) {
+export default function BrandCompetitorsPage({ params }: { params: Promise<{ brandId: string }> }) {
   const router = useRouter();
-  const { brandId } = params;
+  const resolvedParams = React.use(params);
+  const { brandId } = resolvedParams;
   const currentPlan = useCurrentPlan();
 
   const {
@@ -318,7 +319,7 @@ export default function BrandCompetitorsPage({ params }: { params: { brandId: st
   if (summaryLoading) {
     return (
       <div className="space-y-6 relative">
-        <PageHeader brandName={summary?.brandName} />
+        <PageHeader brandName={(summary as CompetitiveSummary | undefined)?.brandName} />
         <LoadingState />
         <DecorativeStar />
       </div>
@@ -328,7 +329,7 @@ export default function BrandCompetitorsPage({ params }: { params: { brandId: st
   if (summaryError) {
     return (
       <div className="space-y-6 relative">
-        <PageHeader brandName={summary?.brandName} />
+        <PageHeader brandName={(summary as CompetitiveSummary | undefined)?.brandName} />
         <ErrorState error={summaryError as Error} onRetry={() => refetchSummary()} />
         <DecorativeStar />
       </div>

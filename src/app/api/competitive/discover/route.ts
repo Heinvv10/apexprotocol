@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getOrganizationId, getUserId } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { brands, discoveredCompetitors } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -58,7 +58,7 @@ interface DiscoveryResponse {
  */
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

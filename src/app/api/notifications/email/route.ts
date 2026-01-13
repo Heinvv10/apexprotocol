@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Email Notifications API (F128-F130)
  * GET /api/notifications/email - Get status, templates, history
@@ -24,7 +25,7 @@ const VALID_ALERT_TYPES: AlertType[] = [
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(

@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Create - AI Suggestions API (F092)
  * Generate AI-powered content suggestions
@@ -24,7 +25,8 @@ interface SuggestionRequest {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId || !orgId) {
       return NextResponse.json(

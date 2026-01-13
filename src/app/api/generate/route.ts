@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateContentSchema } from '@/lib/validations/content';
-import { generateContent } from '@/lib/ai/content-generator';
+import { generateGeoPrompt } from '@/lib/ai/prompts/geo-templates';
+import { createStreamingResponse, StreamEvent, StreamUsage } from '@/lib/ai/streaming';
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,24 +13,45 @@ export async function POST(req: NextRequest) {
     if (!validationResult.success) {
       return NextResponse.json({
         success: false,
-        error: validationResult.error.errors[0].message
+        error: validationResult.error.issues[0].message
       }, { status: 400 });
     }
 
-    const { contentType, keywords, brandVoice, aiProvider } = body;
+    const { contentType, keywords, brandVoice, aiProvider, streaming = false } = body;
 
-    // Generate content using the selected AI provider
-    const generatedContent = await generateContent({
+    // Generate GEO-optimized prompt
+    const prompt = generateGeoPrompt({
       contentType,
       keywords,
-      brandVoice,
-      aiProvider
+      brandVoice
     });
 
-    return NextResponse.json({
-      success: true,
-      content: generatedContent
-    });
+    // Determine whether to use streaming or non-streaming response
+    if (streaming) {
+      // Create streaming SSE response
+      return createStreamingResponse(
+        prompt.systemPrompt,
+        prompt.userPrompt,
+        {
+          provider: aiProvider,
+          maxTokens: 4096
+        }
+      );
+    } else {
+      // Use existing content generation for non-streaming
+      const { generateContent } = await import('@/lib/ai/content-generator');
+      const generatedContent = await generateContent({
+        contentType,
+        keywords,
+        brandVoice,
+        aiProvider
+      });
+
+      return NextResponse.json({
+        success: true,
+        content: generatedContent
+      });
+    }
 
   } catch (error) {
     console.error('Content generation error:', error);
@@ -51,4 +73,16 @@ export async function POST(req: NextRequest) {
       error: 'An unexpected error occurred during content generation.'
     }, { status: 500 });
   }
+}
+
+// Encourage using streaming for long content
+export async function GET(req: NextRequest) {
+  return NextResponse.json({
+    message: 'Use POST method with streaming=true for streaming content generation.',
+    supportedFeatures: {
+      streaming: true,
+      providers: ['claude', 'chatgpt'],
+      contentTypes: ['blog_post', 'press_release', 'social_media', 'email', 'faq']
+    }
+  });
 }

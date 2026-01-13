@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Q&A Format Converter API (F111)
  * POST /api/recommendations/qa - Convert content to Q&A format
@@ -37,7 +38,7 @@ const batchQAConvertSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(

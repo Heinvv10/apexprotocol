@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Admin API Configuration Management - Test Connection Endpoint
  * POST /api/admin/api-config/:id/test - Test API connection
@@ -21,7 +22,7 @@ export async function POST(
     const devSuperAdmin = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
 
     if (!devSuperAdmin) {
-      const { userId } = await auth();
+      const userId = await getUserId();
 
       if (!userId) {
         return NextResponse.json(

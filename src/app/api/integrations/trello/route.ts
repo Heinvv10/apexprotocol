@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Trello Integration API (F124)
  * GET /api/integrations/trello - Get connection status, boards, lists
@@ -14,7 +15,7 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(
@@ -71,7 +72,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(

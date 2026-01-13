@@ -1362,9 +1362,9 @@ function buildOrderByClause(
   field: string,
   direction: "asc" | "desc"
 ) {
-  const column = (table as Record<string, unknown>)[field];
+  const column = (table as unknown as Record<string, any>)[field];
   if (!column) {
     return direction === "asc" ? asc(table.createdAt) : desc(table.createdAt);
   }
-  return direction === "asc" ? asc(column) : desc(column);
+  return direction === "asc" ? asc(column as any) : desc(column as any);
 }

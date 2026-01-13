@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Emerging Opportunities API Route
  * GET /api/predictions/opportunities?brandId=xxx
@@ -23,7 +24,7 @@ import type { ForecastPrediction } from "@/lib/ml/forecaster";
 export async function GET(request: NextRequest) {
   try {
     // Step 1: Authenticate
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

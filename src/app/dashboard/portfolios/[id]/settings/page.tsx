@@ -397,7 +397,7 @@ export default function PortfolioSettingsPage() {
               <FormField
                 control={form.control}
                 name="name"
-                render={({ field }) => (
+                render={({ field }: { field: any }) => (
                   <FormItem>
                     <FormLabel>
                       Portfolio Name <span className="text-red-500">*</span>
@@ -421,7 +421,7 @@ export default function PortfolioSettingsPage() {
               <FormField
                 control={form.control}
                 name="description"
-                render={({ field }) => (
+                render={({ field }: { field: any }) => (
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
@@ -644,10 +644,7 @@ export default function PortfolioSettingsPage() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDelete}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
+                <AlertDialogAction onClick={handleDelete}>
                   {deleteMutation.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />

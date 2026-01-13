@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Jira Integration API (F117-F119)
  * GET /api/integrations/jira - Get connection status, projects
@@ -38,7 +39,7 @@ const webhookEventSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(
@@ -89,7 +90,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(

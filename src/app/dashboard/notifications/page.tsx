@@ -252,44 +252,42 @@ function NotificationCard({
               <h4 className="text-xs font-medium text-muted-foreground mb-2">Message</h4>
               <p className="text-sm text-foreground">{notification.message}</p>
             </div>
-
-            {/* Metadata */}
-            {notification.metadata && Object.keys(notification.metadata).length > 0 && (
+            {notification.metadata && typeof notification.metadata === 'object' && Object.keys(notification.metadata as Record<string, any>).length > 0 ? (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground mb-2">Details</h4>
                 <div className="space-y-1">
-                  {notification.metadata.brandName && (
+                  {(notification.metadata as Record<string, any>)?.brandName && (
                     <div className="flex items-center gap-2 text-xs">
                       <span className="text-muted-foreground">Brand:</span>
-                      <span className="text-foreground font-medium">{notification.metadata.brandName}</span>
+                      <span className="text-foreground font-medium">{(notification.metadata as Record<string, any>)?.brandName}</span>
                     </div>
                   )}
-                  {notification.metadata.platform && (
+                  {(notification.metadata as Record<string, any>)?.platform && (
                     <div className="flex items-center gap-2 text-xs">
                       <span className="text-muted-foreground">Platform:</span>
-                      <span className="text-foreground font-medium">{notification.metadata.platform}</span>
+                      <span className="text-foreground font-medium">{(notification.metadata as Record<string, any>)?.platform}</span>
                     </div>
                   )}
-                  {notification.metadata.oldScore !== undefined && notification.metadata.newScore !== undefined && (
+                  {((notification.metadata as Record<string, any>) ?? {}).oldScore !== undefined && ((notification.metadata as Record<string, any>) ?? {}).newScore !== undefined && (
                     <div className="flex items-center gap-2 text-xs">
                       <span className="text-muted-foreground">Score:</span>
                       <span className="text-foreground font-medium">
-                        {notification.metadata.oldScore} â†’ {notification.metadata.newScore}
+                        {((notification.metadata as Record<string, any>) ?? {}).oldScore} â†’ {((notification.metadata as Record<string, any>) ?? {}).newScore}
                       </span>
                     </div>
                   )}
-                  {notification.metadata.sentiment && (
+                  {((notification.metadata as Record<string, any>) ?? {}).sentiment && (
                     <div className="flex items-center gap-2 text-xs">
                       <span className="text-muted-foreground">Sentiment:</span>
-                      <span className="text-foreground font-medium capitalize">{notification.metadata.sentiment}</span>
+                      <span className="text-foreground font-medium capitalize">{(notification.metadata as Record<string, any>)?.sentiment}</span>
                     </div>
                   )}
                 </div>
               </div>
-            )}
+            ) : null}
 
             {/* Action Link */}
-            {notification.metadata?.linkUrl && (
+            {(notification.metadata as Record<string, any>)?.linkUrl && (
               <div>
                 <Button
                   size="sm"
@@ -297,7 +295,7 @@ function NotificationCard({
                   className="w-full"
                   onClick={() => window.location.href = notification.metadata?.linkUrl as string}
                 >
-                  {notification.metadata.linkText || "View Details"}
+                  {((notification.metadata as Record<string, any>) ?? {}).linkText || "View Details"}
                 </Button>
               </div>
             )}

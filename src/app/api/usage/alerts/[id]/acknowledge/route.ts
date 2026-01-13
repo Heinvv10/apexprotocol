@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Acknowledge Alert API (F176)
  * POST /api/usage/alerts/[id]/acknowledge - Acknowledge an alert
@@ -14,7 +15,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json(

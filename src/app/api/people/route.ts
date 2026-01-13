@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getOrganizationId, getUserId } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { brandPeople, peopleAiMentions, peopleScores, brands } from "@/lib/db/schema";
 import { eq, and, desc, asc, sql, gte } from "drizzle-orm";
@@ -62,7 +62,8 @@ const createPersonSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -330,7 +331,8 @@ async function getPeopleAiMentionsHandler(brandId: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -396,6 +398,14 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
+    // 🟢 AUTO-ENRICHMENT: Trigger background LinkedIn enrichment if LinkedIn URL provided
+    if (person.linkedinUrl) {
+      triggerBackgroundEnrichment(person.id, person.linkedinUrl).catch((error) => {
+        console.error("[Auto-Enrichment] Failed to trigger enrichment:", error);
+        // Don't fail the person creation if enrichment fails
+      });
+    }
+
     return NextResponse.json({ data: person }, { status: 201 });
   } catch (error) {
     console.error("Error creating person:", error);
@@ -405,3 +415,34 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+/**
+ * Trigger background LinkedIn enrichment for a person
+ * This is a fire-and-forget operation that won't block the response
+ */
+async function triggerBackgroundEnrichment(personId: string, linkedinUrl: string) {
+  try {
+    // Call the enrichment endpoint internally
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const response = await fetch(`${baseUrl}/api/people/${personId}/enrich`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        source: "linkedin_public",
+        linkedinUrl,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("[Auto-Enrichment] Enrichment request failed:", response.status);
+    } else {
+      console.log("[Auto-Enrichment] Successfully triggered enrichment for person:", personId);
+    }
+  } catch (error) {
+    console.error("[Auto-Enrichment] Error triggering enrichment:", error);
+    throw error;
+  }
+}
+

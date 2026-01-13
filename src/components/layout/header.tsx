@@ -26,8 +26,17 @@ interface HeaderProps {
 export function Header({ title = "Dashboard" }: HeaderProps) {
   const [mounted, setMounted] = React.useState(false);
   const router = useRouter();
-  const { signOut, openUserProfile } = useClerk();
-  const { user } = useUser();
+
+  // Safely use Clerk hooks - they may not be available if Clerk is not configured
+  let clerkData: { signOut?: () => Promise<void>; openUserProfile?: () => void; user?: any } = {};
+  try {
+    const clerk = useClerk();
+    const { user } = useUser();
+    clerkData = { signOut: clerk.signOut, openUserProfile: clerk.openUserProfile, user };
+  } catch (error) {
+    // Clerk not configured - gracefully handle
+    console.warn("Clerk not configured");
+  }
 
   // Prevent hydration mismatch for dropdowns
   React.useEffect(() => {
@@ -35,12 +44,16 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
   }, []);
 
   const handleSignOut = async () => {
-    await signOut();
+    if (clerkData.signOut) {
+      await clerkData.signOut();
+    }
     router.push("/sign-in");
   };
 
   const handleProfile = () => {
-    openUserProfile();
+    if (clerkData.openUserProfile) {
+      clerkData.openUserProfile();
+    }
   };
 
   return (
@@ -89,7 +102,7 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
-                {user?.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : "My Account"}
+                {clerkData.user?.firstName ? `${clerkData.user.firstName} ${clerkData.user.lastName || ""}`.trim() : "My Account"}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleProfile} className="cursor-pointer">

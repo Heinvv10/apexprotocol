@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Dashboard Activity API
  *
@@ -65,7 +66,7 @@ function formatAction(action: string, _actionType: string): string {
 export async function GET(request: NextRequest) {
   try {
     // Check authentication
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(

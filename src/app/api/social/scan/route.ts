@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getOrganizationId, getUserId } from "@/lib/auth";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { serviceScanResults, brands } from "@/lib/db/schema";
@@ -54,7 +54,7 @@ const scanRequestSchema = z.object({
 
 export async function GET() {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -304,7 +304,8 @@ async function saveScanResultsToDb(
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -802,6 +802,16 @@ export class LocalPaymentManager {
       };
     }
 
+    // Check if already refunded
+    if (payment.status === "refunded") {
+      return {
+        success: false,
+        amount: 0,
+        status: "failed",
+        error: "Payment has already been refunded",
+      };
+    }
+
     if (payment.status !== "completed") {
       return {
         success: false,
@@ -819,16 +829,6 @@ export class LocalPaymentManager {
         amount: 0,
         status: "failed",
         error: "Refund amount exceeds payment amount",
-      };
-    }
-
-    // Check if already refunded
-    if (payment.status === "refunded") {
-      return {
-        success: false,
-        amount: 0,
-        status: "failed",
-        error: "Payment has already been refunded",
       };
     }
 

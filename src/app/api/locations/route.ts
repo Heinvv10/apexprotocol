@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Locations API Routes (Phase 9.2)
  *
@@ -76,7 +77,8 @@ const createLocationSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -340,7 +342,8 @@ async function getRecentReviews(brandId: string, limit: number) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

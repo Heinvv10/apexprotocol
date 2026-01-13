@@ -106,6 +106,7 @@ export const generateContentSchema = z.object({
     .max(10, "Maximum 10 keywords allowed"),
   brandVoice: z.enum(["professional", "casual", "friendly", "authoritative", "playful"]),
   aiProvider: z.enum(["chatgpt", "claude"]), // ChatGPT and Claude supported
+  streaming: z.boolean().optional(), // Add optional streaming flag
 });
 
 export type GenerateContentFormData = z.infer<typeof generateContentSchema>;

@@ -200,7 +200,7 @@ async function calculateBrandMetrics(
     where: eq(audits.brandId, brandId),
     orderBy: desc(audits.createdAt),
   });
-  const auditMetadata = latestAudit?.metadata;
+  const auditMetadata = latestAudit?.metadata as any;
   const contentVolume = Math.min(
     100,
     (Number(auditMetadata?.pageInfo?.wordCount) || 500) / 50

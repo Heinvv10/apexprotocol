@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Alert Threshold API (F176)
  * POST /api/usage/alerts/threshold - Set alert threshold
@@ -13,7 +14,8 @@ const thresholdStore = new Map<string, Array<{ metric: UsageMetricType; threshol
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json(

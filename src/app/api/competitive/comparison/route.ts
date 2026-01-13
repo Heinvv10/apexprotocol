@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Competitor Comparison API
  * GET /api/competitive/comparison - Get competitor comparison data
@@ -40,7 +41,7 @@ export interface CompetitorComparisonData {
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

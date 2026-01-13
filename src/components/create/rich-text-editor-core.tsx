@@ -417,9 +417,8 @@ export const RichTextEditor = React.forwardRef<RichTextEditorHandle, RichTextEdi
       {/* Suggestion Panel - appears after optimization */}
       {showPanel && (
         <SuggestionPanel
-          onApplySuggestion={handleApplySuggestion}
+          onApply={handleApplySuggestion}
           onClose={handleClosePanel}
-          onRetry={handleOptimize}
         />
       )}
     </div>

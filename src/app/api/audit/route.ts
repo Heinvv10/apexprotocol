@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Audit API Routes (F103-F105)
  * POST /api/audit - Start a new audit crawl
@@ -19,7 +20,8 @@ import { ZodError } from "zod";
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json(
@@ -123,7 +125,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json(

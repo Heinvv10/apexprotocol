@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { useRecommendations } from "@/hooks/useRecommendations";
 import { useSelectedBrand } from "@/stores";
 import { EmptyState } from "@/components/ui/empty-state";
-import { SkeletonCard } from "@/components/ui";
 import { ErrorState } from "@/components/ui/error-state";
 
 // Export interface for API integration
@@ -111,14 +110,14 @@ export function PrioritizedRecommendations({
           </h3>
         </div>
 
-        {/* SkeletonCard instances for content-aware loading (improved UX vs generic spinner) */}
+        {/* Skeleton loading state */}
         <div className="space-y-3">
           {Array.from({ length: limit }).map((_, index) => (
-            <SkeletonCard
-              key={index}
-              titleLines={1}
-              descriptionLines={2}
-            />
+            <div key={index} className="p-3 rounded-lg bg-white/5 animate-pulse">
+              <div className="h-4 bg-white/10 rounded mb-2 w-3/4" />
+              <div className="h-3 bg-white/10 rounded w-full mb-1" />
+              <div className="h-3 bg-white/10 rounded w-5/6" />
+            </div>
           ))}
         </div>
       </div>

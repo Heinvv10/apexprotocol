@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Compliance API Route (F145)
  * POPIA/GDPR compliance checking endpoints
@@ -37,7 +38,8 @@ const complianceConfigSchema = z.object({
  */
 export async function GET(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -170,7 +172,8 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

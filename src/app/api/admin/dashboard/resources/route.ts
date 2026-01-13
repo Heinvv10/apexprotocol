@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Resource Usage API
  *
@@ -121,7 +122,7 @@ async function getTableStats(): Promise<{
 export async function GET(_request: NextRequest) {
   try {
     // Check authentication
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(

@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getUserId } from "@/lib/auth";
 import { z } from "zod";
 import { AnalysisEngine } from "@/lib/ai/analysis-engine";
 import { analyzeRequestSchema } from "@/lib/ai/validation";
@@ -26,7 +26,7 @@ const isDatabaseConfigured = () => {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(
@@ -81,17 +81,29 @@ export async function POST(request: NextRequest) {
     }
 
     // Create platform query record
-    const query = await db
-      .insert(platformQueries)
-      .values({
-        brandId,
-        userId,
-        queryText,
-        brandContext: brandContext || null,
-        platforms,
-        status: "pending",
-      })
-      .returning();
+    let query;
+    try {
+      query = await db
+        .insert(platformQueries)
+        .values({
+          brandId,
+          userId,
+          queryText,
+          brandContext: brandContext || null,
+          platforms,
+          status: "pending",
+        })
+        .returning();
+    } catch (insertError: unknown) {
+      const err = insertError as { message?: string; code?: string; detail?: string; cause?: unknown };
+      console.error("[AI Insights] DB insert error:", {
+        message: err.message,
+        code: err.code,
+        detail: err.detail,
+        cause: err.cause,
+      });
+      throw insertError;
+    }
 
     const queryId = query[0].id;
 
@@ -107,25 +119,29 @@ export async function POST(request: NextRequest) {
 
       // Run analysis across all platforms
       const analysis = await engine.analyze({
+        userId,
+        brandId,
         query: queryText,
-        context: brandContext || `Analyze how AI platforms reference ${brandName}.`,
+        brandContext: brandContext || `Analyze how AI platforms reference ${brandName}.`,
       });
 
-      // Determine final query status
-      let finalStatus: "completed" | "partial" | "failed" = "completed";
-      const successCount = analysis.platformResults.filter(
-        (r) => r.status === "completed"
+      // Convert platforms map to results array for processing
+      const platformResults = Object.entries(analysis.platforms).map(([platform, platformAnalysis]) => ({
+        platform: platform as AIPlatform,
+        status: platformAnalysis?.status || "failed",
+        analysis: platformAnalysis,
+        error: platformAnalysis?.error,
+      }));
+
+      // Determine final query status based on analysis.status
+      const finalStatus = analysis.status as "completed" | "partial" | "failed";
+      const successCount = platformResults.filter(
+        (r) => r.status === "success"
       ).length;
 
-      if (successCount === 0) {
-        finalStatus = "failed";
-      } else if (successCount < platforms.length) {
-        finalStatus = "partial";
-      }
-
       // Store platform insights and citations for each platform
-      for (const result of analysis.platformResults) {
-        if (result.status === "completed" && result.analysis) {
+      for (const result of platformResults) {
+        if (result.status === "success" && result.analysis) {
           const platformAnalysis = result.analysis;
 
           // Insert platform insight
@@ -197,15 +213,15 @@ export async function POST(request: NextRequest) {
           status: finalStatus,
           analysis: {
             summary: {
-              averageVisibilityScore: analysis.aggregateStats.averageScore,
-              totalCitations: analysis.aggregateStats.totalCitations,
-              totalMentions: analysis.aggregateStats.totalMentions,
+              averageVisibilityScore: analysis.aggregate.avgVisibilityScore,
+              totalCitations: analysis.aggregate.totalCitations,
+              totalMentions: analysis.aggregate.totalMentions,
               platformsAnalyzed: successCount,
               platformsRequested: platforms.length,
-              bestPlatform: analysis.aggregateStats.bestPlatform,
-              worstPlatform: analysis.aggregateStats.worstPlatform,
+              bestPlatform: analysis.aggregate.bestPlatform,
+              worstPlatform: analysis.aggregate.worstPlatform,
             },
-            platforms: analysis.platformResults.map((result) => ({
+            platforms: platformResults.map((result) => ({
               platform: result.platform,
               status: result.status,
               error: result.error,
@@ -245,6 +261,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.error("[AI Insights] Analysis failed:", error);
     return NextResponse.json(
       {
         success: false,

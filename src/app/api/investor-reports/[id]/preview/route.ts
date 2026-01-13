@@ -7,7 +7,7 @@ import { eq, and } from "drizzle-orm";
 // GET /api/investor-reports/[id]/preview - Preview investor report data
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Authentication check
@@ -17,7 +17,8 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const reportId = params.id;
+    const { id } = await params;
+    const reportId = id;
 
     // Fetch report with portfolio info
     const [report] = await db

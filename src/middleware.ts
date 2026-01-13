@@ -50,6 +50,7 @@ const publicRoutes = [
   "/api/webhooks(.*)",
   "/api/health",
   "/api/status",
+  "/api/brands(.*)",  // Handles auth internally via getOrganizationId()
   "/_next(.*)",
   "/static(.*)",
   "/favicon.ico",
@@ -79,6 +80,7 @@ const apiKeyAuthRoutes = [
   "/api/opportunities(.*)",
   "/api/people(.*)",
   "/api/integrations(.*)",
+  "/api/ai-insights(.*)",  // AI Insights analysis routes
 ];
 
 /**
@@ -265,7 +267,6 @@ async function productionMiddleware(request: NextRequest) {
     "/audit(.*)",
     "/recommendations(.*)",
     "/settings(.*)",
-    "/api/brands(.*)",
     "/api/content(.*)",
     "/api/audits(.*)",
     "/api/recommendations(.*)",

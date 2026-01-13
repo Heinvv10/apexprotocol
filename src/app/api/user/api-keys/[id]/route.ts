@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * User API Keys Management API - Individual Key Operations
  * GET /api/user/api-keys/[id] - Get single API key metadata (never the actual key)
@@ -33,7 +34,8 @@ async function getAuthorizedUser(): Promise<{
   authorized: false;
   errorResponse: NextResponse;
 }> {
-  const { userId, orgId } = await auth();
+  const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
   if (!userId) {
     return {

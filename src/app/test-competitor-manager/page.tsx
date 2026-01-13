@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Test page for CompetitorManager component
  * Navigate to /test-competitor-manager to verify functionality

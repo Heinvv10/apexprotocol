@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { DayPicker } from "react-day-picker";
-import "react-day-picker/style.css";
+// import { DayPicker } from "react-day-picker";
+// import "react-day-picker/style.css";
 import {
   Calendar,
   Clock,
@@ -72,9 +72,9 @@ export function ScheduleCalendar({
     if (hoursNum < 0 || hoursNum > 23) return null;
     if (minutesNum < 0 || minutesNum > 59) return null;
 
-    let scheduledDate = setHours(selectedDate, hoursNum);
-    scheduledDate = setMinutes(scheduledDate, minutesNum);
-    scheduledDate = startOfMinute(scheduledDate);
+    // Create a new date with the specified time
+    const scheduledDate = new Date(selectedDate);
+    scheduledDate.setHours(hoursNum, minutesNum, 0, 0);
 
     return scheduledDate;
   };
@@ -198,15 +198,17 @@ export function ScheduleCalendar({
         {/* Calendar Picker */}
         <div className="space-y-3">
           <Label className="text-sm font-medium">Select Date</Label>
-          <div className="flex justify-center p-4 border rounded-lg bg-background/50">
-            <DayPicker
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              disabled={{ before: new Date() }}
-              className="rdp-custom"
-            />
-          </div>
+          <Input
+            type="date"
+            value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}
+            onChange={(e) => {
+              if (e.target.value) {
+                setSelectedDate(new Date(e.target.value));
+              }
+            }}
+            min={format(new Date(), 'yyyy-MM-dd')}
+            className="bg-background"
+          />
         </div>
 
         {/* Time Inputs */}

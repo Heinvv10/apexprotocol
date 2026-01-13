@@ -1,12 +1,12 @@
 # Project Expertise - Auto-updated by expert-self-improve hook
-# Last updated: 2025-12-17T18:05:20.081Z
-# Version: 3
+# Last updated: 2026-01-10T06:53:37.157Z
+# Version: 4
 
 expertise:
   project: apex
   domain: full-stack-web
-  version: 3
-  last_updated: 2025-12-17T18:05:20.081Z
+  version: 4
+  last_updated: 2026-01-10T06:53:37.157Z
   stack:
     language: typescript
     runtime: node
@@ -28,6 +28,8 @@ expertise:
     types: src/types
     utils: src/utils
     middleware: src/middleware
+    config: .claude/skills/fabric/fabric-repo/web/src/lib/config
+    routes: .claude/skills/fabric/fabric-repo/web/src/routes/tags/[tag]
   patterns:
     - name: Auto-generated expertise
       when: starting work on this project
@@ -45,6 +47,13 @@ expertise:
     db_migrate: npm run db:migrate
     db_push: npm run db:push
   update_history:
+    - version: 4
+      date: 2026-01-10T06:53:37.157Z
+      changes: "Added locations: config, routes; Files modified: 1002 (auto-claude-status, json, ts, md, png, dockerignore,
+        envrc, yml, yaml, gitignore, claude/skills/fabric/fabric-repo/LICENSE, go, db, txt,
+        claude/skills/fabric/fabric-repo/completions/_fabric, bash, fish, sh, gif, lock, nix, mod, sum, py, toml,
+        claude/skills/fabric/fabric-repo/scripts/docker/Dockerfile, ps1, bat, browserslistrc, npmrc, prettierignore,
+        prettierrc, js, gitkeep, cjs, css, html, postcss, svelte, mjs, example, secretsignore, sql, tsx, backup)"
     - version: 3
       date: 2025-12-17T18:05:20.081Z
       changes: "Added locations: middleware; Files modified: 4 (ts)"

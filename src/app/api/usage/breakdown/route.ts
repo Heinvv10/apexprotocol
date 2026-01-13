@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Usage Breakdown API (F176)
  * GET /api/usage/breakdown - Get usage breakdown by brand/user/feature
@@ -12,7 +13,8 @@ import type { UsageBreakdown, UsageMetricType } from "@/hooks/useUsage";
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json(

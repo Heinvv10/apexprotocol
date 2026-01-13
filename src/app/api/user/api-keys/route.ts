@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * User API Keys Management API
  * GET /api/user/api-keys - List user's API keys (masked values)
@@ -34,7 +35,8 @@ export async function GET(request: NextRequest) {
 
   try {
     // Get authenticated user
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json(
@@ -157,7 +159,8 @@ export async function POST(request: NextRequest) {
 
   try {
     // Get authenticated user
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json(

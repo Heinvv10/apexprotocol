@@ -8,7 +8,7 @@
 
 import { Realtime, handle } from '@upstash/realtime';
 import { Redis } from '@upstash/redis';
-import { auth } from '@clerk/nextjs/server';
+import { getUserId } from '@/lib/auth';
 import { z } from 'zod';
 
 /**
@@ -37,7 +37,7 @@ const redis = Redis.fromEnv();
  * - history: Keeps last 100 messages for 24 hours to support reconnection recovery
  */
 const realtime = new Realtime({
-  schema: notificationSchema,
+  schema: notificationSchema as any,
   redis,
   maxDurationSecs: 300, // Vercel free tier timeout limit
   history: {
@@ -58,14 +58,11 @@ const realtime = new Realtime({
 export const GET = handle({
   realtime,
   middleware: async (request) => {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return new Response('Unauthorized', { status: 401 });
     }
-
-    return {
-      channel: `notifications:${userId}`,
-    };
+    // Middleware returns void on success, allowing connection to proceed
   },
 });

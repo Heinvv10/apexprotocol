@@ -30,7 +30,7 @@ import { EmptyState, EmptyStateProps } from "./empty-state"
  * />
  * ```
  */
-interface ErrorStateProps extends Omit<EmptyStateProps, 'icon' | 'theme' | 'primaryAction'> {
+interface ErrorStateProps extends Omit<EmptyStateProps, 'icon' | 'theme' | 'primaryAction' | 'title'> {
   /**
    * Error message title
    *

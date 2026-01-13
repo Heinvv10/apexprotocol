@@ -48,8 +48,9 @@ If you reference any sources, websites, or specific information, please include 
 
       // Call Anthropic API
       // Note: max_tokens is REQUIRED for Anthropic (no default value)
+      // Using claude-sonnet-4-20250514 (Claude 4 Sonnet) as the latest stable model
       const response = await this.client.messages.create({
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-sonnet-4-20250514",
         max_tokens: 1500, // REQUIRED - Anthropic doesn't have a default
         temperature: 0.7,
         system: systemPrompt, // System prompt is separate, not in messages array

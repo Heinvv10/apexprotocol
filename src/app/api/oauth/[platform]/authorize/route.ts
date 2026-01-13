@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * OAuth Authorization Initiation Route
  * GET /api/oauth/[platform]/authorize
@@ -17,7 +18,8 @@ export async function GET(
   context: { params: Promise<{ platform: string }> }
 ) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json(
@@ -64,7 +66,7 @@ export async function GET(
         brandId,
         timestamp: Date.now(),
       })).toString("base64url");
-      authUrl = LinkedInProvider.getAuthorizationUrl({ state });
+      authUrl = await LinkedInProvider.getAuthorizationUrl({ state });
     } else if (platform === "twitter") {
       // Twitter generates state internally, returns object
       const result = await TwitterProvider.getAuthorizationUrl({

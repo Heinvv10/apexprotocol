@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Connectivity Settings API
  * GET /api/settings/connectivity - Get user's connectivity preferences
@@ -26,7 +27,7 @@ export type ConnectivitySettings = z.infer<typeof connectivitySettingsSchema>;
 // GET - Retrieve current connectivity settings
 export async function GET() {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -73,7 +74,7 @@ export async function GET() {
 // PATCH - Update connectivity settings
 export async function PATCH(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

@@ -23,20 +23,38 @@ interface AdminHeaderProps {
 export function AdminHeader({ title = "Admin Dashboard" }: AdminHeaderProps) {
   const [mounted, setMounted] = React.useState(false);
   const router = useRouter();
-  const { signOut, openUserProfile } = useClerk();
-  const { user } = useUser();
+  
+  // Safe Clerk hooks usage (handles when Clerk is not configured)
+  let signOut: (() => Promise<void>) | undefined;
+  let openUserProfile: (() => void) | undefined;
+  let user: any = null;
+
+  try {
+    const clerk = useClerk();
+    const userData = useUser();
+    signOut = clerk.signOut;
+    openUserProfile = clerk.openUserProfile;
+    user = userData.user;
+  } catch (error) {
+    // Clerk not configured - use dev mode defaults
+    console.warn("[AdminHeader] Clerk not configured, using dev mode");
+  }
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
   const handleSignOut = async () => {
-    await signOut();
+    if (signOut) {
+      await signOut();
+    }
     router.push("/sign-in");
   };
 
   const handleProfile = () => {
-    openUserProfile();
+    if (openUserProfile) {
+      openUserProfile();
+    }
   };
 
   return (

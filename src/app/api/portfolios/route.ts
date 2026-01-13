@@ -77,10 +77,10 @@ export async function GET(request: NextRequest) {
         createdAt: portfolios.createdAt,
         updatedAt: portfolios.updatedAt,
         metricsUpdatedAt: portfolios.metricsUpdatedAt,
-        brandCount: sql<number>`(
-          SELECT COUNT(*) FROM portfolio_brands pb
-          WHERE pb.portfolio_id = ${portfolios.id}
-        )::int`,
+        brandCount: sql<number>`CAST((
+          SELECT COUNT(*)::int FROM portfolio_brands pb
+          WHERE pb.portfolio_id = portfolios.id
+        ) AS int)`,
       })
       .from(portfolios)
       .where(eq(portfolios.organizationId, orgId))

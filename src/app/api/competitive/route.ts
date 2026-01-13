@@ -9,9 +9,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getOrganizationId, getUserId } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { brands, brandMentions, competitiveAlerts, competitiveGaps } from "@/lib/db/schema";
+import { brands, brandMentions, competitiveAlerts, competitiveGaps, discoveredCompetitors } from "@/lib/db/schema";
 import { eq, and, desc, gte, count, sql } from "drizzle-orm";
 import {
   createCompetitiveTracker,
@@ -94,7 +94,8 @@ export interface AlertsResponse {
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -182,6 +183,17 @@ async function handleSummaryRequest(
   const brandCount = mentions.length;
   const sov = totalMentions > 0 ? (brandCount / totalMentions) * 100 : 0;
 
+  // Get competitor count from discovered_competitors table (confirmed competitors)
+  const competitorCount = await db
+    .select({ count: count() })
+    .from(discoveredCompetitors)
+    .where(
+      and(
+        eq(discoveredCompetitors.brandId, brandId),
+        eq(discoveredCompetitors.status, "confirmed")
+      )
+    );
+
   // Get alert count
   const alertCount = await db
     .select({ count: count() })
@@ -231,7 +243,7 @@ async function handleSummaryRequest(
     summary: {
       shareOfVoice: Math.round(sov * 100) / 100,
       sovTrend: trend,
-      competitorCount: competitorSet.size,
+      competitorCount: competitorCount[0]?.count || 0,
       alertCount: alertCount[0]?.count || 0,
       gapCount: gapCount[0]?.count || 0,
     },
@@ -397,7 +409,8 @@ async function handleFullIntelligenceRequest(
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

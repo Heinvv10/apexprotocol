@@ -20,6 +20,7 @@ import {
 } from "@/lib/db/schema/feedback";
 import { brands } from "@/lib/db/schema/brands";
 import { predictions, type Prediction } from "@/lib/db/schema/predictions";
+import { notifications } from "@/lib/db/schema/notifications";
 import { eq, and, desc, gte } from "drizzle-orm";
 import { createNotification } from "./service";
 import {
@@ -27,6 +28,8 @@ import {
   generateAlertTitle,
   generateAlertMessage,
   generateActionRecommendation,
+  calculateAlertPriority,
+  type PredictiveAlertContext,
 } from "@/lib/alerts/predictive-alerts";
 
 // Constants
@@ -302,19 +305,11 @@ export async function onPredictedScoreDrop(
   try {
     const { prediction, currentScore, userId, organizationId } = input;
 
-    // Evaluate if alert should be triggered
-    const evaluation = shouldTriggerPredictiveAlert({
-      prediction,
-      currentScore,
-    });
-
-    if (!evaluation.trigger) {
-      return {
-        success: true,
-        skipped: true,
-        reason: evaluation.reason || "Prediction does not meet alert criteria",
-      };
-    }
+    // Calculate score change for alert evaluation
+    const scoreChange = prediction.predictedValue - currentScore;
+    const changePercentage = currentScore > 0
+      ? (Math.abs(scoreChange) / currentScore) * 100
+      : 0;
 
     // Get brand details for context
     const brand = await db.query.brands.findFirst({
@@ -331,21 +326,48 @@ export async function onPredictedScoreDrop(
       };
     }
 
+    // Build alert context
+    const alertContext: PredictiveAlertContext = {
+      brandId: prediction.brandId,
+      brandName: brand.name,
+      currentScore,
+      previousScore: currentScore, // Current is previous for predictions
+      scoreChange,
+      changePercentage,
+      trendDirection: (prediction.trend as "up" | "down" | "stable") || "stable",
+      timeframe: "predicted",
+    };
+
+    // Evaluate if alert should be triggered
+    const shouldTrigger = shouldTriggerPredictiveAlert(alertContext);
+
+    if (!shouldTrigger) {
+      return {
+        success: true,
+        skipped: true,
+        reason: "Prediction does not meet alert criteria",
+      };
+    }
+
+    // Calculate severity for rate limiting
+    const severity = calculateAlertPriority(alertContext);
+
     // Check rate limiting (max 1 per week unless HIGH severity)
-    if (evaluation.severity !== "high") {
+    if (severity !== "high" && severity !== "critical") {
       const rateLimitDate = new Date();
       rateLimitDate.setDate(
         rateLimitDate.getDate() - PREDICTIVE_ALERT_RATE_LIMIT_DAYS
       );
 
       // Query for recent predictive alerts for this brand
+      // Filter by important notifications with predictive_alert metadata
       const recentAlerts = await db.query.notifications.findFirst({
         where: and(
-          eq(db.query.notifications.organizationId, organizationId),
-          eq(db.query.notifications.type, "predictive_alert"),
-          gte(db.query.notifications.createdAt, rateLimitDate)
+          eq(notifications.organizationId, organizationId),
+          eq(notifications.type, "important"),
+          gte(notifications.createdAt, rateLimitDate)
         ),
-        orderBy: [desc(db.query.notifications.createdAt)],
+        orderBy: [desc(notifications.createdAt)],
       });
 
       if (recentAlerts) {
@@ -358,15 +380,15 @@ export async function onPredictedScoreDrop(
     }
 
     // Generate notification content
-    const title = generateAlertTitle(evaluation);
-    const message = generateAlertMessage(brand.name, currentScore, prediction, evaluation);
-    const actionRecommendation = generateActionRecommendation(evaluation);
+    const title = generateAlertTitle(alertContext);
+    const message = generateAlertMessage(alertContext);
+    const actionRecommendation = generateActionRecommendation(alertContext);
 
     // Create notification
     const result = await createNotification({
       userId,
       organizationId,
-      type: "predictive_alert",
+      type: "important",
       title,
       message,
       metadata: {
@@ -375,11 +397,13 @@ export async function onPredictedScoreDrop(
         predictionId: prediction.id,
         currentScore,
         predictedValue: prediction.predictedValue,
-        predictedDrop: evaluation.predictedDrop,
+        scoreChange,
+        changePercentage,
         confidence: prediction.confidence,
-        leadTime: evaluation.leadTime,
         targetDate: prediction.targetDate,
-        severity: evaluation.severity,
+        severity,
+        trendDirection: alertContext.trendDirection,
+        timeframe: alertContext.timeframe,
         explanation: prediction.explanation || message,
         actionRecommendation,
         linkUrl: `/dashboard/brands/${prediction.brandId}/predictions`,

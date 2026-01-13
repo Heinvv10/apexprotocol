@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Delete Competitor By Domain
  * DELETE /api/competitors/by-domain/:domain - Delete all snapshots for a competitor domain
@@ -16,7 +17,7 @@ export async function DELETE(
   const { domain } = await params;
 
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(

@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Admin API Keys Rotation API
  * POST /api/admin/api-keys/[id]/rotate - Rotate an external service API key
@@ -50,7 +51,7 @@ async function getAuthorizedActor(): Promise<
     };
   }
 
-  const { userId } = await auth();
+  const userId = await getUserId();
 
   if (!userId) {
     return {

@@ -21,3 +21,13 @@ export {
   getBrandLocations,
   getLocationReviews,
 } from "./google-places";
+
+// LinkedIn Enrichment (Phase 9.3)
+export {
+  // Types
+  type LinkedInEnrichmentResult,
+  type LinkedInProfileData,
+  // Functions
+  enrichFromLinkedIn,
+  isLinkedInEnrichmentAvailable,
+} from "./linkedin-enrichment";

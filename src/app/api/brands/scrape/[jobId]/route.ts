@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Brand Scrape Job Status API
  * GET - Poll job status and results
@@ -21,7 +22,7 @@ export async function GET(
 ) {
   try {
     // Authenticate user
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -92,7 +93,7 @@ export async function DELETE(
 ) {
   try {
     // Authenticate user
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

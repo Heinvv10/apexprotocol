@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Predictions API Route
  * GET /api/predictions?brandId=xxx&horizon=90
@@ -104,7 +105,7 @@ export async function GET(request: NextRequest) {
   try {
     // Step 1: Authenticate
     const authStartTime = performance.now();
-    const { userId } = await auth();
+    const userId = await getUserId();
     timings.authMs = Math.round(performance.now() - authStartTime);
 
     if (!userId) {

@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Admin API Configuration Management - Dynamic ID Routes
  * GET /api/admin/api-config/:id - Get integration details
@@ -30,7 +31,7 @@ export async function GET(
     const devSuperAdmin = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
 
     if (!devSuperAdmin) {
-      const { userId } = await auth();
+      const userId = await getUserId();
 
       if (!userId) {
         return NextResponse.json(
@@ -155,7 +156,7 @@ export async function PATCH(
     let currentUserId = "dev-super-admin";
 
     if (!devSuperAdmin) {
-      const { userId } = await auth();
+      const userId = await getUserId();
 
       if (!userId) {
         return NextResponse.json(
@@ -331,7 +332,7 @@ export async function DELETE(
     const devSuperAdmin = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
 
     if (!devSuperAdmin) {
-      const { userId } = await auth();
+      const userId = await getUserId();
 
       if (!userId) {
         return NextResponse.json(

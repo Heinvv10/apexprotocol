@@ -69,7 +69,7 @@ export const apiCallTrackingRelations = relations(apiCallTracking, ({ one }) => 
 }));
 
 export const storageTrackingRelations = relations(storageTracking, ({ one }) => ({
-  organization: one(storageTracking, {
+  organization: one(organizations, {
     fields: [storageTracking.organizationId],
     references: [organizations.id],
   }),

@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * WhatsApp Notifications API (F131)
  * GET /api/notifications/whatsapp - Get status, recipients, messages
@@ -28,7 +29,7 @@ const VALID_NOTIFICATION_TYPES: WhatsAppNotificationType[] = [
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(

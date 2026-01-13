@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getOrganizationId, getUserId } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { brands } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -26,7 +26,7 @@ interface RouteParams {
  */
 export async function GET(request: NextRequest, context: RouteParams) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest, context: RouteParams) {
  */
 export async function POST(request: NextRequest, context: RouteParams) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

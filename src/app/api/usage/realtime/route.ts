@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Realtime Usage API (F176)
  * GET /api/usage/realtime - Get real-time usage stats
@@ -9,7 +10,8 @@ import { stripeBillingManager, SUBSCRIPTION_PLANS } from "@/lib/billing/stripe";
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json(

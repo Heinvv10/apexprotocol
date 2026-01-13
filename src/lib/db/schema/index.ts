@@ -77,6 +77,14 @@ export {
 } from "./api-keys";
 
 export {
+  systemSettings,
+  systemSettingTypeEnum,
+  apiKeyProviderEnum,
+  type SystemSetting,
+  type NewSystemSetting,
+} from "./system-settings";
+
+export {
   apiIntegrations,
   integrationCategoryEnum,
   integrationStatusEnum,
@@ -413,3 +421,34 @@ export {
   type ContentTypePerformance,
   type InsightMetadata,
 } from "./ai-platform-insights";
+
+// Predictions (ML Models)
+export {
+  predictions,
+  modelMetadata,
+  type Prediction,
+  type NewPrediction,
+  type ModelMetadataRecord,
+  type NewModelMetadata,
+  predictionsRelations,
+} from "./predictions";
+
+// Content Publishing
+export {
+  contentItems,
+  contentSchedules,
+  publishingHistory,
+  contentMetrics,
+  contentItemsRelations,
+  contentSchedulesRelations,
+  publishingHistoryRelations,
+  contentMetricsRelations,
+  type ContentItem,
+  type NewContentItem,
+  type ContentSchedule,
+  type NewContentSchedule,
+  type PublishingHistory,
+  type NewPublishingHistory,
+  type ContentMetrics,
+  type NewContentMetrics,
+} from "./content-publishing";

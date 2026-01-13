@@ -411,14 +411,14 @@ function EmptyStateDashboard() {
 
 // Main Dashboard Component
 export default function DashboardPage() {
-  const { data: brands, isLoading: brandsLoading } = useBrands();
-  const { selectedBrand } = useSelectedBrand();
-  const { metrics, isLoading: metricsLoading } = useDashboardMetrics(selectedBrand?.id);
-  const { geoScore } = useGEOScore(selectedBrand?.id);
-  const { unifiedScore } = useUnifiedScore(selectedBrand?.id);
+  const brands = useBrands();
+  const selectedBrand = useSelectedBrand();
+  const { data: metrics, isLoading: metricsLoading } = useDashboardMetrics(selectedBrand?.id || "");
+  const { data: geoScore } = useGEOScore(selectedBrand?.id || "");
+  const { data: unifiedScore } = useUnifiedScore(selectedBrand?.id || "");
 
   // Show empty state if no brands
-  if (!brandsLoading && (!brands || brands.length === 0)) {
+  if (!brands || brands.length === 0) {
     return <EmptyStateDashboard />;
   }
 
@@ -452,7 +452,7 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-muted-foreground">Unified Score</p>
               <h3 className="text-2xl font-bold text-foreground mt-1">
-                {unifiedScore?.score ?? '--'}
+                {typeof unifiedScore === 'object' && unifiedScore ? ((unifiedScore as any).score ?? '--') : ((unifiedScore as any) ?? '--')}
               </h3>
             </div>
             <Target className="w-5 h-5 text-primary" />
@@ -466,7 +466,7 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-muted-foreground">GEO Score</p>
               <h3 className="text-2xl font-bold text-foreground mt-1">
-                {geoScore?.score ?? '--'}
+                {geoScore?.overall ?? '--'}
               </h3>
             </div>
             <Globe className="w-5 h-5 text-accent-purple" />
@@ -480,7 +480,7 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-muted-foreground">Mentions</p>
               <h3 className="text-2xl font-bold text-foreground mt-1">
-                {metrics?.totalMentions ?? '--'}
+                {metrics?.mentions?.total ?? '--'}
               </h3>
             </div>
             <Activity className="w-5 h-5 text-accent-blue" />
@@ -494,7 +494,7 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-muted-foreground">Trend</p>
               <h3 className="text-2xl font-bold text-foreground mt-1">
-                {metrics?.trend ?? '--'}%
+                {metrics?.mentions?.change ?? '--'}%
               </h3>
             </div>
             <TrendingUp className="w-5 h-5 text-success" />
@@ -512,7 +512,19 @@ export default function DashboardPage() {
             <h2 className="text-lg font-semibold text-foreground mb-6">
               Overall Performance
             </h2>
-            <UnifiedScoreGauge score={unifiedScore} />
+            {unifiedScore?.score ? (
+              <UnifiedScoreGauge
+                overall={unifiedScore.score.overall}
+                seoScore={unifiedScore.score.components.seo.score}
+                geoScore={unifiedScore.score.components.geo.score}
+                aeoScore={unifiedScore.score.components.aeo.score}
+                grade={unifiedScore.score.grade}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                No score data available
+              </div>
+            )}
           </div>
 
           {/* Platform Performance */}
@@ -521,7 +533,7 @@ export default function DashboardPage() {
               Platform Performance
             </h2>
             <div className="space-y-4">
-              {metrics?.platformMetrics?.map((platform) => (
+              {metrics?.platforms?.map((platform) => (
                 <div
                   key={platform.name}
                   className="flex items-center justify-between p-3 rounded-lg bg-white/5"
@@ -533,11 +545,11 @@ export default function DashboardPage() {
                     <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-primary to-accent-purple"
-                        style={{ width: `${platform.score}%` }}
+                        style={{ width: `${Math.min((platform.mentions || 0) / 10, 100)}%` }}
                       />
                     </div>
                     <span className="text-sm font-semibold text-primary w-10 text-right">
-                      {platform.score}%
+                      {platform.mentions || 0}
                     </span>
                   </div>
                 </div>
@@ -553,7 +565,7 @@ export default function DashboardPage() {
             <h2 className="text-lg font-semibold text-foreground mb-6">
               Score Trend
             </h2>
-            <ScoreTrend data={metrics?.scoreHistory} />
+            <ScoreTrend data={unifiedScore?.history} />
           </div>
 
           {/* Quick Actions */}

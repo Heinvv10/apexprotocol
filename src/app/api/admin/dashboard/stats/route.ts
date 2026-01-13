@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Dashboard Statistics API
  *
@@ -17,7 +18,7 @@ import { isSuperAdmin } from "@/lib/auth/super-admin";
 export async function GET(_request: NextRequest) {
   try {
     // Check authentication
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(

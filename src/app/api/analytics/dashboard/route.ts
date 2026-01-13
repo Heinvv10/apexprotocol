@@ -5,14 +5,14 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getOrganizationId, getUserId } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { brandMentions, recommendations, audits, content, brands } from "@/lib/db/schema";
 import { eq, and, count, sql, desc } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

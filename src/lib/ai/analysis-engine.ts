@@ -340,15 +340,13 @@ export class AnalysisEngine {
     brandContext: string,
     options?: AnalysisOptions
   ): Promise<PlatformAnalysisResult[]> {
-    // Create adapters for selected platforms
-    const adapters = this.options.platforms.map((platform) => ({
-      platform,
-      adapter: createPlatformAdapter(platform),
-    }));
-
     // Query all platforms in parallel using Promise.allSettled for graceful degradation
+    // Note: Adapter creation is inside the async callback so individual adapter failures
+    // (e.g., missing API keys) don't crash the entire analysis
     const results = await Promise.allSettled(
-      adapters.map(async ({ platform, adapter }) => {
+      this.options.platforms.map(async (platform) => {
+        // Create adapter inside Promise.allSettled so failures are handled gracefully
+        const adapter = createPlatformAdapter(platform);
         const response = await this.queryPlatformWithTimeout(
           adapter.analyze(query, brandContext, options),
           platform

@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getOrganizationId, getUserId } from "@/lib/auth";
 import { z } from "zod";
 import { getRedisClient, cacheSet } from "@/lib/redis";
 import { createId } from "@paralleldrive/cuid2";
@@ -82,7 +82,9 @@ const hasRedis = () => {
 export async function POST(request: NextRequest) {
   try {
     // Authenticate user
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

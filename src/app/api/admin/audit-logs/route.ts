@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Admin Audit Logs API
  * GET /api/admin/audit-logs - List audit logs with filters
@@ -32,13 +33,14 @@ import { desc, and, eq, gte, lte, like, or, sql } from "drizzle-orm";
 export async function GET(request: NextRequest) {
   try {
     // Check authentication
-    const session = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     // Dev mode bypass for testing
     const isDev = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
 
     if (!isDev) {
-      if (!session?.userId) {
+      if (!userId) {
         return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
       }
 
@@ -188,13 +190,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
-    const session = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     // Dev mode bypass for testing
     const isDev = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
 
     if (!isDev) {
-      if (!session?.userId) {
+      if (!userId) {
         return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
       }
 

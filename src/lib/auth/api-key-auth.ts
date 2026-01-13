@@ -166,7 +166,7 @@ export async function validateApiKey(
     }
 
     // Step 2: Hash the key for lookup
-    const keyHash = hashApiKey(apiKey);
+    const keyHash = await hashApiKey(apiKey);
 
     // Step 3: Look up the key in the database
     const now = new Date();

@@ -13,6 +13,8 @@ import { getOrganizationId } from "@/lib/auth";
 // Validation schema for query parameters
 const querySchema = z.object({
   brandId: z.string().optional(),
+  timeRange: z.enum(['7d', '30d', '90d']).optional().default('30d'),
+  platform: z.string().optional(), // Filter by specific platform (chatgpt, claude, gemini, etc.)
 });
 
 // Platform configuration
@@ -106,10 +108,26 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Calculate time range cutoff
+    const timeRangeDays = params.timeRange === '7d' ? 7 : params.timeRange === '30d' ? 30 : 90;
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - timeRangeDays);
+
     // Build conditions
-    const baseConditions = params.brandId
-      ? [eq(brandMentions.brandId, params.brandId)]
-      : [inArray(brandMentions.brandId, brandIds)];
+    const brandCondition = params.brandId
+      ? eq(brandMentions.brandId, params.brandId)
+      : inArray(brandMentions.brandId, brandIds);
+
+    const timeCondition = sql`${brandMentions.timestamp} >= ${cutoffDate}`;
+
+    // Add platform filter if specified
+    const platformCondition = params.platform
+      ? eq(brandMentions.platform, params.platform as any)
+      : undefined;
+
+    const baseConditions = platformCondition
+      ? [brandCondition, timeCondition, platformCondition]
+      : [brandCondition, timeCondition];
 
     // Get mention counts by platform
     const platformCounts = await db
@@ -173,27 +191,123 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Generate radar data (competitive comparison)
+    // Calculate radar data from REAL database metrics
     const totalMentions = platformCounts.reduce((sum, pc) => sum + Number(pc.count), 0);
     const avgPositive = platformCounts.reduce((sum, pc) => sum + Number(pc.positiveCount), 0) / Math.max(platformCounts.length, 1);
+    const avgMentionsPerPlatform = totalMentions / Math.max(platformCounts.length, 1);
 
+    // Get citation count from database
+    const citationCount = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(brandMentions)
+      .where(and(...baseConditions, sql`${brandMentions.citationUrl} IS NOT NULL`));
+
+    const totalCitations = Number(citationCount[0]?.count || 0);
+
+    // Get position-based metrics (mentions where brand appears in top 3)
+    const topPositionCount = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(brandMentions)
+      .where(and(...baseConditions, sql`${brandMentions.position} <= 3`));
+
+    const topPositions = Number(topPositionCount[0]?.count || 0);
+
+    // Get recommendation count (mentions with "recommendation" prompt category)
+    const recommendationCount = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(brandMentions)
+      .where(and(...baseConditions, eq(brandMentions.promptCategory, "recommendation")));
+
+    const recommendations = Number(recommendationCount[0]?.count || 0);
+
+    // Calculate REAL metrics from database data
     const radarData: RadarDataPoint[] = [
-      { metric: "Brand Visibility", score: Math.min(100, (totalMentions / 50) * 100), industryAverage: 65 },
-      { metric: "Citation Rate", score: Math.min(100, (totalMentions / 30) * 100), industryAverage: 55 },
-      { metric: "Sentiment Score", score: Math.min(100, (avgPositive / Math.max(totalMentions / platformCounts.length, 1)) * 100), industryAverage: 60 },
-      { metric: "Response Quality", score: Math.random() * 30 + 50, industryAverage: 70 },
-      { metric: "Knowledge Accuracy", score: Math.random() * 30 + 55, industryAverage: 65 },
-      { metric: "Recommendation Rate", score: Math.random() * 30 + 45, industryAverage: 50 },
+      {
+        metric: "Brand Visibility",
+        score: Math.min(100, (totalMentions / 50) * 100), // More mentions = higher visibility
+        industryAverage: 65
+      },
+      {
+        metric: "Citation Rate",
+        score: totalMentions > 0 ? Math.min(100, (totalCitations / totalMentions) * 100) : 0, // Real citation percentage
+        industryAverage: 55
+      },
+      {
+        metric: "Sentiment Score",
+        score: totalMentions > 0 ? Math.min(100, (avgPositive / avgMentionsPerPlatform) * 100) : 0, // Real sentiment ratio
+        industryAverage: 60
+      },
+      {
+        metric: "Response Quality",
+        score: totalMentions > 0 ? Math.min(100, (topPositions / totalMentions) * 100) : 0, // Brands in top 3 positions = quality
+        industryAverage: 70
+      },
+      {
+        metric: "Knowledge Accuracy",
+        score: totalMentions > 0 ? Math.min(100, ((totalMentions - Number(platformCounts.reduce((sum, pc) => sum + Number(pc.negativeCount), 0))) / totalMentions) * 100) : 0, // Non-negative mentions = accurate
+        industryAverage: 65
+      },
+      {
+        metric: "Recommendation Rate",
+        score: totalMentions > 0 ? Math.min(100, (recommendations / totalMentions) * 100) : 0, // Real recommendation percentage
+        industryAverage: 50
+      },
     ];
 
-    // Generate perception bubbles
-    const perceptionBubbles: PerceptionBubble[] = [
-      { id: "1", label: "Quality", size: "lg", top: "20%", left: "30%" },
-      { id: "2", label: "Trustworthy", size: "md", top: "40%", left: "60%" },
-      { id: "3", label: "Innovative", size: "md", top: "60%", left: "25%" },
-      { id: "4", label: "Expert", size: "sm", top: "30%", left: "70%" },
-      { id: "5", label: "Reliable", size: "sm", top: "70%", left: "55%" },
+    // Extract perception keywords from REAL AI responses
+    const perceptionKeywords = await db
+      .select({ response: brandMentions.response })
+      .from(brandMentions)
+      .where(and(...baseConditions, eq(brandMentions.sentiment, "positive")))
+      .limit(100);
+
+    // Extract common positive keywords from responses
+    const keywordCounts: Record<string, number> = {};
+    const perceptionWords = [
+      "quality", "trustworthy", "innovative", "expert", "reliable",
+      "professional", "leading", "trusted", "excellent", "best",
+      "fast", "efficient", "convenient", "comprehensive", "secure"
     ];
+
+    perceptionKeywords.forEach((mention) => {
+      const lowerResponse = mention.response.toLowerCase();
+      perceptionWords.forEach((word) => {
+        if (lowerResponse.includes(word)) {
+          keywordCounts[word] = (keywordCounts[word] || 0) + 1;
+        }
+      });
+    });
+
+    // Sort keywords by frequency and take top 5
+    const topKeywords = Object.entries(keywordCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    // Generate perception bubbles from REAL keyword frequency
+    const perceptionBubbles: PerceptionBubble[] = topKeywords.length > 0
+      ? topKeywords.map((keyword, index) => {
+          const frequency = keyword[1];
+          const maxFrequency = Math.max(...topKeywords.map((k) => k[1]));
+          const size = frequency / maxFrequency > 0.7 ? "lg" : frequency / maxFrequency > 0.4 ? "md" : "sm";
+
+          // Position bubbles in a circular pattern
+          const angle = (index / topKeywords.length) * 2 * Math.PI;
+          const radius = 35; // 35% from center
+          const centerX = 50;
+          const centerY = 50;
+
+          return {
+            id: String(index + 1),
+            label: keyword[0].charAt(0).toUpperCase() + keyword[0].slice(1),
+            size,
+            top: `${centerY + radius * Math.sin(angle)}%`,
+            left: `${centerX + radius * Math.cos(angle)}%`,
+          };
+        })
+      : [
+          // Fallback to generic bubbles if no positive mentions yet
+          { id: "1", label: "Quality", size: "md", top: "50%", left: "50%" },
+        ];
 
     // Generate metric badges
     const metricBadges: MetricBadge[] = [

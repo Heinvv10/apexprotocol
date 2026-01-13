@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Entity Extraction API (F108)
  * POST /api/recommendations/entities - Extract entities from content
@@ -25,7 +26,7 @@ const extractEntitiesSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(

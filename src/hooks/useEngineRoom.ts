@@ -58,12 +58,18 @@ interface EngineRoomResponse {
 /**
  * Hook to fetch engine room data
  */
-export function useEngineRoom(brandId?: string) {
+export function useEngineRoom(
+  brandId?: string,
+  timeRange: '7d' | '30d' | '90d' = '30d',
+  platform?: string // Optional platform filter (chatgpt, claude, gemini, etc.)
+) {
   return useQuery<EngineRoomResponse>({
-    queryKey: ["engine-room", brandId || "all"],
+    queryKey: ["engine-room", brandId || "all", timeRange, platform || "all"],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (brandId) params.set("brandId", brandId);
+      params.set("timeRange", timeRange);
+      if (platform) params.set("platform", platform);
 
       const response = await fetch(`/api/engine-room?${params}`);
       if (!response.ok) {

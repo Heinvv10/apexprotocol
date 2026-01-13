@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Purchase Additional Usage API (F176)
  * POST /api/usage/purchase - Purchase additional usage quota
@@ -22,7 +23,8 @@ const additionalUsagePricing: Record<string, number> = {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json(

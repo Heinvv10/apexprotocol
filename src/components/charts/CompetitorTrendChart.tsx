@@ -186,7 +186,7 @@ export function CompetitorTrendChart({
     if (!data || !data.snapshots) return [];
 
     // Group snapshots by date
-    const dateMap = new Map<string, Record<string, number>>();
+    const dateMap = new Map<string, Record<string, string | number>>();
 
     data.snapshots.forEach((snapshot) => {
       if (!dateMap.has(snapshot.date)) {
@@ -199,7 +199,7 @@ export function CompetitorTrendChart({
 
     // Convert to array and sort by date
     return Array.from(dateMap.values()).sort((a, b) => {
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
+      return new Date(String(a.date)).getTime() - new Date(String(b.date)).getTime();
     });
   }, [data, metric]);
 
@@ -323,7 +323,11 @@ export function CompetitorTrendChart({
                   paddingTop: "20px",
                   fontSize: "12px",
                 }}
-                onClick={(e) => toggleCompetitor(e.value)}
+                onClick={(e) => {
+                  if (e.value) {
+                    toggleCompetitor(e.value);
+                  }
+                }}
                 iconType="line"
               />
               {competitors.map((comp, idx) => (

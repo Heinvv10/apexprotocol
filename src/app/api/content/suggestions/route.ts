@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Content - AI Suggestions API
  * Transform request format and generate content improvement suggestions
@@ -20,7 +21,8 @@ interface ContentSuggestionRequest {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId || !orgId) {
       return NextResponse.json(

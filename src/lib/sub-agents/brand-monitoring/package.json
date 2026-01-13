@@ -1,0 +1,32 @@
+{
+  "name": "@apex/brand-monitoring-sub-agent",
+  "version": "0.1.0",
+  "description": "Autonomous Brand Monitoring Sub-Agent for Apex",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint . --ext .ts",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.18.0",
+    "openai": "^4.0.0",
+    "axios": "^1.6.0",
+    "zod": "^3.22.0",
+    "redis": "^4.6.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0"
+  },
+  "keywords": ["apex", "ai", "brand-monitoring", "sub-agent"],
+  "author": "Apex AI Team",
+  "license": "UNLICENSED"
+}

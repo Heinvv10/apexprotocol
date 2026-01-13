@@ -87,13 +87,14 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
       // New notification received via SSE - invalidate queries to refetch
       invalidateQueries.notifications(queryClient);
     },
-    onStatusChange: (newStatus) => {
-      // Refetch missed notifications on reconnect
-      if (newStatus === "connected") {
-        invalidateQueries.notifications(queryClient);
-      }
-    },
   });
+
+  // Refetch missed notifications on reconnect
+  React.useEffect(() => {
+    if (status === "connected") {
+      invalidateQueries.notifications(queryClient);
+    }
+  }, [status, queryClient]);
 
   // Transform API notifications to component format
   const notifications: Notification[] = React.useMemo(() => {
@@ -108,7 +109,7 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
       message: n.message,
       timestamp: formatRelativeTime(n.createdAt),
       read: n.status === "read",
-      href: n.actionUrl,
+      href: (n as any)?.actionUrl,
     }));
   }, [initialNotifications, recentNotifications]);
 

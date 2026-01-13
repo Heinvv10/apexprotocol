@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils"
  * />
  * ```
  */
-interface LoadingStateProps extends Omit<EmptyStateProps, 'icon' | 'theme'> {
+interface LoadingStateProps extends Omit<EmptyStateProps, 'icon' | 'theme' | 'title'> {
   /**
    * Loading message title
    *

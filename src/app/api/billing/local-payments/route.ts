@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Local Payments API (F136)
  * GET /api/billing/local-payments - Get providers, payments, status
@@ -23,7 +24,8 @@ const VALID_CURRENCIES: Currency[] = ["ZAR", "USD", "EUR", "GBP", "NGN", "KES"];
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json(
@@ -105,7 +107,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
     const body = await request.json();
     const action = body.action;
 

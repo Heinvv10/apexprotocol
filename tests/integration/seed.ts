@@ -99,7 +99,7 @@ export interface SeedResult {
   }>;
   integrations: Array<{
     id: string;
-    organizationId: string;
+    serviceName: string;
     provider: string;
   }>;
 }
@@ -571,18 +571,16 @@ async function seedGeoScoreHistory(
   const historyData = TEST_IDS.GEO_SCORE_HISTORY.map((id, idx) => ({
     id,
     brandId: brandIds[0], // All history for first brand
-    score: 70 + idx * 5, // Scores from 70-90 showing improvement
+    overallScore: 70 + idx * 5, // Scores from 70-90 showing improvement
     visibilityScore: 65 + idx * 6,
     sentimentScore: 72 + idx * 4,
     recommendationScore: 68 + idx * 5,
-    competitorGapScore: 60 + idx * 7,
     platformScores: {
       chatgpt: 75 + idx * 4,
       claude: 70 + idx * 5,
       gemini: 65 + idx * 6,
     },
-    trend: idx === 0 ? "stable" : idx > 2 ? "up" : "down",
-    calculatedAt: daysAgo((TEST_IDS.GEO_SCORE_HISTORY.length - idx) * 7),
+    trend: (idx === 0 ? "stable" : idx > 2 ? "up" : "down") as "up" | "down" | "stable",
     createdAt: daysAgo((TEST_IDS.GEO_SCORE_HISTORY.length - idx) * 7),
   }));
 
@@ -592,7 +590,7 @@ async function seedGeoScoreHistory(
   return historyData.map((h) => ({
     id: h.id,
     brandId: h.brandId,
-    score: h.score,
+    score: h.overallScore,
   }));
 }
 
@@ -604,21 +602,19 @@ async function seedIntegrations(
   schema: Schema,
   orgId: string
 ): Promise<SeedResult["integrations"]> {
-  const integrationsData = TEST_IDS.INTEGRATIONS.map((id, idx) => ({
+  const integrationsData: typeof schema.apiIntegrations.$inferInsert[] = TEST_IDS.INTEGRATIONS.map((id, idx) => ({
     id,
-    organizationId: orgId,
-    name: idx === 0 ? "Google Analytics" : "Google Search Console",
+    serviceName: idx === 0 ? "Google Analytics" : "Google Search Console",
     provider: idx === 0 ? "google_analytics" : "google_search_console",
     category: "analytics" as const,
-    status: idx === 0 ? "connected" : "disconnected",
-    credentials: null,
-    settings: {
-      autoSync: idx === 0,
-      syncInterval: idx === 0 ? "daily" : null,
-    },
-    lastSyncedAt: idx === 0 ? daysAgo(1) : null,
-    syncStatus: idx === 0 ? "success" : null,
-    syncError: null,
+    status: (idx === 0 ? "configured" : "not_configured") as "configured" | "not_configured",
+    isEnabled: idx === 0,
+    config: idx === 0 ? {
+      apiKey: "test-key-001",
+      endpoint: "https://analytics.googleapis.com",
+    } : {},
+    lastVerified: idx === 0 ? daysAgo(1) : null,
+    usageThisMonth: idx === 0 ? 150 : 0,
     createdAt: daysAgo(30 - idx * 10),
     updatedAt: daysAgo(idx),
   }));
@@ -627,10 +623,10 @@ async function seedIntegrations(
   await db.insert(schema.apiIntegrations).values(integrationsData).onConflictDoNothing();
 
   return integrationsData.map((i) => ({
-    id: i.id,
-    organizationId: i.organizationId,
+    id: i.id as string, // id is always defined from TEST_IDS
+    serviceName: i.serviceName,
     provider: i.provider,
-  }));
+  })) as SeedResult["integrations"];
 }
 
 /**
@@ -815,7 +811,7 @@ export const seedHelpers = {
         platform: "chatgpt" as const,
         query: "Test query",
         response: "Test response",
-        sentiment: idx === 0 ? "positive" : "neutral" as const,
+        sentiment: (idx === 0 ? "positive" : "neutral") as "positive" | "neutral",
         timestamp: new Date(),
       }))
     );
@@ -830,7 +826,7 @@ export const seedHelpers = {
         description: "Test description",
         category: "content_optimization" as const,
         priority: "medium" as const,
-        status: idx === 0 ? "pending" : "completed" as const,
+        status: (idx === 0 ? "pending" : "completed") as "pending" | "completed",
         effort: "moderate" as const,
         impact: "medium" as const,
         source: "manual" as const,

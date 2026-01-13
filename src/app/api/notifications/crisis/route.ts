@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Crisis Alert System API (F130.5)
  * GET /api/notifications/crisis - Get crises, settings, dashboard
@@ -37,7 +38,7 @@ const VALID_SEVERITIES: CrisisSeverity[] = ["warning", "critical", "emergency"];
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(
@@ -111,7 +112,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(

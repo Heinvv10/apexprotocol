@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * System Health API
  *
@@ -123,7 +124,7 @@ function getServerUptime(): string {
 export async function GET(_request: NextRequest) {
   try {
     // Check authentication
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(

@@ -8,7 +8,7 @@ import { generateInvestorReportPDF } from "@/lib/reports/investor-report";
 // GET /api/investor-reports/[id]/pdf - Download PDF for investor report
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Authentication check
@@ -18,7 +18,8 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const reportId = params.id;
+    const { id } = await params;
+    const reportId = id;
 
     // Fetch report with portfolio info
     const [report] = await db
@@ -77,7 +78,7 @@ export async function GET(
     });
 
     // Return PDF as download
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="Investor_Report_${report.portfolioName?.replace(/[^a-z0-9]/gi, "_")}_${new Date().toISOString().split("T")[0]}.pdf"`,

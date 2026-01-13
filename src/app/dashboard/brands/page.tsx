@@ -44,6 +44,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { ScrapeWizard } from "@/components/brands/scrape-wizard";
 import { BrandDetailView } from "@/components/brands/brand-detail-view";
+import { CompletionWizard } from "@/components/brands/completion-wizard";
 import { useToast } from "@/components/toast";
 import type { ScrapedBrandData } from "@/app/api/brands/scrape/route";
 
@@ -238,6 +239,8 @@ function BrandsPageContent() {
   const [isUploadingLogo, setIsUploadingLogo] = React.useState(false);
   // Detail view state
   const [viewingBrand, setViewingBrand] = React.useState<Brand | null>(null);
+  // Completion wizard state
+  const [showCompletionWizard, setShowCompletionWizard] = React.useState<Brand | null>(null);
 
   // Load brands on mount
   React.useEffect(() => {
@@ -521,6 +524,8 @@ function BrandsPageContent() {
         if (data.success) {
           addBrand(data.data);
           closeModal();
+          // Trigger completion wizard for newly created brand
+          setShowCompletionWizard(data.data);
         } else {
           setError(data.error || "Failed to create brand");
         }
@@ -684,7 +689,7 @@ function BrandsPageContent() {
             <Building2 className="h-5 w-5 text-primary" />
             <div>
               <p className="font-medium">
-                {meta?.total ?? 0} of {meta?.limit ?? 1} brands used
+                {brands.length} of {meta?.limit ?? 1} brands used
               </p>
               <p className="text-sm text-muted-foreground">
                 {meta?.plan === "starter" && "Starter plan - 1 brand included"}
@@ -704,7 +709,7 @@ function BrandsPageContent() {
           <div
             className="h-full bg-primary transition-all"
             style={{
-              width: `${Math.min(((meta?.total ?? 0) / (meta?.limit ?? 1)) * 100, 100)}%`,
+              width: `${Math.min((brands.length / (meta?.limit ?? 1)) * 100, 100)}%`,
             }}
           />
         </div>
@@ -1477,6 +1482,20 @@ function BrandsPageContent() {
             setViewingBrand(null);
             openEditModal(viewingBrand);
           }}
+        />
+      )}
+
+      {/* Completion Wizard Modal */}
+      {showCompletionWizard && (
+        <CompletionWizard
+          brand={showCompletionWizard}
+          onComplete={async (updatedData) => {
+            // Update the brand with the completed data
+            await updateBrand(showCompletionWizard.id, updatedData);
+            setShowCompletionWizard(null);
+            toast.success("Brand data completed successfully!");
+          }}
+          onClose={() => setShowCompletionWizard(null)}
         />
       )}
 

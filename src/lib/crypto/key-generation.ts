@@ -10,7 +10,7 @@
  */
 
 // Check if we're in Edge runtime or Node.js runtime
-const isEdgeRuntime = typeof EdgeRuntime !== "undefined";
+const isEdgeRuntime = typeof (globalThis as any).EdgeRuntime !== "undefined";
 
 // Import Node.js crypto only in Node.js runtime
 let nodeRandomBytes: (size: number) => Buffer;

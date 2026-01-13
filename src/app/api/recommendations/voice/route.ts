@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Voice Search Readability API (F110)
  * POST /api/recommendations/voice - Analyze content for voice search optimization
@@ -24,7 +25,7 @@ const voiceReadabilitySchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(

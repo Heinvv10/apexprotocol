@@ -212,8 +212,18 @@ function DecorativeStar() {
 export default function EngineRoomPage() {
   const selectedBrand = useSelectedBrand();
 
-  // Fetch engine room data from API
-  const { data: engineData, isLoading } = useEngineRoom(selectedBrand?.id);
+  // Track selected time range
+  const [selectedTimeRange, setSelectedTimeRange] = React.useState<'7d' | '30d' | '90d'>('30d');
+
+  // Track active platform
+  const [activePlatform, setActivePlatform] = React.useState("");
+
+  // Fetch engine room data from API with platform filtering
+  const { data: engineData, isLoading } = useEngineRoom(
+    selectedBrand?.id,
+    selectedTimeRange,
+    activePlatform || undefined // Only filter if platform is selected
+  );
 
   // Extract data from API response
   const platforms = engineData?.platforms || [];
@@ -223,8 +233,9 @@ export default function EngineRoomPage() {
   const filterGroups = engineData?.filterGroups || [];
   const platformData = engineData?.platformData || {};
 
-  const [activePlatform, setActivePlatform] = React.useState("");
   const [expandedGroups, setExpandedGroups] = React.useState<Record<string, boolean>>({});
+  const [activeMetric, setActiveMetric] = React.useState("visibility");
+  const [filterState, setFilterState] = React.useState<Record<string, Record<string, boolean>>>({});
 
   // Set initial active platform when data loads
   React.useEffect(() => {
@@ -233,9 +244,110 @@ export default function EngineRoomPage() {
     }
   }, [platforms, activePlatform]);
 
+  // Initialize filter state from API data
+  React.useEffect(() => {
+    if (filterGroups.length > 0 && Object.keys(filterState).length === 0) {
+      const initialFilters: Record<string, Record<string, boolean>> = {};
+      filterGroups.forEach((group) => {
+        initialFilters[group.id] = {};
+        group.options.forEach((option) => {
+          initialFilters[group.id][option.id] = option.checked;
+        });
+      });
+      setFilterState(initialFilters);
+    }
+  }, [filterGroups, filterState]);
+
   const toggleGroup = (groupId: string) => {
     setExpandedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
   };
+
+  const toggleFilter = (groupId: string, optionId: string) => {
+    // Handle time range changes
+    if (groupId === 'timeRange') {
+      console.log(`[Engine Room] Time range changed: ${selectedTimeRange} → ${optionId}`);
+      setSelectedTimeRange(optionId as '7d' | '30d' | '90d');
+
+      // Update filter state to show only the selected time range as checked
+      setFilterState((prev) => {
+        const newState = {
+          ...prev,
+          [groupId]: {
+            '7d': optionId === '7d',
+            '30d': optionId === '30d',
+            '90d': optionId === '90d',
+          },
+        };
+        return newState;
+      });
+      return;
+    }
+
+    // Handle other filters (sentiment, platforms)
+    setFilterState((prev) => {
+      const newState = {
+        ...prev,
+        [groupId]: {
+          ...prev[groupId],
+          [optionId]: !prev[groupId]?.[optionId],
+        },
+      };
+      console.log(`[Engine Room] Filter toggled: ${groupId}/${optionId} = ${newState[groupId][optionId]}`);
+      return newState;
+    });
+  };
+
+  const toggleMetric = (metricId: string) => {
+    console.log(`[Engine Room] Metric changed: ${activeMetric} → ${metricId}`);
+    setActiveMetric(metricId);
+  };
+
+  // Filter radar data based on active metric
+  const filteredRadarData = React.useMemo(() => {
+    if (!radarData || radarData.length === 0) return [];
+
+    console.log(`[Engine Room] Filtering radar data for metric: ${activeMetric}`);
+
+    if (activeMetric === 'visibility') {
+      // Show metrics related to brand visibility
+      return radarData.filter(d =>
+        ['Brand Visibility', 'Citation Rate', 'Response Quality'].includes(d.metric)
+      );
+    } else if (activeMetric === 'sentiment') {
+      // Show sentiment and accuracy metrics
+      return radarData.filter(d =>
+        ['Sentiment Score', 'Knowledge Accuracy', 'Recommendation Rate'].includes(d.metric)
+      );
+    } else if (activeMetric === 'citations') {
+      // Show citation and quality metrics
+      return radarData.filter(d =>
+        ['Citation Rate', 'Response Quality', 'Knowledge Accuracy'].includes(d.metric)
+      );
+    } else if (activeMetric === 'competitors') {
+      // Show competitive metrics
+      return radarData.filter(d =>
+        ['Recommendation Rate', 'Brand Visibility', 'Response Quality'].includes(d.metric)
+      );
+    }
+
+    // Default: show all metrics
+    return radarData;
+  }, [radarData, activeMetric]);
+
+  // Filter perception bubbles based on sentiment filters
+  const filteredPerceptionBubbles = React.useMemo(() => {
+    if (!perceptionBubbles || perceptionBubbles.length === 0) return [];
+
+    const sentimentFilters = filterState['sentiment'] || {};
+
+    // If positive sentiment is unchecked, hide all bubbles (they're from positive responses)
+    if (sentimentFilters['positive'] === false) {
+      console.log('[Engine Room] Hiding perception bubbles (positive sentiment unchecked)');
+      return [];
+    }
+
+    return perceptionBubbles;
+  }, [perceptionBubbles, filterState]);
 
   // Check if there's any data
   const hasData = platforms.length > 0;
@@ -310,29 +422,33 @@ export default function EngineRoomPage() {
                       {/* Group Options */}
                       {expandedGroups[group.id] && group.options.length > 0 && (
                         <div className="space-y-1 mt-2 ml-6">
-                          {group.options.map((option) => (
-                            <label
-                              key={option.id}
-                              className="flex items-center gap-3 py-1.5 cursor-pointer group"
-                            >
-                              <div
-                                className={`w-4 h-4 rounded border transition-colors flex items-center justify-center ${
-                                  option.checked
-                                    ? "bg-primary/20 border-primary"
-                                    : "border-muted-foreground/50 group-hover:border-muted-foreground"
-                                }`}
+                          {group.options.map((option) => {
+                            const isChecked = filterState[group.id]?.[option.id] ?? option.checked;
+                            return (
+                              <label
+                                key={option.id}
+                                className="flex items-center gap-3 py-1.5 cursor-pointer group"
+                                onClick={() => toggleFilter(group.id, option.id)}
                               >
-                                {option.checked && (
-                                  <svg className="w-2.5 h-2.5 text-primary" viewBox="0 0 12 12" fill="none">
-                                    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                  </svg>
-                                )}
-                              </div>
-                              <span className="text-sm text-muted-foreground group-hover:text-foreground">
-                                {option.label}
-                              </span>
-                            </label>
-                          ))}
+                                <div
+                                  className={`w-4 h-4 rounded border transition-colors flex items-center justify-center ${
+                                    isChecked
+                                      ? "bg-primary/20 border-primary"
+                                      : "border-muted-foreground/50 group-hover:border-muted-foreground"
+                                  }`}
+                                >
+                                  {isChecked && (
+                                    <svg className="w-2.5 h-2.5 text-primary" viewBox="0 0 12 12" fill="none">
+                                      <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                  )}
+                                </div>
+                                <span className="text-sm text-muted-foreground group-hover:text-foreground">
+                                  {option.label}
+                                </span>
+                              </label>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -345,15 +461,19 @@ export default function EngineRoomPage() {
             <div className="flex-1 min-w-0">
               {/* Metric Badges Row */}
               <div className="flex items-center gap-3 mb-6">
-                {metricBadges.map((badge) => (
-                  <button
-                    key={badge.id}
-                    className={`engine-metric-badge ${badge.active ? "active" : ""}`}
-                  >
-                    {badge.active && <span className="w-2 h-2 rounded-full bg-primary" />}
-                    <span>{badge.label}</span>
-                  </button>
-                ))}
+                {metricBadges.map((badge) => {
+                  const isActive = activeMetric === badge.id;
+                  return (
+                    <button
+                      key={badge.id}
+                      onClick={() => toggleMetric(badge.id)}
+                      className={`engine-metric-badge ${isActive ? "active" : ""}`}
+                    >
+                      {isActive && <span className="w-2 h-2 rounded-full bg-primary" />}
+                      <span>{badge.label}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Engine Room Card */}
@@ -378,32 +498,38 @@ export default function EngineRoomPage() {
                   {/* Competitive Radar */}
                   <div className="engine-radar-section">
                     <CompetitiveRadar
-                      data={radarData}
+                      data={filteredRadarData}
                       brandName="Your Brand"
                     />
                   </div>
 
                   {/* Brand Perception Bubbles */}
                   <div className="relative h-[300px]">
-                    {perceptionBubbles.map((bubble) => {
-                      const sizeClasses = {
-                        sm: "w-16 h-16 text-xs",
-                        md: "w-20 h-20 text-xs",
-                        lg: "w-24 h-24 text-sm",
-                      };
-                      return (
-                        <div
-                          key={bubble.id}
-                          className={`engine-perception-bubble ${sizeClasses[bubble.size]}`}
-                          style={{
-                            top: bubble.top,
-                            left: bubble.left,
-                          }}
-                        >
-                          {bubble.label}
-                        </div>
-                      );
-                    })}
+                    {filteredPerceptionBubbles.length > 0 ? (
+                      filteredPerceptionBubbles.map((bubble) => {
+                        const sizeClasses = {
+                          sm: "w-16 h-16 text-xs",
+                          md: "w-20 h-20 text-xs",
+                          lg: "w-24 h-24 text-sm",
+                        };
+                        return (
+                          <div
+                            key={bubble.id}
+                            className={`engine-perception-bubble ${sizeClasses[bubble.size]}`}
+                            style={{
+                              top: bubble.top,
+                              left: bubble.left,
+                            }}
+                          >
+                            {bubble.label}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                        No perception data for current filters
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

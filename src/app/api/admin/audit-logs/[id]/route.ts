@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Admin Audit Logs API - Dynamic Route
  * GET /api/admin/audit-logs/:id - Get detailed log information
@@ -31,13 +32,14 @@ export async function GET(
   const { id: logId } = await params;
   try {
     // Check authentication
-    const session = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     // Dev mode bypass for testing
     const isDev = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
 
     if (!isDev) {
-      if (!session?.userId) {
+      if (!userId) {
         return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
       }
 

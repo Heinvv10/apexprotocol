@@ -293,6 +293,8 @@ export interface DiscoveryMetadata {
   keywordCount?: number;
   mentionCount?: number;
   firstSeenAt?: string;
+  discoveryReason?: string;
+  discoveredDuringBrandCreation?: boolean;
   rawSignals?: Record<string, unknown>;
 }
 

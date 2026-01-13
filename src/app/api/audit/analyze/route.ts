@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Audit Analyze API (F104-F105) - Enhanced with Phase 3
  * POST /api/audit/analyze - Analyze a URL directly
@@ -31,7 +32,7 @@ const analyzeRequestSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(

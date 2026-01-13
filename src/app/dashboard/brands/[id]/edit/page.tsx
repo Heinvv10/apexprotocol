@@ -299,7 +299,7 @@ export default function EditBrandPage() {
               <FormField
                 control={form.control}
                 name="name"
-                render={({ field }) => (
+                render={({ field }: { field: any }) => (
                   <FormItem>
                     <FormLabel>
                       Brand Name <span className="text-red-500">*</span>
@@ -323,7 +323,7 @@ export default function EditBrandPage() {
               <FormField
                 control={form.control}
                 name="domain"
-                render={({ field }) => (
+                render={({ field }: { field: any }) => (
                   <FormItem>
                     <FormLabel>Domain</FormLabel>
                     <FormControl>
@@ -345,7 +345,7 @@ export default function EditBrandPage() {
               <FormField
                 control={form.control}
                 name="industry"
-                render={({ field }) => (
+                render={({ field }: { field: any }) => (
                   <FormItem>
                     <FormLabel>Industry</FormLabel>
                     <Select
@@ -377,7 +377,7 @@ export default function EditBrandPage() {
               <FormField
                 control={form.control}
                 name="description"
-                render={({ field }) => (
+                render={({ field }: { field: any }) => (
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
@@ -399,7 +399,7 @@ export default function EditBrandPage() {
               <FormField
                 control={form.control}
                 name="logoUrl"
-                render={({ field }) => (
+                render={({ field }: { field: any }) => (
                   <FormItem>
                     <FormLabel>Logo URL</FormLabel>
                     <FormControl>
@@ -441,10 +441,7 @@ export default function EditBrandPage() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDelete}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
+                      <AlertDialogAction onClick={handleDelete}>
                         {deleteMutation.isPending ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />

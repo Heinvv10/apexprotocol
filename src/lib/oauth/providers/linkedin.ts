@@ -16,6 +16,10 @@
 
 import { TokenService, type TokenData, type OAuthAccountInfo } from "../token-service";
 import { RateLimitService } from "../rate-limit-service";
+import { db } from "@/lib/db";
+import { apiIntegrations } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
+import { decryptConfigApiKey } from "@/lib/security";
 
 // ============================================================================
 // Configuration
@@ -27,12 +31,11 @@ const LINKEDIN_CONFIG = {
   apiBaseUrl: "https://api.linkedin.com/v2",
   restApiBaseUrl: "https://api.linkedin.com/rest", // New REST API
 
-  // Default scopes for brand monitoring
+  // Default scopes for brand monitoring (OIDC only - w_member_social requires additional approval)
   defaultScopes: [
     "openid",
     "profile",
     "email",
-    "w_member_social",
   ],
 
   // Scopes for company pages (requires LinkedIn Marketing Solutions Partner access)
@@ -108,16 +111,51 @@ export interface LinkedInFollowerStats {
 }
 
 // ============================================================================
-// Environment Variables
+// Environment Variables / Database Config
 // ============================================================================
 
-function getLinkedInCredentials(): { clientId: string; clientSecret: string; redirectUri: string } {
+/**
+ * Get LinkedIn OAuth credentials from API config database
+ * Falls back to environment variables if not found in database
+ */
+async function getLinkedInCredentials(): Promise<{ clientId: string; clientSecret: string; redirectUri: string }> {
+  // First, try to get from database (admin API config)
+  try {
+    const integration = await db.query.apiIntegrations.findFirst({
+      where: and(
+        eq(apiIntegrations.serviceName, "LinkedIn OAuth"),
+        eq(apiIntegrations.isEnabled, true)
+      ),
+    });
+
+    if (integration?.config) {
+      const decryptedConfig = decryptConfigApiKey(integration.config);
+
+      if (decryptedConfig.clientId && decryptedConfig.clientSecret) {
+        const redirectUri = decryptedConfig.redirectUri ||
+          `${process.env.NEXT_PUBLIC_APP_URL}/api/settings/oauth/linkedin/callback`;
+
+        return {
+          clientId: decryptedConfig.clientId,
+          clientSecret: decryptedConfig.clientSecret,
+          redirectUri,
+        };
+      }
+    }
+  } catch (error) {
+    console.warn("[LinkedIn OAuth] Failed to fetch credentials from database, falling back to env vars:", error);
+  }
+
+  // Fallback to environment variables
   const clientId = process.env.LINKEDIN_CLIENT_ID;
   const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
-  const redirectUri = process.env.LINKEDIN_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL}/api/oauth/linkedin/callback`;
+  const redirectUri = process.env.LINKEDIN_REDIRECT_URI ||
+    `${process.env.NEXT_PUBLIC_APP_URL}/api/settings/oauth/linkedin/callback`;
 
   if (!clientId || !clientSecret) {
-    throw new Error("LinkedIn OAuth credentials not configured. Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET.");
+    throw new Error(
+      "LinkedIn OAuth credentials not configured. Please configure via Admin > API Config or set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET environment variables."
+    );
   }
 
   return { clientId, clientSecret, redirectUri };
@@ -130,12 +168,12 @@ function getLinkedInCredentials(): { clientId: string; clientSecret: string; red
 /**
  * Generate the LinkedIn authorization URL
  */
-export function getAuthorizationUrl(params: {
+export async function getAuthorizationUrl(params: {
   state: string; // CSRF token
   scopes?: string[];
   includeOrganizationScopes?: boolean;
-}): string {
-  const { clientId, redirectUri } = getLinkedInCredentials();
+}): Promise<string> {
+  const { clientId, redirectUri } = await getLinkedInCredentials();
 
   let scopes = params.scopes || LINKEDIN_CONFIG.defaultScopes;
 
@@ -157,7 +195,7 @@ export function getAuthorizationUrl(params: {
  * Exchange authorization code for tokens
  */
 export async function exchangeCodeForTokens(code: string): Promise<TokenData> {
-  const { clientId, clientSecret, redirectUri } = getLinkedInCredentials();
+  const { clientId, clientSecret, redirectUri } = await getLinkedInCredentials();
 
   const response = await fetch(LINKEDIN_CONFIG.tokenUrl, {
     method: "POST",
@@ -197,7 +235,7 @@ export async function exchangeCodeForTokens(code: string): Promise<TokenData> {
  * can be used to get new access tokens without user interaction
  */
 export async function refreshAccessToken(refreshToken: string): Promise<TokenData> {
-  const { clientId, clientSecret } = getLinkedInCredentials();
+  const { clientId, clientSecret } = await getLinkedInCredentials();
 
   const response = await fetch(LINKEDIN_CONFIG.tokenUrl, {
     method: "POST",
@@ -306,53 +344,57 @@ async function rateLimitedRequest<T>(
 // ============================================================================
 
 /**
- * Get the authenticated user's profile
+ * Get the authenticated user's profile using OpenID Connect userinfo endpoint
+ * This endpoint works with openid, profile, and email scopes
  */
 export async function getProfile(accessToken: string): Promise<LinkedInProfile> {
-  return rateLimitedRequest<LinkedInProfile>(
-    accessToken,
-    "/me?projection=(id,localizedFirstName,localizedLastName,localizedHeadline,profilePicture(displayImage~:playableStreams),vanityName)"
-  );
+  // Use OpenID Connect userinfo endpoint
+  const userinfo = await rateLimitedRequest<{
+    sub: string;
+    name: string;
+    given_name: string;
+    family_name: string;
+    picture?: string;
+    email?: string;
+    locale?: string;
+  }>(accessToken, "/userinfo");
+
+  // Map OIDC fields to our LinkedInProfile format
+  return {
+    id: userinfo.sub,
+    localizedFirstName: userinfo.given_name,
+    localizedLastName: userinfo.family_name,
+    localizedHeadline: undefined, // Not available in OIDC userinfo
+    profilePicture: userinfo.picture ? { displayImage: userinfo.picture } : undefined,
+    vanityName: undefined, // Not available in OIDC userinfo
+  };
 }
 
 /**
- * Get the authenticated user's email
+ * Get the authenticated user's email from OpenID Connect userinfo
  */
 export async function getEmail(accessToken: string): Promise<string | null> {
   try {
-    const response = await rateLimitedRequest<{
-      elements: Array<{ "handle~": { emailAddress: string } }>;
-    }>(accessToken, "/emailAddress?q=members&projection=(elements*(handle~))");
+    const userinfo = await rateLimitedRequest<{
+      email?: string;
+    }>(accessToken, "/userinfo");
 
-    return response.elements?.[0]?.["handle~"]?.emailAddress || null;
+    return userinfo.email || null;
   } catch {
     return null;
   }
 }
 
 /**
- * Get user's profile picture URL
+ * Get user's profile picture URL from OpenID Connect userinfo
  */
 export async function getProfilePicture(accessToken: string): Promise<string | null> {
   try {
-    const response = await rateLimitedRequest<{
-      profilePicture?: {
-        "displayImage~"?: {
-          elements?: Array<{
-            identifiers?: Array<{ identifier: string }>;
-          }>;
-        };
-      };
-    }>(accessToken, "/me?projection=(profilePicture(displayImage~:playableStreams))");
+    const userinfo = await rateLimitedRequest<{
+      picture?: string;
+    }>(accessToken, "/userinfo");
 
-    const elements = response.profilePicture?.["displayImage~"]?.elements;
-    if (elements && elements.length > 0) {
-      // Get the highest quality image (last element usually)
-      const lastElement = elements[elements.length - 1];
-      return lastElement?.identifiers?.[0]?.identifier || null;
-    }
-
-    return null;
+    return userinfo.picture || null;
   } catch {
     return null;
   }
@@ -487,44 +529,58 @@ export async function getOrganizationPosts(
  */
 export async function completeOAuthFlow(params: {
   code: string;
-  organizationId: string;
-  brandId: string;
+  state?: string;
+  organizationId?: string;
+  brandId?: string;
 }): Promise<{
-  tokens: TokenData;
-  accountInfo: OAuthAccountInfo;
-  profile: LinkedInProfile;
+  success: boolean;
+  tokens?: TokenData;
+  accountInfo?: OAuthAccountInfo;
+  profile?: LinkedInProfile;
+  email?: string | null;
+  error?: string;
 }> {
-  const { code, organizationId, brandId } = params;
+  try {
+    const { code, organizationId, brandId } = params;
 
-  // Exchange code for tokens
-  const tokens = await exchangeCodeForTokens(code);
+    // Exchange code for tokens
+    const tokens = await exchangeCodeForTokens(code);
 
-  // Fetch profile
-  const profile = await getProfile(tokens.accessToken);
-  const email = await getEmail(tokens.accessToken);
-  const avatarUrl = await getProfilePicture(tokens.accessToken);
+    // Fetch profile
+    const profile = await getProfile(tokens.accessToken);
+    const email = await getEmail(tokens.accessToken);
+    const avatarUrl = await getProfilePicture(tokens.accessToken);
 
-  // Build account info
-  const accountInfo: OAuthAccountInfo = {
-    accountId: profile.id,
-    accountName: `${profile.localizedFirstName} ${profile.localizedLastName}`,
-    accountHandle: profile.vanityName || undefined,
-    profileUrl: profile.vanityName
-      ? `https://linkedin.com/in/${profile.vanityName}`
-      : `https://linkedin.com/in/${profile.id}`,
-    avatarUrl: avatarUrl || undefined,
-  };
+    // Build account info
+    const accountInfo: OAuthAccountInfo = {
+      accountId: profile.id,
+      accountName: `${profile.localizedFirstName} ${profile.localizedLastName}`,
+      accountHandle: profile.vanityName || undefined,
+      profileUrl: profile.vanityName
+        ? `https://linkedin.com/in/${profile.vanityName}`
+        : `https://linkedin.com/in/${profile.id}`,
+      avatarUrl: avatarUrl || undefined,
+    };
 
-  // Store tokens
-  await TokenService.storeTokens({
-    organizationId,
-    brandId,
-    platform: "linkedin",
-    tokens,
-    accountInfo,
-  });
+    // Store tokens if organizationId and brandId provided
+    if (organizationId && brandId) {
+      await TokenService.storeTokens({
+        organizationId,
+        brandId,
+        platform: "linkedin",
+        tokens,
+        accountInfo,
+      });
+    }
 
-  return { tokens, accountInfo, profile };
+    return { success: true, tokens, accountInfo, profile, email };
+  } catch (error) {
+    console.error("[LinkedIn OAuth] Complete flow error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
 }
 
 // ============================================================================

@@ -17,7 +17,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { useCurrentPng } from "recharts-to-png";
+// NOTE: recharts-to-png import removed - package not installed
+// TODO: Implement PNG export functionality when package is available
 
 // ============================================================================
 // Types
@@ -76,15 +77,8 @@ export function GeoVisibilityChart({
   width = 800,
   height = 400,
 }: GeoVisibilityChartProps) {
-  // Initialize recharts-to-png hook with high quality settings for professional reports
-  const [getPng, { ref }] = useCurrentPng({
-    backgroundColor: "#fff",
-    scale: 2, // High quality for professional reports
-  });
-
   return (
     <div
-      ref={ref}
       style={{
         width,
         height,

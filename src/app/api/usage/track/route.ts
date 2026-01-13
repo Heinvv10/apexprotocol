@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Usage Tracking API (F176)
  * POST /api/usage/track - Track usage event
@@ -21,7 +22,8 @@ const metricToBillingType: Record<string, UsageType> = {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json(

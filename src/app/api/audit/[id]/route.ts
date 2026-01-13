@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Audit by ID API Routes
  * GET /api/audit/[id] - Get audit details
@@ -23,7 +24,8 @@ export async function GET(
   { params }: RouteParams
 ) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json(
@@ -87,7 +89,8 @@ export async function DELETE(
   { params }: RouteParams
 ) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json(

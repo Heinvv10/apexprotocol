@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Admin Users API
  * GET /api/admin/users - List all users across organizations
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
     const devSuperAdmin = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
 
     if (!devSuperAdmin) {
-      const { userId } = await auth();
+      const userId = await getUserId();
 
       if (!userId) {
         return NextResponse.json(
@@ -238,7 +239,7 @@ export async function PATCH(request: NextRequest) {
     let currentUserId = "dev-super-admin";
 
     if (!devSuperAdmin) {
-      const { userId } = await auth();
+      const userId = await getUserId();
 
       if (!userId) {
         return NextResponse.json(

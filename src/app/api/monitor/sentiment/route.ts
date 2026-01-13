@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Monitor - Sentiment Analysis API (F091)
  * Analyze sentiment of brand mentions using AI
@@ -13,7 +14,8 @@ import { trackUsage } from "@/lib/ai/token-tracker";
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId || !orgId) {
       return NextResponse.json(
@@ -158,7 +160,8 @@ async function analyzeMentionsBatch(
 // GET - Get sentiment statistics for a brand
 export async function GET(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId || !orgId) {
       return NextResponse.json(

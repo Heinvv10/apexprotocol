@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Recommendations Generate API (F106-F107)
  * POST /api/recommendations/generate - Generate recommendations for a brand
@@ -47,7 +48,8 @@ export async function POST(request: NextRequest) {
   const requestStartTime = Date.now();
 
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       console.warn(`${LOG_PREFIX} Unauthorized request attempt`);

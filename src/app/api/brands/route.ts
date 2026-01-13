@@ -299,6 +299,17 @@ export async function POST(request: NextRequest) {
           });
         }
       }
+
+      // 🚀 POST-CREATION BACKGROUND JOB: Populate related data tables
+      // This runs asynchronously to populate:
+      // - Social profiles from extracted links
+      // - Competitors from extracted data
+      // - Default portfolio
+      // - GEO monitoring (future)
+      const { populateBrandData } = await import("@/lib/services/brand-post-create");
+      populateBrandData(newBrand[0].id).catch((err: Error) => {
+        console.error("Failed to populate brand data:", err.message);
+      });
     }
 
     return NextResponse.json({

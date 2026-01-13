@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Single Usage Metric API (F176)
  * GET /api/usage/metric - Get specific usage metric
@@ -10,7 +11,8 @@ import type { UsageMetric, UsageMetricType } from "@/hooks/useUsage";
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     if (!userId) {
       return NextResponse.json(

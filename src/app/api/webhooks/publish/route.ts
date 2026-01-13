@@ -17,9 +17,7 @@ const isQStashConfigured = () => {
 // Validation schema for webhook payload
 const webhookPayloadSchema = z.object({
   contentId: z.string().min(1, "Content ID is required"),
-  platform: z.enum(["wordpress", "medium"], {
-    errorMap: () => ({ message: "Platform must be 'wordpress' or 'medium'" }),
-  }),
+  platform: z.enum(["wordpress", "medium"]).catch("wordpress"),
   scheduledAt: z.string().optional(), // ISO timestamp from QStash for logging
 });
 
@@ -243,7 +241,7 @@ export async function POST(request: NextRequest) {
     // Handle validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: error.errors },
+        { success: false, error: error.issues },
         { status: 400 }
       );
     }

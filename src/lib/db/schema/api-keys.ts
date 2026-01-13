@@ -17,6 +17,7 @@ import { users } from "./users";
 export const apiKeyTypeEnum = pgEnum("api_key_type", [
   "anthropic",
   "openai",
+  "gemini",
   "serper",
   "pinecone",
   "custom",

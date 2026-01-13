@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * API Usage Statistics
  * GET /api/usage/api-stats - Get API usage statistics for settings
@@ -21,7 +22,8 @@ export interface ApiUsageStats {
 
 export async function GET() {
   try {
-    const { userId, orgId } = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

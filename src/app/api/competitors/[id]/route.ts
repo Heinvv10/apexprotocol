@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Individual Competitor Snapshot Management - Dynamic ID Routes
  * GET /api/competitors/:id - Get competitor snapshot details
@@ -18,7 +19,7 @@ export async function GET(
   const { id } = await params;
 
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(
@@ -75,7 +76,7 @@ export async function PUT(
   const { id } = await params;
 
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(
@@ -191,7 +192,7 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json(

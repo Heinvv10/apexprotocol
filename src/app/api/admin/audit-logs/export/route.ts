@@ -1,3 +1,4 @@
+import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Admin Audit Logs API - Export
  * POST /api/admin/audit-logs/export - Export logs to CSV or JSON
@@ -36,13 +37,14 @@ import { desc, and, eq, gte, lte, like, or } from "drizzle-orm";
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
-    const session = await auth();
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
 
     // Dev mode bypass for testing
     const isDev = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
 
     if (!isDev) {
-      if (!session?.userId) {
+      if (!userId) {
         return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
       }
 

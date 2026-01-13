@@ -103,7 +103,7 @@ export const NotificationDigest: React.FC<NotificationDigestProps> = ({
     <Html>
       <Head />
       <Preview>
-        {title} - {stats.total} new notification{stats.total !== 1 ? "s" : ""} from Apex GEO
+        {`${title} - ${stats.total} new notification${stats.total !== 1 ? "s" : ""} from Apex GEO`}
       </Preview>
       <Body style={main}>
         <Container style={container}>

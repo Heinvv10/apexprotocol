@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getOrganizationId, getUserId } from "@/lib/auth";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { socialMentions, brands } from "@/lib/db/schema";
@@ -40,7 +40,7 @@ const getMentionsQuerySchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -192,7 +192,7 @@ async function storeMentionsToDb(
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
