@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
     } else {
       const authResult = await auth();
       userId = authResult.userId;
-      orgId = authResult.orgId;
+      orgId = authResult.orgId ?? null;
     }
 
     if (!userId || !orgId) {
@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
     } else {
       const authResult = await auth();
       userId = authResult.userId;
-      orgId = authResult.orgId;
+      orgId = authResult.orgId ?? null;
     }
 
     if (!userId || !orgId) {
@@ -293,7 +293,7 @@ export async function PATCH(request: NextRequest) {
     } else {
       const authResult = await auth();
       userId = authResult.userId;
-      orgId = authResult.orgId;
+      orgId = authResult.orgId ?? null;
     }
 
     if (!userId || !orgId) {

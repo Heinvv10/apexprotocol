@@ -335,14 +335,14 @@ export function generateAlertFromPlatformChange(
       templateKey = "algorithm_change_feature";
       values.featureName = platformChange.description.substring(0, 50);
       break;
-    case "ranking_factor":
+    case "algorithm_update":
       templateKey = "algorithm_change_citation";
-      values.changeType = "ranking signals";
+      values.changeType = "algorithm updates";
       values.changePercent = platformChange.confidenceScore || 10;
       break;
-    case "deprecation":
+    case "ranking_change":
       templateKey = "strategy_deprecated_content";
-      values.contentType = "deprecated features";
+      values.contentType = "ranking signals";
       values.newPreference = platformChange.recommendedResponse.substring(0, 100);
       break;
     default:

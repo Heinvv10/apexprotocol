@@ -452,3 +452,83 @@ export {
   type ContentMetrics,
   type NewContentMetrics,
 } from "./content-publishing";
+
+// Citation ROI (Phase 15)
+export {
+  citationConversions,
+  citationTrackingLinks,
+  citationRoiReports,
+  conversionTypeEnum,
+  attributionModelEnum,
+  citationConversionsRelations,
+  citationTrackingLinksRelations,
+  citationRoiReportsRelations,
+  type CitationConversion,
+  type NewCitationConversion,
+  type CitationTrackingLink,
+  type NewCitationTrackingLink,
+  type CitationRoiReport,
+  type NewCitationRoiReport,
+  type ConversionMetadata,
+  type UTMParams,
+  type TrackingLinkMetadata,
+  type PlatformROIBreakdown,
+  type ConversionTypeBreakdown,
+  type ROIReportData,
+} from "./citation-roi";
+
+// Activity Log (Dashboard Analytics)
+export {
+  activityLog,
+  activityLogRelations,
+  type ActivityLog,
+  type NewActivityLog,
+  type ActivityType,
+} from "./activity-log";
+
+// GEO Knowledge Base (PRD-001: User Deliverables & Dynamic Adaptability System)
+export {
+  // Tables
+  geoBestPractices,
+  schemaTemplates,
+  platformChanges,
+  geoAlerts,
+  actionPlanVersions,
+  // Enums
+  geoPlatformEnum,
+  bestPracticeCategoryEnum,
+  platformChangeTypeEnum,
+  geoAlertTypeEnum,
+  alertSeverityEnum,
+  schemaTypeEnum,
+  // Relations
+  geoBestPracticesRelations,
+  schemaTemplatesRelations,
+  platformChangesRelations,
+  geoAlertsRelations,
+  actionPlanVersionsRelations,
+  // Types
+  type GeoBestPractice,
+  type NewGeoBestPractice,
+  type SchemaTemplate,
+  type NewSchemaTemplate,
+  type PlatformChange,
+  type NewPlatformChange,
+  type GeoAlert,
+  type NewGeoAlert,
+  type ActionPlanVersion,
+  type NewActionPlanVersion,
+  // Interface types for JSONB
+  type ImplementationStep,
+  type PlatformRelevance,
+  type SchemaVariables,
+  type ActionSnapshot,
+  type VersionChanges,
+  // Enum types
+  type GeoPlatform,
+  type BestPracticeCategory,
+  type PlatformChangeType,
+  type GeoAlertType,
+  type AlertSeverity,
+  type SchemaType,
+} from "./geo-knowledge-base";

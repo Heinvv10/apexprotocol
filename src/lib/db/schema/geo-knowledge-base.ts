@@ -52,10 +52,11 @@ export const geoPlatformEnum = pgEnum("geo_platform", [
  */
 export const bestPracticeCategoryEnum = pgEnum("best_practice_category", [
   "schema", // Schema markup (FAQ, Organization, Article, etc.)
-  "content", // Content optimization (structure, length, freshness)
+  "content", // Content optimization (structure, length)
   "social", // Social media presence (LinkedIn, Twitter, YouTube)
   "technical", // Technical SEO (meta tags, speed, crawlability)
   "authority", // Authority building (citations, mentions, backlinks)
+  "freshness", // Content freshness and update frequency
 ]);
 
 /**
@@ -65,8 +66,8 @@ export const platformChangeTypeEnum = pgEnum("platform_change_type", [
   "citation_pattern", // How the platform cites sources
   "content_preference", // Content length, format, freshness preferences
   "feature_update", // New platform features or API changes
-  "ranking_factor", // Changes to ranking/visibility factors
-  "deprecation", // Deprecated features or behaviors
+  "algorithm_update", // Algorithm or model updates
+  "ranking_change", // Changes to ranking/visibility factors
 ]);
 
 /**
@@ -496,3 +497,11 @@ export type NewGeoAlert = typeof geoAlerts.$inferInsert;
 
 export type ActionPlanVersion = typeof actionPlanVersions.$inferSelect;
 export type NewActionPlanVersion = typeof actionPlanVersions.$inferInsert;
+
+// Enum type exports
+export type GeoPlatform = (typeof geoPlatformEnum.enumValues)[number];
+export type BestPracticeCategory = (typeof bestPracticeCategoryEnum.enumValues)[number];
+export type PlatformChangeType = (typeof platformChangeTypeEnum.enumValues)[number];
+export type GeoAlertType = (typeof geoAlertTypeEnum.enumValues)[number];
+export type AlertSeverity = (typeof alertSeverityEnum.enumValues)[number];
+export type SchemaType = (typeof schemaTypeEnum.enumValues)[number];
