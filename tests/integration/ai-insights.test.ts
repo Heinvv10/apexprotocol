@@ -32,6 +32,15 @@ import type { AIPlatform } from "@/lib/ai/types";
 // Check if database is configured
 const dbConfigured = isDatabaseConfigured();
 
+// Helper to generate valid UUID format for test IDs
+let testIdCounter = 0;
+const generateTestUuid = (): string => {
+  testIdCounter++;
+  const now = Date.now();
+  const hex = (now * 1000 + testIdCounter).toString(16).padStart(16, "0");
+  return `aaaaaaaa-bbbb-4ccc-8ddd-${hex.slice(-12)}`;
+};
+
 // Mock environment variables for AI platform API keys
 const originalEnv = process.env;
 beforeAll(() => {
@@ -59,59 +68,68 @@ describe("AI Platform Insights Integration Tests", () => {
   const { getDb, getSchema: getSchemaFn, getSeededData } = setupIntegrationTest();
 
   // Helper to create unique query for testing
-  const createUniqueQuery = (suffix: string = Date.now().toString()) => ({
-    id: `integration-query-${suffix}`,
-    brandId: TEST_IDS.BRANDS[0],
-    userId: TEST_IDS.USERS[0],
-    queryText: `How do AI platforms reference our brand? (Test ${suffix})`,
-    brandContext: `Test brand is a leading technology company. Test ${suffix}`,
-    platforms: ["chatgpt", "claude", "gemini", "perplexity"] as AIPlatform[],
-    status: "pending" as const,
-    createdAt: new Date(),
-  });
+  const createUniqueQuery = () => {
+    const id = generateTestUuid();
+    return {
+      id,
+      brandId: TEST_IDS.BRANDS[0],
+      userId: TEST_IDS.USERS[0],
+      queryText: `How do AI platforms reference our brand? (Test ${id.slice(-8)})`,
+      brandContext: `Test brand is a leading technology company. Test ${id.slice(-8)}`,
+      platforms: ["chatgpt", "claude", "gemini", "perplexity"] as AIPlatform[],
+      status: "pending" as const,
+      createdAt: new Date(),
+    };
+  };
 
   // Helper to create mock platform insight
-  const createMockInsight = (queryId: string, platform: AIPlatform, suffix: string = Date.now().toString()) => ({
-    id: `integration-insight-${platform}-${suffix}`,
-    queryId,
-    brandId: TEST_IDS.BRANDS[0],
-    userId: TEST_IDS.USERS[0],
-    platform,
-    responseContent: `Test Brand is a leading technology company that specializes in AI solutions. ${suffix}`,
-    visibilityScore: 75,
-    citationCount: 3,
-    mentionCount: 2,
-    prominenceScore: 20,
-    contentTypePerformance: {
-      blog_post: 2,
-      documentation: 1,
-    },
-    recommendations: ["increase_mentions", "improve_citations"],
-    metadata: {
-      model: platform === "chatgpt" ? "gpt-4" : platform === "claude" ? "claude-3-5-sonnet-20241022" : platform === "gemini" ? "gemini-2.0-flash-001" : "llama-3.1-sonar-small-128k-online",
-      modelVersion: "test-version",
-      temperature: 0.7,
-      tokensUsed: 1500,
-      responseTime: 2500,
-    },
-    createdAt: new Date(),
-  });
+  const createMockInsight = (queryId: string, platform: AIPlatform) => {
+    const id = generateTestUuid();
+    return {
+      id,
+      queryId,
+      brandId: TEST_IDS.BRANDS[0],
+      userId: TEST_IDS.USERS[0],
+      platform,
+      responseContent: `Test Brand is a leading technology company that specializes in AI solutions. ${id.slice(-8)}`,
+      visibilityScore: 75,
+      citationCount: 3,
+      mentionCount: 2,
+      prominenceScore: 20,
+      contentTypePerformance: {
+        blog_post: 2,
+        documentation: 1,
+      },
+      recommendations: ["increase_mentions", "improve_citations"],
+      metadata: {
+        model: platform === "chatgpt" ? "gpt-4" : platform === "claude" ? "claude-3-5-sonnet-20241022" : platform === "gemini" ? "gemini-2.0-flash-001" : "llama-3.1-sonar-small-128k-online",
+        modelVersion: "test-version",
+        temperature: 0.7,
+        tokensUsed: 1500,
+        responseTime: 2500,
+      },
+      createdAt: new Date(),
+    };
+  };
 
   // Helper to create mock citation
-  const createMockCitation = (insightId: string, brandId: string, suffix: string = Date.now().toString()) => ({
-    id: `integration-citation-${suffix}`,
-    insightId,
-    brandId,
-    citationType: "direct_quote" as const,
-    citationText: "Test Brand is a leader in technology innovation",
-    sourceUrl: "https://testbrand.com/about",
-    sourceTitle: "About Test Brand",
-    position: 120,
-    context: "According to industry sources, Test Brand is a leader...",
-    contentType: "documentation" as const,
-    relevanceScore: 85,
-    createdAt: new Date(),
-  });
+  const createMockCitation = (insightId: string, brandId: string) => {
+    const id = generateTestUuid();
+    return {
+      id,
+      insightId,
+      brandId,
+      citationType: "direct_quote" as const,
+      citationText: "Test Brand is a leader in technology innovation",
+      sourceUrl: "https://testbrand.com/about",
+      sourceTitle: "About Test Brand",
+      position: 120,
+      context: "According to industry sources, Test Brand is a leader...",
+      contentType: "documentation" as const,
+      relevanceScore: 85,
+      createdAt: new Date(),
+    };
+  };
 
   // Cleanup function for AI insights test data
   const cleanupAIInsights = async (queryId: string) => {
@@ -145,7 +163,7 @@ describe("AI Platform Insights Integration Tests", () => {
     it("should insert a new platform query into the database", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const queryData = createUniqueQuery("create-test-1");
+      const queryData = createUniqueQuery();
       createdQueryId = queryData.id;
 
       // Insert query into database
@@ -167,7 +185,7 @@ describe("AI Platform Insights Integration Tests", () => {
     it("should persist query data that can be retrieved", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const queryData = createUniqueQuery("create-test-2");
+      const queryData = createUniqueQuery();
 
       // Insert query
       await db.insert(schema.platformQueries).values(queryData).returning();
@@ -193,7 +211,7 @@ describe("AI Platform Insights Integration Tests", () => {
     it("should store complex platform array data", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const queryData = createUniqueQuery("platform-array-test");
+      const queryData = createUniqueQuery();
 
       // Insert query with all platforms
       await db.insert(schema.platformQueries).values(queryData).returning();
@@ -221,7 +239,7 @@ describe("AI Platform Insights Integration Tests", () => {
       // Create a query for each insight test
       const db = getDb();
       const schema = getSchemaFn();
-      const queryData = createUniqueQuery(`insight-${Date.now()}`);
+      const queryData = createUniqueQuery();
       testQueryId = queryData.id;
 
       await db.insert(schema.platformQueries).values(queryData).returning();
@@ -236,7 +254,7 @@ describe("AI Platform Insights Integration Tests", () => {
     it("should insert platform insight for ChatGPT", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const insightData = createMockInsight(testQueryId!, "chatgpt", "chatgpt-1");
+      const insightData = createMockInsight(testQueryId!, "chatgpt");
 
       // Insert insight
       const [insertedInsight] = await db
@@ -259,7 +277,7 @@ describe("AI Platform Insights Integration Tests", () => {
     it("should store JSONB content type performance data", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const insightData = createMockInsight(testQueryId!, "claude", "jsonb-test");
+      const insightData = createMockInsight(testQueryId!, "claude");
 
       // Insert insight
       await db.insert(schema.platformInsights).values(insightData).returning();
@@ -284,7 +302,7 @@ describe("AI Platform Insights Integration Tests", () => {
     it("should store JSONB metadata correctly", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const insightData = createMockInsight(testQueryId!, "gemini", "metadata-test");
+      const insightData = createMockInsight(testQueryId!, "gemini");
 
       // Insert insight
       await db.insert(schema.platformInsights).values(insightData).returning();
@@ -312,7 +330,7 @@ describe("AI Platform Insights Integration Tests", () => {
 
       // Insert insight for each platform
       for (const platform of platforms) {
-        const insightData = createMockInsight(testQueryId!, platform, `${platform}-multi`);
+        const insightData = createMockInsight(testQueryId!, platform);
         await db.insert(schema.platformInsights).values(insightData).returning();
       }
 
@@ -343,12 +361,12 @@ describe("AI Platform Insights Integration Tests", () => {
       // Create a query and insight for citation tests
       const db = getDb();
       const schema = getSchemaFn();
-      const queryData = createUniqueQuery(`citation-${Date.now()}`);
+      const queryData = createUniqueQuery();
       testQueryId = queryData.id;
 
       await db.insert(schema.platformQueries).values(queryData).returning();
 
-      const insightData = createMockInsight(testQueryId, "chatgpt", `citation-insight`);
+      const insightData = createMockInsight(testQueryId, "chatgpt");
       testInsightId = insightData.id;
       await db.insert(schema.platformInsights).values(insightData).returning();
     });
@@ -362,7 +380,7 @@ describe("AI Platform Insights Integration Tests", () => {
     it("should insert a citation record", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const citationData = createMockCitation(testInsightId!, TEST_IDS.BRANDS[0], "citation-1");
+      const citationData = createMockCitation(testInsightId!, TEST_IDS.BRANDS[0]);
 
       // Insert citation
       const [insertedCitation] = await db
@@ -389,7 +407,7 @@ describe("AI Platform Insights Integration Tests", () => {
 
       // Insert citation for each type
       for (const citationType of citationTypes) {
-        const citationData = createMockCitation(testInsightId!, TEST_IDS.BRANDS[0], `${citationType}-test`);
+        const citationData = createMockCitation(testInsightId!, TEST_IDS.BRANDS[0]);
         citationData.citationType = citationType;
         await db.insert(schema.citationRecords).values(citationData).returning();
       }
@@ -418,7 +436,7 @@ describe("AI Platform Insights Integration Tests", () => {
 
       // Insert 3 citations for the same insight
       for (let i = 0; i < 3; i++) {
-        const citationData = createMockCitation(testInsightId!, TEST_IDS.BRANDS[0], `multi-citation-${i}`);
+        const citationData = createMockCitation(testInsightId!, TEST_IDS.BRANDS[0]);
         await db.insert(schema.citationRecords).values(citationData).returning();
       }
 
@@ -443,7 +461,7 @@ describe("AI Platform Insights Integration Tests", () => {
       // Set up query with insights and citations
       const db = getDb();
       const schema = getSchemaFn();
-      const queryData = createUniqueQuery(`query-${Date.now()}`);
+      const queryData = createUniqueQuery();
       testQueryId = queryData.id;
 
       await db.insert(schema.platformQueries).values(queryData).returning();
@@ -451,7 +469,7 @@ describe("AI Platform Insights Integration Tests", () => {
       // Add insights for all platforms
       const platforms: AIPlatform[] = ["chatgpt", "claude", "gemini", "perplexity"];
       for (const platform of platforms) {
-        const insightData = createMockInsight(testQueryId, platform, `${platform}-query`);
+        const insightData = createMockInsight(testQueryId, platform);
         await db.insert(schema.platformInsights).values(insightData).returning();
       }
     });
@@ -529,10 +547,10 @@ describe("AI Platform Insights Integration Tests", () => {
   });
 
   describe("Full Analysis Flow (CREATE â†’ READ)", () => {
-    it("should complete full cycle: query â†’ insights â†’ citations â†’ retrieval", async () => {
+    it("should complete full cycle: query â†' insights â†' citations â†' retrieval", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const queryData = createUniqueQuery("full-cycle");
+      const queryData = createUniqueQuery();
 
       // CREATE query
       const [createdQuery] = await db
@@ -548,7 +566,7 @@ describe("AI Platform Insights Integration Tests", () => {
       const insightIds: string[] = [];
 
       for (const platform of platforms) {
-        const insightData = createMockInsight(queryData.id, platform, `${platform}-full`);
+        const insightData = createMockInsight(queryData.id, platform);
         const [insight] = await db
           .insert(schema.platformInsights)
           .values(insightData)
@@ -558,7 +576,7 @@ describe("AI Platform Insights Integration Tests", () => {
 
         // CREATE citations for each insight
         for (let i = 0; i < 2; i++) {
-          const citationData = createMockCitation(insight.id, TEST_IDS.BRANDS[0], `${platform}-citation-${i}`);
+          const citationData = createMockCitation(insight.id, TEST_IDS.BRANDS[0]);
           await db.insert(schema.citationRecords).values(citationData).returning();
         }
       }
@@ -612,7 +630,7 @@ describe("AI Platform Insights Integration Tests", () => {
     beforeEach(async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const queryData = createUniqueQuery(`update-${Date.now()}`);
+      const queryData = createUniqueQuery();
       testQueryId = queryData.id;
 
       await db.insert(schema.platformQueries).values(queryData).returning();
@@ -683,8 +701,8 @@ describe("AI Platform Insights Integration Tests", () => {
       const schema = getSchemaFn();
 
       // Create multiple queries for the test brand
-      const query1 = createUniqueQuery("brand-history-1");
-      const query2 = createUniqueQuery("brand-history-2");
+      const query1 = createUniqueQuery();
+      const query2 = createUniqueQuery();
 
       await db.insert(schema.platformQueries).values(query1).returning();
       await db.insert(schema.platformQueries).values(query2).returning();
@@ -714,7 +732,7 @@ describe("AI Platform Insights Integration Tests", () => {
     beforeEach(async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const queryData = createUniqueQuery(`platform-specific-${Date.now()}`);
+      const queryData = createUniqueQuery();
       testQueryId = queryData.id;
 
       await db.insert(schema.platformQueries).values(queryData).returning();
@@ -722,7 +740,7 @@ describe("AI Platform Insights Integration Tests", () => {
       // Add insights for all platforms
       const platforms: AIPlatform[] = ["chatgpt", "claude", "gemini", "perplexity"];
       for (const platform of platforms) {
-        const insightData = createMockInsight(testQueryId, platform, `${platform}-specific`);
+        const insightData = createMockInsight(testQueryId, platform);
         await db.insert(schema.platformInsights).values(insightData).returning();
       }
     });
@@ -789,7 +807,7 @@ describe("AI Platform Insights Integration Tests", () => {
     it("should handle query with empty brand context", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const queryData = createUniqueQuery("empty-context");
+      const queryData = createUniqueQuery();
       queryData.brandContext = null;
 
       const [inserted] = await db
@@ -806,10 +824,10 @@ describe("AI Platform Insights Integration Tests", () => {
     it("should handle insight with zero visibility score", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const queryData = createUniqueQuery("zero-score");
+      const queryData = createUniqueQuery();
       await db.insert(schema.platformQueries).values(queryData).returning();
 
-      const insightData = createMockInsight(queryData.id, "chatgpt", "zero-score");
+      const insightData = createMockInsight(queryData.id, "chatgpt");
       insightData.visibilityScore = 0;
       insightData.citationCount = 0;
       insightData.mentionCount = 0;
@@ -830,13 +848,13 @@ describe("AI Platform Insights Integration Tests", () => {
     it("should handle citation with null optional fields", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const queryData = createUniqueQuery("null-citation");
+      const queryData = createUniqueQuery();
       await db.insert(schema.platformQueries).values(queryData).returning();
 
-      const insightData = createMockInsight(queryData.id, "gemini", "null-citation");
+      const insightData = createMockInsight(queryData.id, "gemini");
       await db.insert(schema.platformInsights).values(insightData).returning();
 
-      const citationData = createMockCitation(insightData.id, TEST_IDS.BRANDS[0], "null-fields");
+      const citationData = createMockCitation(insightData.id, TEST_IDS.BRANDS[0]);
       citationData.sourceUrl = null;
       citationData.sourceTitle = null;
       citationData.context = null;

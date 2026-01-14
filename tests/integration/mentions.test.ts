@@ -23,6 +23,19 @@ import { TEST_IDS } from "./seed";
 // Check if database is configured
 const dbConfigured = isDatabaseConfigured();
 
+// Helper to generate valid UUID format for test IDs
+let testIdCounter = 0;
+const generateTestUuid = (): string => {
+  testIdCounter++;
+  const now = Date.now();
+  const hex = (now * 1000 + testIdCounter).toString(16).padStart(16, "0");
+  return `aaaaaaaa-bbbb-4ccc-8ddd-${hex.slice(-12)}`;
+};
+
+// Generate a deterministic "non-existent" UUID that won't exist in DB
+const NON_EXISTENT_MENTION_ID = "00000000-0000-4000-8000-000000000001";
+const NON_EXISTENT_BRAND_ID = "00000000-0000-4000-8000-000000000002";
+
 describe("Mention Integration Tests", () => {
   // If database is not configured, skip all tests with a clear message
   if (!dbConfigured) {
@@ -46,27 +59,30 @@ describe("Mention Integration Tests", () => {
   };
 
   // Helper to create a unique mention for testing
-  const createUniqueMention = (suffix: string = Date.now().toString()) => ({
-    id: `integration-mention-${suffix}`,
-    brandId: TEST_IDS.BRANDS[0],
-    platform: "chatgpt" as const,
-    query: `Integration test query ${suffix}`,
-    response: `Integration test response for ${suffix}`,
-    sentiment: "positive" as const,
-    position: 1,
-    citationUrl: `https://test.com/${suffix}`,
-    competitors: [
-      { name: "Competitor A", position: 2, sentiment: "neutral" as const },
-    ],
-    promptCategory: "recommendation",
-    topics: ["integration", "testing"],
-    metadata: {
-      modelVersion: "test-v1",
-      responseLength: 100,
-      confidenceScore: 0.9,
-    },
-    timestamp: new Date(),
-  });
+  const createUniqueMention = () => {
+    const id = generateTestUuid();
+    return {
+      id,
+      brandId: TEST_IDS.BRANDS[0],
+      platform: "chatgpt" as const,
+      query: `Integration test query ${id.slice(-8)}`,
+      response: `Integration test response for ${id.slice(-8)}`,
+      sentiment: "positive" as const,
+      position: 1,
+      citationUrl: `https://test.com/${id.slice(-8)}`,
+      competitors: [
+        { name: "Competitor A", position: 2, sentiment: "neutral" as const },
+      ],
+      promptCategory: "recommendation",
+      topics: ["integration", "testing"],
+      metadata: {
+        modelVersion: "test-v1",
+        responseLength: 100,
+        confidenceScore: 0.9,
+      },
+      timestamp: new Date(),
+    };
+  };
 
   describe("Query Mentions (SELECT)", () => {
     it("should fetch seeded mentions for a brand", async () => {
@@ -124,7 +140,7 @@ describe("Mention Integration Tests", () => {
       const result = await db
         .select()
         .from(schema.brandMentions)
-        .where(eq(schema.brandMentions.id, "non-existent-mention-id-xyz"))
+        .where(eq(schema.brandMentions.id, NON_EXISTENT_MENTION_ID))
         .limit(1);
 
       expect(result).toEqual([]);
@@ -284,7 +300,7 @@ describe("Mention Integration Tests", () => {
     it("should insert a new mention into the database", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const mentionData = createUniqueMention("create-test-1");
+      const mentionData = createUniqueMention();
       createdMentionId = mentionData.id;
 
       // Insert mention into database
@@ -305,7 +321,7 @@ describe("Mention Integration Tests", () => {
     it("should persist mention data that can be queried", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const mentionData = createUniqueMention("create-test-2");
+      const mentionData = createUniqueMention();
 
       // Insert mention
       await db.insert(schema.brandMentions).values(mentionData).returning();
@@ -330,7 +346,7 @@ describe("Mention Integration Tests", () => {
     it("should store complex nested data (competitors, metadata)", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const mentionData = createUniqueMention("create-nested");
+      const mentionData = createUniqueMention();
 
       // Insert mention with complex data
       await db.insert(schema.brandMentions).values(mentionData).returning();
@@ -354,7 +370,7 @@ describe("Mention Integration Tests", () => {
     it("should reject duplicate mention IDs (primary key constraint)", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const mentionData = createUniqueMention("duplicate-test");
+      const mentionData = createUniqueMention();
 
       // Insert first mention
       await db.insert(schema.brandMentions).values(mentionData).returning();
@@ -377,8 +393,8 @@ describe("Mention Integration Tests", () => {
       const db = getDb();
       const schema = getSchemaFn();
       const mentionData = {
-        ...createUniqueMention("fk-test"),
-        brandId: "non-existent-brand-id-xyz",
+        ...createUniqueMention(),
+        brandId: NON_EXISTENT_BRAND_ID,
       };
 
       // Attempt to insert with invalid brandId
@@ -603,7 +619,7 @@ describe("Mention Integration Tests", () => {
     it("should handle mention with null optional fields", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const mentionId = `mention-null-fields-${Date.now()}`;
+      const mentionId = generateTestUuid();
 
       // Insert mention with minimal data
       const [insertedMention] = await db
@@ -632,7 +648,7 @@ describe("Mention Integration Tests", () => {
     it("should handle mention with empty competitors array", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const mentionId = `mention-empty-competitors-${Date.now()}`;
+      const mentionId = generateTestUuid();
 
       // Insert mention with empty competitors
       const [insertedMention] = await db
@@ -663,7 +679,7 @@ describe("Mention Integration Tests", () => {
     it("should handle mention with long text fields", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const mentionId = `mention-long-text-${Date.now()}`;
+      const mentionId = generateTestUuid();
       const longResponse = "A".repeat(5000);
 
       // Insert mention with long response
@@ -694,7 +710,7 @@ describe("Mention Integration Tests", () => {
       const platforms = ["chatgpt", "claude", "gemini", "perplexity", "grok"] as const;
 
       for (const platform of platforms) {
-        const mentionId = `mention-platform-${platform}-${Date.now()}`;
+        const mentionId = generateTestUuid();
 
         const [insertedMention] = await db
           .insert(schema.brandMentions)
@@ -722,7 +738,7 @@ describe("Mention Integration Tests", () => {
       const sentiments = ["positive", "neutral", "negative"] as const;
 
       for (const sentiment of sentiments) {
-        const mentionId = `mention-sentiment-${sentiment}-${Date.now()}`;
+        const mentionId = generateTestUuid();
 
         const [insertedMention] = await db
           .insert(schema.brandMentions)

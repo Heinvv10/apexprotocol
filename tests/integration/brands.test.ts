@@ -35,9 +35,22 @@ describe("Brand Integration Tests", () => {
   const { getDb, getSchema: getSchemaFn, getSeededData } =
     setupIntegrationTest();
 
+  // Counter for generating unique UUIDs within this test file
+  let testIdCounter = 0;
+
+  // Helper to generate a valid UUID for testing
+  // Format: aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee (using a fixed prefix and timestamp-based suffix)
+  const generateTestUuid = (): string => {
+    testIdCounter++;
+    const now = Date.now();
+    // Create a deterministic but unique UUID based on timestamp and counter
+    const hex = (now * 1000 + testIdCounter).toString(16).padStart(16, "0");
+    return `aaaaaaaa-bbbb-4ccc-8ddd-${hex.slice(-12)}`;
+  };
+
   // Helper to create a unique brand for testing
   const createUniqueBrand = (suffix: string = Date.now().toString()) => ({
-    id: `integration-brand-${suffix}`,
+    id: generateTestUuid(),
     organizationId: TEST_IDS.ORG,
     name: `Integration Test Brand ${suffix}`,
     domain: `integration-test-${suffix}.com`,
@@ -129,7 +142,7 @@ describe("Brand Integration Tests", () => {
     it("should set default values for optional fields", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const brandId = `integration-brand-defaults-${Date.now()}`;
+      const brandId = generateTestUuid();
 
       // Insert minimal brand data
       const [insertedBrand] = await db
@@ -718,16 +731,32 @@ describe("Brand Integration Tests", () => {
       const db = getDb();
       const schema = getSchemaFn();
 
-      // Create a brand in a different organization
+      // Create another organization first (valid UUID format)
+      const otherOrgId = "00000000-0000-0000-0000-000000000099";
+      const otherBrandId = "00000000-0000-0000-0000-000000000299";
+
+      // Insert the other organization
+      await db.insert(schema.organizations).values({
+        id: otherOrgId,
+        name: "Other Test Organization",
+        slug: `other-test-org-${Date.now()}`,
+        clerkOrgId: `clerk_other_org_${Date.now()}`,
+        plan: "starter",
+        brandLimit: 3,
+        userLimit: 5,
+        isActive: true,
+      }).onConflictDoNothing();
+
+      // Create a brand in the other organization
       const otherOrgBrand = {
-        id: `other-org-brand-${Date.now()}`,
-        organizationId: "other-org-id-xyz",
+        id: otherBrandId,
+        organizationId: otherOrgId,
         name: "Other Org Brand",
         isActive: true,
         monitoringPlatforms: ["chatgpt"],
       };
 
-      await db.insert(schema.brands).values(otherOrgBrand).returning();
+      await db.insert(schema.brands).values(otherOrgBrand).onConflictDoNothing();
 
       // Query brands for test organization
       const testOrgBrands = await db
@@ -743,6 +772,7 @@ describe("Brand Integration Tests", () => {
 
       // Cleanup
       await db.delete(schema.brands).where(eq(schema.brands.id, otherOrgBrand.id));
+      await db.delete(schema.organizations).where(eq(schema.organizations.id, otherOrgId));
     });
 
     it("should correctly filter by both organization and domain", async () => {
@@ -779,7 +809,7 @@ describe("Brand Integration Tests", () => {
     it("should handle brand with empty arrays", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const brandId = `brand-empty-arrays-${Date.now()}`;
+      const brandId = generateTestUuid();
 
       // Insert brand with empty arrays
       const [insertedBrand] = await db
@@ -806,7 +836,7 @@ describe("Brand Integration Tests", () => {
     it("should handle brand with null optional fields", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const brandId = `brand-null-fields-${Date.now()}`;
+      const brandId = generateTestUuid();
 
       // Insert brand with null optional fields
       const [insertedBrand] = await db
@@ -834,7 +864,7 @@ describe("Brand Integration Tests", () => {
     it("should handle brand name with special characters", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const brandId = `brand-special-chars-${Date.now()}`;
+      const brandId = generateTestUuid();
       const specialName = "Brand with 特殊字符 & émojis 🚀";
 
       const [insertedBrand] = await db
@@ -866,7 +896,7 @@ describe("Brand Integration Tests", () => {
     it("should handle very long text fields", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const brandId = `brand-long-text-${Date.now()}`;
+      const brandId = generateTestUuid();
       const longDescription = "A".repeat(5000);
 
       const [insertedBrand] = await db

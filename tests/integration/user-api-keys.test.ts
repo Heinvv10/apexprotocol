@@ -47,8 +47,8 @@ describe("User API Keys Integration Tests", () => {
   };
 
   // Helper to create a test user API key data
-  const createTestUserKey = (suffix: string = Date.now().toString(), userId?: string) => {
-    const { key, hash } = generateApiKey();
+  const createTestUserKey = async (suffix: string = Date.now().toString(), userId?: string) => {
+    const { key, hash } = await generateApiKey();
     return {
       id: `integration-user-key-${suffix}`,
       organizationId: TEST_IDS.ORG as string,
@@ -81,7 +81,7 @@ describe("User API Keys Integration Tests", () => {
 
   describe("Generate User API Key (Key Format Validation)", () => {
     itWithDb("should generate a valid apx_ prefixed API key", async () => {
-      const { key, hash } = generateApiKey();
+      const { key, hash } = await generateApiKey();
 
       // Verify apx_ prefix
       expect(key.startsWith("apx_")).toBe(true);
@@ -103,7 +103,7 @@ describe("User API Keys Integration Tests", () => {
 
       // Generate 10 keys and verify uniqueness
       for (let i = 0; i < 10; i++) {
-        const { key, hash } = generateApiKey();
+        const { key, hash } = await generateApiKey();
         keys.add(key);
         hashes.add(hash);
       }
@@ -113,9 +113,9 @@ describe("User API Keys Integration Tests", () => {
     });
 
     itWithDb("should hash the same key consistently", async () => {
-      const { key } = generateApiKey();
-      const hash1 = hashApiKey(key);
-      const hash2 = hashApiKey(key);
+      const { key } = await generateApiKey();
+      const hash1 = await hashApiKey(key);
+      const hash2 = await hashApiKey(key);
 
       expect(hash1).toBe(hash2);
     });
@@ -135,7 +135,7 @@ describe("User API Keys Integration Tests", () => {
     itWithDb("should store generated key with encryption", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const keyData = createTestUserKey("store-encrypted-1");
+      const keyData = await createTestUserKey("store-encrypted-1");
       createdKeyId = keyData.id;
 
       // Encrypt the API key
@@ -169,7 +169,7 @@ describe("User API Keys Integration Tests", () => {
     itWithDb("should store encryptedKey as JSON with ciphertext/iv/authTag", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const keyData = createTestUserKey("json-format-1");
+      const keyData = await createTestUserKey("json-format-1");
       createdKeyId = keyData.id;
 
       const encryptedKey = encryptApiKey(keyData.rawKey);
@@ -212,7 +212,7 @@ describe("User API Keys Integration Tests", () => {
     itWithDb("should allow decryption of stored user key", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const keyData = createTestUserKey("decrypt-test-1");
+      const keyData = await createTestUserKey("decrypt-test-1");
       createdKeyId = keyData.id;
 
       const encryptedKey = encryptApiKey(keyData.rawKey);
@@ -248,7 +248,7 @@ describe("User API Keys Integration Tests", () => {
     itWithDb("should store keyHash for fast lookup without decryption", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const keyData = createTestUserKey("hash-lookup-1");
+      const keyData = await createTestUserKey("hash-lookup-1");
       createdKeyId = keyData.id;
 
       const encryptedKey = encryptApiKey(keyData.rawKey);
@@ -298,7 +298,7 @@ describe("User API Keys Integration Tests", () => {
     itWithDb("should set isActive to false when revoking", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const keyData = createTestUserKey("revoke-test-1");
+      const keyData = await createTestUserKey("revoke-test-1");
       testKeyId = keyData.id;
 
       const encryptedKey = encryptApiKey(keyData.rawKey);
@@ -351,7 +351,7 @@ describe("User API Keys Integration Tests", () => {
     itWithDb("should keep key in database after revocation (soft delete)", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const keyData = createTestUserKey("soft-delete-1");
+      const keyData = await createTestUserKey("soft-delete-1");
       testKeyId = keyData.id;
 
       const encryptedKey = encryptApiKey(keyData.rawKey);
@@ -394,7 +394,7 @@ describe("User API Keys Integration Tests", () => {
     itWithDb("should exclude revoked keys from active key queries", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const keyData = createTestUserKey("exclude-revoked-1");
+      const keyData = await createTestUserKey("exclude-revoked-1");
       testKeyId = keyData.id;
 
       const encryptedKey = encryptApiKey(keyData.rawKey);
@@ -454,7 +454,7 @@ describe("User API Keys Integration Tests", () => {
 
       // Create 3 keys for the same user
       for (let i = 0; i < 3; i++) {
-        const keyData = createTestUserKey(`rate-${i}`, userId);
+        const keyData = await createTestUserKey(`rate-${i}`, userId);
         createdKeyIds.push(keyData.id);
 
         await db
@@ -498,7 +498,7 @@ describe("User API Keys Integration Tests", () => {
 
       // Create 5 keys
       for (let i = 0; i < 5; i++) {
-        const keyData = createTestUserKey(`count-${i}`, userId);
+        const keyData = await createTestUserKey(`count-${i}`, userId);
         createdKeyIds.push(keyData.id);
 
         await db
@@ -548,7 +548,7 @@ describe("User API Keys Integration Tests", () => {
 
       // Create 10 keys (at the limit)
       for (let i = 0; i < 10; i++) {
-        const keyData = createTestUserKey(`limit-${i}`, userId);
+        const keyData = await createTestUserKey(`limit-${i}`, userId);
         createdKeyIds.push(keyData.id);
 
         await db
@@ -608,7 +608,7 @@ describe("User API Keys Integration Tests", () => {
       const userB = `user-b-${Date.now()}`;
 
       // Create key for user A
-      const keyDataA = createTestUserKey("user-a-key", userA);
+      const keyDataA = await createTestUserKey("user-a-key", userA);
       createdKeyIds.push(keyDataA.id);
 
       await db
@@ -627,7 +627,7 @@ describe("User API Keys Integration Tests", () => {
         .returning();
 
       // Create key for user B
-      const keyDataB = createTestUserKey("user-b-key", userB);
+      const keyDataB = await createTestUserKey("user-b-key", userB);
       createdKeyIds.push(keyDataB.id);
 
       await db
@@ -674,7 +674,7 @@ describe("User API Keys Integration Tests", () => {
       const orgB = `other-org-${Date.now()}`;
 
       // Create key for user in org A
-      const keyDataOrgA = createTestUserKey("org-a-key", sharedUserId);
+      const keyDataOrgA = await createTestUserKey("org-a-key", sharedUserId);
       keyDataOrgA.organizationId = orgA;
       createdKeyIds.push(keyDataOrgA.id);
 
@@ -694,7 +694,7 @@ describe("User API Keys Integration Tests", () => {
         .returning();
 
       // Create key for same user in org B
-      const keyDataOrgB = createTestUserKey("org-b-key", sharedUserId);
+      const keyDataOrgB = await createTestUserKey("org-b-key", sharedUserId);
       keyDataOrgB.organizationId = orgB;
       createdKeyIds.push(keyDataOrgB.id);
 
@@ -754,7 +754,7 @@ describe("User API Keys Integration Tests", () => {
       const userB = `user-b-isolated-${Date.now()}`;
 
       // Create key for user A
-      const keyDataA = createTestUserKey("isolated-key", userA);
+      const keyDataA = await createTestUserKey("isolated-key", userA);
       createdKeyIds.push(keyDataA.id);
 
       await db
@@ -803,7 +803,7 @@ describe("User API Keys Integration Tests", () => {
     itWithDb("should update key name and displayName", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const keyData = createTestUserKey("update-name-1");
+      const keyData = await createTestUserKey("update-name-1");
       testKeyId = keyData.id;
 
       await db
@@ -847,7 +847,7 @@ describe("User API Keys Integration Tests", () => {
     itWithDb("should not allow updating the actual key value (security)", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const keyData = createTestUserKey("no-key-update-1");
+      const keyData = await createTestUserKey("no-key-update-1");
       testKeyId = keyData.id;
 
       const originalEncrypted = encryptApiKey(keyData.rawKey);
@@ -896,7 +896,7 @@ describe("User API Keys Integration Tests", () => {
     });
 
     itWithDb("should return masked key value for display", async () => {
-      const { key, hash } = generateApiKey();
+      const { key, hash } = await generateApiKey();
       const masked = maskApiKey(hash);
 
       // Masked should show first 4 + ... + last 4
@@ -907,7 +907,7 @@ describe("User API Keys Integration Tests", () => {
     itWithDb("should track lastUsedAt timestamp", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const keyData = createTestUserKey("last-used-1");
+      const keyData = await createTestUserKey("last-used-1");
       testKeyId = keyData.id;
 
       await db
@@ -955,7 +955,7 @@ describe("User API Keys Integration Tests", () => {
     itWithDb("should handle key expiration date", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const keyData = createTestUserKey("expiring-1");
+      const keyData = await createTestUserKey("expiring-1");
       testKeyId = keyData.id;
 
       const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
@@ -993,7 +993,7 @@ describe("User API Keys Integration Tests", () => {
       const schema = getSchemaFn();
 
       // GENERATE
-      const { key, hash } = generateApiKey();
+      const { key, hash } = await generateApiKey();
       expect(key.startsWith("apx_")).toBe(true);
       expect(isValidApiKeyFormat(key)).toBe(true);
 

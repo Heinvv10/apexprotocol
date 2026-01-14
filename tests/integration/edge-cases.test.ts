@@ -25,6 +25,11 @@ import { TEST_IDS } from "./seed";
 // Check if database is configured
 const dbConfigured = isDatabaseConfigured();
 
+// Generate valid non-existent UUIDs for tables that use UUID type
+// These are valid UUID format but will never match real records
+const NON_EXISTENT_UUID_1 = "00000000-0000-4000-8000-000000000001";
+const NON_EXISTENT_UUID_2 = "00000000-0000-4000-8000-000000000002";
+
 describe("Edge Cases Integration Tests", () => {
   // If database is not configured, skip all tests with a clear message
   if (!dbConfigured) {
@@ -211,10 +216,11 @@ describe("Edge Cases Integration Tests", () => {
         const db = getDb();
         const schema = getSchemaFn();
 
+        // geoScoreHistory uses uuid type, so we need valid UUID format
         const result = await db
           .select()
           .from(schema.geoScoreHistory)
-          .where(eq(schema.geoScoreHistory.id, "geo-history-not-found-55555"))
+          .where(eq(schema.geoScoreHistory.id, NON_EXISTENT_UUID_1))
           .limit(1);
 
         expect(result).toEqual([]);
@@ -225,10 +231,11 @@ describe("Edge Cases Integration Tests", () => {
         const db = getDb();
         const schema = getSchemaFn();
 
+        // geoScoreHistory.brandId uses uuid type, so we need valid UUID format
         const result = await db
           .select()
           .from(schema.geoScoreHistory)
-          .where(eq(schema.geoScoreHistory.brandId, "brand-no-geo-history-jkl"));
+          .where(eq(schema.geoScoreHistory.brandId, NON_EXISTENT_UUID_2));
 
         expect(result).toEqual([]);
       });

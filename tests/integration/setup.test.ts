@@ -58,38 +58,39 @@ describe("Integration Test Setup Utilities", () => {
 
   describe("TEST_IDS", () => {
     it("should have valid organization ID", () => {
-      expect(TEST_IDS.ORG).toBe("test-org-integration-001");
+      // UUID format: 00000000-0000-0000-0000-00000000XXXX
+      expect(TEST_IDS.ORG).toBe("00000000-0000-0000-0000-000000000001");
     });
 
     it("should have valid user IDs", () => {
       expect(TEST_IDS.USERS).toHaveLength(2);
-      expect(TEST_IDS.USERS[0]).toBe("test-user-001");
-      expect(TEST_IDS.USERS[1]).toBe("test-user-002");
+      expect(TEST_IDS.USERS[0]).toBe("00000000-0000-0000-0000-000000000101");
+      expect(TEST_IDS.USERS[1]).toBe("00000000-0000-0000-0000-000000000102");
     });
 
     it("should have valid brand IDs", () => {
       expect(TEST_IDS.BRANDS).toHaveLength(3);
-      expect(TEST_IDS.BRANDS[0]).toBe("test-brand-001");
+      expect(TEST_IDS.BRANDS[0]).toBe("00000000-0000-0000-0000-000000000201");
     });
 
     it("should have valid mention IDs", () => {
       expect(TEST_IDS.MENTIONS).toHaveLength(5);
-      expect(TEST_IDS.MENTIONS[0]).toBe("test-mention-001");
+      expect(TEST_IDS.MENTIONS[0]).toBe("00000000-0000-0000-0000-000000000301");
     });
 
     it("should have valid recommendation IDs", () => {
       expect(TEST_IDS.RECOMMENDATIONS).toHaveLength(5);
-      expect(TEST_IDS.RECOMMENDATIONS[0]).toBe("test-rec-001");
+      expect(TEST_IDS.RECOMMENDATIONS[0]).toBe("00000000-0000-0000-0000-000000000401");
     });
 
     it("should have valid audit IDs", () => {
       expect(TEST_IDS.AUDITS).toHaveLength(3);
-      expect(TEST_IDS.AUDITS[0]).toBe("test-audit-001");
+      expect(TEST_IDS.AUDITS[0]).toBe("00000000-0000-0000-0000-000000000501");
     });
 
     it("should have valid content IDs", () => {
       expect(TEST_IDS.CONTENT).toHaveLength(3);
-      expect(TEST_IDS.CONTENT[0]).toBe("test-content-001");
+      expect(TEST_IDS.CONTENT[0]).toBe("00000000-0000-0000-0000-000000000601");
     });
   });
 
@@ -275,8 +276,8 @@ describe("Seed Data Structure", () => {
       expect(uniqueIds.size).toBe(TEST_IDS.GEO_SCORE_HISTORY.length);
     });
 
-    it("should have correct ID prefix", () => {
-      expect(TEST_IDS.GEO_SCORE_HISTORY[0]).toBe("test-geo-history-001");
+    it("should have correct UUID format", () => {
+      expect(TEST_IDS.GEO_SCORE_HISTORY[0]).toBe("00000000-0000-0000-0000-000000000701");
     });
   });
 
@@ -290,8 +291,8 @@ describe("Seed Data Structure", () => {
       expect(uniqueIds.size).toBe(TEST_IDS.INTEGRATIONS.length);
     });
 
-    it("should have correct ID prefix", () => {
-      expect(TEST_IDS.INTEGRATIONS[0]).toBe("test-integration-001");
+    it("should have correct UUID format", () => {
+      expect(TEST_IDS.INTEGRATIONS[0]).toBe("00000000-0000-0000-0000-000000000801");
     });
   });
 });

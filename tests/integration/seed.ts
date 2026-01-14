@@ -24,36 +24,55 @@ type Database = NeonHttpDatabase<Schema>;
 
 /**
  * Fixed test IDs for consistent reference in tests
- * These are deterministic to allow assertions in tests
+ * These are deterministic UUIDs to allow assertions in tests
+ * Format: 00000000-0000-0000-0000-00000000XXXX where XXXX is a sequential number
  */
 export const TEST_IDS = {
-  ORG: "test-org-integration-001",
-  USERS: ["test-user-001", "test-user-002"],
-  BRANDS: ["test-brand-001", "test-brand-002", "test-brand-003"],
+  ORG: "00000000-0000-0000-0000-000000000001",
+  USERS: [
+    "00000000-0000-0000-0000-000000000101",
+    "00000000-0000-0000-0000-000000000102",
+  ],
+  BRANDS: [
+    "00000000-0000-0000-0000-000000000201",
+    "00000000-0000-0000-0000-000000000202",
+    "00000000-0000-0000-0000-000000000203",
+  ],
   MENTIONS: [
-    "test-mention-001",
-    "test-mention-002",
-    "test-mention-003",
-    "test-mention-004",
-    "test-mention-005",
+    "00000000-0000-0000-0000-000000000301",
+    "00000000-0000-0000-0000-000000000302",
+    "00000000-0000-0000-0000-000000000303",
+    "00000000-0000-0000-0000-000000000304",
+    "00000000-0000-0000-0000-000000000305",
   ],
   RECOMMENDATIONS: [
-    "test-rec-001",
-    "test-rec-002",
-    "test-rec-003",
-    "test-rec-004",
-    "test-rec-005",
+    "00000000-0000-0000-0000-000000000401",
+    "00000000-0000-0000-0000-000000000402",
+    "00000000-0000-0000-0000-000000000403",
+    "00000000-0000-0000-0000-000000000404",
+    "00000000-0000-0000-0000-000000000405",
   ],
-  AUDITS: ["test-audit-001", "test-audit-002", "test-audit-003"],
-  CONTENT: ["test-content-001", "test-content-002", "test-content-003"],
+  AUDITS: [
+    "00000000-0000-0000-0000-000000000501",
+    "00000000-0000-0000-0000-000000000502",
+    "00000000-0000-0000-0000-000000000503",
+  ],
+  CONTENT: [
+    "00000000-0000-0000-0000-000000000601",
+    "00000000-0000-0000-0000-000000000602",
+    "00000000-0000-0000-0000-000000000603",
+  ],
   GEO_SCORE_HISTORY: [
-    "test-geo-history-001",
-    "test-geo-history-002",
-    "test-geo-history-003",
-    "test-geo-history-004",
-    "test-geo-history-005",
+    "00000000-0000-0000-0000-000000000701",
+    "00000000-0000-0000-0000-000000000702",
+    "00000000-0000-0000-0000-000000000703",
+    "00000000-0000-0000-0000-000000000704",
+    "00000000-0000-0000-0000-000000000705",
   ],
-  INTEGRATIONS: ["test-integration-001", "test-integration-002"],
+  INTEGRATIONS: [
+    "00000000-0000-0000-0000-000000000801",
+    "00000000-0000-0000-0000-000000000802",
+  ],
 } as const;
 
 /**
@@ -141,7 +160,7 @@ async function seedOrganization(
   };
 
   try {
-    // First, check if organization already exists to handle parallel test execution
+    // First, check if organization already exists with our specific ID
     const existing = await db
       .select({ id: schema.organizations.id })
       .from(schema.organizations)
@@ -149,13 +168,19 @@ async function seedOrganization(
       .limit(1);
 
     if (existing.length > 0) {
-      // Organization exists, just update it
+      // Organization with our ID exists, just update it
       await db
         .update(schema.organizations)
         .set({ name: orgData.name, isActive: true })
         .where(eq(schema.organizations.id, TEST_IDS.ORG));
     } else {
-      // Organization doesn't exist, try to insert
+      // Organization with our ID doesn't exist
+      // First, delete any org with the same slug (cleanup from old test runs)
+      await db
+        .delete(schema.organizations)
+        .where(eq(schema.organizations.slug, orgData.slug));
+
+      // Now insert the new organization
       // Use a try-catch to handle race condition if another test file inserts first
       try {
         await db.insert(schema.organizations).values(orgData);
@@ -781,11 +806,22 @@ export async function cleanupTestData(
 }
 
 /**
+ * Helper to generate a deterministic UUID from a base UUID and suffix
+ * Takes the last 4 hex digits of the base UUID and adds a suffix
+ */
+function deriveUuid(baseUuid: string, suffix: number): string {
+  // Extract the last segment of the base UUID and replace last 2 digits with suffix
+  const base = baseUuid.slice(0, -4);
+  return `${base}${suffix.toString(16).padStart(4, "0")}`;
+}
+
+/**
  * Quick seed helpers for specific test scenarios
  */
 export const seedHelpers = {
   /**
    * Seed a single brand with all related data
+   * Note: brandId and orgId must be valid UUIDs
    */
   async seedBrandWithData(
     db: Database,
@@ -798,16 +834,16 @@ export const seedHelpers = {
     await db.insert(schema.brands).values({
       id: brandId,
       organizationId: orgId,
-      name: `Quick Test Brand ${brandId}`,
-      domain: `${brandId}.test.com`,
+      name: `Quick Test Brand`,
+      domain: `quick-test-brand.test.com`,
       industry: "Technology",
       isActive: true,
       monitoringEnabled: true,
       monitoringPlatforms: ["chatgpt"],
     });
 
-    // Create a few mentions
-    const mentionIds = [`${brandId}-mention-1`, `${brandId}-mention-2`];
+    // Create a few mentions with derived UUIDs
+    const mentionIds = [deriveUuid(brandId, 0x0001), deriveUuid(brandId, 0x0002)];
     await db.insert(schema.brandMentions).values(
       mentionIds.map((id, idx) => ({
         id,
@@ -820,8 +856,8 @@ export const seedHelpers = {
       }))
     );
 
-    // Create a few recommendations
-    const recIds = [`${brandId}-rec-1`, `${brandId}-rec-2`];
+    // Create a few recommendations with derived UUIDs
+    const recIds = [deriveUuid(brandId, 0x0011), deriveUuid(brandId, 0x0012)];
     await db.insert(schema.recommendations).values(
       recIds.map((id, idx) => ({
         id,

@@ -23,6 +23,19 @@ import { TEST_IDS } from "./seed";
 // Check if database is configured
 const dbConfigured = isDatabaseConfigured();
 
+// Helper to generate valid UUID format for test IDs
+let testIdCounter = 0;
+const generateTestUuid = (): string => {
+  testIdCounter++;
+  const now = Date.now();
+  const hex = (now * 1000 + testIdCounter).toString(16).padStart(16, "0");
+  return `aaaaaaaa-bbbb-4ccc-8ddd-${hex.slice(-12)}`;
+};
+
+// Generate a deterministic "non-existent" UUID that won't exist in DB
+const NON_EXISTENT_REC_ID = "00000000-0000-4000-8000-000000000003";
+const NON_EXISTENT_BRAND_ID = "00000000-0000-4000-8000-000000000004";
+
 describe("Recommendation Integration Tests", () => {
   // If database is not configured, skip all tests with a clear message
   if (!dbConfigured) {
@@ -63,27 +76,29 @@ describe("Recommendation Integration Tests", () => {
 
   // Helper to create a unique recommendation for testing
   const createUniqueRecommendation = (
-    suffix: string = Date.now().toString(),
     status: "pending" | "in_progress" | "completed" | "dismissed" = "pending"
-  ) => ({
-    id: `integration-rec-${suffix}`,
-    brandId: TEST_IDS.BRANDS[0],
-    title: `Integration Test Recommendation ${suffix}`,
-    description: `This is a test recommendation created for integration testing ${suffix}`,
-    category: "content_optimization" as const,
-    priority: "medium" as const,
-    status,
-    effort: "moderate" as const,
-    impact: "medium" as const,
-    estimatedTime: "1 hour",
-    source: "manual" as const,
-    steps: ["Step 1", "Step 2", "Step 3"],
-    notes: null,
-    dueDate: null,
-    completedAt: status === "completed" ? new Date() : null,
-    dismissedAt: status === "dismissed" ? new Date() : null,
-    createdAt: new Date(),
-  });
+  ) => {
+    const id = generateTestUuid();
+    return {
+      id,
+      brandId: TEST_IDS.BRANDS[0],
+      title: `Integration Test Recommendation ${id.slice(-8)}`,
+      description: `This is a test recommendation created for integration testing ${id.slice(-8)}`,
+      category: "content_optimization" as const,
+      priority: "medium" as const,
+      status,
+      effort: "moderate" as const,
+      impact: "medium" as const,
+      estimatedTime: "1 hour",
+      source: "manual" as const,
+      steps: ["Step 1", "Step 2", "Step 3"],
+      notes: null,
+      dueDate: null,
+      completedAt: status === "completed" ? new Date() : null,
+      dismissedAt: status === "dismissed" ? new Date() : null,
+      createdAt: new Date(),
+    };
+  };
 
   describe("Query Recommendations (SELECT)", () => {
     it("should fetch seeded recommendations for a brand", async () => {
@@ -141,7 +156,7 @@ describe("Recommendation Integration Tests", () => {
       const result = await db
         .select()
         .from(schema.recommendations)
-        .where(eq(schema.recommendations.id, "non-existent-rec-id-xyz"))
+        .where(eq(schema.recommendations.id, NON_EXISTENT_REC_ID))
         .limit(1);
 
       expect(result).toEqual([]);
@@ -324,7 +339,7 @@ describe("Recommendation Integration Tests", () => {
     it("should transition from pending to in_progress", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recData = createUniqueRecommendation("transition-pending-ip", "pending");
+      const recData = createUniqueRecommendation("pending");
       testRecId = recData.id;
 
       // Create pending recommendation
@@ -354,7 +369,7 @@ describe("Recommendation Integration Tests", () => {
     it("should transition from in_progress to completed", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recData = createUniqueRecommendation("transition-ip-completed", "in_progress");
+      const recData = createUniqueRecommendation("in_progress");
 
       // Create in_progress recommendation
       await db.insert(schema.recommendations).values(recData).returning();
@@ -377,7 +392,7 @@ describe("Recommendation Integration Tests", () => {
     it("should transition from pending to dismissed", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recData = createUniqueRecommendation("transition-pending-dismissed", "pending");
+      const recData = createUniqueRecommendation("pending");
 
       // Create pending recommendation
       await db.insert(schema.recommendations).values(recData).returning();
@@ -400,7 +415,7 @@ describe("Recommendation Integration Tests", () => {
     it("should allow transition from completed back to in_progress", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recData = createUniqueRecommendation("transition-completed-ip", "completed");
+      const recData = createUniqueRecommendation("completed");
 
       // Create completed recommendation
       await db.insert(schema.recommendations).values(recData).returning();
@@ -422,7 +437,7 @@ describe("Recommendation Integration Tests", () => {
     it("should complete full workflow: pending → in_progress → completed", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recData = createUniqueRecommendation("full-workflow", "pending");
+      const recData = createUniqueRecommendation("pending");
 
       // Create pending recommendation
       await db.insert(schema.recommendations).values(recData).returning();
@@ -460,7 +475,7 @@ describe("Recommendation Integration Tests", () => {
     it("should update updatedAt timestamp on status change", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recData = createUniqueRecommendation("updated-at-test", "pending");
+      const recData = createUniqueRecommendation("pending");
 
       // Create pending recommendation
       const [created] = await db.insert(schema.recommendations).values(recData).returning();
@@ -503,7 +518,7 @@ describe("Recommendation Integration Tests", () => {
     it("should create feedback record for recommendation", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recData = createUniqueRecommendation("feedback-test-1", "completed");
+      const recData = createUniqueRecommendation("completed");
       testRecId = recData.id;
 
       // Create recommendation first
@@ -537,7 +552,7 @@ describe("Recommendation Integration Tests", () => {
     it("should allow multiple feedback records for same recommendation", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recData = createUniqueRecommendation("feedback-test-multiple", "completed");
+      const recData = createUniqueRecommendation("completed");
 
       // Create recommendation
       await db.insert(schema.recommendations).values(recData).returning();
@@ -577,7 +592,7 @@ describe("Recommendation Integration Tests", () => {
     it("should store rating values correctly (1-5 scale)", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recData = createUniqueRecommendation("feedback-rating-test", "completed");
+      const recData = createUniqueRecommendation("completed");
 
       // Create recommendation
       await db.insert(schema.recommendations).values(recData).returning();
@@ -607,7 +622,7 @@ describe("Recommendation Integration Tests", () => {
     it("should order feedback by createdAt descending", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recData = createUniqueRecommendation("feedback-order-test", "completed");
+      const recData = createUniqueRecommendation("completed");
 
       // Create recommendation
       await db.insert(schema.recommendations).values(recData).returning();
@@ -649,7 +664,7 @@ describe("Recommendation Integration Tests", () => {
     it("should handle feedback with optional fields", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recData = createUniqueRecommendation("feedback-optional-test", "completed");
+      const recData = createUniqueRecommendation("completed");
 
       // Create recommendation
       await db.insert(schema.recommendations).values(recData).returning();
@@ -687,7 +702,7 @@ describe("Recommendation Integration Tests", () => {
     it("should assign recommendation to a user", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recData = createUniqueRecommendation("assign-test", "pending");
+      const recData = createUniqueRecommendation("pending");
       const userId = TEST_IDS.USERS[0];
       testRecId = recData.id;
 
@@ -710,7 +725,7 @@ describe("Recommendation Integration Tests", () => {
     it("should reassign recommendation to different user", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recData = createUniqueRecommendation("reassign-test", "pending");
+      const recData = createUniqueRecommendation("pending");
       const userId1 = TEST_IDS.USERS[0];
       const userId2 = TEST_IDS.USERS[1];
 
@@ -734,7 +749,7 @@ describe("Recommendation Integration Tests", () => {
     it("should unassign recommendation by setting assignedToId to null", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recData = createUniqueRecommendation("unassign-test", "pending");
+      const recData = createUniqueRecommendation("pending");
       const userId = TEST_IDS.USERS[0];
 
       // Create recommendation assigned to user
@@ -874,7 +889,7 @@ describe("Recommendation Integration Tests", () => {
     it("should handle recommendation with null optional fields", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recId = `rec-null-fields-${Date.now()}`;
+      const recId = generateTestUuid();
 
       // Insert recommendation with minimal data
       const [insertedRec] = await db
@@ -910,7 +925,7 @@ describe("Recommendation Integration Tests", () => {
     it("should handle recommendation with empty steps array", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recId = `rec-empty-steps-${Date.now()}`;
+      const recId = generateTestUuid();
 
       // Insert recommendation with empty steps
       const [insertedRec] = await db
@@ -940,7 +955,7 @@ describe("Recommendation Integration Tests", () => {
     it("should handle recommendation with long description", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recId = `rec-long-desc-${Date.now()}`;
+      const recId = generateTestUuid();
       const longDescription = "A".repeat(5000);
 
       // Insert recommendation with long description
@@ -974,7 +989,7 @@ describe("Recommendation Integration Tests", () => {
       const statuses = ["pending", "in_progress", "completed", "dismissed"] as const;
 
       for (const status of statuses) {
-        const recId = `rec-status-${status}-${Date.now()}`;
+        const recId = generateTestUuid();
 
         const [insertedRec] = await db
           .insert(schema.recommendations)
@@ -1004,7 +1019,7 @@ describe("Recommendation Integration Tests", () => {
     it("should enforce foreign key constraint for brandId", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const recId = `rec-fk-test-${Date.now()}`;
+      const recId = generateTestUuid();
 
       // Attempt to insert with invalid brandId
       try {
@@ -1012,7 +1027,7 @@ describe("Recommendation Integration Tests", () => {
           .insert(schema.recommendations)
           .values({
             id: recId,
-            brandId: "non-existent-brand-id-xyz",
+            brandId: NON_EXISTENT_BRAND_ID,
             title: "Invalid Brand Rec",
             description: "Test",
             category: "brand_consistency",
