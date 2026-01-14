@@ -1,8 +1,9 @@
 "use client";
 
-import { ClerkProvider as BaseClerkProvider } from "@clerk/nextjs";
+import { ClerkProvider as BaseClerkProvider, useUser as useUserBase } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import type { ReactNode } from "react";
+import { useContext, createContext } from "react";
 
 interface ClerkProviderProps {
   children: ReactNode;
@@ -10,13 +11,37 @@ interface ClerkProviderProps {
 
 // Check if Clerk is configured
 const CLERK_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-const IS_CLERK_CONFIGURED = !!CLERK_PUBLISHABLE_KEY && CLERK_PUBLISHABLE_KEY !== "pk_test_placeholder";
+export const IS_CLERK_CONFIGURED = !!CLERK_PUBLISHABLE_KEY && CLERK_PUBLISHABLE_KEY !== "pk_test_placeholder";
+
+// Create a context for Clerk availability
+const ClerkAvailabilityContext = createContext<{ isAvailable: boolean }>({ isAvailable: IS_CLERK_CONFIGURED });
+
+// Export a safe useUser hook that handles missing Clerk gracefully
+export function useUserSafe() {
+  const { isAvailable } = useContext(ClerkAvailabilityContext);
+
+  if (!isAvailable) {
+    // Return a default value when Clerk is not configured
+    return {
+      user: null,
+      isLoaded: true,
+      isSignedIn: false,
+    };
+  }
+
+  // If Clerk is available, use the real hook
+  return useUserBase();
+}
 
 // Conditional Clerk provider that handles missing credentials gracefully
 export function ClerkProvider({ children }: ClerkProviderProps) {
-  // If not configured, just render children without Clerk
+  // If not configured, provide the children with context indicating Clerk is unavailable
   if (!IS_CLERK_CONFIGURED) {
-    return <>{children}</>;
+    return (
+      <ClerkAvailabilityContext.Provider value={{ isAvailable: false }}>
+        {children}
+      </ClerkAvailabilityContext.Provider>
+    );
   }
 
   return (
@@ -116,7 +141,9 @@ export function ClerkProvider({ children }: ClerkProviderProps) {
         },
       }}
     >
-      {children}
+      <ClerkAvailabilityContext.Provider value={{ isAvailable: true }}>
+        {children}
+      </ClerkAvailabilityContext.Provider>
     </BaseClerkProvider>
   );
 }

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import SettingsClient from "./settings-client";
+import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
 
 // Force dynamic rendering - this page requires authentication context
 export const dynamic = "force-dynamic";

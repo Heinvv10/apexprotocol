@@ -49,14 +49,12 @@ function auditToHistoryItem(audit: Audit): AuditHistoryItem {
     failed: "failed",
   };
 
-  // Get date from completedAt, startedAt, or createdAt
+  // Get date from completedAt or startedAt
   let dateString = "";
   if (audit.completedAt) {
     dateString = new Date(audit.completedAt).toLocaleDateString();
   } else if (audit.startedAt) {
     dateString = new Date(audit.startedAt).toLocaleDateString();
-  } else if (audit.createdAt) {
-    dateString = new Date(audit.createdAt).toLocaleDateString();
   }
 
   return {
