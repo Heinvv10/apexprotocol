@@ -283,11 +283,12 @@ describe('Marketing Database Schema', () => {
         comments: 28,
         shares: 12,
         views: 2340,
+        engagementRate: 6.2,
       };
 
       expect(post.likes).toBeGreaterThanOrEqual(0);
       expect(post.comments).toBeGreaterThanOrEqual(0);
-      expect(post.engagementRate).toBeGreaterThanOrEqual(0) || post.engagementRate === undefined;
+      expect(post.engagementRate).toBeGreaterThanOrEqual(0);
     });
 
     it('should store scheduling times', () => {
