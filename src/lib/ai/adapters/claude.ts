@@ -5,6 +5,8 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import type { PlatformAdapter, PlatformResponse, Citation } from "./base";
+import { getOptimalModel } from "../model-optimizer";
+import { logAIUsage } from "../usage-logger";
 
 /**
  * Claude adapter for analyzing brand visibility in Claude responses
@@ -12,8 +14,10 @@ import type { PlatformAdapter, PlatformResponse, Citation } from "./base";
 export class ClaudeAdapter implements PlatformAdapter {
   readonly platform = "claude" as const;
   private client: Anthropic;
+  private organizationId?: string;
+  private userId?: string;
 
-  constructor() {
+  constructor(organizationId?: string, userId?: string) {
     const apiKey = process.env.ANTHROPIC_API_KEY;
 
     if (!apiKey) {
@@ -26,6 +30,8 @@ export class ClaudeAdapter implements PlatformAdapter {
     this.client = new Anthropic({
       apiKey,
     });
+    this.organizationId = organizationId;
+    this.userId = userId;
   }
 
   /**
@@ -37,6 +43,9 @@ export class ClaudeAdapter implements PlatformAdapter {
    */
   async analyze(query: string, brandContext: string): Promise<PlatformResponse> {
     try {
+      // Get optimal model for content analysis operation
+      const modelConfig = getOptimalModel("content_analysis", "claude");
+
       // Create system prompt that includes brand context
       // Note: Anthropic requires system prompt as separate parameter
       const systemPrompt = `You are a helpful assistant analyzing brand visibility.
@@ -46,14 +55,12 @@ Brand context: ${brandContext}
 When answering questions, if the brand is relevant to the query, include specific information about it.
 If you reference any sources, websites, or specific information, please include citations in your response using the format [Source: URL or title].`;
 
-      // Call Anthropic API
-      // Note: max_tokens is REQUIRED for Anthropic (no default value)
-      // Using claude-sonnet-4-20250514 (Claude 4 Sonnet) as the latest stable model
+      // Call Anthropic API with optimized model configuration
       const response = await this.client.messages.create({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1500, // REQUIRED - Anthropic doesn't have a default
-        temperature: 0.7,
-        system: systemPrompt, // System prompt is separate, not in messages array
+        model: modelConfig.model,
+        max_tokens: modelConfig.maxTokens,
+        temperature: modelConfig.temperature,
+        system: systemPrompt,
         messages: [
           {
             role: "user",
@@ -79,6 +86,28 @@ If you reference any sources, websites, or specific information, please include 
       // Extract citations from the response
       const citations = this.extractCitations(content, brandContext);
 
+      // Log AI usage for cost tracking (only if organizationId is available)
+      if (this.organizationId) {
+        await logAIUsage(
+          this.organizationId,
+          modelConfig.provider,
+          modelConfig.model,
+          "content_analysis",
+          response.usage.input_tokens,
+          response.usage.output_tokens,
+          this.userId,
+          {
+            operation: "content_analysis",
+            platform: this.platform,
+            query_length: query.length,
+            citations_found: citations.length,
+          }
+        ).catch((err) => {
+          console.warn("Failed to log AI usage:", err);
+          // Don't throw - we don't want logging to break the feature
+        });
+      }
+
       // Build metadata
       const metadata = {
         model: response.model,
@@ -88,6 +117,7 @@ If you reference any sources, websites, or specific information, please include 
         },
         stop_reason: response.stop_reason,
         id: response.id,
+        costBand: modelConfig.costBand,
       };
 
       return {
