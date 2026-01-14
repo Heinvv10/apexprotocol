@@ -145,8 +145,8 @@ export const geoBestPractices = pgTable("geo_best_practices", {
   id: uuid("id").primaryKey().defaultRandom(),
   platform: varchar("platform", { length: 50 }).notNull(), // 'chatgpt', 'claude', 'gemini', etc.
   category: varchar("category", { length: 100 }).notNull(), // 'schema', 'content', 'social', 'technical'
-  title: varchar("title", { length: 255 }).notNull(),
-  description: text("description").notNull(),
+  title: varchar("practice_title", { length: 255 }).notNull(),
+  description: text("practice_description").notNull(),
   implementationSteps: jsonb("implementation_steps").$type<string[]>().notNull(), // Array of step descriptions
   impactScore: integer("impact_score").notNull(), // 1-10 current impact
   effortScore: integer("effort_score").notNull(), // 1-10 effort required
@@ -170,7 +170,7 @@ export const schemaTemplates = pgTable("schema_templates", {
   usageInstructions: text("usage_instructions").notNull(),
   version: integer("version").notNull(),
   isCurrent: boolean("is_current").default(true).notNull(),
-  supersededById: uuid("superseded_by_id"),
+  supersededById: uuid("superseded_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
