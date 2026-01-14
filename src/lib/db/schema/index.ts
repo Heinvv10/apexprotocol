@@ -532,3 +532,46 @@ export {
   type AlertSeverity,
   type SchemaType,
 } from "./geo-knowledge-base";
+
+// Marketing System (Phase M1: Foundation)
+export {
+  // Campaigns
+  campaigns as marketingCampaigns,
+  campaignStatusEnum,
+  campaignTypeEnum,
+  type Campaign,
+  type NewCampaign,
+  // Leads
+  leads as marketingLeads,
+  leadStatusEnum,
+  leadSourceEnum,
+  type Lead,
+  type NewLead,
+  // Email
+  emailLists as marketingEmailLists,
+  emailEvents as marketingEmailEvents,
+  emailEventTypeEnum,
+  emailSequences as marketingEmailSequences,
+  type EmailList,
+  type NewEmailList,
+  type EmailEvent,
+  type NewEmailEvent,
+  type EmailSequence,
+  type NewEmailSequence,
+  // Social
+  socialPosts as marketingSocialPosts,
+  postStatusEnum,
+  type SocialPost,
+  type NewSocialPost,
+  // Analytics
+  analyticsEvents as marketingAnalyticsEvents,
+  marketingMetrics,
+  type AnalyticsEvent,
+  type NewAnalyticsEvent,
+  type MarketingMetrics,
+  type NewMarketingMetrics,
+  // Automation
+  automationLogs as marketingAutomationLogs,
+  type AutomationLog,
+  type NewAutomationLog,
+} from "./marketing";

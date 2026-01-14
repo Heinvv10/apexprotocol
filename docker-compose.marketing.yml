@@ -1,0 +1,150 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database - Shared by all marketing tools
+  marketing-postgres:
+    image: postgres:15-alpine
+    container_name: apex-marketing-postgres
+    environment:
+      POSTGRES_USER: ${MARKETING_POSTGRES_USER:-apex_marketing}
+      POSTGRES_PASSWORD: ${MARKETING_POSTGRES_PASSWORD:-apex-marketing-dev}
+      POSTGRES_DB: ${MARKETING_POSTGRES_DB:-apex_marketing}
+    ports:
+      - "5433:5432"
+    volumes:
+      - marketing_postgres_data:/var/lib/postgresql/data
+    networks:
+      - marketing-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apex_marketing"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Mautic - CRM + Email Automation
+  mautic:
+    image: mautic/mautic:latest
+    container_name: apex-mautic
+    environment:
+      MAUTIC_DB_HOST: marketing-postgres
+      MAUTIC_DB_NAME: ${MARKETING_POSTGRES_DB:-apex_marketing}
+      MAUTIC_DB_USER: ${MARKETING_POSTGRES_USER:-apex_marketing}
+      MAUTIC_DB_PASSWORD: ${MARKETING_POSTGRES_PASSWORD:-apex-marketing-dev}
+      MAUTIC_DB_PORT: 5432
+      MAUTIC_DOMAIN: ${MAUTIC_DOMAIN:-http://localhost:8000}
+      MAUTIC_ADMIN_USERNAME: ${MAUTIC_ADMIN_USERNAME:-admin}
+      MAUTIC_ADMIN_PASSWORD: ${MAUTIC_ADMIN_PASSWORD:-mautic-password-123}
+      MAUTIC_ADMIN_EMAIL: ${MAUTIC_ADMIN_EMAIL:-admin@apex.local}
+    ports:
+      - "8000:80"
+    volumes:
+      - mautic_data:/var/www/html
+    networks:
+      - marketing-network
+    depends_on:
+      marketing-postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ListMonk - Email Delivery Engine
+  listmonk:
+    image: listmonk/listmonk:latest
+    container_name: apex-listmonk
+    environment:
+      LISTMONK_db__host: marketing-postgres
+      LISTMONK_db__port: 5432
+      LISTMONK_db__user: ${MARKETING_POSTGRES_USER:-apex_marketing}
+      LISTMONK_db__password: ${MARKETING_POSTGRES_PASSWORD:-apex-marketing-dev}
+      LISTMONK_db__database: ${MARKETING_POSTGRES_DB:-apex_marketing}
+      LISTMONK_app__address: "0.0.0.0:9000"
+      LISTMONK_app__admin_username: ${LISTMONK_ADMIN_USERNAME:-admin}
+      LISTMONK_app__admin_password: ${LISTMONK_ADMIN_PASSWORD:-listmonk-password-123}
+    ports:
+      - "9000:9000"
+    volumes:
+      - listmonk_data:/listmonk
+    networks:
+      - marketing-network
+    depends_on:
+      marketing-postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Postiz - Social Media Scheduler
+  postiz:
+    image: gitroomhq/postiz:latest
+    container_name: apex-postiz
+    environment:
+      DATABASE_URL: postgresql://${MARKETING_POSTGRES_USER:-apex_marketing}:${MARKETING_POSTGRES_PASSWORD:-apex-marketing-dev}@marketing-postgres:5432/${MARKETING_POSTGRES_DB:-apex_marketing}
+      NODE_ENV: development
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    networks:
+      - marketing-network
+    depends_on:
+      marketing-postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Matomo - Analytics & Tracking
+  matomo:
+    image: matomo:latest
+    container_name: apex-matomo
+    environment:
+      MATOMO_DATABASE_HOST: marketing-postgres
+      MATOMO_DATABASE_USERNAME: ${MARKETING_POSTGRES_USER:-apex_marketing}
+      MATOMO_DATABASE_PASSWORD: ${MARKETING_POSTGRES_PASSWORD:-apex-marketing-dev}
+      MATOMO_DATABASE_DBNAME: ${MARKETING_POSTGRES_DB:-apex_marketing}
+    ports:
+      - "8080:80"
+    volumes:
+      - matomo_data:/var/www/html
+      - matomo_logs:/var/www/html/tmp
+    networks:
+      - marketing-network
+    depends_on:
+      marketing-postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/index.php || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  marketing_postgres_data:
+    driver: local
+  mautic_data:
+    driver: local
+  listmonk_data:
+    driver: local
+  matomo_data:
+    driver: local
+  matomo_logs:
+    driver: local
+
+networks:
+  marketing-network:
+    driver: bridge
