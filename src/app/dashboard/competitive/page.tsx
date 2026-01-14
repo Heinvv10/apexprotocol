@@ -134,12 +134,11 @@ function SelectBrandPrompt() {
             Choose a brand from the dropdown in the header to analyze competitive landscape.
           </p>
         </div>
-        <Link
-          href="/dashboard/brands"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary/10 text-primary border border-primary/30 font-medium hover:bg-primary/20 transition-all"
-        >
-          Manage Brands
-          <ArrowRight className="w-4 h-4" />
+        <Link href="/dashboard/brands">
+          <Button variant="outline" size="lg" className="gap-2">
+            Manage Brands
+            <ArrowRight className="w-4 h-4" />
+          </Button>
         </Link>
       </div>
     </div>
@@ -170,13 +169,10 @@ function ErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
           <h3 className="text-lg font-semibold text-foreground">Failed to Load Competitive Data</h3>
           <p className="text-muted-foreground text-sm">{error.message}</p>
         </div>
-        <button
-          onClick={onRetry}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all"
-        >
+        <Button onClick={onRetry} className="gap-2">
           <RefreshCw className="w-4 h-4" />
           Retry
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -466,12 +462,11 @@ export default function CompetitivePage() {
                 View in-depth competitor tracking, manage your competitor list, and analyze trends over time with interactive charts.
               </p>
             </div>
-            <Link
-              href={`/dashboard/${brandId}/competitors`}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl whitespace-nowrap"
-            >
-              View Dashboard
-              <ArrowRight className="w-4 h-4" />
+            <Link href={`/dashboard/${brandId}/competitors`}>
+              <Button size="lg" className="gap-2">
+                View Dashboard
+                <ArrowRight className="w-4 h-4" />
+              </Button>
             </Link>
           </div>
         </div>
@@ -692,12 +687,11 @@ function PageHeader({ brandId }: { brandId?: string }) {
       <div className="flex items-center gap-4">
         {/* Competitor Dashboard Link */}
         {brandId && (
-          <Link
-            href={`/dashboard/${brandId}/competitors`}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary border border-primary/30 font-medium hover:bg-primary/20 transition-all text-sm"
-          >
-            <Users className="w-4 h-4" />
-            Manage Competitors
+          <Link href={`/dashboard/${brandId}/competitors`}>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Users className="w-4 h-4" />
+              Manage Competitors
+            </Button>
           </Link>
         )}
 

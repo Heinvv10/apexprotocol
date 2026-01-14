@@ -89,12 +89,11 @@ function SelectBrandPrompt() {
             Choose a brand from the dropdown in the header to audit your website and see audit history.
           </p>
         </div>
-        <Link
-          href="/dashboard/brands"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary/10 text-primary border border-primary/30 font-medium hover:bg-primary/20 transition-all"
-        >
-          Manage Brands
-          <ArrowRight className="w-4 h-4" />
+        <Link href="/dashboard/brands">
+          <Button variant="outline" size="lg" className="gap-2">
+            Manage Brands
+            <ArrowRight className="w-4 h-4" />
+          </Button>
         </Link>
       </div>
     </div>
