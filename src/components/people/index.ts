@@ -15,3 +15,5 @@ export { CareerTimeline } from "./career-timeline";
 export { EnrichedProfileCard } from "./enriched-profile-card";
 
 export { OpportunityMatches } from "./opportunity-matches";
+
+export { LinkedInTeamDiscovery } from "./linkedin-team-discovery";

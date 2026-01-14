@@ -31,6 +31,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { PredictiveChart } from "@/components/analytics/PredictiveChart";
+import { LinkedInTeamDiscovery } from "@/components/people/linkedin-team-discovery";
 
 // Type definitions
 interface Brand {
@@ -436,6 +437,13 @@ export default function BrandDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* LinkedIn Team Discovery */}
+      <LinkedInTeamDiscovery
+        brandId={brandId}
+        brandName={brand.name}
+        domain={brand.domain || undefined}
+      />
 
       {/* Quick Actions */}
       <Card className="card-tertiary border-0">
