@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { ChevronDown, Plus, MoreHorizontal } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface FilterGroup {
@@ -31,36 +32,61 @@ interface FilterSidebarProps {
 const AIEngineIcons = () => (
   <div className="flex items-center gap-2 mt-3">
     {/* ChatGPT */}
-    <button className="ai-engine-filter-icon active" title="ChatGPT">
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      title="ChatGPT"
+      className="text-primary hover:bg-primary/10"
+    >
       <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
         <path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494z"/>
       </svg>
-    </button>
+    </Button>
     {/* Claude */}
-    <button className="ai-engine-filter-icon" title="Claude">
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      title="Claude"
+      className="hover:bg-primary/10"
+    >
       <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" fill="none"/>
         <path d="M8 12h8M12 8v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
       </svg>
-    </button>
+    </Button>
     {/* Gemini */}
-    <button className="ai-engine-filter-icon" title="Gemini">
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      title="Gemini"
+      className="hover:bg-primary/10"
+    >
       <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
         <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.5L18 8v8l-6 3.5L6 16V8l6-3.5z"/>
       </svg>
-    </button>
+    </Button>
     {/* Perplexity */}
-    <button className="ai-engine-filter-icon" title="Perplexity">
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      title="Perplexity"
+      className="hover:bg-primary/10"
+    >
       <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
         <circle cx="12" cy="12" r="3"/>
         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" fill="none"/>
         <path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
       </svg>
-    </button>
+    </Button>
     {/* Grok (X) */}
-    <button className="ai-engine-filter-icon" title="Grok">
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      title="Grok"
+      className="hover:bg-primary/10"
+    >
       <span className="text-sm font-bold">X</span>
-    </button>
+    </Button>
   </div>
 );
 
@@ -84,9 +110,13 @@ export function FilterSidebar({
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-foreground">Filters</h3>
-          <button className="text-muted-foreground hover:text-foreground transition-colors">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          >
             <MoreHorizontal className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Filter Groups */}
@@ -94,9 +124,10 @@ export function FilterSidebar({
           {filters.map((group) => (
             <div key={group.id} className="filter-group">
               {/* Group Header */}
-              <button
+              <Button
                 onClick={() => toggleGroup(group.id)}
-                className="w-full flex items-center gap-2 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
+                variant="ghost"
+                className="w-full justify-start px-0 h-auto text-sm font-medium text-foreground hover:text-primary hover:bg-transparent"
               >
                 <div className={cn(
                   "w-5 h-5 rounded flex items-center justify-center border transition-colors",
@@ -120,7 +151,7 @@ export function FilterSidebar({
                   "w-4 h-4 text-muted-foreground transition-transform",
                   expandedGroups[group.id] && "transform rotate-180"
                 )} />
-              </button>
+              </Button>
 
               {/* Group Options */}
               {expandedGroups[group.id] && (
@@ -169,10 +200,10 @@ export function FilterSidebar({
         </div>
 
         {/* Add New Tracking Scenario Button */}
-        <button className="monitor-add-scenario-btn mt-6">
+        <Button variant="outline" className="w-full mt-6 gap-2">
           <Plus className="w-4 h-4" />
           <span>Add New Tracking Scenario</span>
-        </button>
+        </Button>
       </div>
     </div>
   );
