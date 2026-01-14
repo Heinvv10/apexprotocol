@@ -9,6 +9,7 @@ import {
   boolean,
   date,
   real,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
@@ -159,7 +160,14 @@ export const shareOfVoice = pgTable("share_of_voice", {
 
   // Timestamps
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => ({
+  // Unique constraint for brand+date+platform combo for upsert operations
+  brandDatePlatformIdx: uniqueIndex("sov_brand_date_platform_idx").on(
+    table.brandId,
+    table.date,
+    table.platform
+  ),
+}));
 
 // Competitor SOV type
 export interface CompetitorSOV {
