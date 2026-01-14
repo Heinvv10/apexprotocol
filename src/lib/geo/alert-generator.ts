@@ -12,13 +12,15 @@
  * - Score impacts
  */
 
-import type {
-  GeoAlert,
-  NewGeoAlert,
-  PlatformChange,
-  geoAlertTypeEnum,
-  alertSeverityEnum,
+import { db } from "@/lib/db";
+import {
+  geoAlerts,
+  type GeoAlert,
+  type NewGeoAlert,
+  type PlatformChange,
 } from "../db/schema/geo-knowledge-base";
+import { organizations } from "@/lib/db/schema/organizations";
+import type { PlatformBehaviorSignal } from "./platform-monitor";
 
 // Alert type enum values
 export type GeoAlertType =
@@ -709,6 +711,229 @@ export function getPlatformDisplayName(platform: string): string {
     all: "All Platforms",
   };
   return names[platform] || platform;
+}
+
+// ============================================================================
+// Batch Alert Generation from Platform Signals
+// ============================================================================
+
+/**
+ * Generate alerts from detected platform behavior signals
+ * This is called by the update pipeline to notify affected organizations
+ */
+export async function generateAlertsFromSignals(
+  signals: PlatformBehaviorSignal[]
+): Promise<{ created: number; errors: number }> {
+  if (signals.length === 0) {
+    return { created: 0, errors: 0 };
+  }
+
+  let created = 0;
+  let errors = 0;
+
+  try {
+    // Get all organizations to alert
+    const allOrgs = await db.select({ id: organizations.id }).from(organizations);
+
+    for (const signal of signals) {
+      // Only generate alerts for high-confidence signals
+      if (signal.confidence < 60) {
+        continue;
+      }
+
+      // Determine alert severity based on confidence and change magnitude
+      let severity: AlertSeverity = "info";
+      if (signal.confidence >= 80 && Math.abs(signal.metrics.percentChange) >= 30) {
+        severity = "critical";
+      } else if (signal.confidence >= 70 || Math.abs(signal.metrics.percentChange) >= 20) {
+        severity = "warning";
+      }
+
+      // Determine if action is required
+      const actionRequired = severity === "critical" || signal.metrics.percentChange < -20;
+
+      // Create alert for each organization
+      for (const org of allOrgs) {
+        try {
+          const alert: NewGeoAlert = {
+            organizationId: org.id,
+            alertType: signal.changeType === "citation_pattern"
+              ? "algorithm_change"
+              : signal.changeType === "content_preference"
+                ? "strategy_deprecated"
+                : "algorithm_change",
+            severity,
+            title: `${getPlatformDisplayName(signal.platform)} ${signal.changeType.replace(/_/g, " ")} detected`,
+            description: signal.details,
+            affectedPlatforms: [signal.platform],
+            actionRequired,
+            suggestedActions: [
+              signal.recommendedAction,
+              "Review your current GEO action plan",
+              "Monitor your visibility metrics for changes",
+            ],
+            relatedChanges: [],
+            expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days
+          };
+
+          await db.insert(geoAlerts).values(alert);
+          created++;
+        } catch (err) {
+          console.error(`Failed to create alert for org ${org.id}:`, err);
+          errors++;
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Failed to generate alerts from signals:", err);
+    errors++;
+  }
+
+  return { created, errors };
+}
+
+// ============================================================================
+// Alert Database Operations
+// ============================================================================
+
+import { eq, and, desc, isNull, sql } from "drizzle-orm";
+
+/**
+ * Get alerts for an organization with optional filters
+ */
+export async function getOrganizationAlerts(
+  organizationId: string,
+  options: {
+    unreadOnly?: boolean;
+    severity?: AlertSeverity;
+    type?: GeoAlertType;
+    limit?: number;
+  } = {}
+): Promise<GeoAlert[]> {
+  const { unreadOnly, severity, type, limit = 50 } = options;
+
+  let query = db
+    .select()
+    .from(geoAlerts)
+    .where(eq(geoAlerts.organizationId, organizationId))
+    .orderBy(desc(geoAlerts.createdAt))
+    .limit(limit);
+
+  // Apply filters - we need to build a compound where clause
+  const conditions = [eq(geoAlerts.organizationId, organizationId)];
+
+  if (unreadOnly) {
+    conditions.push(eq(geoAlerts.isRead, false));
+  }
+  if (severity) {
+    conditions.push(eq(geoAlerts.severity, severity));
+  }
+  if (type) {
+    conditions.push(eq(geoAlerts.alertType, type));
+  }
+
+  const alerts = await db
+    .select()
+    .from(geoAlerts)
+    .where(and(...conditions))
+    .orderBy(desc(geoAlerts.createdAt))
+    .limit(limit);
+
+  return alerts;
+}
+
+/**
+ * Get alert summary for an organization
+ */
+export async function getAlertSummary(organizationId: string): Promise<{
+  total: number;
+  unread: number;
+  critical: number;
+  actionRequired: number;
+  byType: Record<GeoAlertType, number>;
+}> {
+  const alerts = await db
+    .select()
+    .from(geoAlerts)
+    .where(
+      and(
+        eq(geoAlerts.organizationId, organizationId),
+        isNull(geoAlerts.dismissedAt)
+      )
+    );
+
+  const byType: Record<GeoAlertType, number> = {
+    algorithm_change: 0,
+    recommendation_updated: 0,
+    strategy_deprecated: 0,
+    new_opportunity: 0,
+    competitor_move: 0,
+    score_impact: 0,
+  };
+
+  let unread = 0;
+  let critical = 0;
+  let actionRequired = 0;
+
+  for (const alert of alerts) {
+    if (!alert.isRead) unread++;
+    if (alert.severity === "critical") critical++;
+    if (alert.actionRequired) actionRequired++;
+    if (alert.alertType in byType) {
+      byType[alert.alertType as GeoAlertType]++;
+    }
+  }
+
+  return {
+    total: alerts.length,
+    unread,
+    critical,
+    actionRequired,
+    byType,
+  };
+}
+
+/**
+ * Mark an alert as read
+ */
+export async function markAlertAsRead(alertId: string): Promise<GeoAlert | null> {
+  const [updated] = await db
+    .update(geoAlerts)
+    .set({ isRead: true, readAt: new Date() })
+    .where(eq(geoAlerts.id, alertId))
+    .returning();
+
+  return updated || null;
+}
+
+/**
+ * Mark all alerts as read for an organization
+ */
+export async function markAllAlertsAsRead(organizationId: string): Promise<number> {
+  const result = await db
+    .update(geoAlerts)
+    .set({ isRead: true, readAt: new Date() })
+    .where(
+      and(
+        eq(geoAlerts.organizationId, organizationId),
+        eq(geoAlerts.isRead, false)
+      )
+    );
+
+  return result.rowCount || 0;
+}
+
+/**
+ * Dismiss an alert
+ */
+export async function dismissAlert(alertId: string): Promise<GeoAlert | null> {
+  const [updated] = await db
+    .update(geoAlerts)
+    .set({ dismissedAt: new Date() })
+    .where(eq(geoAlerts.id, alertId))
+    .returning();
+
+  return updated || null;
 }
 
 export { ALERT_TEMPLATES };

@@ -18,7 +18,7 @@ import {
   index,
   foreignKey,
 } from 'drizzle-orm/pg-core';
-import { organizationTable } from './organizations';
+import { organizations } from './organizations';
 
 // ============================================================================
 // Enums
@@ -96,7 +96,7 @@ export const campaigns = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     organizationId: uuid('organization_id')
       .notNull()
-      .references(() => organizationTable.id, { onDelete: 'cascade' }),
+      .references(() => organizations.id, { onDelete: 'cascade' }),
     externalCampaignId: varchar('external_campaign_id', { length: 255 }),
     name: varchar('name', { length: 255 }).notNull(),
     description: text('description'),
@@ -141,7 +141,7 @@ export const leads = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     organizationId: uuid('organization_id')
       .notNull()
-      .references(() => organizationTable.id, { onDelete: 'cascade' }),
+      .references(() => organizations.id, { onDelete: 'cascade' }),
     externalLeadId: varchar('external_lead_id', { length: 255 }),
     email: varchar('email', { length: 255 }).notNull(),
     firstName: varchar('first_name', { length: 100 }),
@@ -190,7 +190,7 @@ export const emailLists = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     organizationId: uuid('organization_id')
       .notNull()
-      .references(() => organizationTable.id, { onDelete: 'cascade' }),
+      .references(() => organizations.id, { onDelete: 'cascade' }),
     externalListId: varchar('external_list_id', { length: 255 }),
     name: varchar('name', { length: 255 }).notNull(),
     description: text('description'),
@@ -221,7 +221,7 @@ export const emailEvents = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     organizationId: uuid('organization_id')
       .notNull()
-      .references(() => organizationTable.id, { onDelete: 'cascade' }),
+      .references(() => organizations.id, { onDelete: 'cascade' }),
     leadId: uuid('lead_id').references(() => leads.id, { onDelete: 'cascade' }),
     campaignId: uuid('campaign_id').references(() => campaigns.id, {
       onDelete: 'cascade',
@@ -264,7 +264,7 @@ export const socialPosts = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     organizationId: uuid('organization_id')
       .notNull()
-      .references(() => organizationTable.id, { onDelete: 'cascade' }),
+      .references(() => organizations.id, { onDelete: 'cascade' }),
     campaignId: uuid('campaign_id').references(() => campaigns.id, {
       onDelete: 'set null',
     }),
@@ -313,7 +313,7 @@ export const analyticsEvents = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     organizationId: uuid('organization_id')
       .notNull()
-      .references(() => organizationTable.id, { onDelete: 'cascade' }),
+      .references(() => organizations.id, { onDelete: 'cascade' }),
     leadId: uuid('lead_id').references(() => leads.id, { onDelete: 'set null' }),
     campaignId: uuid('campaign_id').references(() => campaigns.id, {
       onDelete: 'set null',
@@ -353,7 +353,7 @@ export const marketingMetrics = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     organizationId: uuid('organization_id')
       .notNull()
-      .references(() => organizationTable.id, { onDelete: 'cascade' }),
+      .references(() => organizations.id, { onDelete: 'cascade' }),
     campaignId: uuid('campaign_id').references(() => campaigns.id, {
       onDelete: 'set null',
     }),
@@ -392,7 +392,7 @@ export const emailSequences = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     organizationId: uuid('organization_id')
       .notNull()
-      .references(() => organizationTable.id, { onDelete: 'cascade' }),
+      .references(() => organizations.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 255 }).notNull(),
     description: text('description'),
     isTemplate: boolean('is_template').default(false),
@@ -430,7 +430,7 @@ export const automationLogs = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     organizationId: uuid('organization_id')
       .notNull()
-      .references(() => organizationTable.id, { onDelete: 'cascade' }),
+      .references(() => organizations.id, { onDelete: 'cascade' }),
     leadId: uuid('lead_id')
       .notNull()
       .references(() => leads.id, { onDelete: 'cascade' }),
