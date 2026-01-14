@@ -49,14 +49,22 @@ function auditToHistoryItem(audit: Audit): AuditHistoryItem {
     failed: "failed",
   };
 
+  // Get date from completedAt, startedAt, or createdAt
+  let dateString = "";
+  if (audit.completedAt) {
+    dateString = new Date(audit.completedAt).toLocaleDateString();
+  } else if (audit.startedAt) {
+    dateString = new Date(audit.startedAt).toLocaleDateString();
+  } else if (audit.createdAt) {
+    dateString = new Date(audit.createdAt).toLocaleDateString();
+  }
+
   return {
     id: audit.id,
     url: audit.url,
     score: audit.overallScore || 0,
     status: statusMap[audit.status] || "in_progress",
-    date: audit.completedAt
-      ? new Date(audit.completedAt).toLocaleDateString()
-      : new Date(audit.startedAt).toLocaleDateString(),
+    date: dateString || "Unknown date",
   };
 }
 

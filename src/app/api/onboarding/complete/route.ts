@@ -71,12 +71,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (!org) {
+      // Create organization with starter plan defaults (1 brand, 3 users)
       await db.insert(organizations).values({
         id: orgId,
         name: "My Organization",
         slug: "my-organization",
         plan: "starter",
-        brandLimit: 10,
+        brandLimit: 1,  // Starter plan: 1 brand
+        userLimit: 3,   // Starter plan: 3 users
       });
     }
 

@@ -69,12 +69,14 @@ export async function POST(request: NextRequest) {
 
     // Create audit record
     const auditId = createId();
+    const now = new Date();
     await db.insert(audits).values({
       id: auditId,
       brandId,
       triggeredById: userId,
       url: normalizedUrl,
       status: "pending",
+      startedAt: now,
       metadata: {
         depth: validatedData.depth,
         options: validatedData.options,
