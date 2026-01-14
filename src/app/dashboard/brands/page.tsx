@@ -45,6 +45,7 @@ import { Switch } from "@/components/ui/switch";
 import { ScrapeWizard } from "@/components/brands/scrape-wizard";
 import { BrandDetailView } from "@/components/brands/brand-detail-view";
 import { CompletionWizard } from "@/components/brands/completion-wizard";
+import { BrandLogo } from "@/components/brands/brand-logo";
 import { useToast } from "@/components/toast";
 import type { ScrapedBrandData } from "@/app/api/brands/scrape/route";
 
@@ -756,15 +757,12 @@ function BrandsPageContent() {
                       backgroundColor: brand.visual?.primaryColor || "#4926FA",
                     }}
                   >
-                    {brand.logoUrl ? (
-                      <img
-                        src={brand.logoUrl}
-                        alt={brand.name}
-                        className="h-full w-full rounded-lg object-cover"
-                      />
-                    ) : (
-                      getBrandInitials(brand.name)
-                    )}
+                    <BrandLogo
+                      logoUrl={brand.logoUrl}
+                      brandName={brand.name}
+                      fallbackColor={brand.visual?.primaryColor || "#4926FA"}
+                      size="md"
+                    />
                   </div>
                   <div className="min-w-0">
                     <h3 className="font-medium truncate group-hover:text-primary transition-colors">{brand.name}</h3>

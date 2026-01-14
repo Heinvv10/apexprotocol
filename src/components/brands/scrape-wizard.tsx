@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { BrandLogo } from "@/components/brands/brand-logo";
 import { useBrandScrape } from "@/hooks/use-brand-scrape";
 import { cn } from "@/lib/utils";
 import type { ScrapedBrandData } from "@/app/api/brands/scrape/route";
@@ -517,23 +518,13 @@ function PreviewStep({
       >
         {/* Logo and Name */}
         <div className="flex items-center gap-3">
-          {data.logoUrl ? (
-            <img
-              src={data.logoUrl}
-              alt={data.brandName}
-              className="h-12 w-12 rounded-lg object-contain bg-white p-1"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          ) : (
-            <div
-              className="h-12 w-12 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: `${DESIGN.textMuted}20` }}
-            >
-              <Globe className="h-6 w-6" style={{ color: DESIGN.textMuted }} />
-            </div>
-          )}
+          <BrandLogo
+            logoUrl={data.logoUrl}
+            brandName={data.brandName}
+            fallbackColor={`${DESIGN.textMuted}20`}
+            size="md"
+            showFallback={false}
+          />
           <div className="flex-1 min-w-0">
             <p className="font-medium truncate" style={{ color: DESIGN.textPrimary }}>{data.brandName}</p>
             {data.tagline && (

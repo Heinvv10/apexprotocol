@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useSelectedBrand } from "@/stores";
 import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 
 // Phase 9.1 Components
 import {

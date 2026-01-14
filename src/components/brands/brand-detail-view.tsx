@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import type { Brand, BrandCompetitor } from "@/stores/brand-store";
 import { Button } from "@/components/ui/button";
 import { LocationsSection } from "@/components/locations";
+import { BrandLogo } from "@/components/brands/brand-logo";
 
 // AI Platforms for monitoring display (colors from UI_DESIGN_SYSTEM.md)
 const AI_PLATFORMS = [
@@ -323,22 +324,17 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
           <div className="flex items-center gap-4">
             {/* Brand Logo/Avatar */}
             <div
-              className="flex items-center justify-center h-16 w-16 rounded-xl text-lg font-bold shrink-0 overflow-hidden"
               style={{
-                backgroundColor: brand.visual?.primaryColor || DESIGN.primaryCyan,
-                color: DESIGN.bgDeep,
                 border: `2px solid ${DESIGN.borderAccent}`,
               }}
+              className="rounded-xl overflow-hidden"
             >
-              {brand.logoUrl ? (
-                <img
-                  src={brand.logoUrl}
-                  alt={brand.name}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                getBrandInitials(brand.name)
-              )}
+              <BrandLogo
+                logoUrl={brand.logoUrl}
+                brandName={brand.name}
+                fallbackColor={brand.visual?.primaryColor || DESIGN.primaryCyan}
+                size="lg"
+              />
             </div>
             <div className="min-w-0">
               <h2 className="text-xl font-semibold truncate" style={{ color: DESIGN.textPrimary }}>

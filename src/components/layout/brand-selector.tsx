@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { BrandLogo } from "@/components/brands/brand-logo";
 
 interface BrandSelectorProps {
   className?: string;
@@ -94,21 +95,13 @@ export function BrandSelector({ className }: BrandSelectorProps) {
           aria-label={selectedBrand?.name ? `Selected brand: ${selectedBrand.name}` : "Select a brand"}
         >
           {/* Brand Avatar */}
-          <div
-            className="flex items-center justify-center h-6 w-6 rounded-md text-xs font-semibold text-white"
-            style={{ backgroundColor: getBrandColor(selectedBrand || {}) }}
-            aria-hidden="true"
-          >
-            {selectedBrand?.logoUrl ? (
-              <img
-                src={selectedBrand.logoUrl}
-                alt=""
-                className="h-full w-full rounded-md object-cover"
-              />
-            ) : (
-              getBrandInitials(selectedBrand?.name || "Brand")
-            )}
-          </div>
+          <BrandLogo
+            logoUrl={selectedBrand?.logoUrl}
+            brandName={selectedBrand?.name || "Brand"}
+            fallbackColor={getBrandColor(selectedBrand || {})}
+            size="xs"
+            showFallback={true}
+          />
 
           {/* Brand Name */}
           <span className="max-w-[120px] truncate text-sm font-medium">
@@ -142,21 +135,13 @@ export function BrandSelector({ className }: BrandSelectorProps) {
               aria-current={selectedBrand?.id === brand.id ? "true" : undefined}
             >
               {/* Brand Avatar */}
-              <div
-                className="flex items-center justify-center h-8 w-8 rounded-md text-xs font-semibold text-white shrink-0"
-                style={{ backgroundColor: getBrandColor(brand) }}
-                aria-hidden="true"
-              >
-                {brand.logoUrl ? (
-                  <img
-                    src={brand.logoUrl}
-                    alt=""
-                    className="h-full w-full rounded-md object-cover"
-                  />
-                ) : (
-                  getBrandInitials(brand.name)
-                )}
-              </div>
+              <BrandLogo
+                logoUrl={brand.logoUrl}
+                brandName={brand.name}
+                fallbackColor={getBrandColor(brand)}
+                size="sm"
+                showFallback={true}
+              />
 
               {/* Brand Info */}
               <div className="flex-1 min-w-0">
