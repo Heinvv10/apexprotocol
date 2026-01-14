@@ -67,10 +67,10 @@ describe("API Key Authentication Integration Tests", () => {
   ) => {
     const db = getDb();
     const schema = getSchemaFn();
-    const { key, hash } = generateApiKey();
+    const { key, hash } = await generateApiKey();
 
     const keyId = `auth-test-key-${suffix}-${Date.now()}`;
-    const userId = options.userId || `auth-test-user-${suffix}`;
+    const userId = options.userId || TEST_IDS.USERS[0];
     const organizationId = options.organizationId || TEST_IDS.ORG;
 
     const encryptedKey = encryptApiKey(key);
@@ -145,8 +145,8 @@ describe("API Key Authentication Integration Tests", () => {
       expect(isApexApiKey("APX_test123")).toBe(false); // wrong case
     });
 
-    it("should validate full Apex API key format", () => {
-      const { key } = generateApiKey();
+    it("should validate full Apex API key format", async () => {
+      const { key } = await generateApiKey();
       expect(isValidApiKeyFormat(key)).toBe(true);
       expect(key.startsWith("apx_")).toBe(true);
       expect(key.length).toBe(47);
@@ -172,7 +172,7 @@ describe("API Key Authentication Integration Tests", () => {
       const testKey = await createTestApiKey("valid-auth");
       createdKeyIds.push(testKey.id);
 
-      const result = await validateApiKey(testKey.key);
+      const result = await validateApiKey(testKey.key, getDb());
 
       expect(result.valid).toBe(true);
       if (result.valid) {
@@ -187,7 +187,7 @@ describe("API Key Authentication Integration Tests", () => {
       createdKeyIds.push(testKey.id);
 
       const authHeader = `Bearer ${testKey.key}`;
-      const result = await validateApiKeyFromHeader(authHeader);
+      const result = await validateApiKeyFromHeader(authHeader, getDb());
 
       expect(result.valid).toBe(true);
       if (result.valid) {
@@ -201,22 +201,22 @@ describe("API Key Authentication Integration Tests", () => {
       createdKeyIds.push(testKey.id);
 
       // Test lowercase
-      const result1 = await validateApiKeyFromHeader(`bearer ${testKey.key}`);
+      const result1 = await validateApiKeyFromHeader(`bearer ${testKey.key}`, getDb());
       expect(result1.valid).toBe(true);
 
       // Test uppercase
-      const result2 = await validateApiKeyFromHeader(`BEARER ${testKey.key}`);
+      const result2 = await validateApiKeyFromHeader(`BEARER ${testKey.key}`, getDb());
       expect(result2.valid).toBe(true);
 
       // Test mixed case
-      const result3 = await validateApiKeyFromHeader(`BeArEr ${testKey.key}`);
+      const result3 = await validateApiKeyFromHeader(`BeArEr ${testKey.key}`, getDb());
       expect(result3.valid).toBe(true);
     });
 
     itWithDb("should return scopes from key record", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const { key, hash } = generateApiKey();
+      const { key, hash } = await generateApiKey();
       const keyId = `scopes-test-${Date.now()}`;
       createdKeyIds.push(keyId);
 
@@ -227,7 +227,7 @@ describe("API Key Authentication Integration Tests", () => {
         .values({
           id: keyId,
           organizationId: TEST_IDS.ORG,
-          userId: "scopes-user",
+          userId: TEST_IDS.USERS[0],
           name: "Scopes Test Key",
           type: "user",
           encryptedKey: encryptApiKey(key),
@@ -238,7 +238,7 @@ describe("API Key Authentication Integration Tests", () => {
         })
         .returning();
 
-      const result = await validateApiKey(key);
+      const result = await validateApiKey(key, getDb());
 
       expect(result.valid).toBe(true);
       if (result.valid) {
@@ -249,10 +249,10 @@ describe("API Key Authentication Integration Tests", () => {
 
   describe("Invalid API Key Returns 401", () => {
     itWithDb("should reject non-existent API key", async () => {
-      const { key } = generateApiKey();
+      const { key } = await generateApiKey();
       // Key was never stored in database
 
-      const result = await validateApiKey(key);
+      const result = await validateApiKey(key, getDb());
 
       expect(result.valid).toBe(false);
       if (!result.valid) {
@@ -262,7 +262,7 @@ describe("API Key Authentication Integration Tests", () => {
     });
 
     itWithDb("should reject invalid key format", async () => {
-      const result = await validateApiKey("not_a_valid_key");
+      const result = await validateApiKey("not_a_valid_key", getDb());
 
       expect(result.valid).toBe(false);
       if (!result.valid) {
@@ -271,7 +271,7 @@ describe("API Key Authentication Integration Tests", () => {
     });
 
     itWithDb("should reject missing Authorization header", async () => {
-      const result = await validateApiKeyFromHeader(null);
+      const result = await validateApiKeyFromHeader(null, getDb());
 
       expect(result.valid).toBe(false);
       if (!result.valid) {
@@ -280,7 +280,7 @@ describe("API Key Authentication Integration Tests", () => {
     });
 
     itWithDb("should reject empty Authorization header", async () => {
-      const result = await validateApiKeyFromHeader("");
+      const result = await validateApiKeyFromHeader("", getDb());
 
       expect(result.valid).toBe(false);
       if (!result.valid) {
@@ -289,7 +289,7 @@ describe("API Key Authentication Integration Tests", () => {
     });
 
     itWithDb("should reject non-Bearer token", async () => {
-      const result = await validateApiKeyFromHeader("Basic abc123");
+      const result = await validateApiKeyFromHeader("Basic abc123", getDb());
 
       expect(result.valid).toBe(false);
       if (!result.valid) {
@@ -298,7 +298,7 @@ describe("API Key Authentication Integration Tests", () => {
     });
 
     itWithDb("should reject non-Apex Bearer token", async () => {
-      const result = await validateApiKeyFromHeader("Bearer sk-openai-key");
+      const result = await validateApiKeyFromHeader("Bearer sk-openai-key", getDb());
 
       expect(result.valid).toBe(false);
       if (!result.valid) {
@@ -325,7 +325,7 @@ describe("API Key Authentication Integration Tests", () => {
       });
       createdKeyIds.push(testKey.id);
 
-      const result = await validateApiKey(testKey.key);
+      const result = await validateApiKey(testKey.key, getDb());
 
       expect(result.valid).toBe(false);
       if (!result.valid) {
@@ -342,7 +342,7 @@ describe("API Key Authentication Integration Tests", () => {
       });
       createdKeyIds.push(testKey.id);
 
-      const result = await validateApiKey(testKey.key);
+      const result = await validateApiKey(testKey.key, getDb());
 
       expect(result.valid).toBe(false);
       if (!result.valid) {
@@ -358,7 +358,7 @@ describe("API Key Authentication Integration Tests", () => {
       });
       createdKeyIds.push(testKey.id);
 
-      const result = await validateApiKey(testKey.key);
+      const result = await validateApiKey(testKey.key, getDb());
 
       expect(result.valid).toBe(true);
     });
@@ -369,7 +369,7 @@ describe("API Key Authentication Integration Tests", () => {
       });
       createdKeyIds.push(testKey.id);
 
-      const result = await validateApiKey(testKey.key);
+      const result = await validateApiKey(testKey.key, getDb());
 
       expect(result.valid).toBe(true);
     });
@@ -382,14 +382,14 @@ describe("API Key Authentication Integration Tests", () => {
       });
       createdKeyIds.push(expiredKey.id);
 
-      const isExpiredValid = await isApiKeyValid(expiredKey.hash);
+      const isExpiredValid = await isApiKeyValid(expiredKey.hash, getDb());
       expect(isExpiredValid).toBe(false);
 
       // Valid key
       const validKey = await createTestApiKey("valid-check");
       createdKeyIds.push(validKey.id);
 
-      const isValidKeyValid = await isApiKeyValid(validKey.hash);
+      const isValidKeyValid = await isApiKeyValid(validKey.hash, getDb());
       expect(isValidKeyValid).toBe(true);
     });
   });
@@ -409,7 +409,7 @@ describe("API Key Authentication Integration Tests", () => {
       });
       createdKeyIds.push(testKey.id);
 
-      const result = await validateApiKey(testKey.key);
+      const result = await validateApiKey(testKey.key, getDb());
 
       expect(result.valid).toBe(false);
       if (!result.valid) {
@@ -429,7 +429,7 @@ describe("API Key Authentication Integration Tests", () => {
       createdKeyIds.push(testKey.id);
 
       // Verify key is valid
-      const beforeRevoke = await validateApiKey(testKey.key);
+      const beforeRevoke = await validateApiKey(testKey.key, getDb());
       expect(beforeRevoke.valid).toBe(true);
 
       // Revoke the key
@@ -439,7 +439,7 @@ describe("API Key Authentication Integration Tests", () => {
         .where(eq(schema.apiKeys.id, testKey.id));
 
       // Verify key is now invalid
-      const afterRevoke = await validateApiKey(testKey.key);
+      const afterRevoke = await validateApiKey(testKey.key, getDb());
       expect(afterRevoke.valid).toBe(false);
       if (!afterRevoke.valid) {
         expect(afterRevoke.reason).toBe("key_inactive");
@@ -452,7 +452,7 @@ describe("API Key Authentication Integration Tests", () => {
       });
       createdKeyIds.push(revokedKey.id);
 
-      const isValid = await isApiKeyValid(revokedKey.hash);
+      const isValid = await isApiKeyValid(revokedKey.hash, getDb());
       expect(isValid).toBe(false);
     });
   });
@@ -483,7 +483,7 @@ describe("API Key Authentication Integration Tests", () => {
       expect(beforeAuth.lastUsedAt).toBeNull();
 
       // Authenticate
-      const result = await validateApiKey(testKey.key);
+      const result = await validateApiKey(testKey.key, getDb());
       expect(result.valid).toBe(true);
 
       // Wait a bit for the async lastUsedAt update
@@ -513,7 +513,7 @@ describe("API Key Authentication Integration Tests", () => {
       createdKeyIds.push(testKey.id);
 
       // Try to authenticate (should fail)
-      const result = await validateApiKey(testKey.key);
+      const result = await validateApiKey(testKey.key, getDb());
       expect(result.valid).toBe(false);
 
       // Wait a bit
@@ -537,7 +537,7 @@ describe("API Key Authentication Integration Tests", () => {
       createdKeyIds.push(testKey.id);
 
       // Check validity (should not update lastUsedAt)
-      const isValid = await isApiKeyValid(testKey.hash);
+      const isValid = await isApiKeyValid(testKey.hash, getDb());
       expect(isValid).toBe(true);
 
       // Wait a bit
@@ -630,7 +630,7 @@ describe("API Key Authentication Integration Tests", () => {
       const schema = getSchemaFn();
 
       // Create an external service key (type = "openai")
-      const { key, hash } = generateApiKey();
+      const { key, hash } = await generateApiKey();
       const keyId = `external-service-${Date.now()}`;
       createdKeyIds.push(keyId);
 
@@ -650,7 +650,7 @@ describe("API Key Authentication Integration Tests", () => {
         .returning();
 
       // Try to authenticate - should fail because type != "user"
-      const result = await validateApiKey(key);
+      const result = await validateApiKey(key, getDb());
 
       expect(result.valid).toBe(false);
       if (!result.valid) {
@@ -673,11 +673,11 @@ describe("API Key Authentication Integration Tests", () => {
       const schema = getSchemaFn();
 
       // Step 1: Generate key
-      const { key, hash } = generateApiKey();
+      const { key, hash } = await generateApiKey();
       expect(key.startsWith("apx_")).toBe(true);
 
       const keyId = `full-flow-${Date.now()}`;
-      const userId = `flow-user-${Date.now()}`;
+      const userId = TEST_IDS.USERS[0];
       createdKeyIds.push(keyId);
 
       // Step 2: Store key
@@ -698,7 +698,7 @@ describe("API Key Authentication Integration Tests", () => {
 
       // Step 3: Validate via header
       const authHeader = `Bearer ${key}`;
-      const result = await validateApiKeyFromHeader(authHeader);
+      const result = await validateApiKeyFromHeader(authHeader, getDb());
 
       expect(result.valid).toBe(true);
       if (result.valid) {
@@ -724,7 +724,7 @@ describe("API Key Authentication Integration Tests", () => {
         .set({ isActive: false })
         .where(eq(schema.apiKeys.id, keyId));
 
-      const revokedResult = await validateApiKey(key);
+      const revokedResult = await validateApiKey(key, getDb());
       expect(revokedResult.valid).toBe(false);
     });
   });

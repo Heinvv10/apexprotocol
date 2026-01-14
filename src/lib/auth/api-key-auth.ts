@@ -8,7 +8,9 @@
  */
 
 import { db } from "@/lib/db";
+import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { apiKeys, users, organizations } from "@/lib/db/schema";
+import type * as schema from "@/lib/db/schema";
 import { eq, and, or, isNull, gt } from "drizzle-orm";
 import { hashApiKey, isValidApiKeyFormat } from "@/lib/crypto/key-generation";
 
@@ -153,7 +155,8 @@ export function isApexApiKey(token: string | null): boolean {
  * @returns Validation result with user/org context or failure reason
  */
 export async function validateApiKey(
-  apiKey: string
+  apiKey: string,
+  dbInstance: NeonHttpDatabase<typeof schema> = db
 ): Promise<ApiKeyValidationResult> {
   try {
     // Step 1: Validate key format
@@ -170,7 +173,7 @@ export async function validateApiKey(
 
     // Step 3: Look up the key in the database
     const now = new Date();
-    const [keyRecord] = await db
+    const [keyRecord] = await dbInstance
       .select({
         id: apiKeys.id,
         userId: apiKeys.userId,
@@ -224,7 +227,7 @@ export async function validateApiKey(
     }
 
     // Step 7: Fetch user and organization details
-    const [userRecord] = await db
+    const [userRecord] = await dbInstance
       .select({
         id: users.id,
         email: users.email,
@@ -234,7 +237,7 @@ export async function validateApiKey(
       .where(eq(users.clerkUserId, keyRecord.userId))
       .limit(1);
 
-    const [orgRecord] = await db
+    const [orgRecord] = await dbInstance
       .select({
         id: organizations.id,
         name: organizations.name,
@@ -245,7 +248,7 @@ export async function validateApiKey(
 
     // Step 8: Update lastUsedAt timestamp (async, don't block response)
     // Use a fire-and-forget pattern to avoid slowing down the auth flow
-    updateLastUsedAt(keyRecord.id).catch(() => {
+    updateLastUsedAt(keyRecord.id, dbInstance).catch(() => {
       // Silently ignore errors - lastUsedAt update is not critical
     });
 
@@ -282,8 +285,11 @@ export async function validateApiKey(
  *
  * @param keyId - The API key record ID
  */
-async function updateLastUsedAt(keyId: string): Promise<void> {
-  await db
+async function updateLastUsedAt(
+  keyId: string,
+  dbInstance: NeonHttpDatabase<typeof schema> = db
+): Promise<void> {
+  await dbInstance
     .update(apiKeys)
     .set({
       lastUsedAt: new Date(),
@@ -301,7 +307,8 @@ async function updateLastUsedAt(keyId: string): Promise<void> {
  * @returns Validation result with user/org context or failure reason
  */
 export async function validateApiKeyFromHeader(
-  authHeader: string | null
+  authHeader: string | null,
+  dbInstance: NeonHttpDatabase<typeof schema> = db
 ): Promise<ApiKeyValidationResult> {
   // Extract Bearer token
   const token = extractBearerToken(authHeader);
@@ -324,7 +331,7 @@ export async function validateApiKeyFromHeader(
   }
 
   // Validate the API key
-  return validateApiKey(token);
+  return validateApiKey(token, dbInstance);
 }
 
 /**
@@ -365,10 +372,13 @@ export async function getActiveApiKeyCount(
  * @param keyHash - The SHA-256 hash of the API key
  * @returns true if the key is valid and active
  */
-export async function isApiKeyValid(keyHash: string): Promise<boolean> {
+export async function isApiKeyValid(
+  keyHash: string,
+  dbInstance: NeonHttpDatabase<typeof schema> = db
+): Promise<boolean> {
   const now = new Date();
 
-  const [keyRecord] = await db
+  const [keyRecord] = await dbInstance
     .select({
       id: apiKeys.id,
       isActive: apiKeys.isActive,
