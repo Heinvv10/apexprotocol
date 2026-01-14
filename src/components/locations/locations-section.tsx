@@ -20,6 +20,7 @@ import {
   type LocationData,
 } from "./location-card";
 import { ReviewsSummary, type ReviewData, type SentimentStats } from "./reviews-summary";
+import { AddLocationDialog } from "./add-location-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ErrorState } from "@/components/ui/error-state";
@@ -102,6 +103,7 @@ export function LocationsSection({
   const [googleConfigured, setGoogleConfigured] = React.useState<boolean | null>(null);
   const [isSyncing, setIsSyncing] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
 
   // Fetch locations and summary
   const fetchData = React.useCallback(async () => {
@@ -381,9 +383,7 @@ export function LocationsSection({
           secondaryAction={{
             label: "Add Manually",
             icon: Plus,
-            onClick: () => {
-              // TODO: Implement manual add location
-            },
+            onClick: () => setIsAddDialogOpen(true),
             variant: "outline",
           }}
         />
@@ -432,6 +432,14 @@ export function LocationsSection({
           />
         </div>
       )}
+
+      {/* Add Location Dialog */}
+      <AddLocationDialog
+        brandId={brandId}
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onSuccess={fetchData}
+      />
     </div>
   );
 }

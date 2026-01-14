@@ -67,6 +67,21 @@ const PLATFORM_CONFIG: Record<AIPlatform, PlatformConfig> = {
     color: "#20B8CD",
     icon: <Search className="w-4 h-4" />,
   },
+  grok: {
+    name: "Grok",
+    color: "#000000",
+    icon: <Bot className="w-4 h-4" />,
+  },
+  deepseek: {
+    name: "DeepSeek",
+    color: "#0066FF",
+    icon: <Brain className="w-4 h-4" />,
+  },
+  copilot: {
+    name: "Copilot",
+    color: "#0078D4",
+    icon: <Sparkles className="w-4 h-4" />,
+  },
 };
 
 // ============================================================================

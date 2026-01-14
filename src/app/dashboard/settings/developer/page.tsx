@@ -552,7 +552,10 @@ export default function DeveloperSettingsPage() {
       {generatedKeyModalOpen && generatedKey && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={() => {}}
+          onClick={(e) => {
+            // Prevent accidental closing - user must explicitly copy key and close
+            e.stopPropagation();
+          }}
         >
           <div className="bg-card border border-white/10 rounded-xl w-full max-w-lg shadow-2xl">
             <div className="p-4 border-b border-white/10 flex items-center justify-between">

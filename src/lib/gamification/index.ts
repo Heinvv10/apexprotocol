@@ -721,15 +721,42 @@ export class GamificationEngine {
   }
 
   /**
-   * Get leaderboard position (mock implementation)
+   * Get leaderboard position from database
    */
-  getLeaderboardPosition(userId: string, totalXP: number): { position: number; percentile: number } {
-    // In production, this would query the database
-    // For now, return mock data based on XP
-    const estimatedPosition = Math.max(1, Math.floor(10000 / Math.max(1, totalXP)));
-    const percentile = Math.min(99, Math.max(1, 100 - (estimatedPosition / 100)));
+  async getLeaderboardPosition(userId: string, totalXP: number): Promise<{ position: number; percentile: number }> {
+    try {
+      // Import dynamically to avoid circular dependencies
+      const { db } = await import("@/lib/db");
+      const { userGamification } = await import("@/lib/db/schema");
+      const { count, gt, sql } = await import("drizzle-orm");
 
-    return { position: estimatedPosition, percentile };
+      // Count users with higher XP (position is 1 + count of users above)
+      const higherXPResult = await db
+        .select({ count: count() })
+        .from(userGamification)
+        .where(gt(userGamification.totalXP, totalXP));
+
+      const position = (higherXPResult[0]?.count || 0) + 1;
+
+      // Get total users for percentile calculation
+      const totalUsersResult = await db
+        .select({ count: count() })
+        .from(userGamification);
+
+      const totalUsers = totalUsersResult[0]?.count || 1;
+      const percentile = Math.round(((totalUsers - position + 1) / totalUsers) * 100);
+
+      return {
+        position,
+        percentile: Math.min(99, Math.max(1, percentile))
+      };
+    } catch (error) {
+      // Fallback to estimate if DB query fails
+      console.warn("[Gamification] Could not query leaderboard:", error);
+      const estimatedPosition = Math.max(1, Math.floor(10000 / Math.max(1, totalXP)));
+      const percentile = Math.min(99, Math.max(1, 100 - (estimatedPosition / 100)));
+      return { position: estimatedPosition, percentile };
+    }
   }
 
   // Private helper methods

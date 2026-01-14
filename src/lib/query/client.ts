@@ -208,6 +208,19 @@ export const queryKeys = {
     status: () => [...queryKeys.health.all, "status"] as const,
     detailed: () => [...queryKeys.health.all, "detailed"] as const,
   },
+
+  // Citation ROI (Phase 15)
+  citationRoi: {
+    all: ["citationRoi"] as const,
+    summary: (brandId: string, period?: string) =>
+      [...queryKeys.citationRoi.all, "summary", brandId, period] as const,
+    conversions: (brandId: string, filters?: Record<string, unknown>) =>
+      [...queryKeys.citationRoi.all, "conversions", brandId, filters] as const,
+    trackingLinks: (brandId: string) =>
+      [...queryKeys.citationRoi.all, "trackingLinks", brandId] as const,
+    report: (brandId: string, startDate?: string, endDate?: string) =>
+      [...queryKeys.citationRoi.all, "report", brandId, startDate, endDate] as const,
+  },
 } as const;
 
 /**
@@ -229,6 +242,8 @@ export const invalidateQueries = {
     client.invalidateQueries({ queryKey: queryKeys.notifications.all }),
   usage: (client: QueryClient) =>
     client.invalidateQueries({ queryKey: queryKeys.usage.all }),
+  citationRoi: (client: QueryClient) =>
+    client.invalidateQueries({ queryKey: queryKeys.citationRoi.all }),
   all: (client: QueryClient) => client.invalidateQueries(),
 };
 

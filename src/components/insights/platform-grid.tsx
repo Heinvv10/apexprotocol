@@ -36,6 +36,9 @@ const PLATFORMS: PlatformConfig[] = [
   { key: "claude", name: "Claude" },
   { key: "gemini", name: "Gemini" },
   { key: "perplexity", name: "Perplexity" },
+  { key: "grok", name: "Grok" },
+  { key: "deepseek", name: "DeepSeek" },
+  { key: "copilot", name: "Copilot" },
 ];
 
 // ============================================================================

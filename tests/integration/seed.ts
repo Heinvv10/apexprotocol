@@ -425,7 +425,11 @@ async function seedRecommendations(
     estimatedTime: idx % 2 === 0 ? "30 minutes" : "2 hours",
     source: sources[idx % sources.length],
     relatedMentionId: null,
-    steps: ["Step 1", "Step 2", "Step 3"],
+    steps: [
+      { stepNumber: 1, instruction: "Step 1" },
+      { stepNumber: 2, instruction: "Step 2" },
+      { stepNumber: 3, instruction: "Step 3" },
+    ],
     notes: idx === 2 ? "Implemented successfully" : null,
     dueDate: idx === 0 ? daysAgo(-7) : null, // Due in 7 days for first one
     completedAt: idx === 2 ? daysAgo(1) : null, // Completed 1 day ago for third

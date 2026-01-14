@@ -564,9 +564,17 @@ export function useChallenges() {
   return useQuery({
     queryKey: ["gamification", "challenges", user?.id],
     queryFn: async (): Promise<Challenge[]> => {
-      // Challenges endpoint not yet implemented in API
-      // Return empty array - challenges UI will show "No active challenges"
-      return [];
+      const response = await fetch(
+        `/api/gamification/challenges?userId=${user!.id}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch challenges");
+      }
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || "Failed to fetch challenges");
+      }
+      return data.challenges || [];
     },
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
@@ -591,17 +599,26 @@ export function useWeeklyChallenges() {
 
 /**
  * Hook to claim challenge reward
- * Note: API doesn't have challenges endpoint yet - this is a placeholder
  */
 export function useClaimChallengeReward() {
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
 
   return useMutation({
-    mutationFn: async (_challengeId: string) => {
-      // Challenges endpoint not yet implemented
-      // Return success to prevent UI errors
-      return { success: true, message: "Challenge rewards coming soon" };
+    mutationFn: async (challengeId: string) => {
+      const response = await fetch("/api/gamification/challenges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          challengeId,
+          userId: user?.id,
+        }),
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || "Failed to claim challenge reward");
+      }
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -620,7 +637,7 @@ export function useClaimChallengeReward() {
 
 /**
  * Hook to fetch user's badges
- * Badges are derived from unlocked achievements
+ * Badges are derived from unlocked achievements via dedicated badges endpoint
  */
 export function useBadges() {
   const user = useAuthStore((state) => state.user);
@@ -628,8 +645,7 @@ export function useBadges() {
   return useQuery({
     queryKey: ["gamification", "badges", user?.id],
     queryFn: async (): Promise<Badge[]> => {
-      // Fetch achievements and derive badges from unlocked ones
-      const response = await fetch(`/api/gamification?action=achievements&userId=${user!.id}`);
+      const response = await fetch(`/api/gamification/badges?userId=${user!.id}`);
       if (!response.ok) {
         throw new Error("Failed to fetch badges");
       }
@@ -637,19 +653,15 @@ export function useBadges() {
       if (!data.success) {
         throw new Error(data.error || "Failed to fetch badges");
       }
-      // Transform unlocked achievements to badges
-      const all = data.all || [];
-      return all
-        .filter((a: { unlocked?: boolean }) => a.unlocked)
-        .map((a: { id: string; name: string; description: string; icon: string; tier: string }) => ({
-          id: `badge-${a.id}`,
-          name: a.name,
-          description: a.description,
-          icon: a.icon || "🏆",
-          tier: a.tier as "bronze" | "silver" | "gold" | "platinum" | "diamond",
-          earnedAt: new Date().toISOString(),
-          isDisplayed: false,
-        }));
+      // Return earned badges from collection
+      const badges = data.collection?.allBadges || [];
+      return badges.map((b: { id: string; name: string; description: string; icon: string; earnedAt: string }) => ({
+        id: b.id,
+        name: b.name,
+        icon: b.icon || "trophy",
+        description: b.description,
+        earnedAt: b.earnedAt,
+      }));
     },
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 10,
@@ -657,18 +669,28 @@ export function useBadges() {
 }
 
 /**
- * Hook to set displayed badge
- * Note: API doesn't have badge display endpoint yet - this is a placeholder
+ * Hook to set displayed/showcase badges
  */
 export function useSetDisplayedBadge() {
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
 
   return useMutation({
-    mutationFn: async (_badgeId: string) => {
-      // Badge display endpoint not yet implemented
-      // Return success to prevent UI errors
-      return { success: true, message: "Badge display feature coming soon" };
+    mutationFn: async (badgeIds: string | string[]) => {
+      const showcaseBadgeIds = Array.isArray(badgeIds) ? badgeIds : [badgeIds];
+      const response = await fetch("/api/gamification/badges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user?.id,
+          showcaseBadgeIds,
+        }),
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || "Failed to update showcase badges");
+      }
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({

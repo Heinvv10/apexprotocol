@@ -12,7 +12,7 @@
 /**
  * Supported AI platforms for brand analysis
  */
-export type AIPlatform = "chatgpt" | "claude" | "gemini" | "perplexity";
+export type AIPlatform = "chatgpt" | "claude" | "gemini" | "perplexity" | "grok" | "deepseek" | "copilot";
 
 /**
  * Platform query status
@@ -308,6 +308,9 @@ export interface MultiPlatformAnalysis {
     claude?: PlatformAnalysis;
     gemini?: PlatformAnalysis;
     perplexity?: PlatformAnalysis;
+    grok?: PlatformAnalysis;
+    deepseek?: PlatformAnalysis;
+    copilot?: PlatformAnalysis;
   };
 
   /** Aggregate statistics */

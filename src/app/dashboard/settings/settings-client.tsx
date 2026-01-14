@@ -94,6 +94,350 @@ function PageHeader() {
   );
 }
 
+// Team Management Section Component
+interface TeamMember {
+  id: string;
+  email: string;
+  name: string | null;
+  avatarUrl: string | null;
+  role: string;
+  isActive: boolean;
+  lastActiveAt: string | null;
+  createdAt: string;
+}
+
+function TeamSection() {
+  const [teamMembers, setTeamMembers] = React.useState<TeamMember[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [inviteEmail, setInviteEmail] = React.useState("");
+  const [inviteRole, setInviteRole] = React.useState("viewer");
+  const [isInviting, setIsInviting] = React.useState(false);
+
+  React.useEffect(() => {
+    fetchTeamMembers();
+  }, []);
+
+  const fetchTeamMembers = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/settings/team");
+      const data = await response.json();
+      if (data.success) {
+        setTeamMembers(data.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch team members:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail) return;
+
+    try {
+      setIsInviting(true);
+      const response = await fetch("/api/settings/team", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setInviteEmail("");
+        fetchTeamMembers();
+      }
+    } catch (error) {
+      console.error("Failed to invite team member:", error);
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case "admin": return "bg-purple-500/10 text-purple-400 border-purple-500/20";
+      case "editor": return "bg-cyan-500/10 text-cyan-400 border-cyan-500/20";
+      default: return "bg-gray-500/10 text-gray-400 border-gray-500/20";
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">Team Management</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Manage your team members and their access levels
+        </p>
+      </div>
+
+      {/* Invite Form */}
+      <form onSubmit={handleInvite} className="card-secondary p-4 flex gap-3">
+        <input
+          type="email"
+          value={inviteEmail}
+          onChange={(e) => setInviteEmail(e.target.value)}
+          placeholder="Enter email to invite..."
+          className="flex-1 px-3 py-2 bg-background/50 border border-white/10 rounded-lg text-foreground text-sm focus:border-primary focus:outline-none"
+        />
+        <select
+          value={inviteRole}
+          onChange={(e) => setInviteRole(e.target.value)}
+          className="px-3 py-2 bg-background/50 border border-white/10 rounded-lg text-foreground text-sm focus:border-primary focus:outline-none"
+        >
+          <option value="viewer">Viewer</option>
+          <option value="editor">Editor</option>
+          <option value="admin">Admin</option>
+        </select>
+        <button
+          type="submit"
+          disabled={isInviting || !inviteEmail}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {isInviting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Invite"}
+        </button>
+      </form>
+
+      {/* Team Members List */}
+      <div className="card-secondary rounded-lg overflow-hidden">
+        <div className="px-4 py-3 border-b border-white/10">
+          <h3 className="text-sm font-medium text-foreground">Team Members ({teamMembers.length})</h3>
+        </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : teamMembers.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Users className="w-12 h-12 text-muted-foreground/30 mb-3" />
+            <p className="text-muted-foreground text-sm">No team members yet</p>
+            <p className="text-muted-foreground/60 text-xs mt-1">Invite people to collaborate</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-white/5">
+            {teamMembers.map((member) => (
+              <div key={member.id} className="px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    {member.avatarUrl ? (
+                      <Image src={member.avatarUrl} alt={member.name || member.email} width={40} height={40} className="rounded-full" />
+                    ) : (
+                      <User className="w-5 h-5 text-primary" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{member.name || member.email}</p>
+                    <p className="text-xs text-muted-foreground">{member.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${getRoleBadgeColor(member.role)}`}>
+                    {member.role}
+                  </span>
+                  <span className={`w-2 h-2 rounded-full ${member.isActive ? "bg-emerald-500" : "bg-gray-500"}`} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Billing Section Component
+interface SubscriptionData {
+  plan: string;
+  status: string;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+}
+
+interface UsageData {
+  mentions: { used: number; limit: number };
+  audits: { used: number; limit: number };
+  aiTokens: { used: number; limit: number };
+  contentPieces: { used: number; limit: number };
+}
+
+function BillingSection() {
+  const [subscription, setSubscription] = React.useState<SubscriptionData | null>(null);
+  const [usage, setUsage] = React.useState<UsageData | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    fetchBillingData();
+  }, []);
+
+  const fetchBillingData = async () => {
+    try {
+      setIsLoading(true);
+      const [subRes, usageRes] = await Promise.all([
+        fetch("/api/billing?action=subscription"),
+        fetch("/api/billing?action=usage"),
+      ]);
+      const subData = await subRes.json();
+      const usageData = await usageRes.json();
+
+      if (subData.subscription) {
+        setSubscription(subData.subscription);
+      }
+      if (usageData.usage) {
+        setUsage(usageData.usage);
+      }
+    } catch (error) {
+      console.error("Failed to fetch billing data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleManageBilling = async () => {
+    try {
+      const response = await fetch("/api/billing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "portal" }),
+      });
+      const data = await response.json();
+      if (data.portalUrl) {
+        window.location.href = data.portalUrl;
+      }
+    } catch (error) {
+      console.error("Failed to open billing portal:", error);
+    }
+  };
+
+  const getPlanColor = (plan: string) => {
+    switch (plan?.toLowerCase()) {
+      case "pro": case "professional": return "text-purple-400";
+      case "enterprise": return "text-cyan-400";
+      default: return "text-gray-400";
+    }
+  };
+
+  const getUsagePercentage = (used: number, limit: number) => {
+    if (limit === 0) return 0;
+    return Math.min((used / limit) * 100, 100);
+  };
+
+  const getUsageColor = (percentage: number) => {
+    if (percentage >= 90) return "bg-red-500";
+    if (percentage >= 70) return "bg-yellow-500";
+    return "bg-primary";
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">Billing & Plan</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Manage your subscription and view usage
+        </p>
+      </div>
+
+      {/* Current Plan */}
+      <div className="card-secondary p-6 rounded-lg">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Current Plan</p>
+            <h3 className={`text-2xl font-bold ${getPlanColor(subscription?.plan || "free")}`}>
+              {subscription?.plan?.charAt(0).toUpperCase() + (subscription?.plan?.slice(1) || "ree")}
+            </h3>
+            {subscription?.status && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Status: <span className="text-emerald-400 capitalize">{subscription.status}</span>
+              </p>
+            )}
+            {subscription?.currentPeriodEnd && (
+              <p className="text-xs text-muted-foreground mt-2">
+                {subscription.cancelAtPeriodEnd
+                  ? "Cancels on "
+                  : "Renews on "}
+                {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={handleManageBilling}
+            className="px-4 py-2 bg-white/5 border border-white/10 text-foreground rounded-lg text-sm font-medium hover:bg-white/10 transition-colors flex items-center gap-2"
+          >
+            Manage Billing
+            <ExternalLink className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Usage */}
+      {usage && (
+        <div className="card-secondary p-6 rounded-lg">
+          <h3 className="text-sm font-medium text-foreground mb-4">Usage This Period</h3>
+          <div className="space-y-4">
+            {[
+              { label: "Brand Mentions", key: "mentions" as const },
+              { label: "Site Audits", key: "audits" as const },
+              { label: "AI Tokens", key: "aiTokens" as const },
+              { label: "Content Pieces", key: "contentPieces" as const },
+            ].map(({ label, key }) => {
+              const item = usage[key];
+              if (!item) return null;
+              const percentage = getUsagePercentage(item.used, item.limit);
+              return (
+                <div key={key}>
+                  <div className="flex items-center justify-between text-sm mb-1">
+                    <span className="text-muted-foreground">{label}</span>
+                    <span className="text-foreground">
+                      {item.used.toLocaleString()} / {item.limit === -1 ? "Unlimited" : item.limit.toLocaleString()}
+                    </span>
+                  </div>
+                  {item.limit !== -1 && (
+                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${getUsageColor(percentage)}`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade CTA */}
+      {subscription?.plan !== "enterprise" && (
+        <div className="card-primary p-6 rounded-lg bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Upgrade Your Plan</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Get more features and higher limits with a premium plan
+              </p>
+            </div>
+            <button
+              onClick={() => window.location.href = "/dashboard/settings/upgrade"}
+              className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            >
+              View Plans
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Decorative star component
 function DecorativeStar() {
   return (
@@ -629,19 +973,14 @@ export default function SettingsClient() {
               </>
             )}
 
-            {/* Placeholder for other sections */}
-            {(activeSection === "team" || activeSection === "billing") && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">{activeSection === "team" ? "Team Management" : "Billing & Plan"}</h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    This section is coming soon
-                  </p>
-                </div>
-                <div className="card-tertiary flex items-center justify-center py-12">
-                  <p className="text-muted-foreground/70">Content will be available soon</p>
-                </div>
-              </div>
+            {/* Team Management Section */}
+            {activeSection === "team" && (
+              <TeamSection />
+            )}
+
+            {/* Billing Section */}
+            {activeSection === "billing" && (
+              <BillingSection />
             )}
           </div>
         </div>

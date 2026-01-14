@@ -7,6 +7,7 @@ import {
   brands,
   brandMentions,
   recommendations,
+  geoScoreHistory,
   type ReportContent,
 } from "@/lib/db/schema";
 import { eq, and, desc, count, sql, gte, lte } from "drizzle-orm";
@@ -286,11 +287,59 @@ async function generateReportContent(
     .orderBy(desc(recommendations.priority))
     .limit(3);
 
-  // Calculate scores (placeholder - would come from unified_scores table)
-  const unifiedCurrent = 65 + Math.floor(Math.random() * 20);
-  const geoCurrent = 55 + Math.floor(Math.random() * 25);
-  const seoCurrent = 60 + Math.floor(Math.random() * 20);
-  const aeoCurrent = 50 + Math.floor(Math.random() * 25);
+  // Get real scores from geoScoreHistory for brands
+  const brandScores = await db
+    .select({
+      brandId: geoScoreHistory.brandId,
+      overallScore: geoScoreHistory.overallScore,
+      visibilityScore: geoScoreHistory.visibilityScore,
+      sentimentScore: geoScoreHistory.sentimentScore,
+      recommendationScore: geoScoreHistory.recommendationScore,
+      trend: geoScoreHistory.trend,
+    })
+    .from(geoScoreHistory)
+    .where(
+      sql`${geoScoreHistory.brandId}::text IN ${brandIds} AND ${geoScoreHistory.calculatedAt} = (
+        SELECT MAX(gsh2.calculated_at)
+        FROM geo_score_history gsh2
+        WHERE gsh2.brand_id = ${geoScoreHistory.brandId}
+      )`
+    );
+
+  // Create a map of brand scores
+  const brandScoreMap = new Map(
+    brandScores.map((s) => [
+      s.brandId,
+      {
+        overall: s.overallScore || 0,
+        visibility: s.visibilityScore || 0,
+        sentiment: s.sentimentScore || 0,
+        recommendation: s.recommendationScore || 0,
+        trend: s.trend || "stable",
+      },
+    ])
+  );
+
+  // Calculate average scores from real data
+  const scoresArray = brandScores.map((s) => ({
+    overall: s.overallScore || 0,
+    visibility: s.visibilityScore || 0,
+    sentiment: s.sentimentScore || 0,
+  }));
+
+  const avgScores = scoresArray.length > 0
+    ? {
+        unified: Math.round(scoresArray.reduce((sum, s) => sum + s.overall, 0) / scoresArray.length),
+        geo: Math.round(scoresArray.reduce((sum, s) => sum + s.visibility, 0) / scoresArray.length),
+        seo: Math.round(scoresArray.reduce((sum, s) => sum + s.sentiment * 100, 0) / scoresArray.length),
+        aeo: Math.round(scoresArray.reduce((sum, s) => sum + s.overall * 0.8, 0) / scoresArray.length),
+      }
+    : { unified: 0, geo: 0, seo: 0, aeo: 0 };
+
+  const unifiedCurrent = avgScores.unified;
+  const geoCurrent = avgScores.geo;
+  const seoCurrent = avgScores.seo;
+  const aeoCurrent = avgScores.aeo;
 
   // Build brand breakdown if portfolio
   let brandBreakdown: ReportContent["brandBreakdown"] = undefined;
@@ -303,16 +352,55 @@ async function generateReportContent(
       .from(brands)
       .where(sql`${brands.id} IN ${brandIds}`);
 
-    brandBreakdown = brandData.map((b) => ({
-      brandId: b.id,
-      brandName: b.name,
-      scores: {
-        unified: 50 + Math.floor(Math.random() * 30),
-        geo: 45 + Math.floor(Math.random() * 30),
-      },
-      mentionCount: mentions.filter((m) => true).length, // Would filter by brand
-      topRecommendation: "Optimize schema markup",
-    }));
+    // Get top recommendation per brand
+    const topRecsByBrand = await db
+      .select({
+        brandId: recommendations.brandId,
+        title: recommendations.title,
+      })
+      .from(recommendations)
+      .where(
+        and(
+          sql`${recommendations.brandId} IN ${brandIds}`,
+          eq(recommendations.status, "pending")
+        )
+      )
+      .orderBy(desc(recommendations.priority))
+      .limit(brandIds.length);
+
+    const topRecMap = new Map(topRecsByBrand.map((r) => [r.brandId, r.title]));
+
+    // Get mention counts per brand
+    const mentionCountsByBrand = await db
+      .select({
+        brandId: brandMentions.brandId,
+        count: count(),
+      })
+      .from(brandMentions)
+      .where(
+        and(
+          sql`${brandMentions.brandId} IN ${brandIds}`,
+          gte(brandMentions.timestamp, periodStart),
+          lte(brandMentions.timestamp, periodEnd)
+        )
+      )
+      .groupBy(brandMentions.brandId);
+
+    const mentionCountMap = new Map(mentionCountsByBrand.map((m) => [m.brandId, m.count]));
+
+    brandBreakdown = brandData.map((b) => {
+      const score = brandScoreMap.get(b.id);
+      return {
+        brandId: b.id,
+        brandName: b.name,
+        scores: {
+          unified: score?.overall || 0,
+          geo: score?.visibility || 0,
+        },
+        mentionCount: mentionCountMap.get(b.id) || 0,
+        topRecommendation: topRecMap.get(b.id) || "No pending recommendations",
+      };
+    });
   }
 
   // Calculate sentiment percentage

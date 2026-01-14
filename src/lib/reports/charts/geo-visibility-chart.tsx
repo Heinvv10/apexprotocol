@@ -6,7 +6,7 @@
  * âšª UNTESTED: Component written but not yet verified with actual data
  */
 
-import React from "react";
+import React, { useRef, useCallback } from "react";
 import {
   LineChart,
   Line,
@@ -17,8 +17,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-// NOTE: recharts-to-png import removed - package not installed
-// TODO: Implement PNG export functionality when package is available
+import { svgToPng, downloadPng } from "@/lib/export/png";
 
 // ============================================================================
 // Types
@@ -37,6 +36,7 @@ export interface GeoVisibilityChartProps {
   data: GeoDataPoint[];
   width?: number;
   height?: number;
+  onExportReady?: (exportFn: () => Promise<string>) => void;
 }
 
 // ============================================================================
@@ -66,19 +66,60 @@ export async function blobToBase64(blob: Blob): Promise<string> {
  * GeoVisibilityChart
  *
  * Renders GEO visibility trends as a line chart for investor reports
- * Supports conversion to PNG via useCurrentPng hook for PDF embedding
+ * Supports conversion to PNG via svgToPng utility for PDF embedding
  *
  * @param data - Array of GEO data points with scores and metrics
  * @param width - Chart width in pixels (default: 800)
  * @param height - Chart height in pixels (default: 400)
+ * @param onExportReady - Callback that receives the export function when chart is ready
  */
 export function GeoVisibilityChart({
   data,
   width = 800,
   height = 400,
+  onExportReady,
 }: GeoVisibilityChartProps) {
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Export chart to PNG data URL
+   */
+  const exportToPng = useCallback(async (): Promise<string> => {
+    if (!chartRef.current) {
+      throw new Error("Chart container not available");
+    }
+
+    const svgElement = chartRef.current.querySelector("svg");
+    if (!svgElement) {
+      throw new Error("SVG element not found in chart");
+    }
+
+    return svgToPng(svgElement, {
+      width: width - 40, // Account for padding
+      height: height - 40,
+      backgroundColor: "#ffffff",
+      scale: 2, // 2x resolution for better quality
+    });
+  }, [width, height]);
+
+  /**
+   * Download chart as PNG file
+   */
+  const downloadChart = useCallback(async (filename: string = "geo-visibility-chart.png") => {
+    const dataUrl = await exportToPng();
+    downloadPng(dataUrl, filename);
+  }, [exportToPng]);
+
+  // Notify parent when export function is ready
+  React.useEffect(() => {
+    if (onExportReady) {
+      onExportReady(exportToPng);
+    }
+  }, [onExportReady, exportToPng]);
+
   return (
     <div
+      ref={chartRef}
       style={{
         width,
         height,
@@ -199,21 +240,54 @@ export function GeoVisibilityChart({
  * This function is used in the PDF generation flow to convert
  * the chart into an embeddable image format
  *
- * @param data - GEO data points to visualize
- * @param getPngFn - PNG generation function from useCurrentPng hook
- * @returns Promise resolving to base64 image string
- * @throws Error if chart generation fails or Blob is null
- *
- * âšª UNTESTED: Error handling logic written but not verified with actual chart generation
+ * @param getPngFn - PNG generation function from the chart component's onExportReady callback
+ * @returns Promise resolving to base64 PNG data URL string
+ * @throws Error if chart generation fails
  */
 export async function generateGeoChartImage(
-  getPngFn: () => Promise<Blob | null>
+  getPngFn: () => Promise<string>
 ): Promise<string> {
-  const pngBlob = await getPngFn();
+  try {
+    const pngDataUrl = await getPngFn();
 
-  if (!pngBlob) {
-    throw new Error("Failed to generate GEO visibility chart image");
+    if (!pngDataUrl) {
+      throw new Error("Failed to generate GEO visibility chart image");
+    }
+
+    return pngDataUrl;
+  } catch (error) {
+    throw new Error(
+      `Chart image generation failed: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
   }
+}
 
-  return await blobToBase64(pngBlob);
+/**
+ * Export utility hook for chart export functionality
+ * Returns an object with export methods that can be called imperatively
+ */
+export function useChartExport() {
+  const exportFnRef = useRef<(() => Promise<string>) | null>(null);
+
+  const setExportFn = useCallback((fn: () => Promise<string>) => {
+    exportFnRef.current = fn;
+  }, []);
+
+  const exportToPng = useCallback(async (): Promise<string> => {
+    if (!exportFnRef.current) {
+      throw new Error("Chart export function not available");
+    }
+    return exportFnRef.current();
+  }, []);
+
+  const downloadAsPng = useCallback(async (filename: string = "chart.png") => {
+    const dataUrl = await exportToPng();
+    downloadPng(dataUrl, filename);
+  }, [exportToPng]);
+
+  return {
+    setExportFn,
+    exportToPng,
+    downloadAsPng,
+  };
 }

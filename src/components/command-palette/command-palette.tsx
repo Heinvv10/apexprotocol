@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useClerk } from "@clerk/nextjs";
+import { useTheme } from "next-themes";
 import {
   Search,
   Home,
@@ -42,6 +44,8 @@ interface CommandPaletteProps {
 
 export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const router = useRouter();
+  const { signOut } = useClerk();
+  const { theme, setTheme } = useTheme();
   const [query, setQuery] = React.useState("");
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -147,7 +151,10 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         subtitle: "Check recent alerts",
         icon: Bell,
         category: "Actions",
-        action: () => {},
+        action: () => {
+          router.push("/dashboard/notifications");
+          onClose();
+        },
       },
       // Settings
       {
@@ -162,9 +169,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         id: "theme-toggle",
         title: "Toggle Theme",
         subtitle: "Switch dark/light mode",
-        icon: Moon,
+        icon: theme === "dark" ? Sun : Moon,
         category: "Settings",
-        action: () => {},
+        action: () => {
+          setTheme(theme === "dark" ? "light" : "dark");
+          onClose();
+        },
       },
       {
         id: "help",
@@ -173,7 +183,11 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         icon: HelpCircle,
         category: "Settings",
         shortcut: ["?"],
-        action: () => {},
+        action: () => {
+          // Open help docs in new tab
+          window.open("https://docs.apex.io/help", "_blank");
+          onClose();
+        },
       },
       {
         id: "logout",
@@ -181,10 +195,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         subtitle: "Log out of your account",
         icon: LogOut,
         category: "Settings",
-        action: () => {},
+        action: () => {
+          signOut({ redirectUrl: "/" });
+        },
       },
     ],
-    [router]
+    [router, onClose, signOut, theme, setTheme]
   );
 
   // Filter commands by query

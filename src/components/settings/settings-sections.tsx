@@ -765,18 +765,34 @@ export function ApiKeysSection({ apiKeys: propKeys }: ApiKeysSectionProps) {
   );
 }
 
-// Default placeholder section
-export function PlaceholderSection({ title }: { title: string }) {
+// Default placeholder section - used as fallback for sections not yet implemented
+export function PlaceholderSection({
+  title,
+  description = "This feature is currently being developed",
+  icon: Icon,
+}: {
+  title: string;
+  description?: string;
+  icon?: React.ComponentType<{ className?: string }>;
+}) {
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-foreground">{title}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          This section is coming soon
+          {description}
         </p>
       </div>
-      <div className="card-tertiary flex items-center justify-center py-12">
-        <p className="text-muted-foreground">Content will be available soon</p>
+      <div className="card-tertiary flex flex-col items-center justify-center py-12 text-center">
+        {Icon && (
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+            <Icon className="w-8 h-8 text-primary/60" />
+          </div>
+        )}
+        <p className="text-muted-foreground font-medium">Feature in Development</p>
+        <p className="text-muted-foreground/60 text-sm mt-1 max-w-md">
+          We&apos;re working on bringing this feature to you. Check back soon for updates.
+        </p>
       </div>
     </div>
   );

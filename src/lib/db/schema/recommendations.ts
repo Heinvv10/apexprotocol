@@ -11,6 +11,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { brands } from "./brands";
 import { audits } from "./audits";
 import { users } from "./users";
+import type { ImplementationStep, PlatformRelevance } from "./geo-knowledge-base";
 
 // Priority enum
 export const priorityEnum = pgEnum("priority", [
@@ -87,8 +88,17 @@ export const recommendations = pgTable("recommendations", {
   source: sourceEnum("source").default("manual").notNull(),
   relatedMentionId: text("related_mention_id"),
 
-  // Implementation steps
-  steps: jsonb("steps").$type<string[]>().default([]),
+  // Implementation steps (rich step-by-step instructions)
+  steps: jsonb("steps").$type<ImplementationStep[]>().default([]),
+
+  // Platform relevance scores (which AI platforms this affects most)
+  platformRelevance: jsonb("platform_relevance").$type<PlatformRelevance>(),
+
+  // Schema code (if applicable - copy-paste ready JSON-LD)
+  schemaCode: text("schema_code"),
+
+  // Expected score impact
+  expectedScoreImpact: integer("expected_score_impact"),
 
   // Notes and comments
   notes: text("notes"),
@@ -132,3 +142,6 @@ export const recommendationsRelations = relations(recommendations, ({ one }) => 
 // Type exports
 export type Recommendation = typeof recommendations.$inferSelect;
 export type NewRecommendation = typeof recommendations.$inferInsert;
+
+// Re-export ImplementationStep and PlatformRelevance for consumers
+export type { ImplementationStep, PlatformRelevance };

@@ -313,7 +313,7 @@ export default function AdminOrganizationsPage() {
         )}
       </div>
 
-      {/* Organization Details Modal (placeholder) */}
+      {/* Organization Details Modal */}
       {selectedOrg && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
@@ -323,23 +323,95 @@ export default function AdminOrganizationsPage() {
             className="bg-[#141930] border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-white">{selectedOrg.name}</h2>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-white">{selectedOrg.name}</h2>
+                <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full border ${getPlanBadgeColor(selectedOrg.plan)}`}>
+                  {selectedOrg.plan}
+                </span>
+              </div>
               <button
                 onClick={() => setSelectedOrg(null)}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors"
+                aria-label="Close modal"
               >
-                ✕
+                <XCircle className="w-5 h-5" />
               </button>
             </div>
-            <div className="space-y-4 text-gray-300">
-              <p><strong>Slug:</strong> {selectedOrg.slug}</p>
-              <p><strong>Plan:</strong> {selectedOrg.plan}</p>
-              <p><strong>Users:</strong> {selectedOrg.userCount} / {selectedOrg.userLimit}</p>
-              <p><strong>Brand Limit:</strong> {selectedOrg.brandLimit}</p>
-              <p><strong>Status:</strong> {selectedOrg.isActive ? "Active" : "Inactive"}</p>
-              <p><strong>Created:</strong> {new Date(selectedOrg.createdAt).toLocaleString()}</p>
-              <p><strong>Updated:</strong> {new Date(selectedOrg.updatedAt).toLocaleString()}</p>
+
+            {/* Organization Details Grid */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="p-4 bg-[#0a0f1a] rounded-lg border border-gray-800">
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Slug</p>
+                <p className="text-sm text-white font-mono">{selectedOrg.slug}</p>
+              </div>
+              <div className="p-4 bg-[#0a0f1a] rounded-lg border border-gray-800">
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Status</p>
+                <div className="flex items-center gap-2">
+                  {selectedOrg.isActive ? (
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-red-400" />
+                  )}
+                  <span className={`text-sm font-medium ${selectedOrg.isActive ? "text-green-400" : "text-red-400"}`}>
+                    {selectedOrg.isActive ? "Active" : "Inactive"}
+                  </span>
+                </div>
+              </div>
+              <div className="p-4 bg-[#0a0f1a] rounded-lg border border-gray-800">
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Users</p>
+                <p className="text-sm text-white">
+                  <span className="text-cyan-400 font-semibold">{selectedOrg.userCount}</span>
+                  <span className="text-gray-500"> / {selectedOrg.userLimit} max</span>
+                </p>
+              </div>
+              <div className="p-4 bg-[#0a0f1a] rounded-lg border border-gray-800">
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Brand Limit</p>
+                <p className="text-sm text-cyan-400 font-semibold">{selectedOrg.brandLimit}</p>
+              </div>
+              <div className="p-4 bg-[#0a0f1a] rounded-lg border border-gray-800">
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Created</p>
+                <p className="text-sm text-white">{new Date(selectedOrg.createdAt).toLocaleDateString()}</p>
+                <p className="text-xs text-gray-500">{new Date(selectedOrg.createdAt).toLocaleTimeString()}</p>
+              </div>
+              <div className="p-4 bg-[#0a0f1a] rounded-lg border border-gray-800">
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Last Updated</p>
+                <p className="text-sm text-white">{new Date(selectedOrg.updatedAt).toLocaleDateString()}</p>
+                <p className="text-xs text-gray-500">{new Date(selectedOrg.updatedAt).toLocaleTimeString()}</p>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="border-t border-gray-800 pt-4">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Quick Actions</p>
+              <div className="flex gap-3">
+                <select
+                  value={selectedOrg.plan}
+                  onChange={(e) => {
+                    const newPlan = e.target.value as Organization["plan"];
+                    updateOrganization(selectedOrg.id, { plan: newPlan });
+                    setSelectedOrg({ ...selectedOrg, plan: newPlan });
+                  }}
+                  className="flex-1 px-3 py-2 bg-[#0a0f1a] border border-gray-700 rounded-lg text-white text-sm focus:border-cyan-500 focus:outline-none"
+                >
+                  <option value="starter">Starter Plan</option>
+                  <option value="professional">Professional Plan</option>
+                  <option value="enterprise">Enterprise Plan</option>
+                </select>
+                <button
+                  onClick={() => {
+                    updateOrganization(selectedOrg.id, { isActive: !selectedOrg.isActive });
+                    setSelectedOrg({ ...selectedOrg, isActive: !selectedOrg.isActive });
+                  }}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedOrg.isActive
+                      ? "bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20"
+                      : "bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20"
+                  }`}
+                >
+                  {selectedOrg.isActive ? "Deactivate" : "Activate"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

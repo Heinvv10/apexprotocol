@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Brain, Sparkles, Loader2, ChevronDown, Bot, X } from "lucide-react";
+import { Brain, Sparkles, Loader2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSelectedBrand } from "@/stores";
@@ -18,7 +18,7 @@ interface QueryInputProps {
 }
 
 interface PlatformOption {
-  key: "chatgpt" | "claude" | "gemini" | "perplexity";
+  key: "chatgpt" | "claude" | "gemini" | "perplexity" | "grok" | "deepseek" | "copilot";
   name: string;
   color: string;
   icon: string;
@@ -33,6 +33,9 @@ const PLATFORMS: PlatformOption[] = [
   { key: "claude", name: "Claude", color: "#D97757", icon: "🧠" },
   { key: "gemini", name: "Gemini", color: "#4285F4", icon: "✨" },
   { key: "perplexity", name: "Perplexity", color: "#20B8CD", icon: "🔍" },
+  { key: "grok", name: "Grok", color: "#000000", icon: "𝕏" },
+  { key: "deepseek", name: "DeepSeek", color: "#4F46E5", icon: "🔮" },
+  { key: "copilot", name: "Copilot", color: "#0078D4", icon: "🪁" },
 ];
 
 // ============================================================================
@@ -54,34 +57,13 @@ export function QueryInput({
   const [queryText, setQueryText] = React.useState("");
   const [brandContext, setBrandContext] = React.useState("");
   const [selectedPlatforms, setSelectedPlatforms] = React.useState<
-    ("chatgpt" | "claude" | "gemini" | "perplexity")[]
-  >(["chatgpt", "claude", "gemini", "perplexity"]);
+    ("chatgpt" | "claude" | "gemini" | "perplexity" | "grok" | "deepseek" | "copilot")[]
+  >(["chatgpt", "claude", "gemini", "perplexity", "grok", "deepseek", "copilot"]);
   const [showAdvanced, setShowAdvanced] = React.useState(false);
-  const [showPlatformSelector, setShowPlatformSelector] = React.useState(false);
   const [errors, setErrors] = React.useState<{
     queryText?: string;
     platforms?: string;
   }>({});
-
-  // Refs
-  const platformSelectorRef = React.useRef<HTMLDivElement>(null);
-
-  // Close platform selector when clicking outside
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        platformSelectorRef.current &&
-        !platformSelectorRef.current.contains(event.target as Node)
-      ) {
-        setShowPlatformSelector(false);
-      }
-    };
-
-    if (showPlatformSelector) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [showPlatformSelector]);
 
   // Toggle platform selection
   const togglePlatform = (platformKey: typeof PLATFORMS[0]["key"]) => {
@@ -231,114 +213,78 @@ export function QueryInput({
         </div>
 
         {/* Platform Selection */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">
-            Platforms to Analyze <span className="text-error">*</span>
-          </label>
-          <div className="relative" ref={platformSelectorRef}>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-foreground">
+              Platforms to Analyze <span className="text-error">*</span>
+            </label>
             <button
               type="button"
-              onClick={() => setShowPlatformSelector(!showPlatformSelector)}
+              onClick={toggleAllPlatforms}
               disabled={isAnalyzing}
-              className={cn(
-                "w-full h-11 rounded-lg px-4 flex items-center justify-between",
-                "bg-muted/50 border text-foreground",
-                "hover:bg-muted/70 transition-colors",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-                errors.platforms ? "border-error" : "border-border"
-              )}
+              className="text-xs text-primary hover:text-primary/80 transition-colors"
             >
-              <span className="flex items-center gap-2 flex-wrap">
-                {selectedPlatforms.length === PLATFORMS.length ? (
-                  <span className="text-sm">All Platforms ({PLATFORMS.length})</span>
-                ) : (
-                  <>
-                    {selectedPlatforms.map((key) => {
-                      const platform = PLATFORMS.find((p) => p.key === key);
-                      return (
-                        <span
-                          key={key}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-xs"
-                        >
-                          <span>{platform?.icon}</span>
-                          <span>{platform?.name}</span>
-                        </span>
-                      );
-                    })}
-                  </>
-                )}
-              </span>
-              <ChevronDown
-                className={cn(
-                  "w-4 h-4 text-muted-foreground transition-transform",
-                  showPlatformSelector && "rotate-180"
-                )}
-              />
+              {selectedPlatforms.length === PLATFORMS.length ? "Deselect All" : "Select All"}
             </button>
-
-            {/* Platform Dropdown */}
-            {showPlatformSelector && (
-              <div className="absolute z-50 w-full mt-2 rounded-lg border border-border bg-card shadow-lg">
-                <div className="p-2 space-y-1">
-                  {/* Select All Option */}
-                  <button
-                    type="button"
-                    onClick={toggleAllPlatforms}
-                    className="w-full px-3 py-2 rounded-md hover:bg-accent transition-colors flex items-center justify-between text-sm"
-                  >
-                    <span className="font-medium">
-                      {selectedPlatforms.length === PLATFORMS.length
-                        ? "Deselect All"
-                        : "Select All"}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {selectedPlatforms.length}/{PLATFORMS.length}
-                    </span>
-                  </button>
-
-                  <div className="h-px bg-border my-1" />
-
-                  {/* Individual Platforms */}
-                  {PLATFORMS.map((platform) => {
-                    const isSelected = selectedPlatforms.includes(platform.key);
-                    return (
-                      <button
-                        key={platform.key}
-                        type="button"
-                        onClick={() => togglePlatform(platform.key)}
-                        className={cn(
-                          "w-full px-3 py-2 rounded-md transition-colors flex items-center gap-3 text-sm",
-                          isSelected
-                            ? "bg-primary/10 text-foreground"
-                            : "hover:bg-accent text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        <Bot className="w-4 h-4" style={{ color: platform.color }} />
-                        <span className="flex-1 text-left">{platform.name}</span>
-                        {isSelected && (
-                          <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                            <svg
-                              className="w-3 h-3 text-primary-foreground"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={3}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
+
+          {/* Platform Grid - Always Visible */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {PLATFORMS.map((platform) => {
+              const isSelected = selectedPlatforms.includes(platform.key);
+              return (
+                <button
+                  key={platform.key}
+                  type="button"
+                  onClick={() => togglePlatform(platform.key)}
+                  disabled={isAnalyzing}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2.5 rounded-lg border transition-all duration-150",
+                    "disabled:opacity-50 disabled:cursor-not-allowed",
+                    isSelected
+                      ? "bg-primary/10 border-primary/50 text-foreground"
+                      : "bg-muted/30 border-border hover:border-primary/30 hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {/* Checkbox */}
+                  <div
+                    className={cn(
+                      "w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors",
+                      isSelected
+                        ? "bg-primary border-primary"
+                        : "border-muted-foreground/50"
+                    )}
+                  >
+                    {isSelected && (
+                      <svg
+                        className="w-3 h-3 text-primary-foreground"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    )}
+                  </div>
+
+                  {/* Platform Icon & Name */}
+                  <span className="text-base">{platform.icon}</span>
+                  <span className="text-sm font-medium truncate">{platform.name}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Selection Summary */}
+          <p className="text-xs text-muted-foreground">
+            {selectedPlatforms.length} of {PLATFORMS.length} platforms selected
+          </p>
+
           {errors.platforms && (
             <p className="text-xs text-error">{errors.platforms}</p>
           )}

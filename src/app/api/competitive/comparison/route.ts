@@ -224,23 +224,34 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      // Calculate competitor visibility from sentiment or estimate from mentions
+      const compMentions = snapshot?.aiMentionCount || 0;
+      const compVisibility = snapshot?.sentimentScore
+        ? Math.round((Number(snapshot.sentimentScore) + 1) * 50)
+        : Math.min(100, Math.round((compMentions / Math.max(1, currentMentions)) * visibility));
+
+      // Calculate GEO score using same formula as brand for consistency
+      const compGeoScore = snapshot?.geoScore || calculateGeoScore(
+        compMentions,
+        compVisibility,
+        compPlatforms
+      );
+
       competitors.push({
         id: snapshot?.id || `comp-${competitorName.toLowerCase().replace(/\s+/g, "-")}`,
         name: competitorName,
         domain: extractDomain(domain),
-        geoScore: snapshot?.geoScore || Math.floor(Math.random() * 30) + 40, // Placeholder if no data
+        geoScore: compGeoScore,
         geoScoreChange: 0, // Would need previous snapshot
-        mentions: snapshot?.aiMentionCount || 0,
-        mentionsChange: 0,
-        visibility: snapshot?.sentimentScore
-          ? Math.round((Number(snapshot.sentimentScore) + 1) * 50)
-          : Math.floor(Math.random() * 30) + 30,
+        mentions: compMentions,
+        mentionsChange: 0, // Would need historical competitor data
+        visibility: compVisibility,
         visibilityChange: 0,
         platforms: {
-          chatgpt: compPlatforms["chatgpt"] || Math.floor(Math.random() * 50) + 20,
-          claude: compPlatforms["claude"] || Math.floor(Math.random() * 50) + 20,
-          gemini: compPlatforms["gemini"] || Math.floor(Math.random() * 50) + 20,
-          perplexity: compPlatforms["perplexity"] || Math.floor(Math.random() * 50) + 20,
+          chatgpt: compPlatforms["chatgpt"] || 0,
+          claude: compPlatforms["claude"] || 0,
+          gemini: compPlatforms["gemini"] || 0,
+          perplexity: compPlatforms["perplexity"] || 0,
         },
         isYou: false,
       });

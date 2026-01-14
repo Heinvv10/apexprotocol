@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import {
   TrendingUp,
   TrendingDown,
@@ -80,6 +81,8 @@ async function fetchCompetitorComparison(brandId: string): Promise<CompetitorDat
 }
 
 export function CompetitorComparison({ className, brandId, data }: CompetitorComparisonProps) {
+  const router = useRouter();
+
   // Fetch competitors from API if brandId is provided
   const { data: apiData, isLoading, error } = useQuery({
     queryKey: ["competitor-comparison", brandId],
@@ -92,6 +95,14 @@ export function CompetitorComparison({ className, brandId, data }: CompetitorCom
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [sortBy, setSortBy] = React.useState<"geoScore" | "mentions" | "visibility">("geoScore");
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("desc");
+
+  // Handler to navigate to add competitor page
+  const handleAddCompetitor = React.useCallback(() => {
+    const path = brandId
+      ? `/dashboard/${brandId}/competitors?action=add`
+      : "/dashboard/competitive?action=add";
+    router.push(path);
+  }, [brandId, router]);
 
   // Use provided data or API data - memoize to prevent unnecessary re-renders
   const competitors = React.useMemo(
@@ -155,7 +166,10 @@ export function CompetitorComparison({ className, brandId, data }: CompetitorCom
               Track how your brand compares to competitors
             </p>
           </div>
-          <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-primary hover:bg-primary/10 transition-colors">
+          <button
+            onClick={handleAddCompetitor}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-primary hover:bg-primary/10 transition-colors"
+          >
             <Plus className="w-4 h-4" />
             Add Competitor
           </button>
@@ -168,7 +182,7 @@ export function CompetitorComparison({ className, brandId, data }: CompetitorCom
           primaryAction={{
             label: "Add First Competitor",
             icon: Plus,
-            onClick: () => {},
+            onClick: handleAddCompetitor,
           }}
         />
       </div>
@@ -187,7 +201,10 @@ export function CompetitorComparison({ className, brandId, data }: CompetitorCom
             Track how your brand compares to competitors
           </p>
         </div>
-        <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-primary hover:bg-primary/10 transition-colors">
+        <button
+          onClick={handleAddCompetitor}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-primary hover:bg-primary/10 transition-colors"
+        >
           <Plus className="w-4 h-4" />
           Add Competitor
         </button>

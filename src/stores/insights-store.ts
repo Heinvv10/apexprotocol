@@ -21,6 +21,9 @@ export interface PlatformLoadingState {
   claude: boolean;
   gemini: boolean;
   perplexity: boolean;
+  grok: boolean;
+  deepseek: boolean;
+  copilot: boolean;
 }
 
 /**
@@ -31,6 +34,9 @@ export interface PlatformErrorState {
   claude: string | null;
   gemini: string | null;
   perplexity: string | null;
+  grok: string | null;
+  deepseek: string | null;
+  copilot: string | null;
 }
 
 /**
@@ -211,6 +217,9 @@ const initialPlatformLoading: PlatformLoadingState = {
   claude: false,
   gemini: false,
   perplexity: false,
+  grok: false,
+  deepseek: false,
+  copilot: false,
 };
 
 const initialPlatformErrors: PlatformErrorState = {
@@ -218,6 +227,9 @@ const initialPlatformErrors: PlatformErrorState = {
   claude: null,
   gemini: null,
   perplexity: null,
+  grok: null,
+  deepseek: null,
+  copilot: null,
 };
 
 const initialState = {
@@ -297,18 +309,22 @@ export const useInsightsStore = create<InsightsState>()(
           }
 
           // Transform API response to CurrentAnalysis format
+          // API returns: { queryId, status, analysis: { summary: {...}, platforms: [...] } }
           const analysisResult = data.data;
+          const analysisSummary = analysisResult.analysis?.summary;
+          const analysisPlatforms = analysisResult.analysis?.platforms;
+
           const currentAnalysis: CurrentAnalysis = {
             queryId: analysisResult.queryId,
             query: queryText,
             status: analysisResult.status,
             summary: {
-              averageScore: analysisResult.summary?.averageVisibilityScore || 0,
-              totalCitations: analysisResult.summary?.totalCitations || 0,
-              totalMentions: analysisResult.summary?.totalMentions || 0,
-              platformsAnalyzed: analysisResult.summary?.platformsAnalyzed || 0,
-              bestPlatform: analysisResult.summary?.bestPlatform || null,
-              worstPlatform: analysisResult.summary?.worstPlatform || null,
+              averageScore: analysisSummary?.averageVisibilityScore || 0,
+              totalCitations: analysisSummary?.totalCitations || 0,
+              totalMentions: analysisSummary?.totalMentions || 0,
+              platformsAnalyzed: analysisSummary?.platformsAnalyzed || 0,
+              bestPlatform: analysisSummary?.bestPlatform || null,
+              worstPlatform: analysisSummary?.worstPlatform || null,
             },
             platforms: {},
             createdAt: new Date().toISOString(),
@@ -318,11 +334,14 @@ export const useInsightsStore = create<InsightsState>()(
           // Process platform results
           const platformErrorsUpdate = { ...initialPlatformErrors };
 
-          if (analysisResult.platforms) {
-            for (const platformResult of analysisResult.platforms) {
+          if (analysisPlatforms) {
+            for (const platformResult of analysisPlatforms) {
               const platform = platformResult.platform as AIPlatform;
 
               if (platformResult.status === "success" && platformResult.analysis) {
+                // Extract mentionCount from visibilityScore.metrics.totalMentions
+                const mentionCount = platformResult.analysis.visibilityScore?.metrics?.totalMentions || 0;
+
                 currentAnalysis.platforms[platform] = {
                   status: "success",
                   analysis: {
@@ -330,7 +349,7 @@ export const useInsightsStore = create<InsightsState>()(
                     contentTypePerformance: platformResult.analysis.contentTypePerformance || {},
                     recommendations: platformResult.analysis.recommendations || [],
                     citations: platformResult.analysis.citations || [],
-                    mentionCount: platformResult.analysis.mentionCount || 0,
+                    mentionCount,
                   },
                 };
               } else {

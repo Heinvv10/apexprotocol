@@ -20,7 +20,19 @@ import {
   generateRecommendations as generateFromTemplates,
   selectTemplates,
   type TemplateSelectionContext,
+  type RecommendationTemplate,
 } from "./recommendation-templates";
+import {
+  enrichRecommendation,
+  enrichRecommendations,
+  generateStepsForTemplate,
+  getPlatformRelevance,
+  getEstimatedTimeForTemplate,
+  getExpectedScoreImpact,
+  generateSchemaForTemplate,
+  type EnrichedRecommendation,
+} from "./step-generator";
+import type { BrandSchemaData } from "../reports/schema-generator";
 
 /**
  * Configuration for recommendation generation
@@ -333,6 +345,90 @@ export class RecommendationEngine {
 
     return summary;
   }
+
+  /**
+   * Generate enriched recommendations with full implementation steps
+   *
+   * This method returns recommendations with rich step-by-step instructions,
+   * platform relevance scores, schema code, and expected score impacts.
+   *
+   * @param analysis - Complete platform analysis
+   * @param brandData - Brand data for schema generation and personalization
+   * @returns Array of enriched recommendations with implementation details
+   *
+   * @example
+   * ```typescript
+   * const engine = new RecommendationEngine({ brandName: "Acme Corp" });
+   * const enrichedRecs = engine.generateEnrichedRecommendations(
+   *   platformAnalysis,
+   *   { name: "Acme Corp", url: "https://acme.com", description: "..." }
+   * );
+   * enrichedRecs.forEach(rec => {
+   *   console.log(`${rec.title}: ${rec.steps.length} steps`);
+   *   console.log(`Expected score impact: +${rec.expectedScoreImpact} points`);
+   * });
+   * ```
+   */
+  generateEnrichedRecommendations(
+    analysis: PlatformAnalysis,
+    brandData?: BrandSchemaData
+  ): EnrichedRecommendation[] {
+    // Get template selection context
+    const visibilityScore = analysis.visibilityScore;
+    const contentTypePerformance = analysis.contentTypePerformance;
+
+    const templateContext: TemplateSelectionContext = {
+      platform: analysis.platform,
+      visibilityScore: visibilityScore.total,
+      mentionCount: visibilityScore.metrics.totalMentions,
+      citationCount: visibilityScore.metrics.totalCitations,
+      prominence: visibilityScore.breakdown.prominence,
+      bestContentType: this.findBestContentType(contentTypePerformance),
+      worstContentType: this.findWorstContentType(contentTypePerformance),
+    };
+
+    // Select applicable templates
+    const templates = selectTemplates(templateContext, this.options.maxRecommendations);
+
+    // Enrich templates with implementation steps
+    const enrichedRecs = enrichRecommendations(templates, brandData);
+
+    if (this.options.debug) {
+      console.log(
+        `[RecommendationEngine - ${analysis.platform}] Generated ${enrichedRecs.length} enriched recommendations`
+      );
+      enrichedRecs.forEach((rec, i) => {
+        console.log(
+          `  ${i + 1}. ${rec.title}: ${rec.steps.length} steps, +${rec.expectedScoreImpact} expected points`
+        );
+      });
+    }
+
+    return enrichedRecs;
+  }
+
+  /**
+   * Generate enriched recommendations for multiple platforms
+   *
+   * @param analyses - Array of platform analyses
+   * @param brandData - Brand data for schema generation
+   * @returns Map of platform to enriched recommendations
+   */
+  generateEnrichedForMultiplePlatforms(
+    analyses: PlatformAnalysis[],
+    brandData?: BrandSchemaData
+  ): Map<AIPlatform, EnrichedRecommendation[]> {
+    const recommendations = new Map<AIPlatform, EnrichedRecommendation[]>();
+
+    for (const analysis of analyses) {
+      if (analysis.status === "success" || analysis.status === "partial") {
+        const platformRecs = this.generateEnrichedRecommendations(analysis, brandData);
+        recommendations.set(analysis.platform, platformRecs);
+      }
+    }
+
+    return recommendations;
+  }
 }
 
 // ============================================================================
@@ -542,3 +638,64 @@ export function sortRecommendations(
     return impactScore[b.impact] - impactScore[a.impact];
   });
 }
+
+// ============================================================================
+// Enriched Recommendation Functions
+// ============================================================================
+
+/**
+ * Generate enriched recommendations with full implementation steps
+ *
+ * @param analysis - Complete platform analysis
+ * @param brandData - Brand data for schema generation
+ * @param options - Engine options
+ * @returns Array of enriched recommendations with steps
+ *
+ * @example
+ * ```typescript
+ * const enrichedRecs = generateEnrichedRecommendations(
+ *   platformAnalysis,
+ *   { name: "Acme Corp", url: "https://acme.com" },
+ *   { maxRecommendations: 5 }
+ * );
+ * ```
+ */
+export function generateEnrichedRecommendations(
+  analysis: PlatformAnalysis,
+  brandData?: BrandSchemaData,
+  options?: RecommendationEngineOptions
+): EnrichedRecommendation[] {
+  const engine = new RecommendationEngine(options);
+  return engine.generateEnrichedRecommendations(analysis, brandData);
+}
+
+/**
+ * Generate enriched recommendations for multiple platforms
+ *
+ * @param analyses - Array of platform analyses
+ * @param brandData - Brand data for schema generation
+ * @param options - Engine options
+ * @returns Map of platform to enriched recommendations
+ */
+export function batchGenerateEnrichedRecommendations(
+  analyses: PlatformAnalysis[],
+  brandData?: BrandSchemaData,
+  options?: RecommendationEngineOptions
+): Map<AIPlatform, EnrichedRecommendation[]> {
+  const engine = new RecommendationEngine(options);
+  return engine.generateEnrichedForMultiplePlatforms(analyses, brandData);
+}
+
+// Re-export EnrichedRecommendation type for consumers
+export type { EnrichedRecommendation };
+
+// Re-export step generator utilities for direct use
+export {
+  generateStepsForTemplate,
+  getPlatformRelevance,
+  getEstimatedTimeForTemplate,
+  getExpectedScoreImpact,
+  generateSchemaForTemplate,
+  enrichRecommendation,
+  enrichRecommendations,
+};

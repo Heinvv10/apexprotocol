@@ -59,6 +59,24 @@ const PLATFORM_CONFIG: Record<AIPlatform, PlatformConfig> = {
     icon: <Search className="w-4 h-4" />,
     message: "Searching with Perplexity...",
   },
+  grok: {
+    name: "Grok",
+    color: "#000000",
+    icon: <Bot className="w-4 h-4" />,
+    message: "Querying Grok...",
+  },
+  deepseek: {
+    name: "DeepSeek",
+    color: "#0066FF",
+    icon: <Brain className="w-4 h-4" />,
+    message: "Analyzing with DeepSeek...",
+  },
+  copilot: {
+    name: "Copilot",
+    color: "#0078D4",
+    icon: <Sparkles className="w-4 h-4" />,
+    message: "Consulting Copilot...",
+  },
 };
 
 const PROGRESS_MESSAGES = [

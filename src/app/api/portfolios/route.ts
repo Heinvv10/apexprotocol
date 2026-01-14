@@ -6,10 +6,11 @@ import {
   brands,
   brandMentions,
   recommendations,
+  geoScoreHistory,
   type NewPortfolio,
   type PortfolioMetrics,
 } from "@/lib/db/schema";
-import { eq, and, desc, count, sql } from "drizzle-orm";
+import { eq, and, desc, count, sql, inArray, avg } from "drizzle-orm";
 import { z } from "zod";
 import { getOrganizationId, getUserId } from "@/lib/auth";
 
@@ -291,14 +292,63 @@ async function calculatePortfolioMetrics(
     0
   );
 
-  // For now, use placeholder scores (would come from unified_scores table)
-  // In production, query the actual score tables
-  const avgScores = {
-    unified: 50,
-    geo: 45,
-    seo: 55,
-    aeo: 48,
-  };
+  // Get real scores from geoScoreHistory for each brand
+  // Get latest score per brand using a subquery approach
+  const brandScores = await db
+    .select({
+      brandId: geoScoreHistory.brandId,
+      overallScore: geoScoreHistory.overallScore,
+      visibilityScore: geoScoreHistory.visibilityScore,
+      sentimentScore: geoScoreHistory.sentimentScore,
+      recommendationScore: geoScoreHistory.recommendationScore,
+      trend: geoScoreHistory.trend,
+    })
+    .from(geoScoreHistory)
+    .where(
+      sql`${geoScoreHistory.brandId}::text IN ${brandIds} AND ${geoScoreHistory.calculatedAt} = (
+        SELECT MAX(gsh2.calculated_at)
+        FROM geo_score_history gsh2
+        WHERE gsh2.brand_id = ${geoScoreHistory.brandId}
+      )`
+    );
+
+  // Create a map of brand scores
+  const brandScoreMap = new Map(
+    brandScores.map((s) => [
+      s.brandId,
+      {
+        overall: s.overallScore || 0,
+        visibility: s.visibilityScore || 0,
+        sentiment: s.sentimentScore || 0,
+        recommendation: s.recommendationScore || 0,
+        trend: s.trend || "stable",
+      },
+    ])
+  );
+
+  // Calculate average scores from real data
+  const scoresArray = brandScores.map((s) => ({
+    overall: s.overallScore || 0,
+    visibility: s.visibilityScore || 0,
+    sentiment: s.sentimentScore || 0,
+  }));
+
+  const avgScores = scoresArray.length > 0
+    ? {
+        unified: Math.round(
+          scoresArray.reduce((sum, s) => sum + s.overall, 0) / scoresArray.length
+        ),
+        geo: Math.round(
+          scoresArray.reduce((sum, s) => sum + s.visibility, 0) / scoresArray.length
+        ),
+        seo: Math.round(
+          scoresArray.reduce((sum, s) => sum + s.sentiment * 100, 0) / scoresArray.length
+        ), // sentiment is -1 to 1, convert to 0-100
+        aeo: Math.round(
+          scoresArray.reduce((sum, s) => sum + s.overall * 0.8, 0) / scoresArray.length
+        ), // AEO approximation
+      }
+    : { unified: 0, geo: 0, seo: 0, aeo: 0 };
 
   // Determine health status based on scores
   let healthStatus: "healthy" | "warning" | "critical" = "healthy";
@@ -308,13 +358,16 @@ async function calculatePortfolioMetrics(
     healthStatus = "warning";
   }
 
-  // Build brand breakdown
-  const brandBreakdown = portfolioBrandsList.map((brand) => ({
-    brandId: brand.brandId,
-    brandName: brand.brandName,
-    unifiedScore: 50, // Placeholder
-    trend: "stable" as const,
-  }));
+  // Build brand breakdown with real scores
+  const brandBreakdown = portfolioBrandsList.map((brand) => {
+    const score = brandScoreMap.get(brand.brandId);
+    return {
+      brandId: brand.brandId,
+      brandName: brand.brandName,
+      unifiedScore: score?.overall || 0,
+      trend: (score?.trend || "stable") as "up" | "down" | "stable",
+    };
+  });
 
   return {
     totalBrands: portfolioBrandsList.length,

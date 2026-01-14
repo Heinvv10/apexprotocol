@@ -109,3 +109,45 @@ export {
   type StreamOptions,
   type StreamUsage,
 } from "./streaming";
+
+// Recommendation Engine (PRD-001)
+export {
+  RecommendationEngine,
+  generateRecommendations,
+  generateRecommendationsFromContext,
+  batchGenerateRecommendations,
+  generateEnrichedRecommendations,
+  batchGenerateEnrichedRecommendations,
+  getRecommendationSummary,
+  filterByPriority,
+  filterByImpact,
+  filterByDifficulty,
+  getQuickWins,
+  sortRecommendations,
+  type RecommendationEngineOptions,
+  type RecommendationContext,
+  type EnrichedRecommendation,
+} from "./recommendation-engine";
+
+// Step Generator (PRD-001 - Rich Implementation Steps)
+export {
+  generateStepsForTemplate,
+  getPlatformRelevance,
+  getEstimatedTimeForTemplate,
+  getExpectedScoreImpact,
+  generateSchemaForTemplate,
+  enrichRecommendation,
+  enrichRecommendations,
+} from "./step-generator";
+
+// Recommendation Templates
+export {
+  getTemplatesForPlatform,
+  selectTemplates,
+  templateToRecommendation,
+  generateRecommendations as generateTemplateRecommendations,
+  ALL_TEMPLATES,
+  type RecommendationTemplate,
+  type TemplateId,
+  type TemplateSelectionContext,
+} from "./recommendation-templates";

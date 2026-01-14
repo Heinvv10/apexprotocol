@@ -4,8 +4,8 @@
  */
 
 import { db } from "@/lib/db";
-import { organizations } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { organizations, brands } from "@/lib/db/schema";
+import { eq, count } from "drizzle-orm";
 
 /**
  * Mark a specific onboarding step as complete
@@ -79,14 +79,22 @@ export async function markOnboardingStepComplete(
  */
 export async function detectBrandAdded(clerkOrgId: string): Promise<void> {
   try {
+    // Get organization first
     const org = await db.query.organizations.findFirst({
       where: eq(organizations.clerkOrgId, clerkOrgId),
-      with: {
-        brands: true,
-      },
     });
 
-    if (org && org.brands && org.brands.length > 0) {
+    if (!org) {
+      return;
+    }
+
+    // Count brands separately (per organizations.ts recommendation)
+    const brandCount = await db
+      .select({ count: count() })
+      .from(brands)
+      .where(eq(brands.organizationId, org.id));
+
+    if (brandCount[0]?.count && brandCount[0].count > 0) {
       await markOnboardingStepComplete(clerkOrgId, "brandAdded");
     }
   } catch (error: unknown) {

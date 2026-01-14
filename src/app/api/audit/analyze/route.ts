@@ -1,14 +1,13 @@
 import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
- * Audit Analyze API (F104-F105) - Enhanced with Phase 3
+ * Audit Analyze API (F104-F105) - Real web analysis
  * POST /api/audit/analyze - Analyze a URL directly
- * Returns readability score (0-100) with breakdown, categorized issues,
- * schema validation, and Core Web Vitals
+ * Returns readability score (0-100) with breakdown, categorized issues
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { quickAudit, analyzeSchemas, analyzeCoreWebVitals } from "@/lib/audit";
+import { createCrawler, analyzeAuditResults } from "@/lib/audit";
 import { z } from "zod";
 
 // Request schema
@@ -27,7 +26,7 @@ const analyzeRequestSchema = z.object({
 });
 
 /**
- * POST /api/audit/analyze - Quick analysis of a URL
+ * POST /api/audit/analyze - Analyze a URL directly
  * Returns readability score and issues without storing in database
  */
 export async function POST(request: NextRequest) {
@@ -48,8 +47,14 @@ export async function POST(request: NextRequest) {
     // Normalize URL
     const normalizedUrl = url.startsWith("http") ? url : `https://${url}`;
 
-    // Run quick audit
-    const { crawlResult, analysis } = await quickAudit(normalizedUrl);
+    // Create crawler
+    const crawler = createCrawler(normalizedUrl, {
+      depth: "section",
+      maxPages: 25,
+    });
+
+    // Run crawl
+    const crawlResult = await crawler.crawl();
 
     // Check for crawl errors
     if (!crawlResult.success || crawlResult.pages.length === 0) {
@@ -65,17 +70,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Run Phase 3 enhanced analysis
-    const page = crawlResult.pages[0];
-    const schemaAnalysis = analyzeSchemas(page.schemaMarkup);
-    const coreWebVitals = analyzeCoreWebVitals(page);
+    // Analyze results
+    const analysis = analyzeAuditResults(crawlResult);
 
-    // Return analysis results with Phase 3 enhancements
+    // Return analysis results
     return NextResponse.json({
       success: true,
       url: normalizedUrl,
       crawl: {
-        pagesAnalyzed: crawlResult.totalPages,
+        pagesAnalyzed: crawlResult.pages.length,
         duration: crawlResult.duration,
         errors: crawlResult.errors.length,
       },
@@ -105,54 +108,8 @@ export async function POST(request: NextRequest) {
           },
         },
       },
-      // Phase 3: Schema validation
-      schemaValidation: {
-        totalSchemas: schemaAnalysis.totalSchemas,
-        validSchemas: schemaAnalysis.validSchemas,
-        invalidSchemas: schemaAnalysis.invalidSchemas,
-        overallScore: schemaAnalysis.overallScore,
-        schemaTypes: schemaAnalysis.schemaTypes,
-        missingRecommendedSchemas: schemaAnalysis.missingRecommendedSchemas,
-        results: schemaAnalysis.results.map((r) => ({
-          type: r.type,
-          isValid: r.isValid,
-          score: r.score,
-          googleRichResultsEligible: r.googleRichResultsEligible,
-          aiRelevance: r.aiRelevance,
-          errors: r.errors,
-          warnings: r.warnings,
-        })),
-        recommendations: schemaAnalysis.recommendations,
-      },
-      // Phase 3: Core Web Vitals
-      coreWebVitals: {
-        lcp: {
-          value: coreWebVitals.lcp.value,
-          unit: coreWebVitals.lcp.unit,
-          rating: coreWebVitals.lcp.rating,
-          score: coreWebVitals.lcp.score,
-          description: coreWebVitals.lcp.description,
-        },
-        fid: {
-          value: coreWebVitals.fid.value,
-          unit: coreWebVitals.fid.unit,
-          rating: coreWebVitals.fid.rating,
-          score: coreWebVitals.fid.score,
-          description: coreWebVitals.fid.description,
-        },
-        cls: {
-          value: coreWebVitals.cls.value,
-          unit: coreWebVitals.cls.unit,
-          rating: coreWebVitals.cls.rating,
-          score: coreWebVitals.cls.score,
-          description: coreWebVitals.cls.description,
-        },
-        overall: coreWebVitals.overall,
-        recommendations: coreWebVitals.recommendations,
-        aiImpact: coreWebVitals.aiImpact,
-      },
       issues: {
-        total: analysis.summary.totalIssues,
+        total: analysis.issues.length,
         critical: analysis.summary.criticalCount,
         high: analysis.summary.highCount,
         medium: analysis.summary.mediumCount,
@@ -163,17 +120,15 @@ export async function POST(request: NextRequest) {
           severity: issue.severity,
           title: issue.title,
           description: issue.description,
+          affectedPages: issue.affectedPages,
           recommendation: issue.recommendation,
-          aiRelevance: issue.aiRelevance,
           impact: issue.impact,
         })),
       },
-      recommendations: [
-        ...analysis.recommendations,
-        ...schemaAnalysis.recommendations.slice(0, 3),
-        ...coreWebVitals.recommendations.slice(0, 3),
-      ],
-      topPriorities: analysis.summary.topPriorities,
+      aiReadiness: analysis.aiReadiness,
+      recommendations: analysis.recommendations,
+      contentAnalysis: analysis.contentAnalysis,
+      technicalSEO: analysis.technicalSEO,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

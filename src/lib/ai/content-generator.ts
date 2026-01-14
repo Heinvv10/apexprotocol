@@ -57,11 +57,64 @@ export async function generateContent(params: ContentGenerationParams): Promise<
   }
 }
 
-export async function* streamContent(params: ContentGenerationParams) {
-  // Implement streaming generation for real-time content preview
-  // Similar to generateContent but uses streaming APIs
-  // Not implemented in this example
-  yield 'Content streaming not available';
+/**
+ * Stream content generation for real-time preview
+ *
+ * Uses streaming APIs from OpenAI or Anthropic to yield content chunks.
+ * Enables real-time content preview in the UI.
+ */
+export async function* streamContent(
+  params: ContentGenerationParams
+): AsyncGenerator<string, void, unknown> {
+  const { contentType, keywords, brandVoice, aiProvider } = params;
+
+  // Generate GEO-optimized prompt
+  const prompt = generateGeoPrompt({
+    contentType,
+    keywords,
+    brandVoice,
+  });
+
+  if (aiProvider === "claude") {
+    // Stream using Anthropic Claude
+    const stream = await anthropic.messages.stream({
+      model: "claude-3-5-sonnet-20241022",
+      max_tokens: 4096,
+      messages: [
+        {
+          role: "user",
+          content: `${prompt.systemPrompt}\n\n${prompt.userPrompt}`,
+        },
+      ],
+    });
+
+    for await (const event of stream) {
+      if (
+        event.type === "content_block_delta" &&
+        event.delta.type === "text_delta"
+      ) {
+        yield event.delta.text;
+      }
+    }
+  } else {
+    // Stream using OpenAI
+    const stream = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content: prompt.systemPrompt },
+        { role: "user", content: prompt.userPrompt },
+      ],
+      max_tokens: 4096,
+      stream: true,
+    });
+
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content;
+      if (content) {
+        yield content;
+      }
+    }
+  }
 }
 
 export function getAvailableModels() {

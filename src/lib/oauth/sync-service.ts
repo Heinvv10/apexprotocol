@@ -5,7 +5,7 @@
 
 import { db } from "@/lib/db";
 import { socialSyncJobs, socialPlatformEnum } from "@/lib/db/schema";
-import { eq, and, or, lte, isNull, desc } from "drizzle-orm";
+import { eq, and, or, lte, isNull, desc, count, sql } from "drizzle-orm";
 
 // Derive type from enum
 export type SocialPlatform = (typeof socialPlatformEnum.enumValues)[number];
@@ -429,14 +429,10 @@ export async function getLastSuccessfulSync(params: {
 export async function cleanupStaleJobs(maxRunningMinutes: number = 60): Promise<number> {
   const cutoffTime = new Date(Date.now() - maxRunningMinutes * 60 * 1000);
 
-  const result = await db
-    .update(socialSyncJobs)
-    .set({
-      status: "failed",
-      errorMessage: `Job timed out after ${maxRunningMinutes} minutes`,
-      completedAt: new Date(),
-      updatedAt: new Date(),
-    })
+  // First count the stale jobs
+  const staleJobsCount = await db
+    .select({ count: count() })
+    .from(socialSyncJobs)
     .where(
       and(
         eq(socialSyncJobs.status, "running"),
@@ -444,8 +440,26 @@ export async function cleanupStaleJobs(maxRunningMinutes: number = 60): Promise<
       )
     );
 
-  // Drizzle doesn't return count directly, need to query
-  return 0; // Placeholder - in production use SQL count
+  const jobsToCleanup = staleJobsCount[0]?.count ?? 0;
+
+  if (jobsToCleanup > 0) {
+    await db
+      .update(socialSyncJobs)
+      .set({
+        status: "failed",
+        errorMessage: `Job timed out after ${maxRunningMinutes} minutes`,
+        completedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(socialSyncJobs.status, "running"),
+          lte(socialSyncJobs.startedAt, cutoffTime)
+        )
+      );
+  }
+
+  return jobsToCleanup;
 }
 
 /**
@@ -454,8 +468,10 @@ export async function cleanupStaleJobs(maxRunningMinutes: number = 60): Promise<
 export async function deleteOldJobs(daysOld: number = 30): Promise<number> {
   const cutoffDate = new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000);
 
-  await db
-    .delete(socialSyncJobs)
+  // First count the old jobs to delete
+  const oldJobsCount = await db
+    .select({ count: count() })
+    .from(socialSyncJobs)
     .where(
       and(
         or(
@@ -467,7 +483,24 @@ export async function deleteOldJobs(daysOld: number = 30): Promise<number> {
       )
     );
 
-  return 0; // Placeholder
+  const jobsToDelete = oldJobsCount[0]?.count ?? 0;
+
+  if (jobsToDelete > 0) {
+    await db
+      .delete(socialSyncJobs)
+      .where(
+        and(
+          or(
+            eq(socialSyncJobs.status, "completed"),
+            eq(socialSyncJobs.status, "failed"),
+            eq(socialSyncJobs.status, "cancelled")
+          ),
+          lte(socialSyncJobs.completedAt, cutoffDate)
+        )
+      );
+  }
+
+  return jobsToDelete;
 }
 
 // ============================================================================

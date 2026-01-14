@@ -82,9 +82,9 @@ function getOpenAIClient(): OpenAI {
 
 function getGeminiClient(): GoogleGenerativeAI {
   if (!geminiClient) {
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
     if (!apiKey) {
-      throw new Error("GOOGLE_AI_API_KEY not configured");
+      throw new Error("GEMINI_API_KEY not configured");
     }
     geminiClient = new GoogleGenerativeAI(apiKey);
   }
@@ -346,7 +346,7 @@ export async function queryClaude(
       .replace("{product_category}", "online shopping");
 
     const message = await client.messages.create({
-      model: "claude-3-5-sonnet-20241022",
+      model: "claude-sonnet-4-20250514",
       max_tokens: 500,
       messages: [
         {
@@ -461,7 +461,7 @@ export async function queryPerplexity(
       .replace("{product_category}", "online shopping");
 
     const completion = await client.chat.completions.create({
-      model: "llama-3.1-sonar-large-128k-online",
+      model: "sonar-pro",
       messages: [
         {
           role: "user",
@@ -569,27 +569,208 @@ export async function queryDeepSeek(
 }
 
 /**
- * Query Grok (X.AI) - Placeholder
+ * Query Grok (X.AI)
+ *
+ * Uses X.AI API (Grok) for AI-powered brand mention detection.
+ * Requires GROK_API_KEY environment variable.
+ *
+ * Note: X.AI API is currently in limited access. If API key is not set,
+ * this function will return null without attempting a request.
+ *
+ * @see https://docs.x.ai/api for API documentation
  */
 export async function queryGrok(
   brandName: string,
   keyword: string,
   queryTemplate: QueryTemplate
 ): Promise<AIPlatformMention | null> {
-  console.warn("Grok API not yet available - returning null");
-  return null;
+  const apiKey = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
+
+  if (!apiKey) {
+    // Silently return null if Grok/X.AI API is not configured
+    // This is expected in most deployments
+    return null;
+  }
+
+  try {
+    // Generate query from template (same pattern as other platforms)
+    const promptIndex = Math.floor(Math.random() * queryTemplate.prompts.length);
+    const query = queryTemplate.prompts[promptIndex]
+      .replace("{brand}", brandName)
+      .replace("{industry}", "e-commerce")
+      .replace("{region}", "South Africa")
+      .replace("{product_category}", "online shopping");
+
+    // X.AI API endpoint (similar to OpenAI format)
+    const response = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "grok-3",
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful AI assistant. Provide accurate, informative responses.",
+          },
+          {
+            role: "user",
+            content: query,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Grok API error (${response.status}):`, errorText);
+      return null;
+    }
+
+    const data = await response.json();
+    const aiResponse = data.choices?.[0]?.message?.content || "";
+
+    // Check if brand is mentioned
+    if (!aiResponse || !aiResponse.toLowerCase().includes(brandName.toLowerCase())) {
+      return null; // Brand not mentioned
+    }
+
+    // Extract first URL from response (if any)
+    const urlMatch = aiResponse.match(/https?:\/\/[^\s)]+/);
+    const citationUrl = urlMatch ? urlMatch[0] : null;
+
+    return {
+      platform: "grok",
+      query,
+      response: aiResponse,
+      sentiment: analyzeSentiment(aiResponse, brandName),
+      position: extractPosition(aiResponse, brandName),
+      citationUrl,
+      competitors: extractCompetitors(aiResponse, brandName),
+      promptCategory: queryTemplate.category,
+      topics: ["e-commerce", "technology"],
+      metadata: {
+        modelVersion: data.model || "grok-beta",
+        responseLength: aiResponse.length,
+        confidenceScore: 0.75,
+      },
+    };
+  } catch (error) {
+    console.error("Grok query error:", error);
+    return null;
+  }
 }
 
 /**
- * Query Copilot (Microsoft) - Placeholder
+ * Query Microsoft Copilot
+ *
+ * Uses Azure OpenAI API for Copilot integration.
+ * Requires AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT environment variables.
+ *
+ * @param brandName - Brand name to search for
+ * @param keyword - Keyword context for the query
+ * @param queryTemplate - Query template to use
+ * @returns AIPlatformMention if successful, null otherwise
  */
 export async function queryCopilot(
   brandName: string,
   keyword: string,
   queryTemplate: QueryTemplate
 ): Promise<AIPlatformMention | null> {
-  console.warn("Copilot API integration not implemented - returning null");
-  return null;
+  const apiKey = process.env.AZURE_OPENAI_API_KEY;
+  const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+  const deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT || "gpt-4";
+
+  if (!apiKey || !endpoint) {
+    // Silently return null if credentials not configured
+    return null;
+  }
+
+  try {
+    // Generate query from template
+    const promptIndex = Math.floor(Math.random() * queryTemplate.prompts.length);
+    const query = queryTemplate.prompts[promptIndex]
+      .replace("{brand}", brandName)
+      .replace("{industry}", "e-commerce")
+      .replace("{region}", "South Africa")
+      .replace("{product_category}", "online shopping");
+
+    const apiUrl = `${endpoint}/openai/deployments/${deploymentName}/chat/completions?api-version=2024-02-15-preview`;
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": apiKey,
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a helpful assistant providing accurate information about products, services, and brands.",
+          },
+          {
+            role: "user",
+            content: query,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+        top_p: 0.95,
+        frequency_penalty: 0,
+        presence_penalty: 0,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Copilot API error: ${response.status} - ${errorText}`);
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (!data.choices?.[0]?.message?.content) {
+      console.warn("No response from Copilot API");
+      return null;
+    }
+
+    const aiResponse = data.choices[0].message.content;
+
+    // Check if brand is mentioned
+    if (!aiResponse.toLowerCase().includes(brandName.toLowerCase())) {
+      return null; // Brand not mentioned
+    }
+
+    // Extract citation if any URL is mentioned
+    const urlMatch = aiResponse.match(/https?:\/\/[^\s)]+/);
+    const citationUrl = urlMatch ? urlMatch[0] : null;
+
+    return {
+      platform: "copilot",
+      query,
+      response: aiResponse,
+      sentiment: analyzeSentiment(aiResponse, brandName),
+      position: extractPosition(aiResponse, brandName),
+      citationUrl,
+      competitors: extractCompetitors(aiResponse, brandName),
+      promptCategory: queryTemplate.category,
+      topics: ["e-commerce", "technology"],
+      metadata: {
+        modelVersion: deploymentName,
+        responseLength: aiResponse.length,
+        confidenceScore: 0.75,
+      },
+    };
+  } catch (error) {
+    console.error("Copilot query error:", error);
+    return null;
+  }
 }
 
 // ============================================================================

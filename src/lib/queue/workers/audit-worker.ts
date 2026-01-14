@@ -122,7 +122,7 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
               category: "metadata",
               score: analysis.readability.breakdown.metadata.score,
               maxScore: analysis.readability.breakdown.metadata.maxScore,
-              issues: analysis.issues.filter((i) => i.category === "meta")
+              issues: analysis.issues.filter((i) => i.category === "metadata")
                 .length,
             },
             {
@@ -130,7 +130,7 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
               score: analysis.readability.breakdown.accessibility.score,
               maxScore: analysis.readability.breakdown.accessibility.maxScore,
               issues: analysis.issues.filter(
-                (i) => i.category === "images" || i.category === "links"
+                (i) => i.category === "accessibility"
               ).length,
             },
           ],
@@ -140,7 +140,7 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
             severity: issue.severity,
             title: issue.title,
             description: issue.description,
-            element: issue.element,
+            affectedPages: issue.affectedPages,
             recommendation: issue.recommendation,
             impact: issue.impact.description,
           })),

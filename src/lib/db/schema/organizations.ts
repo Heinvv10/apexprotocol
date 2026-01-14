@@ -91,11 +91,17 @@ export interface OnboardingStatus {
   dismissedAt: string | null;
 }
 
-// Relations will be defined after all tables are created
-export const organizationsRelations = relations(organizations, ({ many }) => ({
-  users: many(organizations), // Placeholder - will be updated with actual users table
-  brands: many(organizations), // Placeholder - will be updated with actual brands table
-}));
+// Relations are defined in users.ts and brands.ts to avoid circular imports
+// The inverse relations (organization -> users, organization -> brands) are handled
+// by Drizzle automatically when you query with { with: { organization: true } }
+//
+// Note: To query all users or brands for an organization, use:
+// - db.query.users.findMany({ where: eq(users.organizationId, orgId) })
+// - db.query.brands.findMany({ where: eq(brands.organizationId, orgId) })
+//
+// If inverse relations are needed for eager loading, create a separate relations file:
+// src/lib/db/relations.ts that imports all tables and defines cross-table relations
+export const organizationsRelations = relations(organizations, () => ({}));
 
 // Type exports
 export type Organization = typeof organizations.$inferSelect;

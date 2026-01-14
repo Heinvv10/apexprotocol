@@ -21,6 +21,9 @@ export const aiPlatformSchema = z.enum([
   "claude",
   "gemini",
   "perplexity",
+  "grok",
+  "deepseek",
+  "copilot",
 ]);
 
 /**
@@ -29,7 +32,7 @@ export const aiPlatformSchema = z.enum([
 export const aiPlatformsArraySchema = z
   .array(aiPlatformSchema)
   .min(1, "At least one platform is required")
-  .max(4, "Maximum of 4 platforms allowed");
+  .max(7, "Maximum of 7 platforms allowed");
 
 /**
  * Platform validation with default to all platforms
@@ -37,7 +40,7 @@ export const aiPlatformsArraySchema = z
 export const aiPlatformsWithDefaultSchema = z
   .array(aiPlatformSchema)
   .optional()
-  .default(["chatgpt", "claude", "gemini", "perplexity"]);
+  .default(["chatgpt", "claude", "gemini", "perplexity", "grok", "deepseek", "copilot"]);
 
 // ============================================================================
 // Pagination Validation

@@ -7,8 +7,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrganizationId, getUserId } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { brandMentions, recommendations, audits, content, brands } from "@/lib/db/schema";
-import { eq, and, count, sql, desc } from "drizzle-orm";
+import { brandMentions, recommendations, audits, content, brands, geoScoreHistory, activityLog } from "@/lib/db/schema";
+import { eq, and, count, sql, desc, gte, lte, avg, asc } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
@@ -110,28 +110,133 @@ export async function GET(request: NextRequest) {
       limit: 5,
     });
 
+    // Calculate content created this week
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    const contentThisWeek = await db
+      .select({ count: count() })
+      .from(content)
+      .where(
+        and(
+          eq(content.brandId, brandId),
+          gte(content.createdAt, oneWeekAgo)
+        )
+      );
+    const thisWeekContentCount = contentThisWeek[0]?.count ?? 0;
+
     // Calculate GEO score based on mention sentiment and coverage
     const totalMentions = Number(mentions.total) || 0;
     const positiveMentions = Number(mentions.positive) || 0;
+    const negativeMentions = Number(mentions.negative) || 0;
     const sentimentScore = totalMentions > 0 ? Math.round((positiveMentions / totalMentions) * 50) : 0;
     const coverageScore = Math.min(platformBreakdown.length * 10, 50);
     const geoScore = sentimentScore + coverageScore;
 
+    // Get mentions from last week for trend calculation
+    const mentionsLastWeek = await db
+      .select({ count: count() })
+      .from(brandMentions)
+      .where(
+        and(
+          eq(brandMentions.brandId, brandId),
+          lte(brandMentions.timestamp, oneWeekAgo)
+        )
+      );
+    const lastWeekMentionCount = mentionsLastWeek[0]?.count ?? 0;
+    const mentionsChange = lastWeekMentionCount > 0
+      ? Math.round(((totalMentions - lastWeekMentionCount) / lastWeekMentionCount) * 100)
+      : totalMentions > 0 ? 100 : 0;
+    const mentionsTrend = mentionsChange > 0 ? "up" : mentionsChange < 0 ? "down" : "stable";
+
+    // Calculate per-platform sentiment
+    const platformSentiment = await db
+      .select({
+        platform: brandMentions.platform,
+        total: count(),
+        positive: sql<number>`COUNT(CASE WHEN ${brandMentions.sentiment} = 'positive' THEN 1 END)`,
+      })
+      .from(brandMentions)
+      .where(eq(brandMentions.brandId, brandId))
+      .groupBy(brandMentions.platform);
+
+    const platformSentimentMap = new Map(
+      platformSentiment.map(p => [
+        p.platform,
+        Number(p.total) > 0 ? Number(p.positive) / Number(p.total) : 0.5
+      ])
+    );
+
+    // Get GEO score history for trend data
+    const geoHistory = await db
+      .select({
+        score: geoScoreHistory.overallScore,
+        date: geoScoreHistory.calculatedAt,
+      })
+      .from(geoScoreHistory)
+      .where(eq(geoScoreHistory.brandId, brandId))
+      .orderBy(desc(geoScoreHistory.calculatedAt))
+      .limit(30);
+
+    // Calculate GEO score from latest history or fallback to calculated score
+    const latestGeoScore = geoHistory.length > 0 ? geoHistory[0].score : geoScore;
+    const previousGeoScore = geoHistory.length > 1 ? geoHistory[1].score : latestGeoScore;
+    const geoScoreChange = latestGeoScore - previousGeoScore;
+    const geoTrend = geoScoreChange > 0 ? "up" : geoScoreChange < 0 ? "down" : "stable";
+
+    // Format history for trend chart (oldest to newest)
+    const scoreHistory = geoHistory
+      .map(h => ({ score: h.score, date: h.date.toISOString() }))
+      .reverse();
+
+    // Get recent activity from activity log
+    const recentActivityData = await db
+      .select({
+        id: activityLog.id,
+        type: activityLog.activityType,
+        description: activityLog.description,
+        timestamp: activityLog.timestamp,
+        metadata: activityLog.metadata,
+      })
+      .from(activityLog)
+      .where(eq(activityLog.brandId, brandId))
+      .orderBy(desc(activityLog.timestamp))
+      .limit(10);
+
+    // Get historical platform mention data (one week ago)
+    const platformHistorical = await db
+      .select({
+        platform: brandMentions.platform,
+        count: count(),
+      })
+      .from(brandMentions)
+      .where(
+        and(
+          eq(brandMentions.brandId, brandId),
+          lte(brandMentions.timestamp, oneWeekAgo)
+        )
+      )
+      .groupBy(brandMentions.platform);
+
+    const platformHistoricalMap = new Map(
+      platformHistorical.map(p => [p.platform, Number(p.count) || 0])
+    );
+
     // Build response
     const dashboardMetrics = {
       geoScore: {
-        current: geoScore,
-        change: 5, // Placeholder - would need historical data
-        trend: "up" as const,
-        history: [], // Would need time-series data
+        current: latestGeoScore,
+        change: geoScoreChange,
+        trend: geoTrend as "up" | "down" | "stable",
+        history: scoreHistory,
       },
       mentions: {
         total: Number(mentions.total) || 0,
         positive: Number(mentions.positive) || 0,
         neutral: Number(mentions.neutral) || 0,
         negative: Number(mentions.negative) || 0,
-        change: 0,
-        trend: "stable" as const,
+        change: mentionsChange,
+        trend: mentionsTrend as "up" | "down" | "stable",
       },
       audits: {
         total: Number(auditStats.total) || 0,
@@ -151,22 +256,44 @@ export async function GET(request: NextRequest) {
         total: Number(contentStats.total) || 0,
         published: Number(contentStats.published) || 0,
         draft: Number(contentStats.draft) || 0,
-        thisWeek: 0, // Would need date filtering
+        thisWeek: thisWeekContentCount,
       },
-      platforms: platformBreakdown.map((p) => ({
-        name: p.name,
-        mentions: Number(p.mentions) || 0,
-        sentiment: 0.7, // Placeholder
-        change: 0,
+      platforms: platformBreakdown.map((p) => {
+        const currentCount = Number(p.mentions) || 0;
+        const historicalCount = platformHistoricalMap.get(p.name) || 0;
+        const platformChange = historicalCount > 0
+          ? Math.round(((currentCount - historicalCount) / historicalCount) * 100)
+          : currentCount > 0 ? 100 : 0;
+        return {
+          name: p.name,
+          mentions: currentCount,
+          sentiment: platformSentimentMap.get(p.name) ?? 0.5,
+          change: platformChange,
+        };
+      }),
+      recentActivity: recentActivityData.map((a) => ({
+        id: a.id,
+        type: a.type,
+        description: a.description,
+        timestamp: a.timestamp.toISOString(),
+        metadata: a.metadata,
       })),
-      recentActivity: [], // Would need activity tracking
-      topRecommendations: topRecs.map((r) => ({
-        id: r.id,
-        title: r.title,
-        priority: r.priority as "critical" | "high" | "medium" | "low",
-        impact: 80, // Placeholder
-        category: r.category,
-      })),
+      topRecommendations: topRecs.map((r) => {
+        // Calculate impact based on priority
+        const priorityImpact: Record<string, number> = {
+          critical: 95,
+          high: 80,
+          medium: 60,
+          low: 40,
+        };
+        return {
+          id: r.id,
+          title: r.title,
+          priority: r.priority as "critical" | "high" | "medium" | "low",
+          impact: priorityImpact[r.priority || "medium"] || 60,
+          category: r.category,
+        };
+      }),
     };
 
     return NextResponse.json(dashboardMetrics);

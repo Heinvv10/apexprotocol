@@ -132,28 +132,33 @@ export async function POST(request: NextRequest) {
           throw new Error("WordPress is not configured. Set WORDPRESS_URL, WORDPRESS_USERNAME, and WORDPRESS_APP_PASSWORD environment variables.");
         }
 
-        // WordPress publishing will be implemented in Phase 4
-        // For now, we'll create a stub that throws a clear error
-        // When WordPress integration is complete, replace this with:
-        // const { publishToWordPress } = await import("@/lib/publishing/wordpress");
-        // const result = await publishToWordPress({ title: contentItem.title, body: contentItem.body });
+        // Publish to WordPress using the WordPress publishing library
+        const { publishToWordPress } = await import("@/lib/publishing/wordpress");
+        const result = await publishToWordPress({
+          title: contentItem.title,
+          body: contentItem.body || "",
+          status: "publish",
+        });
 
-        // Temporary stub - will be replaced when WordPress integration is implemented
-        throw new Error("WordPress publishing not yet implemented. This will be available in Phase 4.");
+        externalId = String(result.postId);
+        externalUrl = result.postUrl;
       } else if (platform === "medium") {
         // Check if Medium is configured
         if (!process.env.MEDIUM_API_TOKEN) {
           throw new Error("Medium is not configured. Set MEDIUM_API_TOKEN environment variable.");
         }
 
-        // Medium publishing will be implemented in Phase 6 (optional)
-        // For now, we'll create a stub that throws a clear error
-        // When Medium integration is complete, replace this with:
-        // const { publishToMedium } = await import("@/lib/publishing/medium");
-        // const result = await publishToMedium({ title: contentItem.title, body: contentItem.body });
+        // Publish to Medium using the Medium publishing library
+        const { publishToMedium } = await import("@/lib/publishing/medium");
+        const result = await publishToMedium({
+          title: contentItem.title,
+          body: contentItem.body || "",
+          contentFormat: "html",
+          publishStatus: "public",
+        });
 
-        // Temporary stub - will be replaced when Medium integration is implemented
-        throw new Error("Medium publishing not yet implemented. This will be available in Phase 6.");
+        externalId = result.postId;
+        externalUrl = result.postUrl;
       }
     } catch (error) {
       publishError = error instanceof Error ? error.message : "Unknown publishing error";

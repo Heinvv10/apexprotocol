@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { systemSettings } from "@/lib/db/schema/system-settings";
+import { users } from "@/lib/db/schema";
 import { encrypt, decrypt } from "@/lib/encryption";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
@@ -22,8 +23,8 @@ const getApiKeySchema = z.object({
 });
 
 /**
- * Check if user is admin
- * TODO: Implement proper role-based access control
+ * Check if user is admin using proper role-based access control
+ * Checks both Clerk metadata and database user record
  */
 async function isAdmin(): Promise<boolean> {
   const user = await currentUser();
@@ -32,9 +33,39 @@ async function isAdmin(): Promise<boolean> {
     return false;
   }
 
-  // TODO: Check if user has admin role in your database
-  // For now, check if user has admin metadata in Clerk
-  return user.publicMetadata?.role === "admin" || user.privateMetadata?.role === "admin";
+  // First check Clerk metadata (fast path)
+  const publicMetadata = user.publicMetadata as { role?: string; isSuperAdmin?: boolean } | undefined;
+  const privateMetadata = user.privateMetadata as { role?: string } | undefined;
+
+  if (publicMetadata?.isSuperAdmin === true) {
+    return true;
+  }
+
+  if (publicMetadata?.role === "admin" || privateMetadata?.role === "admin") {
+    return true;
+  }
+
+  // Then check database for super admin status (source of truth)
+  try {
+    const dbUser = await db
+      .select({ isSuperAdmin: users.isSuperAdmin, role: users.role })
+      .from(users)
+      .where(eq(users.clerkUserId, user.id))
+      .limit(1);
+
+    if (dbUser[0]?.isSuperAdmin) {
+      return true;
+    }
+
+    // Also check if user has admin role in database
+    if (dbUser[0]?.role === "admin") {
+      return true;
+    }
+  } catch (error) {
+    console.error("Error checking admin status in database:", error);
+  }
+
+  return false;
 }
 
 /**

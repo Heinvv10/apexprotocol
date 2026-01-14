@@ -240,12 +240,19 @@ function generateRecommendations(brandId: string, brandConfig: typeof brandConfi
   const impacts = ["high", "medium", "low"] as const;
   const sources = ["audit", "monitoring", "content", "manual"] as const;
 
+  // Helper to convert simple step strings to ImplementationStep objects
+  const toSteps = (steps: string[]): schema.ImplementationStep[] =>
+    steps.map((instruction, index) => ({
+      stepNumber: index + 1,
+      instruction,
+    }));
+
   const recommendationTemplates = [
     {
       category: "schema_markup" as const,
       title: "Add Organization Schema",
       description: "Your website is missing Organization schema markup, which helps AI systems understand your brand identity.",
-      steps: ["Create Organization JSON-LD", "Add to website header", "Validate with Google Rich Results Test"],
+      steps: toSteps(["Create Organization JSON-LD", "Add to website header", "Validate with Google Rich Results Test"]),
       priority: "high" as const,
       effort: "quick_win" as const,
       impact: "high" as const,
@@ -254,7 +261,7 @@ function generateRecommendations(brandId: string, brandConfig: typeof brandConfi
       category: "schema_markup" as const,
       title: "Implement FAQ Schema",
       description: "Add FAQ schema to your frequently asked questions to increase chances of AI citation.",
-      steps: ["Identify top 10 FAQs", "Format as FAQ schema", "Deploy to FAQ page"],
+      steps: toSteps(["Identify top 10 FAQs", "Format as FAQ schema", "Deploy to FAQ page"]),
       priority: "high" as const,
       effort: "moderate" as const,
       impact: "high" as const,
@@ -263,7 +270,7 @@ function generateRecommendations(brandId: string, brandConfig: typeof brandConfi
       category: "content_optimization" as const,
       title: "Optimize for Question-Based Queries",
       description: "Create content that directly answers common questions in your industry.",
-      steps: ["Research question keywords", "Create Q&A content sections", "Structure with proper headers"],
+      steps: toSteps(["Research question keywords", "Create Q&A content sections", "Structure with proper headers"]),
       priority: "medium" as const,
       effort: "moderate" as const,
       impact: "high" as const,
@@ -272,7 +279,7 @@ function generateRecommendations(brandId: string, brandConfig: typeof brandConfi
       category: "citation_building" as const,
       title: "Build Authoritative Backlinks",
       description: "Increase domain authority through quality backlinks from industry publications.",
-      steps: ["Identify target publications", "Create linkable assets", "Outreach to editors"],
+      steps: toSteps(["Identify target publications", "Create linkable assets", "Outreach to editors"]),
       priority: "medium" as const,
       effort: "major" as const,
       impact: "high" as const,
@@ -281,7 +288,7 @@ function generateRecommendations(brandId: string, brandConfig: typeof brandConfi
       category: "technical_seo" as const,
       title: "Improve Core Web Vitals",
       description: "Your LCP score needs improvement for better AI crawlability.",
-      steps: ["Optimize images", "Implement lazy loading", "Reduce server response time"],
+      steps: toSteps(["Optimize images", "Implement lazy loading", "Reduce server response time"]),
       priority: "high" as const,
       effort: "moderate" as const,
       impact: "medium" as const,
@@ -290,7 +297,7 @@ function generateRecommendations(brandId: string, brandConfig: typeof brandConfi
       category: "brand_consistency" as const,
       title: "Standardize Brand Mentions",
       description: "Ensure consistent brand name usage across all platforms and content.",
-      steps: ["Audit existing content", "Create brand style guide", "Update inconsistent mentions"],
+      steps: toSteps(["Audit existing content", "Create brand style guide", "Update inconsistent mentions"]),
       priority: "medium" as const,
       effort: "moderate" as const,
       impact: "medium" as const,
@@ -299,7 +306,7 @@ function generateRecommendations(brandId: string, brandConfig: typeof brandConfi
       category: "competitor_analysis" as const,
       title: `Analyze ${brandConfig.competitors[0].name} Content Strategy`,
       description: `Study competitor content that's getting cited by AI to identify gaps.`,
-      steps: ["Monitor competitor mentions", "Identify content gaps", "Create superior content"],
+      steps: toSteps(["Monitor competitor mentions", "Identify content gaps", "Create superior content"]),
       priority: "medium" as const,
       effort: "moderate" as const,
       impact: "medium" as const,
@@ -308,7 +315,7 @@ function generateRecommendations(brandId: string, brandConfig: typeof brandConfi
       category: "content_freshness" as const,
       title: "Update Outdated Content",
       description: "Several pages haven't been updated in 6+ months, reducing AI citation probability.",
-      steps: ["Identify stale content", "Update with current data", "Add publish dates"],
+      steps: toSteps(["Identify stale content", "Update with current data", "Add publish dates"]),
       priority: "medium" as const,
       effort: "moderate" as const,
       impact: "medium" as const,
@@ -317,7 +324,7 @@ function generateRecommendations(brandId: string, brandConfig: typeof brandConfi
       category: "authority_building" as const,
       title: "Publish Industry Research",
       description: "Create original research content to establish thought leadership.",
-      steps: ["Conduct industry survey", "Analyze and visualize data", "Publish and promote report"],
+      steps: toSteps(["Conduct industry survey", "Analyze and visualize data", "Publish and promote report"]),
       priority: "low" as const,
       effort: "major" as const,
       impact: "high" as const,
@@ -326,7 +333,7 @@ function generateRecommendations(brandId: string, brandConfig: typeof brandConfi
       category: "technical_seo" as const,
       title: "Fix Broken Internal Links",
       description: "Found 12 broken internal links that hurt crawlability.",
-      steps: ["Run link audit", "Fix or redirect broken links", "Verify crawl health"],
+      steps: toSteps(["Run link audit", "Fix or redirect broken links", "Verify crawl health"]),
       priority: "high" as const,
       effort: "quick_win" as const,
       impact: "medium" as const,

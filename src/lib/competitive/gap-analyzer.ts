@@ -411,8 +411,7 @@ export async function getGapTrends(
     const dateStr = date.toISOString().split("T")[0];
     dates.push(dateStr);
 
-    // For now, return placeholder data
-    // In production, this would query historical gap counts
+    // Initialize with zeros, will be populated from actual gap data below
     total.push(0);
     byType.keyword.push(0);
     byType.topic.push(0);

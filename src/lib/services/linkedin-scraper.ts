@@ -71,28 +71,61 @@ function extractCompanyDomain(brand: typeof brands.$inferSelect): string | null 
 /**
  * Search LinkedIn for company page
  *
- * 🔵 MOCK: Real implementation would:
- * 1. Use LinkedIn API or third-party service
- * 2. Search for company by domain or name
- * 3. Return LinkedIn company page URL
+ * Uses RapidAPI LinkedIn Scraper when RAPIDAPI_KEY is set,
+ * otherwise falls back to constructing a probable LinkedIn URL.
  */
 async function findLinkedInCompanyPage(domain: string): Promise<string | null> {
   console.log(`[LinkedIn] Searching for company: ${domain}`);
 
-  // 🔵 MOCK: Return null (no company found)
-  // Real implementation would call LinkedIn API or service
+  const rapidApiKey = process.env.RAPIDAPI_KEY;
+
+  if (rapidApiKey) {
+    try {
+      // Use RapidAPI LinkedIn Scraper to find company
+      const response = await fetch(
+        `https://linkedin-data-scraper.p.rapidapi.com/search_companies?query=${encodeURIComponent(domain)}`,
+        {
+          method: "GET",
+          headers: {
+            "X-RapidAPI-Key": rapidApiKey,
+            "X-RapidAPI-Host": "linkedin-data-scraper.p.rapidapi.com",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+          const companyUrl = data.results[0].linkedin_url;
+          if (companyUrl) {
+            console.log(`  ✅ Found company via RapidAPI: ${companyUrl}`);
+            return companyUrl;
+          }
+        }
+      }
+    } catch (error) {
+      console.error("  RapidAPI LinkedIn search error:", error);
+    }
+  }
+
+  // Fallback: Construct probable LinkedIn company URL from domain
+  // Extract company name from domain (e.g., "takealot.com" -> "takealot")
+  const companyName = domain.replace(/\.(com|co\.za|co|org|net|io|ai).*$/, "").toLowerCase();
+
+  if (companyName) {
+    const probableUrl = `https://www.linkedin.com/company/${companyName}`;
+    console.log(`  📌 Using constructed URL: ${probableUrl}`);
+    return probableUrl;
+  }
+
   return null;
 }
 
 /**
  * Scrape employees from LinkedIn company page
  *
- * 🔵 MOCK: Real implementation would:
- * 1. Use LinkedIn API with OAuth authentication
- * 2. OR: Use third-party service (Clearbit, FullContact, etc.)
- * 3. OR: Use web scraping with proxy rotation
- * 4. Extract employee profiles (name, title, URL, photo)
- * 5. Return list of employees
+ * Uses RapidAPI LinkedIn Scraper when RAPIDAPI_KEY is set,
+ * otherwise returns empty array (API required for employee data).
  */
 async function scrapeLinkedInCompanyEmployees(
   companyPageUrl: string,
@@ -101,10 +134,79 @@ async function scrapeLinkedInCompanyEmployees(
   console.log(`[LinkedIn] Scraping employees from: ${companyPageUrl}`);
   console.log(`  Limit: ${limit} people`);
 
-  // 🔵 MOCK: Return empty array (no people found)
-  // Real implementation would scrape/API call LinkedIn
+  const rapidApiKey = process.env.RAPIDAPI_KEY;
 
-  return [];
+  if (!rapidApiKey) {
+    console.log("  ⚠️ RAPIDAPI_KEY not set - cannot scrape LinkedIn employees");
+    return [];
+  }
+
+  try {
+    // Extract company identifier from URL
+    const companyMatch = companyPageUrl.match(/linkedin\.com\/company\/([^\/\?]+)/);
+    if (!companyMatch) {
+      console.log("  ⚠️ Could not extract company ID from URL");
+      return [];
+    }
+
+    const companyId = companyMatch[1];
+
+    // Use RapidAPI LinkedIn Scraper to get employees
+    const response = await fetch(
+      `https://linkedin-data-scraper.p.rapidapi.com/company_employees?company_url=${encodeURIComponent(companyPageUrl)}&count=${limit}`,
+      {
+        method: "GET",
+        headers: {
+          "X-RapidAPI-Key": rapidApiKey,
+          "X-RapidAPI-Host": "linkedin-data-scraper.p.rapidapi.com",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`  RapidAPI error: ${response.status} - ${errorText}`);
+      return [];
+    }
+
+    const data = await response.json();
+
+    if (!data.employees || !Array.isArray(data.employees)) {
+      console.log("  ⚠️ No employees found in API response");
+      return [];
+    }
+
+    // Map API response to our LinkedInPerson type
+    const employees: LinkedInPerson[] = data.employees.map((emp: {
+      full_name?: string;
+      name?: string;
+      title?: string;
+      headline?: string;
+      linkedin_url?: string;
+      profile_url?: string;
+      profile_image_url?: string;
+      photo_url?: string;
+      summary?: string;
+      location?: string;
+      skills?: string[];
+      connection_count?: number;
+    }) => ({
+      fullName: emp.full_name || emp.name || "Unknown",
+      title: emp.title || emp.headline || "Unknown Position",
+      linkedinUrl: emp.linkedin_url || emp.profile_url || "",
+      profileImageUrl: emp.profile_image_url || emp.photo_url,
+      bio: emp.summary,
+      location: emp.location,
+      skills: emp.skills,
+      connections: emp.connection_count,
+    }));
+
+    console.log(`  ✅ Found ${employees.length} employee(s) via RapidAPI`);
+    return employees.slice(0, limit);
+  } catch (error) {
+    console.error("  RapidAPI LinkedIn scraping error:", error);
+    return [];
+  }
 }
 
 // ============================================================================
@@ -221,15 +323,149 @@ export async function extractLinkedInPeople(
 }
 
 /**
- * Enrich person profile with additional data
+ * Enrich person profile with additional data from LinkedIn
  *
- * 🔵 MOCK: Real implementation would:
- * 1. Fetch additional profile data from LinkedIn
- * 2. Update database with new information
+ * Uses RapidAPI LinkedIn Scraper when RAPIDAPI_KEY is set.
  */
-export async function enrichPersonProfile(personId: string): Promise<void> {
+export async function enrichPersonProfile(personId: string): Promise<{
+  success: boolean;
+  updatedFields: string[];
+  error?: string;
+}> {
   console.log(`[LinkedIn] Enriching person profile: ${personId}`);
 
-  // 🔵 MOCK: No-op for now
-  // Real implementation would fetch and update profile data
+  const rapidApiKey = process.env.RAPIDAPI_KEY;
+
+  if (!rapidApiKey) {
+    return {
+      success: false,
+      updatedFields: [],
+      error: "RAPIDAPI_KEY not configured",
+    };
+  }
+
+  try {
+    // Fetch person from database
+    const person = await db.query.brandPeople.findFirst({
+      where: eq(brandPeople.id, personId),
+    });
+
+    if (!person) {
+      return {
+        success: false,
+        updatedFields: [],
+        error: "Person not found",
+      };
+    }
+
+    if (!person.linkedinUrl) {
+      return {
+        success: false,
+        updatedFields: [],
+        error: "No LinkedIn URL for this person",
+      };
+    }
+
+    // Call RapidAPI to get profile details
+    const response = await fetch(
+      `https://linkedin-data-scraper.p.rapidapi.com/profile?linkedin_url=${encodeURIComponent(person.linkedinUrl)}`,
+      {
+        method: "GET",
+        headers: {
+          "X-RapidAPI-Key": rapidApiKey,
+          "X-RapidAPI-Host": "linkedin-data-scraper.p.rapidapi.com",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return {
+        success: false,
+        updatedFields: [],
+        error: `RapidAPI error: ${response.status}`,
+      };
+    }
+
+    const profileData = await response.json();
+    const updatedFields: string[] = [];
+
+    // Build update object with enriched data
+    const updates: Partial<typeof brandPeople.$inferInsert> = {};
+
+    if (profileData.full_name && !person.name) {
+      updates.name = profileData.full_name;
+      updatedFields.push("name");
+    }
+
+    if (profileData.headline && !person.title) {
+      updates.title = profileData.headline;
+      updatedFields.push("title");
+    }
+
+    if (profileData.profile_image && !person.photoUrl) {
+      updates.photoUrl = profileData.profile_image;
+      updatedFields.push("photoUrl");
+    }
+
+    if (profileData.summary && !person.bio) {
+      updates.bio = profileData.summary;
+      updatedFields.push("bio");
+    }
+
+    // Update social profiles if available (uses socialProfiles JSONB field)
+    if (profileData.twitter || profileData.email) {
+      const existingSocial = (person.socialProfiles as Record<string, unknown>) || {};
+      let hasUpdates = false;
+
+      // Twitter profile
+      if (profileData.twitter && !existingSocial.twitter) {
+        existingSocial.twitter = {
+          url: profileData.twitter,
+          handle: profileData.twitter.replace(/.*twitter\.com\//, "").replace(/\?.*/, ""),
+          lastUpdated: new Date().toISOString(),
+        };
+        updatedFields.push("socialProfiles.twitter");
+        hasUpdates = true;
+      }
+
+      // Email (store in personalWebsite or as contact - schema doesn't have email field in socialProfiles)
+      // Note: Email and phone are better stored in the dedicated email/phone columns
+      if (profileData.email && !person.email) {
+        updates.email = profileData.email;
+        updatedFields.push("email");
+      }
+
+      if (hasUpdates) {
+        updates.socialProfiles = existingSocial;
+      }
+    }
+
+    // Only update if we have new data
+    if (Object.keys(updates).length > 0) {
+      await db
+        .update(brandPeople)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(eq(brandPeople.id, personId));
+
+      console.log(`  ✅ Updated ${updatedFields.length} field(s) for ${person.name}`);
+    } else {
+      console.log(`  📌 No new data to update for ${person.name}`);
+    }
+
+    return {
+      success: true,
+      updatedFields,
+    };
+  } catch (error) {
+    console.error("  Error enriching profile:", error);
+    return {
+      success: false,
+      updatedFields: [],
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 }

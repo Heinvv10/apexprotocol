@@ -8,6 +8,9 @@ import { ChatGPTAdapter } from "./chatgpt";
 import { ClaudeAdapter } from "./claude";
 import { GeminiAdapter } from "./gemini";
 import { PerplexityAdapter } from "./perplexity";
+import { GrokAdapter } from "./grok";
+import { DeepSeekAdapter } from "./deepseek";
+import { CopilotAdapter } from "./copilot";
 
 /**
  * Create a platform adapter instance for the specified AI platform
@@ -38,6 +41,15 @@ export function createPlatformAdapter(platform: AIPlatform): PlatformAdapter {
 
     case "perplexity":
       return new PerplexityAdapter();
+
+    case "grok":
+      return new GrokAdapter();
+
+    case "deepseek":
+      return new DeepSeekAdapter();
+
+    case "copilot":
+      return new CopilotAdapter();
 
     default:
       // TypeScript exhaustiveness check - this should never happen
@@ -71,6 +83,9 @@ export function createAllPlatformAdapters(): Record<
     claude: new ClaudeAdapter(),
     gemini: new GeminiAdapter(),
     perplexity: new PerplexityAdapter(),
+    grok: new GrokAdapter(),
+    deepseek: new DeepSeekAdapter(),
+    copilot: new CopilotAdapter(),
   };
 }
 
@@ -80,7 +95,7 @@ export function createAllPlatformAdapters(): Record<
  * @returns Array of supported platform names
  */
 export function getSupportedPlatforms(): AIPlatform[] {
-  return ["chatgpt", "claude", "gemini", "perplexity"];
+  return ["chatgpt", "claude", "gemini", "perplexity", "grok", "deepseek", "copilot"];
 }
 
 /**

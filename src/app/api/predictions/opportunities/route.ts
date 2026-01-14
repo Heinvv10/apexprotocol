@@ -8,8 +8,8 @@ import { getUserId, getOrganizationId } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { brands, predictions, geoScoreHistory } from "@/lib/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { brands, predictions, geoScoreHistory, brandMentions } from "@/lib/db/schema";
+import { eq, and, desc, sql, count } from "drizzle-orm";
 import {
   detectOpportunities,
   type OpportunityEntity,
@@ -128,14 +128,72 @@ export async function GET(request: NextRequest) {
         if (latestScore) {
           entity.currentScore = latestScore.overallScore;
         }
+      } else if (entity.entityType === "platform") {
+        // Calculate platform score from brand mentions
+        // Score = average position (lower is better) + sentiment bonus
+        const platformMentions = await db
+          .select({
+            totalCount: count(),
+            avgPosition: sql<number>`COALESCE(AVG(${brandMentions.position}), 50)`,
+            positiveCount: sql<number>`COUNT(CASE WHEN ${brandMentions.sentiment} = 'positive' THEN 1 END)`,
+          })
+          .from(brandMentions)
+          .where(
+            and(
+              eq(brandMentions.brandId, brandId),
+              eq(brandMentions.platform, entity.entityId as any)
+            )
+          );
+
+        if (platformMentions[0]?.totalCount > 0) {
+          const total = Number(platformMentions[0].totalCount);
+          const avgPos = Number(platformMentions[0].avgPosition) || 50;
+          const positive = Number(platformMentions[0].positiveCount) || 0;
+          const positiveRatio = total > 0 ? positive / total : 0;
+
+          // Score formula: 100 - avgPosition + (positiveRatio * 20)
+          // Higher position = lower score, more positive = higher score
+          entity.currentScore = Math.max(0, Math.min(100, 100 - avgPos + positiveRatio * 20));
+        } else {
+          // No mentions for this platform yet, use prediction baseline
+          const oldestPrediction = entity.predictions[entity.predictions.length - 1];
+          entity.currentScore = oldestPrediction ? oldestPrediction.predictedValue * 0.8 : 0;
+        }
+      } else if (entity.entityType === "keyword" || entity.entityType === "topic") {
+        // Calculate topic/keyword score from brand mentions that match
+        // Since topics are stored as a jsonb array, check if entityId is in topics
+        const topicMentions = await db
+          .select({
+            totalCount: count(),
+            avgPosition: sql<number>`COALESCE(AVG(${brandMentions.position}), 50)`,
+            positiveCount: sql<number>`COUNT(CASE WHEN ${brandMentions.sentiment} = 'positive' THEN 1 END)`,
+          })
+          .from(brandMentions)
+          .where(
+            and(
+              eq(brandMentions.brandId, brandId),
+              sql`${brandMentions.topics} @> ${JSON.stringify([entity.entityId])}::jsonb`
+            )
+          );
+
+        if (topicMentions[0]?.totalCount > 0) {
+          const total = Number(topicMentions[0].totalCount);
+          const avgPos = Number(topicMentions[0].avgPosition) || 50;
+          const positive = Number(topicMentions[0].positiveCount) || 0;
+          const positiveRatio = total > 0 ? positive / total : 0;
+
+          // Score formula: same as platform
+          entity.currentScore = Math.max(0, Math.min(100, 100 - avgPos + positiveRatio * 20));
+        } else {
+          // No mentions with this topic yet, use prediction baseline
+          const oldestPrediction = entity.predictions[entity.predictions.length - 1];
+          entity.currentScore = oldestPrediction ? oldestPrediction.predictedValue * 0.8 : 0;
+        }
       } else {
-        // For keyword/topic/platform, we'd need their specific scores
-        // For MVP, we can use the first prediction's value as a fallback
-        // or skip if no current score available
-        // TODO: Implement keyword/topic score retrieval when that data is available
+        // Fallback for other entity types
         const oldestPrediction = entity.predictions[entity.predictions.length - 1];
         if (oldestPrediction) {
-          entity.currentScore = oldestPrediction.predictedValue * 0.9; // Approximate
+          entity.currentScore = oldestPrediction.predictedValue * 0.8;
         }
       }
     }

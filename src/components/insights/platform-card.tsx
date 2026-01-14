@@ -70,6 +70,27 @@ const PLATFORM_CONFIG: Record<AIPlatform, PlatformConfig> = {
     icon: "🔍",
     gradient: "linear-gradient(135deg, rgba(32, 184, 205, 0.2) 0%, rgba(32, 184, 205, 0.05) 100%)",
   },
+  grok: {
+    name: "Grok",
+    color: "#000000",
+    bgColor: "rgba(0, 0, 0, 0.1)",
+    icon: "𝕏",
+    gradient: "linear-gradient(135deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.05) 100%)",
+  },
+  deepseek: {
+    name: "DeepSeek",
+    color: "#0066FF",
+    bgColor: "rgba(0, 102, 255, 0.1)",
+    icon: "🔬",
+    gradient: "linear-gradient(135deg, rgba(0, 102, 255, 0.2) 0%, rgba(0, 102, 255, 0.05) 100%)",
+  },
+  copilot: {
+    name: "Copilot",
+    color: "#0078D4",
+    bgColor: "rgba(0, 120, 212, 0.1)",
+    icon: "🪁",
+    gradient: "linear-gradient(135deg, rgba(0, 120, 212, 0.2) 0%, rgba(0, 120, 212, 0.05) 100%)",
+  },
 };
 
 // ============================================================================

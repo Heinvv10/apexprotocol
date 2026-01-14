@@ -8,19 +8,13 @@ import {
   Eye,
   PenTool,
   Search,
-  Lightbulb,
   Settings,
   HelpCircle,
   ChevronLeft,
   ChevronRight,
   Zap,
-  MessageSquare,
-  Cog,
   Building2,
   Target,
-  FolderKanban,
-  Share2,
-  Users,
   Brain,
 } from "lucide-react";
 
@@ -57,11 +51,6 @@ const mainNavItems: NavItem[] = [
     icon: Building2,
   },
   {
-    title: "Portfolios",
-    href: "/dashboard/portfolios",
-    icon: FolderKanban,
-  },
-  {
     title: "Monitor",
     href: "/dashboard/monitor",
     icon: Eye,
@@ -73,25 +62,9 @@ const mainNavItems: NavItem[] = [
     icon: Target,
   },
   {
-    title: "Social",
-    href: "/dashboard/social",
-    icon: Share2,
-  },
-  {
-    title: "People",
-    href: "/dashboard/people",
-    icon: Users,
-  },
-  {
-    title: "Engine Room",
-    href: "/dashboard/engine-room",
-    icon: Cog,
-  },
-  {
-    title: "Feedback",
-    href: "/dashboard/feedback",
-    icon: MessageSquare,
-    badgeKey: "feedback",
+    title: "Insights",
+    href: "/dashboard/insights",
+    icon: Brain,
   },
   {
     title: "Create",
@@ -102,17 +75,7 @@ const mainNavItems: NavItem[] = [
     title: "Audit",
     href: "/dashboard/audit",
     icon: Search,
-  },
-  {
-    title: "Recommendations",
-    href: "/dashboard/recommendations",
-    icon: Lightbulb,
     badgeKey: "recommendations",
-  },
-  {
-    title: "Insights",
-    href: "/dashboard/insights",
-    icon: Brain,
   },
 ];
 

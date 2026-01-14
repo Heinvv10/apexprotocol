@@ -1,5 +1,5 @@
 // AI Platform Adapters exports
-// Provides unified interface for querying ChatGPT, Claude, Gemini, and Perplexity
+// Provides unified interface for querying ChatGPT, Claude, Gemini, Perplexity, Grok, DeepSeek, and Copilot
 
 // Base types and interfaces
 export type {
@@ -16,6 +16,9 @@ export { ChatGPTAdapter } from "./chatgpt";
 export { ClaudeAdapter } from "./claude";
 export { GeminiAdapter } from "./gemini";
 export { PerplexityAdapter } from "./perplexity";
+export { GrokAdapter } from "./grok";
+export { DeepSeekAdapter } from "./deepseek";
+export { CopilotAdapter } from "./copilot";
 
 // Factory functions
 export {
