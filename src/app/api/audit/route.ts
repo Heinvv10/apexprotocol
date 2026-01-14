@@ -94,6 +94,22 @@ export async function POST(request: NextRequest) {
       }
     );
 
+    // In development, process the job immediately
+    // In production, this would be triggered by Vercel Cron
+    if (process.env.NODE_ENV === "development") {
+      try {
+        const { runAuditWorker } = await import("@/lib/queue/workers/audit-worker");
+        // Process jobs asynchronously without blocking the response
+        setTimeout(() => {
+          runAuditWorker().catch((err) =>
+            console.error("Error processing audit job:", err)
+          );
+        }, 100);
+      } catch (error) {
+        console.error("Failed to auto-process audit job:", error);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       auditId,

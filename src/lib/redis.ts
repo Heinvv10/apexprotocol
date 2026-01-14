@@ -178,10 +178,18 @@ class InMemoryRedis {
     return 1;
   }
 
-  async zrange(key: string, start: number, stop: number, options?: { withScores?: boolean }): Promise<string[] | Array<{ member: string; score: number }>> {
+  async zrange(key: string, start: number, stop: number, options?: { withScores?: boolean; byScore?: boolean }): Promise<string[] | Array<{ member: string; score: number }>> {
     const existing = await this.get(key);
     if (!existing) return [];
     const zset: Array<{ score: number; member: string }> = JSON.parse(existing);
+
+    // If byScore, treat start/stop as score values instead of indices
+    if (options?.byScore) {
+      const filtered = zset.filter((z) => z.score >= start && z.score <= stop);
+      if (options?.withScores) return filtered;
+      return filtered.map((z) => z.member);
+    }
+
     const end = stop === -1 ? zset.length : stop + 1;
     const slice = zset.slice(start, end);
     if (options?.withScores) return slice;
@@ -194,6 +202,52 @@ class InMemoryRedis {
     const zset: Array<{ score: number; member: string }> = JSON.parse(existing);
     const idx = zset.findIndex((z) => z.member === member);
     return idx >= 0 ? idx : null;
+  }
+
+  async zcard(key: string): Promise<number> {
+    const existing = await this.get(key);
+    if (!existing) return 0;
+    const zset: Array<{ score: number; member: string }> = JSON.parse(existing);
+    return zset.length;
+  }
+
+  async zrem(key: string, member: string): Promise<number> {
+    const existing = await this.get(key);
+    if (!existing) return 0;
+    const zset: Array<{ score: number; member: string }> = JSON.parse(existing);
+    const idx = zset.findIndex((z) => z.member === member);
+    if (idx < 0) return 0;
+    zset.splice(idx, 1);
+    await this.set(key, JSON.stringify(zset));
+    return 1;
+  }
+
+  async zremrangebyrank(key: string, start: number, stop: number): Promise<number> {
+    const existing = await this.get(key);
+    if (!existing) return 0;
+    const zset: Array<{ score: number; member: string }> = JSON.parse(existing);
+    const originalLength = zset.length;
+    const end = stop === -1 ? zset.length : stop + 1;
+    if (start < 0 && stop === -1) {
+      // For "remove everything except last N", start is negative
+      const itemsToKeep = Math.abs(start) - 1;
+      const newZset = zset.slice(zset.length - itemsToKeep);
+      await this.set(key, JSON.stringify(newZset));
+      return originalLength - newZset.length;
+    }
+    zset.splice(start, end - start);
+    await this.set(key, JSON.stringify(zset));
+    return originalLength - zset.length;
+  }
+
+  async hincrby(key: string, field: string, increment: number): Promise<number> {
+    const existing = await this.get(key);
+    const hash: Record<string, number> = existing ? JSON.parse(existing) : {};
+    const current = hash[field] || 0;
+    const newVal = current + increment;
+    hash[field] = newVal;
+    await this.set(key, JSON.stringify(hash));
+    return newVal;
   }
 
   async publish(_channel: string, _message: string): Promise<number> {
