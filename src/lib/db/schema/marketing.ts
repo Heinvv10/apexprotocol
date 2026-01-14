@@ -14,7 +14,7 @@ import {
   timestamp,
   boolean,
   jsonb,
-  enum as pgEnum,
+  pgEnum,
   index,
   foreignKey,
 } from 'drizzle-orm/pg-core';
@@ -463,7 +463,7 @@ export {
   emailEvents as marketingEmailEvents,
   socialPosts as marketingSocialPosts,
   analyticsEvents as marketingAnalyticsEvents,
-  marketingMetrics,
+  marketingMetrics as marketingMetricsTable,
   emailSequences as marketingEmailSequences,
   automationLogs as marketingAutomationLogs,
 };
