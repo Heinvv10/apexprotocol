@@ -18,53 +18,54 @@ import {
 
 describe("Key Generation Module", () => {
   describe("generateApiKey", () => {
-    it("should generate a key with apx_ prefix", () => {
-      const { key } = generateApiKey();
+    it("should generate a key with apx_ prefix", async () => {
+      const { key } = await generateApiKey();
       expect(key.startsWith("apx_")).toBe(true);
     });
 
-    it("should generate a key with correct length (47 characters)", () => {
-      const { key } = generateApiKey();
+    it("should generate a key with correct length (47 characters)", async () => {
+      const { key } = await generateApiKey();
       // apx_ (4 chars) + 43 chars base64url = 47 chars total
       expect(key.length).toBe(47);
     });
 
-    it("should generate URL-safe keys (only base64url characters)", () => {
-      const { key } = generateApiKey();
+    it("should generate URL-safe keys (only base64url characters)", async () => {
+      const { key } = await generateApiKey();
       const randomPart = key.slice(4); // Remove 'apx_' prefix
       // base64url uses A-Z, a-z, 0-9, -, _ (no + or /)
       expect(/^[A-Za-z0-9_-]+$/.test(randomPart)).toBe(true);
     });
 
-    it("should generate unique keys on each call", () => {
+    it("should generate unique keys on each call", async () => {
       const keys = new Set<string>();
       for (let i = 0; i < 100; i++) {
-        const { key } = generateApiKey();
+        const { key } = await generateApiKey();
         expect(keys.has(key)).toBe(false);
         keys.add(key);
       }
       expect(keys.size).toBe(100);
     });
 
-    it("should return a hash along with the key", () => {
-      const { key, hash } = generateApiKey();
+    it("should return a hash along with the key", async () => {
+      const { key, hash } = await generateApiKey();
       expect(hash).toBeDefined();
       expect(typeof hash).toBe("string");
       // SHA-256 produces 64 hex characters
       expect(hash.length).toBe(64);
     });
 
-    it("should return a hash that matches hashApiKey output", () => {
-      const { key, hash } = generateApiKey();
-      const expectedHash = hashApiKey(key);
+    it("should return a hash that matches hashApiKey output", async () => {
+      const { key, hash } = await generateApiKey();
+      const expectedHash = await hashApiKey(key);
       expect(hash).toBe(expectedHash);
     });
 
-    it("should generate cryptographically random keys", () => {
+    it("should generate cryptographically random keys", async () => {
       // Generate many keys and check they have high entropy
       const keys: string[] = [];
       for (let i = 0; i < 1000; i++) {
-        keys.push(generateApiKey().key);
+        const { key } = await generateApiKey();
+        keys.push(key);
       }
 
       // All keys should be unique
@@ -79,95 +80,95 @@ describe("Key Generation Module", () => {
   });
 
   describe("hashApiKey", () => {
-    it("should produce a 64-character hex string (SHA-256)", () => {
-      const hash = hashApiKey("apx_test123456");
+    it("should produce a 64-character hex string (SHA-256)", async () => {
+      const hash = await hashApiKey("apx_test123456");
       expect(hash.length).toBe(64);
       expect(/^[a-f0-9]+$/.test(hash)).toBe(true);
     });
 
-    it("should produce consistent hash for same input", () => {
+    it("should produce consistent hash for same input", async () => {
       const key = "apx_consistentTestKey123";
-      const hash1 = hashApiKey(key);
-      const hash2 = hashApiKey(key);
-      const hash3 = hashApiKey(key);
+      const hash1 = await hashApiKey(key);
+      const hash2 = await hashApiKey(key);
+      const hash3 = await hashApiKey(key);
 
       expect(hash1).toBe(hash2);
       expect(hash2).toBe(hash3);
     });
 
-    it("should produce different hashes for different inputs", () => {
-      const hash1 = hashApiKey("apx_key1");
-      const hash2 = hashApiKey("apx_key2");
-      const hash3 = hashApiKey("apx_key3");
+    it("should produce different hashes for different inputs", async () => {
+      const hash1 = await hashApiKey("apx_key1");
+      const hash2 = await hashApiKey("apx_key2");
+      const hash3 = await hashApiKey("apx_key3");
 
       expect(hash1).not.toBe(hash2);
       expect(hash2).not.toBe(hash3);
       expect(hash1).not.toBe(hash3);
     });
 
-    it("should throw error for empty key", () => {
-      expect(() => hashApiKey("")).toThrow("Cannot hash empty API key");
+    it("should throw error for empty key", async () => {
+      await expect(hashApiKey("")).rejects.toThrow("Cannot hash empty API key");
     });
 
-    it("should handle keys without apx_ prefix", () => {
-      const hash = hashApiKey("some-other-format-key");
+    it("should handle keys without apx_ prefix", async () => {
+      const hash = await hashApiKey("some-other-format-key");
       expect(hash.length).toBe(64);
       expect(/^[a-f0-9]+$/.test(hash)).toBe(true);
     });
 
-    it("should handle special characters in key", () => {
-      const hash = hashApiKey("apx_key-with_special-chars_123");
+    it("should handle special characters in key", async () => {
+      const hash = await hashApiKey("apx_key-with_special-chars_123");
       expect(hash.length).toBe(64);
     });
 
-    it("should produce deterministic output for database lookups", () => {
+    it("should produce deterministic output for database lookups", async () => {
       // This is critical for API key authentication
-      const { key, hash: originalHash } = generateApiKey();
+      const { key, hash: originalHash } = await generateApiKey();
 
       // Simulate storing hash in database and later looking up
-      const lookupHash = hashApiKey(key);
+      const lookupHash = await hashApiKey(key);
 
       expect(lookupHash).toBe(originalHash);
     });
   });
 
   describe("verifyApiKeyHash", () => {
-    it("should return true for matching key and hash", () => {
-      const { key, hash } = generateApiKey();
-      expect(verifyApiKeyHash(key, hash)).toBe(true);
+    it("should return true for matching key and hash", async () => {
+      const { key, hash } = await generateApiKey();
+      expect(await verifyApiKeyHash(key, hash)).toBe(true);
     });
 
-    it("should return false for non-matching key and hash", () => {
-      const { key } = generateApiKey();
-      const { hash: differentHash } = generateApiKey();
-      expect(verifyApiKeyHash(key, differentHash)).toBe(false);
+    it("should return false for non-matching key and hash", async () => {
+      const { key } = await generateApiKey();
+      const { hash: differentHash } = await generateApiKey();
+      expect(await verifyApiKeyHash(key, differentHash)).toBe(false);
     });
 
-    it("should return false for empty key", () => {
-      const { hash } = generateApiKey();
-      expect(verifyApiKeyHash("", hash)).toBe(false);
+    it("should return false for empty key", async () => {
+      const { hash } = await generateApiKey();
+      expect(await verifyApiKeyHash("", hash)).toBe(false);
     });
 
-    it("should return false for empty hash", () => {
-      const { key } = generateApiKey();
-      expect(verifyApiKeyHash(key, "")).toBe(false);
+    it("should return false for empty hash", async () => {
+      const { key } = await generateApiKey();
+      expect(await verifyApiKeyHash(key, "")).toBe(false);
     });
 
-    it("should return false for both empty", () => {
-      expect(verifyApiKeyHash("", "")).toBe(false);
+    it("should return false for both empty", async () => {
+      expect(await verifyApiKeyHash("", "")).toBe(false);
     });
 
-    it("should handle slight modifications to key", () => {
-      const { key, hash } = generateApiKey();
+    it("should handle slight modifications to key", async () => {
+      const { key, hash } = await generateApiKey();
       // Change last character
       const modifiedKey = key.slice(0, -1) + "X";
-      expect(verifyApiKeyHash(modifiedKey, hash)).toBe(false);
+      expect(await verifyApiKeyHash(modifiedKey, hash)).toBe(false);
     });
   });
 
   describe("isValidApiKeyFormat", () => {
-    it("should return true for valid API key format", () => {
-      const { key } = generateApiKey();
+    it("should return true for valid API key format", async () => {
+      const { key } = await generateApiKey();
       expect(isValidApiKeyFormat(key)).toBe(true);
     });
 
@@ -211,8 +212,8 @@ describe("Key Generation Module", () => {
   });
 
   describe("getApiKeyPrefix", () => {
-    it("should return apx_ for valid API keys", () => {
-      const { key } = generateApiKey();
+    it("should return apx_ for valid API keys", async () => {
+      const { key } = await generateApiKey();
       expect(getApiKeyPrefix(key)).toBe("apx_");
     });
 
@@ -242,8 +243,8 @@ describe("Key Generation Module", () => {
       expect(masked).toBe("apx_abcd...9ABC");
     });
 
-    it("should mask generated API keys correctly", () => {
-      const { key } = generateApiKey();
+    it("should mask generated API keys correctly", async () => {
+      const { key } = await generateApiKey();
       const masked = maskApiKey(key);
 
       expect(masked.startsWith("apx_")).toBe(true);
@@ -274,8 +275,8 @@ describe("Key Generation Module", () => {
       expect(masked).toBe("sk_t...ghij");
     });
 
-    it("should not expose the full key", () => {
-      const { key } = generateApiKey();
+    it("should not expose the full key", async () => {
+      const { key } = await generateApiKey();
       const masked = maskApiKey(key);
 
       // The masked version should not contain the full random part
@@ -285,16 +286,19 @@ describe("Key Generation Module", () => {
   });
 
   describe("generateSecureRandom", () => {
-    it("should generate buffer of specified length", () => {
+    it("should generate Uint8Array of specified length", () => {
       const buffer = generateSecureRandom(32);
-      expect(Buffer.isBuffer(buffer)).toBe(true);
+      expect(buffer instanceof Uint8Array).toBe(true);
       expect(buffer.length).toBe(32);
     });
 
     it("should generate different buffers on each call", () => {
       const buffer1 = generateSecureRandom(16);
       const buffer2 = generateSecureRandom(16);
-      expect(buffer1.equals(buffer2)).toBe(false);
+      // Compare as arrays since Uint8Array doesn't have equals method
+      const arr1 = Array.from(buffer1);
+      const arr2 = Array.from(buffer2);
+      expect(arr1).not.toEqual(arr2);
     });
 
     it("should throw error for zero length", () => {
@@ -350,8 +354,8 @@ describe("Key Generation Module", () => {
       expect(API_KEY_CONSTANTS.HASH_LENGTH).toBe(64);
     });
 
-    it("should match actual generated values", () => {
-      const { key, hash } = generateApiKey();
+    it("should match actual generated values", async () => {
+      const { key, hash } = await generateApiKey();
 
       expect(key.startsWith(API_KEY_CONSTANTS.PREFIX)).toBe(true);
       expect(hash.length).toBe(API_KEY_CONSTANTS.HASH_LENGTH);
@@ -359,10 +363,11 @@ describe("Key Generation Module", () => {
   });
 
   describe("Security Properties", () => {
-    it("should not have predictable patterns in generated keys", () => {
+    it("should not have predictable patterns in generated keys", async () => {
       const keys: string[] = [];
       for (let i = 0; i < 100; i++) {
-        keys.push(generateApiKey().key);
+        const { key } = await generateApiKey();
+        keys.push(key);
       }
 
       // Check character distribution at each position after prefix
@@ -396,11 +401,11 @@ describe("Key Generation Module", () => {
       expect(unique.size).toBeGreaterThan(100); // Should have many unique values
     });
 
-    it("should produce hashes that are collision-resistant", () => {
+    it("should produce hashes that are collision-resistant", async () => {
       // Generate many keys and check for hash collisions
       const hashes = new Set<string>();
       for (let i = 0; i < 10000; i++) {
-        const { hash } = generateApiKey();
+        const { hash } = await generateApiKey();
         expect(hashes.has(hash)).toBe(false);
         hashes.add(hash);
       }
