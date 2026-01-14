@@ -453,6 +453,37 @@ export const automationLogs = pgTable(
 );
 
 // ============================================================================
+// Type Exports
+// ============================================================================
+
+export type Campaign = typeof campaigns.$inferSelect;
+export type NewCampaign = typeof campaigns.$inferInsert;
+
+export type Lead = typeof leads.$inferSelect;
+export type NewLead = typeof leads.$inferInsert;
+
+export type EmailList = typeof emailLists.$inferSelect;
+export type NewEmailList = typeof emailLists.$inferInsert;
+
+export type EmailEvent = typeof emailEvents.$inferSelect;
+export type NewEmailEvent = typeof emailEvents.$inferInsert;
+
+export type EmailSequence = typeof emailSequences.$inferSelect;
+export type NewEmailSequence = typeof emailSequences.$inferInsert;
+
+export type SocialPost = typeof socialPosts.$inferSelect;
+export type NewSocialPost = typeof socialPosts.$inferInsert;
+
+export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+export type NewAnalyticsEvent = typeof analyticsEvents.$inferInsert;
+
+export type MarketingMetrics = typeof marketingMetrics.$inferSelect;
+export type NewMarketingMetrics = typeof marketingMetrics.$inferInsert;
+
+export type AutomationLog = typeof automationLogs.$inferSelect;
+export type NewAutomationLog = typeof automationLogs.$inferInsert;
+
+// ============================================================================
 // Export for index
 // ============================================================================
 

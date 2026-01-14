@@ -561,8 +561,8 @@ export {
   // Social
   socialPosts as marketingSocialPosts,
   postStatusEnum,
-  type SocialPost,
-  type NewSocialPost,
+  type SocialPost as MarketingSocialPost,
+  type NewSocialPost as NewMarketingSocialPost,
   // Analytics
   analyticsEvents as marketingAnalyticsEvents,
   marketingMetrics,
