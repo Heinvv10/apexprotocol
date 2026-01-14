@@ -210,7 +210,7 @@ describe('ListMonk Webhook Handler', () => {
 
       it('should find lead by email before updating', () => {
         const email = 'subscriber@example.com';
-        expect(email).toMatch(/@example\\.com$/);
+        expect(email).toMatch(/@example\.com$/);
       });
     });
 
@@ -367,7 +367,7 @@ describe('ListMonk Webhook Handler', () => {
         const validEmail = 'user@example.com';
         const invalidEmail = 'not-an-email';
 
-        expect(validEmail).toMatch(/@example\\.com$/);
+        expect(validEmail).toMatch(/@example\.com$/);
         expect(invalidEmail).not.toMatch(/@/);
       });
 
