@@ -138,6 +138,8 @@ export const PLAN_DETAILS: Record<Plan, PlanDetails> = {
     features: [
       "1 brand",
       "3 team members",
+      "Basic AI platform monitoring (3 platforms)",
+      "1 automated scan per day",
       "Basic GEO score tracking",
       "Smart recommendations",
       "100 AI queries/month",
@@ -154,6 +156,8 @@ export const PLAN_DETAILS: Record<Plan, PlanDetails> = {
     features: [
       "5 brands",
       "10 team members",
+      "Real-time AI platform monitoring (7 platforms)",
+      "Advanced daily tracking & alerts",
       "Competitive discovery (5 competitors)",
       "Google Places integration (3 locations)",
       "Executive enrichment (10 profiles)",
@@ -171,6 +175,8 @@ export const PLAN_DETAILS: Record<Plan, PlanDetails> = {
     features: [
       "Unlimited brands",
       "Unlimited team members",
+      "Real-time AI platform monitoring (7 platforms)",
+      "Unlimited monitoring with instant alerts",
       "Unlimited competitive tracking",
       "Unlimited locations",
       "Unlimited enrichment",
