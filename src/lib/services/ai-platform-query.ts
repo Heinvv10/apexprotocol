@@ -395,7 +395,7 @@ export async function queryGemini(
 ): Promise<AIPlatformMention | null> {
   try {
     const client = getGeminiClient();
-    const model = client.getGenerativeModel({ model: "gemini-1.5-pro" });
+    const model = client.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const promptIndex = Math.floor(Math.random() * queryTemplate.prompts.length);
     const query = queryTemplate.prompts[promptIndex]
@@ -422,7 +422,7 @@ export async function queryGemini(
       promptCategory: queryTemplate.category,
       topics: ["e-commerce", "south africa"],
       metadata: {
-        modelVersion: "Gemini 1.5 Pro",
+        modelVersion: "Gemini 2.0 Flash",
         responseLength: response.length,
         confidenceScore: 0.8,
       },
