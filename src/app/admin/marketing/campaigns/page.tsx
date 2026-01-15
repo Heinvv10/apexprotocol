@@ -59,6 +59,14 @@ export default function CampaignsPage() {
   const totalRevenue = campaigns.reduce((sum, c) => sum + (c.revenue || 0), 0);
   const totalBudget = campaigns.reduce((sum, c) => sum + (c.budget || 0), 0);
   const avgROI = totalBudget > 0 ? ((totalRevenue - totalBudget) / totalBudget) * 100 : 0;
+  const avgConversionRate =
+    filteredCampaigns.length > 0
+      ? (filteredCampaigns.reduce((sum, c) => {
+          const clicks = c.clicks || 0;
+          const conversions = c.conversions || 0;
+          return sum + (clicks > 0 ? (conversions / clicks) * 100 : 0);
+        }, 0) / filteredCampaigns.length)
+      : 0;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -127,6 +135,7 @@ export default function CampaignsPage() {
 
       {/* Stats Cards - Only show when data is loaded */}
       {!isLoading && !isError && (
+        <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card-secondary p-4">
           <div className="flex items-center justify-between">
@@ -370,6 +379,7 @@ export default function CampaignsPage() {
           </div>
         )}
       </div>
+        </>
       )}
     </div>
   );
