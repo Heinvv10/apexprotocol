@@ -9,7 +9,9 @@ import {
   List,
   TrendingUp,
   TrendingDown,
+  AlertCircle,
 } from "lucide-react";
+import { useContentPerformance } from "@/hooks/usePlatformMonitoring";
 
 // Platform colors for consistency
 const platformColors = {
@@ -23,7 +25,7 @@ const platformColors = {
 };
 
 // Mock data for content performance analysis
-const contentTypePerformance = [
+const performanceByType = [
   {
     type: "FAQ Pages",
     icon: List,
@@ -147,17 +149,57 @@ const freshnessImpact = [
 ];
 
 export function ContentPerformanceAnalyzer() {
-  const totalCitations = contentTypePerformance.reduce((sum, item) => sum + item.citations, 0);
+  // API data with fallback to mock data
+  const {
+    performanceByType: apiPerformanceByType,
+    schemaImpact: apiSchemaImpact,
+    freshnessImpact: apiFreshnessImpact,
+    isLoading,
+    isError,
+    error,
+  } = useContentPerformance();
+
+  // Use API data if available, otherwise fallback to mock
+  const performanceByType = apiPerformanceByType.length > 0 ? apiPerformanceByType : performanceByType;
+  const totalCitations = performanceByType.reduce((sum, item) => sum + (item.citations || 0), 0);
 
   return (
     <div className="space-y-6">
-      {/* Content Type Performance */}
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading content performance data...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load content performance data</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching content performance"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content - Only show when not loading and no error */}
+      {!isLoading && !isError && (
+        <>
+          {/* Content Type Performance */}
       <div>
         <h3 className="text-lg font-semibold text-white mb-4">
           Performance by Content Type
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {contentTypePerformance.map((content) => {
+          {performanceByType.map((content) => {
             const Icon = content.icon;
             const sharePercentage = ((content.citations / totalCitations) * 100).toFixed(1);
 
@@ -372,6 +414,8 @@ export function ContentPerformanceAnalyzer() {
           </div>
         </Card>
       </div>
+        </>
+      )}
     </div>
   );
 }
