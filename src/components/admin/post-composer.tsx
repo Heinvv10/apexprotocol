@@ -402,12 +402,11 @@ export function PostComposer({ onClose, onSave, onPublish }: PostComposerProps) 
           </div>
           <div>
             <Label className="text-sm font-medium text-white mb-3 block">Schedule Time (Optional)</Label>
-            <Select value={scheduledTime} onValueChange={setScheduledTime}>
+            <Select value={scheduledTime || undefined} onValueChange={setScheduledTime}>
               <SelectTrigger className="bg-[#0a0f1a] border-white/10">
                 <SelectValue placeholder="Select time..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Custom time</SelectItem>
                 {getOptimalTimes().map((time) => (
                   <SelectItem key={time.time} value={time.time}>
                     {time.label}
