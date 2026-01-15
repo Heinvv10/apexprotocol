@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search, Building2, Users, TrendingUp, DollarSign } from "lucide-react";
+import { Search, Building2, Users, TrendingUp, DollarSign, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
+import { useAccounts } from "@/hooks/useCRM";
 
 // Mock accounts data
 const mockAccounts = [
@@ -78,8 +79,14 @@ export default function AccountsPage() {
   const [industryFilter, setIndustryFilter] = useState("all");
   const [sizeFilter, setSizeFilter] = useState("all");
 
+  // Fetch accounts from API
+  const { accounts, isLoading, isError, error } = useAccounts();
+
+  // Use API data if available, fallback to mock data for development
+  const allAccounts = accounts.length > 0 ? accounts : mockAccounts;
+
   // Filter accounts based on search and filters
-  const filteredAccounts = mockAccounts.filter((account) => {
+  const filteredAccounts = allAccounts.filter((account: any) => {
     const matchesSearch =
       searchQuery === "" ||
       account.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -94,18 +101,20 @@ export default function AccountsPage() {
   });
 
   // Calculate stats
-  const totalAccounts = mockAccounts.length;
-  const totalActiveDeals = mockAccounts.reduce(
-    (sum, acc) => sum + acc.activeDeals,
+  const totalAccounts = allAccounts.length;
+  const totalActiveDeals = allAccounts.reduce(
+    (sum: number, acc: any) => sum + (acc.activeDeals || 0),
     0
   );
-  const totalRevenue = mockAccounts.reduce(
-    (sum, acc) => sum + acc.totalRevenue,
+  const totalRevenue = allAccounts.reduce(
+    (sum: number, acc: any) => sum + (acc.totalRevenue || 0),
     0
   );
   const avgHealthScore =
-    mockAccounts.reduce((sum, acc) => sum + acc.healthScore, 0) /
-    mockAccounts.length;
+    allAccounts.length > 0
+      ? allAccounts.reduce((sum: number, acc: any) => sum + (acc.healthScore || 0), 0) /
+        allAccounts.length
+      : 0;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -144,6 +153,31 @@ export default function AccountsPage() {
           + New Account
         </Button>
       </div>
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load accounts</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching accounts"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading accounts...</p>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
