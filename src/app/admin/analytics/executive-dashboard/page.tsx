@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -195,7 +195,7 @@ function getImpactBadge(impact: string) {
 
 export default function ExecutiveDashboardPage() {
   const [timeRange, setTimeRange] = useState("30d");
-  const [lastUpdated] = useState(new Date().toISOString());
+  const [lastUpdated, setLastUpdated] = useState("");
 
   // Fetch analytics dashboard data from API
   const { dashboard, isLoading, isError, error } = useAnalyticsDashboard(null);
@@ -203,6 +203,11 @@ export default function ExecutiveDashboardPage() {
   // Use API data if available, fallback to mock data
   const hasDashboardData = dashboard && dashboard.geoScore > 0;
   const allData = hasDashboardData ? dashboard : null;
+
+  // Format date on client side only to avoid hydration mismatch
+  useEffect(() => {
+    setLastUpdated(new Date().toLocaleString());
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -236,10 +241,12 @@ export default function ExecutiveDashboardPage() {
       </div>
 
       {/* Last Updated */}
-      <div className="flex items-center gap-2 text-sm text-gray-400">
-        <Calendar className="h-4 w-4" />
-        <span>Last updated: {new Date(lastUpdated).toLocaleString()}</span>
-      </div>
+      {lastUpdated && (
+        <div className="flex items-center gap-2 text-sm text-gray-400">
+          <Calendar className="h-4 w-4" />
+          <span>Last updated: {lastUpdated}</span>
+        </div>
+      )}
 
       {/* Loading State */}
       {isLoading && (
