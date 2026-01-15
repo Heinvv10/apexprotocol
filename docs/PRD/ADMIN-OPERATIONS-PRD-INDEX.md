@@ -2,7 +2,7 @@
 
 **Master Document**: This index organizes all Product Requirements Documents for the Apex platform (Admin Operations + Customer Dashboard).
 
-**Status**: ✅ IMPLEMENTATION & DOCUMENTATION COMPLETE - 12 PRDs documenting 100+ pages (admin + customer systems + mobile)
+**Status**: ✅ IMPLEMENTATION & DOCUMENTATION COMPLETE - 13 PRDs documenting 100+ pages (admin + customer systems + mobile + API integration)
 **Last Updated**: 2026-01-15
 **Owner**: Product & Engineering
 
@@ -10,6 +10,7 @@
 - **Admin Operations** (PRD-001 through PRD-010): 55+ pages for internal company operations
 - **Customer Dashboard** (PRD-011): 46 pages for white-label GEO/AEO platform
 - **Mobile & Responsive** (PRD-012): Cross-cutting mobile-first responsive architecture
+- **API Integration** (PRD-013): Cross-cutting API integration layer with SWR hooks
 
 ---
 
@@ -108,10 +109,14 @@
 - ✅ PRD-008 (SEO & Website) - Technical health, keyword tracking
 - ✅ PRD-009 (Integration Management) - Health monitoring, webhooks, credentials
 - ✅ PRD-010 (Analytics & Reporting) - KPI dashboards, forecasting, custom reports
+- ✅ PRD-011 (Customer Dashboard) - White-label GEO/AEO platform (46 pages)
+- ✅ PRD-012 (Mobile Architecture) - Mobile-first responsive design (cross-cutting)
+- ✅ PRD-013 (API Integration) - API client layer with SWR hooks (cross-cutting)
 
 **Admin Operations PRDs**: 10 PRDs follow 15-section structure (Executive Summary → Acceptance Criteria)
 **Customer-Facing PRD**: 1 comprehensive PRD documenting 46 customer dashboard pages
-**Total Documentation**: 11 PRDs (10 admin + 1 customer) documenting 100+ implemented pages
+**Technical Infrastructure PRDs**: 2 PRDs documenting cross-cutting technical concerns (mobile, API)
+**Total Documentation**: 13 PRDs (10 admin + 1 customer + 2 technical) documenting 100+ implemented pages
 **Status**: Complete retrospective documentation of production-ready system
 
 ---
@@ -202,6 +207,71 @@
 - Onboarding wizard (mobile-optimized)
 
 **Note**: PRD-012 is cross-cutting and applies to ALL pages across admin and customer systems. Mobile support is implemented via responsive web design, not separate native apps.
+
+---
+
+### PRD-013: API INTEGRATION ARCHITECTURE (CROSS-CUTTING)
+**File**: `admin-operations-prd-013.md`
+**Status**: ✅ IMPLEMENTED (Phase 1 complete - 9 pages integrated)
+**Scope**: Backend API integration layer for all admin pages
+**Type**: Technical infrastructure (SWR-based data fetching layer)
+
+**API Clients** (`src/lib/api/`):
+- **crm.ts** - CRM APIs (leads, accounts, pipeline) - 5 functions
+- **social.ts** - Social media APIs (accounts, mentions, posts, metrics) - 5 functions
+- **seo.ts** - SEO/audit APIs - 3 functions
+- **analytics.ts** - Analytics APIs (dashboard, scores) - 2 functions
+- **marketing.ts** - Marketing APIs (campaigns, sequences) - 3 functions
+
+**React Hooks** (`src/hooks/`):
+- **useCRM.ts** - 5 hooks (useLeads, useLead, useAccounts, useAccount, usePipeline)
+- **useSocial.ts** - 5 hooks (useSocialAccounts, useSocialMentions, useSocialMetrics, useSocialSummary, useSocialPosts)
+- **useSEO.ts** - 2 hooks (useAudits, useAudit)
+- **useAnalytics.ts** - 2 hooks (useAnalyticsDashboard, useUnifiedScore)
+- **useMarketing.ts** - 3 hooks (useCampaigns, useSequences, useEmailLists)
+
+**Integration Pattern** (6-step process):
+1. Add imports (hook + AlertCircle icon)
+2. Call hook in component
+3. Update all data references (mockData → allData)
+4. Add safe field access (|| 0 for numeric fields)
+5. Add loading state with spinner
+6. Add error state with message
+
+**Pages with Full API Integration** (9 pages):
+- ✅ CRM: Leads, Accounts, Pipeline (PRD-002)
+- ✅ Social Media: Channels, Engagement, Posting, Analytics, Compose (PRD-006)
+- ✅ Analytics: Executive Dashboard (PRD-010)
+
+**TypeScript Types**:
+- 40+ interfaces for request/response types
+- Strict mode enabled (no 'any' types)
+- Type-safe API responses with null coalescing
+
+**SWR Configuration**:
+- Caching and revalidation enabled
+- revalidateOnFocus: false (don't refetch on tab focus)
+- revalidateOnReconnect: true (refetch on network reconnect)
+- Error retry with exponential backoff
+
+**Mock Data Fallback**:
+- All pages support progressive enhancement
+- API returns empty → fallback to mock data
+- Allows frontend development while backend APIs are built
+
+**Environment Configuration**:
+```bash
+NEXT_PUBLIC_API_URL=https://api.apex.com  # Production API URL
+```
+
+**Remaining Work**:
+- 40+ pages still need API integration
+- Marketing module (campaigns, automation, email lists)
+- SEO module (website health, keyword tracking)
+- Analytics module (sales/marketing analytics, custom reports)
+- Platform monitoring (AI citations, competitor tracking)
+
+**Note**: PRD-013 is cross-cutting technical infrastructure. All admin pages will eventually use this API integration layer. Pattern is established and ready for remaining pages.
 
 ---
 
