@@ -1,10 +1,14 @@
-# APEX ADMIN OPERATIONS - COMPREHENSIVE PRD INDEX
+# APEX - COMPREHENSIVE PRD INDEX
 
-**Master Document**: This index organizes all Product Requirements Documents for the Apex Admin Operations system.
+**Master Document**: This index organizes all Product Requirements Documents for the Apex platform (Admin Operations + Customer Dashboard).
 
-**Status**: ✅ IMPLEMENTATION & DOCUMENTATION COMPLETE - All 9 phases built, documented, and production-ready
+**Status**: ✅ IMPLEMENTATION & DOCUMENTATION COMPLETE - 11 PRDs documenting 100+ pages (admin + customer systems)
 **Last Updated**: 2026-01-15
 **Owner**: Product & Engineering
+
+**Systems Documented**:
+- **Admin Operations** (PRD-001 through PRD-010): 55+ pages for internal company operations
+- **Customer Dashboard** (PRD-011): 46 pages for white-label GEO/AEO platform
 
 ---
 
@@ -104,9 +108,53 @@
 - ✅ PRD-009 (Integration Management) - Health monitoring, webhooks, credentials
 - ✅ PRD-010 (Analytics & Reporting) - KPI dashboards, forecasting, custom reports
 
-**Documentation Format**: All PRDs follow 15-section structure (Executive Summary → Acceptance Criteria)
-**Total Documentation**: 10 comprehensive PRDs documenting 55+ implemented pages
+**Admin Operations PRDs**: 10 PRDs follow 15-section structure (Executive Summary → Acceptance Criteria)
+**Customer-Facing PRD**: 1 comprehensive PRD documenting 46 customer dashboard pages
+**Total Documentation**: 11 PRDs (10 admin + 1 customer) documenting 100+ implemented pages
 **Status**: Complete retrospective documentation of production-ready system
+
+---
+
+## 📋 CUSTOMER-FACING SYSTEM
+
+### PRD-011: CUSTOMER DASHBOARD (SEPARATE SYSTEM)
+**File**: `admin-operations-prd-011.md`
+**Status**: ✅ IMPLEMENTED
+**Pages Built**: 46 pages across 19 modules
+**Scope**: GEO/AEO platform for brand monitoring and optimization
+
+**Key Modules**:
+- **Dashboard** - Onboarding wizard, GEO score, unified score, metrics
+- **Monitoring** - Real-time brand mention tracking across 7 AI platforms
+- **Content Creation** - AI-powered content generation (Claude API)
+- **Auditing** - Technical site analysis, schema validation, content gaps
+- **Recommendations** - Smart recommendation engine with priority scoring
+- **Brand Management** - Multi-brand support with white-label configuration
+- **Analytics** - Platform performance, citation analysis, sentiment breakdown
+- **Competitive Intelligence** - Competitor mention tracking, share of voice
+- **Reports** - Executive summaries, custom report builder, export (PDF/CSV/Excel)
+- **Settings** - Organization, team, integrations, billing, API keys
+
+**White-Label Architecture**:
+- Environment-based branding configuration
+- Multi-tenant data isolation (Clerk + RLS)
+- Subdomain support (*.apex-platform.com)
+- Custom domain support
+- Per-tenant theming
+
+**Core Features**:
+- Real-time WebSocket mention notifications
+- AI content generation (Claude API)
+- 7 AI platform support (ChatGPT, Claude, Gemini, Perplexity, Grok, DeepSeek, Copilot)
+- Smart Recommendations Engine (priority scoring algorithm)
+- GEO Score calculation (technical + content + AEO)
+- Unified Score (SEO + GEO + AEO weighted)
+- Schema markup validation
+- Content gap analysis
+- Citation tracking (cited, mentioned, not cited)
+- Sentiment analysis (positive, neutral, negative)
+
+**Note**: Customer-facing system is SEPARATE from Admin Operations (PRD-001 through PRD-010). Admin Operations manages internal company operations; Customer Dashboard is the white-label product for clients.
 
 ---
 
