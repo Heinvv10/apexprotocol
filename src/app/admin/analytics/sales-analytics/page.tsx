@@ -23,6 +23,7 @@ import {
   Download,
   RefreshCw,
 } from "lucide-react";
+import { useSalesMetrics } from "@/hooks/useAnalytics";
 
 // Mock sales analytics data
 const salesData = {
@@ -156,6 +157,12 @@ const salesData = {
 export default function SalesAnalyticsPage() {
   const [timeRange, setTimeRange] = useState("30d");
 
+  // API data with fallback to mock data
+  const { metrics, isLoading, isError, error } = useSalesMetrics();
+
+  // Use API data if available, otherwise use mock
+  const data = metrics ?? salesData;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -187,6 +194,34 @@ export default function SalesAnalyticsPage() {
         </div>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading sales metrics...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load sales metrics</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching sales metrics"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content - Only show when not loading and no error */}
+      {!isLoading && !isError && (
+        <>
       {/* Key Performance Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4 bg-gray-800/50 border-gray-700">
@@ -196,22 +231,22 @@ export default function SalesAnalyticsPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <p className="text-3xl font-bold text-white">
-              ${(salesData.pipeline.totalValue / 1000).toFixed(0)}k
+              ${(data.pipeline.totalValue / 1000).toFixed(0)}k
             </p>
             <div
               className={`flex items-center text-sm ${
-                salesData.pipeline.totalChange > 0 ? "text-green-400" : "text-red-400"
+                data.pipeline.totalChange > 0 ? "text-green-400" : "text-red-400"
               }`}
             >
-              {salesData.pipeline.totalChange > 0 ? (
+              {data.pipeline.totalChange > 0 ? (
                 <TrendingUp className="h-4 w-4" />
               ) : (
                 <TrendingDown className="h-4 w-4" />
               )}
-              {Math.abs(salesData.pipeline.totalChange)}%
+              {Math.abs(data.pipeline.totalChange)}%
             </div>
           </div>
-          <p className="text-xs text-gray-400 mt-2">{salesData.pipeline.dealCount} active deals</p>
+          <p className="text-xs text-gray-400 mt-2">{data.pipeline.dealCount} active deals</p>
         </Card>
 
         <Card className="p-4 bg-gray-800/50 border-gray-700">
@@ -219,9 +254,9 @@ export default function SalesAnalyticsPage() {
             <Target className="h-5 w-5 text-cyan-400" />
             <p className="text-sm text-gray-400">Win Rate</p>
           </div>
-          <p className="text-3xl font-bold text-white">{salesData.conversions.overallWinRate}%</p>
+          <p className="text-3xl font-bold text-white">{data.conversions.overallWinRate}%</p>
           <p className="text-xs text-gray-400 mt-2">
-            {salesData.performance.dealsWon}W / {salesData.performance.dealsLost}L
+            {data.performance.dealsWon}W / {data.performance.dealsLost}L
           </p>
         </Card>
 
@@ -231,18 +266,18 @@ export default function SalesAnalyticsPage() {
             <p className="text-sm text-gray-400">Avg Sales Cycle</p>
           </div>
           <div className="flex items-baseline gap-2">
-            <p className="text-3xl font-bold text-white">{salesData.performance.avgSalesCycle}d</p>
+            <p className="text-3xl font-bold text-white">{data.performance.avgSalesCycle}d</p>
             <div
               className={`flex items-center text-sm ${
-                salesData.performance.avgSalesCycleChange < 0 ? "text-green-400" : "text-red-400"
+                data.performance.avgSalesCycleChange < 0 ? "text-green-400" : "text-red-400"
               }`}
             >
-              {salesData.performance.avgSalesCycleChange < 0 ? (
+              {data.performance.avgSalesCycleChange < 0 ? (
                 <TrendingDown className="h-4 w-4" />
               ) : (
                 <TrendingUp className="h-4 w-4" />
               )}
-              {Math.abs(salesData.performance.avgSalesCycleChange)}%
+              {Math.abs(data.performance.avgSalesCycleChange)}%
             </div>
           </div>
           <p className="text-xs text-gray-400 mt-2">First contact to close</p>
@@ -255,19 +290,19 @@ export default function SalesAnalyticsPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <p className="text-3xl font-bold text-white">
-              ${(salesData.performance.revenue / 1000).toFixed(1)}k
+              ${(data.performance.revenue / 1000).toFixed(1)}k
             </p>
             <div
               className={`flex items-center text-sm ${
-                salesData.performance.revenueChange > 0 ? "text-green-400" : "text-red-400"
+                data.performance.revenueChange > 0 ? "text-green-400" : "text-red-400"
               }`}
             >
-              {salesData.performance.revenueChange > 0 ? (
+              {data.performance.revenueChange > 0 ? (
                 <TrendingUp className="h-4 w-4" />
               ) : (
                 <TrendingDown className="h-4 w-4" />
               )}
-              {Math.abs(salesData.performance.revenueChange)}%
+              {Math.abs(data.performance.revenueChange)}%
             </div>
           </div>
           <p className="text-xs text-gray-400 mt-2">Closed won deals</p>
@@ -278,7 +313,7 @@ export default function SalesAnalyticsPage() {
       <Card className="p-4 bg-gray-800/50 border-gray-700">
         <h2 className="text-lg font-semibold text-white mb-4">Pipeline by Stage</h2>
         <div className="space-y-3">
-          {salesData.pipeline.byStage.map((stage, idx) => (
+          {data.pipeline.byStage.map((stage, idx) => (
             <div key={idx} className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -304,7 +339,7 @@ export default function SalesAnalyticsPage() {
                     stage.stage === "Won" ? "bg-green-500" : "bg-cyan-500"
                   }`}
                   style={{
-                    width: `${(stage.value / salesData.pipeline.totalValue) * 100}%`,
+                    width: `${(stage.value / data.pipeline.totalValue) * 100}%`,
                   }}
                 />
               </div>
@@ -319,23 +354,23 @@ export default function SalesAnalyticsPage() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="text-center">
             <p className="text-xs text-gray-400 mb-2">Prospect → Qualification</p>
-            <p className="text-2xl font-bold text-white">{salesData.conversions.prospectToQualification}%</p>
+            <p className="text-2xl font-bold text-white">{data.conversions.prospectToQualification}%</p>
           </div>
           <div className="text-center">
             <p className="text-xs text-gray-400 mb-2">Qualification → Proposal</p>
-            <p className="text-2xl font-bold text-white">{salesData.conversions.qualificationToProposal}%</p>
+            <p className="text-2xl font-bold text-white">{data.conversions.qualificationToProposal}%</p>
           </div>
           <div className="text-center">
             <p className="text-xs text-gray-400 mb-2">Proposal → Negotiation</p>
-            <p className="text-2xl font-bold text-white">{salesData.conversions.proposalToNegotiation}%</p>
+            <p className="text-2xl font-bold text-white">{data.conversions.proposalToNegotiation}%</p>
           </div>
           <div className="text-center">
             <p className="text-xs text-gray-400 mb-2">Negotiation → Closing</p>
-            <p className="text-2xl font-bold text-white">{salesData.conversions.negotiationToClosing}%</p>
+            <p className="text-2xl font-bold text-white">{data.conversions.negotiationToClosing}%</p>
           </div>
           <div className="text-center">
             <p className="text-xs text-gray-400 mb-2">Closing → Won</p>
-            <p className="text-2xl font-bold text-white">{salesData.conversions.closingToWon}%</p>
+            <p className="text-2xl font-bold text-white">{data.conversions.closingToWon}%</p>
           </div>
         </div>
       </Card>
@@ -345,7 +380,7 @@ export default function SalesAnalyticsPage() {
         <Card className="p-4 bg-gray-800/50 border-gray-700">
           <h2 className="text-lg font-semibold text-white mb-4">Deal Size Distribution</h2>
           <div className="space-y-3">
-            {salesData.dealSizeDistribution.map((dist, idx) => (
+            {data.dealSizeDistribution.map((dist, idx) => (
               <div key={idx} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-white">{dist.range}</span>
@@ -359,7 +394,7 @@ export default function SalesAnalyticsPage() {
                 <div className="w-full bg-gray-900 rounded-full h-2">
                   <div
                     className="bg-purple-500 h-2 rounded-full"
-                    style={{ width: `${(dist.count / salesData.pipeline.dealCount) * 100}%` }}
+                    style={{ width: `${(dist.count / data.pipeline.dealCount) * 100}%` }}
                   />
                 </div>
               </div>
@@ -371,7 +406,7 @@ export default function SalesAnalyticsPage() {
         <Card className="p-4 bg-gray-800/50 border-gray-700">
           <h2 className="text-lg font-semibold text-white mb-4">Loss Reasons Analysis</h2>
           <div className="space-y-3">
-            {salesData.lossReasons.map((reason, idx) => (
+            {data.lossReasons.map((reason, idx) => (
               <div key={idx} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-white">{reason.reason}</span>
@@ -402,25 +437,25 @@ export default function SalesAnalyticsPage() {
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400">Expected</span>
                 <span className="text-sm font-semibold text-white">
-                  ${(salesData.forecast.thisMonth.expected / 1000).toFixed(0)}k
+                  ${(data.forecast.thisMonth.expected / 1000).toFixed(0)}k
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400">Committed</span>
                 <span className="text-sm font-semibold text-green-400">
-                  ${(salesData.forecast.thisMonth.committed / 1000).toFixed(0)}k
+                  ${(data.forecast.thisMonth.committed / 1000).toFixed(0)}k
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400">Best Case</span>
                 <span className="text-sm font-semibold text-cyan-400">
-                  ${(salesData.forecast.thisMonth.bestCase / 1000).toFixed(0)}k
+                  ${(data.forecast.thisMonth.bestCase / 1000).toFixed(0)}k
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400">Worst Case</span>
                 <span className="text-sm font-semibold text-red-400">
-                  ${(salesData.forecast.thisMonth.worstCase / 1000).toFixed(0)}k
+                  ${(data.forecast.thisMonth.worstCase / 1000).toFixed(0)}k
                 </span>
               </div>
             </div>
@@ -432,25 +467,25 @@ export default function SalesAnalyticsPage() {
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400">Expected</span>
                 <span className="text-sm font-semibold text-white">
-                  ${(salesData.forecast.nextMonth.expected / 1000).toFixed(0)}k
+                  ${(data.forecast.nextMonth.expected / 1000).toFixed(0)}k
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400">Committed</span>
                 <span className="text-sm font-semibold text-green-400">
-                  ${(salesData.forecast.nextMonth.committed / 1000).toFixed(0)}k
+                  ${(data.forecast.nextMonth.committed / 1000).toFixed(0)}k
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400">Best Case</span>
                 <span className="text-sm font-semibold text-cyan-400">
-                  ${(salesData.forecast.nextMonth.bestCase / 1000).toFixed(0)}k
+                  ${(data.forecast.nextMonth.bestCase / 1000).toFixed(0)}k
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400">Worst Case</span>
                 <span className="text-sm font-semibold text-red-400">
-                  ${(salesData.forecast.nextMonth.worstCase / 1000).toFixed(0)}k
+                  ${(data.forecast.nextMonth.worstCase / 1000).toFixed(0)}k
                 </span>
               </div>
             </div>
@@ -462,25 +497,25 @@ export default function SalesAnalyticsPage() {
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400">Expected</span>
                 <span className="text-sm font-semibold text-white">
-                  ${(salesData.forecast.nextQuarter.expected / 1000).toFixed(0)}k
+                  ${(data.forecast.nextQuarter.expected / 1000).toFixed(0)}k
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400">Committed</span>
                 <span className="text-sm font-semibold text-green-400">
-                  ${(salesData.forecast.nextQuarter.committed / 1000).toFixed(0)}k
+                  ${(data.forecast.nextQuarter.committed / 1000).toFixed(0)}k
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400">Best Case</span>
                 <span className="text-sm font-semibold text-cyan-400">
-                  ${(salesData.forecast.nextQuarter.bestCase / 1000).toFixed(0)}k
+                  ${(data.forecast.nextQuarter.bestCase / 1000).toFixed(0)}k
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400">Worst Case</span>
                 <span className="text-sm font-semibold text-red-400">
-                  ${(salesData.forecast.nextQuarter.worstCase / 1000).toFixed(0)}k
+                  ${(data.forecast.nextQuarter.worstCase / 1000).toFixed(0)}k
                 </span>
               </div>
             </div>
@@ -494,7 +529,7 @@ export default function SalesAnalyticsPage() {
         <Card className="p-4 bg-gray-800/50 border-gray-700">
           <h2 className="text-lg font-semibold text-white mb-4">Top Performers</h2>
           <div className="space-y-3">
-            {salesData.topPerformers.map((performer, idx) => (
+            {data.topPerformers.map((performer, idx) => (
               <div key={idx} className="p-3 bg-gray-900/50 rounded">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-semibold text-white">{performer.name}</h3>
@@ -534,7 +569,7 @@ export default function SalesAnalyticsPage() {
         <Card className="p-4 bg-gray-800/50 border-gray-700">
           <h2 className="text-lg font-semibold text-white mb-4">Performance by Source</h2>
           <div className="space-y-3">
-            {salesData.sourcePerformance.map((source, idx) => (
+            {data.sourcePerformance.map((source, idx) => (
               <div key={idx} className="p-3 bg-gray-900/50 rounded">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-semibold text-white">{source.source}</h3>
@@ -570,6 +605,8 @@ export default function SalesAnalyticsPage() {
           </div>
         </Card>
       </div>
+        </>
+      )}
     </div>
   );
 }
