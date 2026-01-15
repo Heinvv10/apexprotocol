@@ -26,6 +26,7 @@ import {
   Trash2,
   BarChart3,
 } from "lucide-react";
+import { useEmailList } from "@/hooks/useMarketing";
 
 // Mock email lists data (same as parent page)
 const mockEmailLists = [
@@ -222,8 +223,11 @@ export default function EmailListDetailPage({ params }: { params: Promise<{ id: 
   // Unwrap async params
   const { id } = use(params);
 
-  // Find the list and related data
-  const list = mockEmailLists.find((l) => l.id === id) || mockEmailLists[0];
+  // Fetch email list data from API
+  const { emailList: apiEmailList, isLoading, isError, error } = useEmailList(id);
+
+  // Use API data or fallback to mock data
+  const list = apiEmailList || mockEmailLists.find((l) => l.id === id) || mockEmailLists[0];
   const subscribers = mockSubscribers[id] || mockSubscribers["list_001"];
   const performanceData = mockPerformanceData[id] || mockPerformanceData["list_001"];
 
@@ -266,6 +270,14 @@ export default function EmailListDetailPage({ params }: { params: Promise<{ id: 
     return (opened / received) * 100;
   };
 
+  // Safe field access
+  const subscriberCount = list.subscriberCount || 0;
+  const unsubscribeCount = list.unsubscribeCount || 0;
+  const bounceCount = list.bounceCount || 0;
+  const growthRate = list.growthRate || 0;
+  const openRate = list.openRate || 0;
+  const clickRate = list.clickRate || 0;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -297,6 +309,34 @@ export default function EmailListDetailPage({ params }: { params: Promise<{ id: 
         </div>
       </div>
 
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load email list</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching email list details"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading email list details...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Email List Content - Only show when data is loaded */}
+      {!isLoading && !isError && (
+        <>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card-primary p-4">
@@ -304,10 +344,10 @@ export default function EmailListDetailPage({ params }: { params: Promise<{ id: 
             <div>
               <p className="text-sm text-muted-foreground">Total Subscribers</p>
               <p className="text-2xl font-bold text-white mt-1">
-                {formatNumber(list.subscriberCount)}
+                {formatNumber(subscriberCount)}
               </p>
               <p className="text-xs text-green-400 mt-1">
-                +{list.growthRate.toFixed(1)}% growth
+                +{growthRate.toFixed(1)}% growth
               </p>
             </div>
             <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center">
@@ -321,7 +361,7 @@ export default function EmailListDetailPage({ params }: { params: Promise<{ id: 
             <div>
               <p className="text-sm text-muted-foreground">Avg Open Rate</p>
               <p className="text-2xl font-bold text-white mt-1">
-                {list.openRate.toFixed(1)}%
+                {openRate.toFixed(1)}%
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 across all campaigns
@@ -338,10 +378,10 @@ export default function EmailListDetailPage({ params }: { params: Promise<{ id: 
             <div>
               <p className="text-sm text-muted-foreground">Click Rate</p>
               <p className="text-2xl font-bold text-white mt-1">
-                {list.clickRate.toFixed(1)}%
+                {clickRate.toFixed(1)}%
               </p>
               <p className="text-xs text-cyan-400 mt-1">
-                {(list.clickRate / list.openRate * 100).toFixed(1)}% of opens
+                {openRate > 0 ? (clickRate / openRate * 100).toFixed(1) : 0}% of opens
               </p>
             </div>
             <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center">
@@ -355,10 +395,10 @@ export default function EmailListDetailPage({ params }: { params: Promise<{ id: 
             <div>
               <p className="text-sm text-muted-foreground">Unsubscribes</p>
               <p className="text-2xl font-bold text-white mt-1">
-                {formatNumber(list.unsubscribeCount)}
+                {formatNumber(unsubscribeCount)}
               </p>
               <p className="text-xs text-red-400 mt-1">
-                {((list.unsubscribeCount / list.subscriberCount) * 100).toFixed(2)}% rate
+                {subscriberCount > 0 ? ((unsubscribeCount / subscriberCount) * 100).toFixed(2) : 0}% rate
               </p>
             </div>
             <div className="w-12 h-12 rounded-lg bg-red-500/10 flex items-center justify-center">
@@ -423,7 +463,7 @@ export default function EmailListDetailPage({ params }: { params: Promise<{ id: 
                 </div>
                 <div className="flex items-center justify-between py-2">
                   <span className="text-muted-foreground">Bounce Count</span>
-                  <span className="text-red-400 font-medium">{list.bounceCount}</span>
+                  <span className="text-red-400 font-medium">{bounceCount}</span>
                 </div>
               </div>
             </div>
@@ -712,6 +752,8 @@ export default function EmailListDetailPage({ params }: { params: Promise<{ id: 
           </div>
         </TabsContent>
       </Tabs>
+        </>
+      )}
     </div>
   );
 }
