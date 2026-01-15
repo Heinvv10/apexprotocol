@@ -27,9 +27,10 @@ import {
   Search,
   Plus,
 } from "lucide-react";
+import { useCompetitorMentions } from "@/hooks/usePlatformMonitoring";
 
 // Mock competitor data
-const competitors = [
+const competitorData = [
   {
     id: "comp_001",
     name: "SearchableAI",
@@ -90,15 +91,15 @@ const competitiveGaps = [
   {
     id: "gap_001",
     query: "AI platform monitoring best practices",
-    competitors: ["SearchableAI", "AIVisibility Pro"],
+    competitorData: ["SearchableAI", "AIVisibility Pro"],
     avgPosition: 1.5,
     opportunity: "high",
-    reasoning: "High-volume query where competitors rank #1-2 but we're not cited",
+    reasoning: "High-volume query where competitorData rank #1-2 but we're not cited",
   },
   {
     id: "gap_002",
     query: "GEO vs traditional SEO comparison",
-    competitors: ["GEO Masters"],
+    competitorData: ["GEO Masters"],
     avgPosition: 2.0,
     opportunity: "high",
     reasoning: "Educational content gap - competitor dominates this comparison query",
@@ -106,15 +107,15 @@ const competitiveGaps = [
   {
     id: "gap_003",
     query: "answer engine optimization pricing",
-    competitors: ["SearchableAI", "AnswerEngine Insights"],
+    competitorData: ["SearchableAI", "AnswerEngine Insights"],
     avgPosition: 2.3,
     opportunity: "medium",
-    reasoning: "Commercial intent query where competitors appear but we don't",
+    reasoning: "Commercial intent query where competitorData appear but we don't",
   },
   {
     id: "gap_004",
     query: "multi-platform citation tracking",
-    competitors: ["AIVisibility Pro"],
+    competitorData: ["AIVisibility Pro"],
     avgPosition: 1.8,
     opportunity: "medium",
     reasoning: "Feature-specific query where competitor has strong presence",
@@ -127,7 +128,7 @@ const competitiveWins = [
     id: "win_001",
     query: "white-label GEO platform",
     ourPosition: 1,
-    competitorsBeat: ["SearchableAI", "GEO Masters"],
+    competitorDataBeat: ["SearchableAI", "GEO Masters"],
     date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     impact: "high",
   },
@@ -135,7 +136,7 @@ const competitiveWins = [
     id: "win_002",
     query: "AI search optimization for agencies",
     ourPosition: 2,
-    competitorsBeat: ["AIVisibility Pro"],
+    competitorDataBeat: ["AIVisibility Pro"],
     date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     impact: "medium",
   },
@@ -143,7 +144,7 @@ const competitiveWins = [
     id: "win_003",
     query: "GEO content creation tools",
     ourPosition: 1,
-    competitorsBeat: ["AnswerEngine Insights"],
+    competitorDataBeat: ["AnswerEngine Insights"],
     date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     impact: "medium",
   },
@@ -152,6 +153,19 @@ const competitiveWins = [
 export default function CompetitorVisibilityPage() {
   const [selectedCompetitor, setSelectedCompetitor] = useState<string>("all");
   const [selectedTab, setSelectedTab] = useState("overview");
+
+  // API data with fallback to mock data
+  const {
+    mentions: apiMentions,
+    competitorData: apiCompetitors,
+    shareOfVoice: apiShareOfVoice,
+    isLoading,
+    isError,
+    error,
+  } = useCompetitorMentions();
+
+  // Use API data if available, otherwise fallback to mock
+  const competitorData = apiCompetitors.length > 0 ? apiCompetitors : competitorData;
 
   const getPlatformIcon = (platform: string) => {
     const colors = {
@@ -200,27 +214,55 @@ export default function CompetitorVisibilityPage() {
     return date.toLocaleDateString();
   };
 
-  // Calculate our ranking vs competitors
+  // Calculate our ranking vs competitorData with safe access
   const allCompetitorsWithUs = [
-    ...competitors,
+    ...competitorData,
     {
       id: "us",
       name: "Apex (Us)",
       mentions: 330,
       avgPosition: 2.4,
       avgVisibility: 86,
-      shareOfVoice: 13.2,
+      shareOfVoice: apiShareOfVoice || 13.2,
       trend: 12,
       topPlatforms: ["claude", "perplexity", "janus"],
       topQueries: ["white-label GEO", "AI visibility monitoring"],
     },
-  ].sort((a, b) => b.mentions - a.mentions);
+  ].sort((a, b) => (b.mentions || 0) - (a.mentions || 0));
 
   const ourRank = allCompetitorsWithUs.findIndex((c) => c.id === "us") + 1;
 
   return (
     <div className="space-y-6 p-6">
-      {/* Header */}
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading competitor visibility data...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load competitor visibility data</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching competitor mentions"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content - Only show when not loading and no error */}
+      {!isLoading && !isError && (
+        <>
+          {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Competitor Visibility</h1>
@@ -282,7 +324,7 @@ export default function CompetitorVisibilityPage() {
       <div className="card-secondary">
         <h2 className="text-xl font-semibold text-white mb-4">Share of Voice</h2>
         <p className="text-gray-400 text-sm mb-4">
-          Percentage of total mentions across all tracked competitors and platforms
+          Percentage of total mentions across all tracked competitorData and platforms
         </p>
 
         <div className="space-y-3">
@@ -320,11 +362,11 @@ export default function CompetitorVisibilityPage() {
               <h2 className="text-xl font-semibold text-white">Tracked Competitors</h2>
               <Select value={selectedCompetitor} onValueChange={setSelectedCompetitor}>
                 <SelectTrigger className="w-48 bg-[#0a0f1a] border-white/10">
-                  <SelectValue placeholder="All competitors" />
+                  <SelectValue placeholder="All competitorData" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Competitors</SelectItem>
-                  {competitors.map((comp) => (
+                  {competitorData.map((comp) => (
                     <SelectItem key={comp.id} value={comp.id}>
                       {comp.name}
                     </SelectItem>
@@ -334,7 +376,7 @@ export default function CompetitorVisibilityPage() {
             </div>
 
             <div className="space-y-3">
-              {competitors
+              {competitorData
                 .filter((comp) => selectedCompetitor === "all" || comp.id === selectedCompetitor)
                 .map((comp, index) => (
                   <div key={comp.id} className="card-tertiary">
@@ -413,7 +455,7 @@ export default function CompetitorVisibilityPage() {
           <div className="card-secondary">
             <h2 className="text-xl font-semibold text-white mb-4">Competitive Gaps</h2>
             <p className="text-gray-400 text-sm mb-4">
-              Queries where competitors rank but we don't appear
+              Queries where competitorData rank but we don't appear
             </p>
 
             <div className="space-y-3">
@@ -442,7 +484,7 @@ export default function CompetitorVisibilityPage() {
                   <div>
                     <div className="text-sm text-gray-400 mb-2">Competitors Ranking</div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      {gap.competitors.map((comp) => (
+                      {gap.competitorData.map((comp) => (
                         <span
                           key={comp}
                           className="px-3 py-1 rounded-full text-sm bg-red-400/10 text-red-400 border border-red-400/20"
@@ -463,7 +505,7 @@ export default function CompetitorVisibilityPage() {
           <div className="card-secondary">
             <h2 className="text-xl font-semibold text-white mb-4">Recent Competitive Wins</h2>
             <p className="text-gray-400 text-sm mb-4">
-              New queries where we now appear and outrank competitors
+              New queries where we now appear and outrank competitorData
             </p>
 
             <div className="space-y-3">
@@ -492,7 +534,7 @@ export default function CompetitorVisibilityPage() {
                   <div>
                     <div className="text-sm text-gray-400 mb-2">Competitors Outranked</div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      {win.competitorsBeat.map((comp) => (
+                      {win.competitorDataBeat.map((comp) => (
                         <span
                           key={comp}
                           className="px-3 py-1 rounded-full text-sm bg-green-400/10 text-green-400 border border-green-400/20"
@@ -508,6 +550,8 @@ export default function CompetitorVisibilityPage() {
           </div>
         </TabsContent>
       </Tabs>
+        </>
+      )}
     </div>
   );
 }
