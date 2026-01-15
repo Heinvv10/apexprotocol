@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { TrendingUp, DollarSign, Clock, Target, ChevronRight } from "lucide-react";
+import { TrendingUp, DollarSign, Clock, Target, ChevronRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
+import { usePipeline } from "@/hooks/useCRM";
 
 // Mock pipeline stages
 const stages = [
@@ -126,8 +127,14 @@ export default function PipelinePage() {
   const [timeFilter, setTimeFilter] = useState("all");
   const [ownerFilter, setOwnerFilter] = useState("all");
 
+  // Fetch pipeline from API
+  const { deals, isLoading, isError, error } = usePipeline();
+
+  // Use API data if available, fallback to mock data for development
+  const allDeals = deals.length > 0 ? deals : mockDeals;
+
   // Filter deals based on filters
-  const filteredDeals = mockDeals.filter((deal) => {
+  const filteredDeals = allDeals.filter((deal: any) => {
     const matchesOwner = ownerFilter === "all" || deal.owner === ownerFilter;
 
     if (timeFilter === "all") return matchesOwner;
@@ -151,13 +158,13 @@ export default function PipelinePage() {
 
   // Calculate stats
   const totalDeals = filteredDeals.length;
-  const totalValue = filteredDeals.reduce((sum, deal) => sum + deal.value, 0);
+  const totalValue = filteredDeals.reduce((sum: number, deal: any) => sum + (deal.value || 0), 0);
   const weightedValue = filteredDeals.reduce(
-    (sum, deal) => sum + (deal.value * deal.probability) / 100,
+    (sum: number, deal: any) => sum + ((deal.value || 0) * (deal.probability || 0)) / 100,
     0
   );
   const wonDeals = dealsByStage.won || [];
-  const wonValue = wonDeals.reduce((sum, deal) => sum + deal.value, 0);
+  const wonValue = wonDeals.reduce((sum: number, deal: any) => sum + (deal.value || 0), 0);
   const avgDealSize = totalDeals > 0 ? totalValue / totalDeals : 0;
   const winRate =
     totalDeals > 0
@@ -199,7 +206,7 @@ export default function PipelinePage() {
     return Math.floor((now - created) / (1000 * 60 * 60 * 24));
   };
 
-  const owners = Array.from(new Set(mockDeals.map((d) => d.owner)));
+  const owners = Array.from(new Set(allDeals.map((d: any) => d.owner)));
 
   return (
     <div className="space-y-6">
@@ -215,6 +222,31 @@ export default function PipelinePage() {
           + New Deal
         </Button>
       </div>
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load pipeline</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching deals"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading pipeline...</p>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
