@@ -20,10 +20,12 @@ import {
   Search,
   Filter,
   Edit,
+  AlertCircle,
 } from "lucide-react";
+import { useSEOPages } from "@/hooks/useSEO";
 
-// Mock page inventory data
-const pages = [
+// Mock page inventory data for fallback
+const mockPages = [
   {
     id: "page_001",
     url: "/features/geo-optimization",
@@ -133,8 +135,29 @@ export default function ContentManagementPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [schemaFilter, setSchemaFilter] = useState("all");
 
+  // API data with fallback to mock data
+  const { pages: apiPages, isLoading, isError, error } = useSEOPages();
+
+  // Transform API data to match the format used by this component
+  const pagesData = apiPages.length > 0
+    ? apiPages.map(page => ({
+        id: page.id,
+        url: page.url,
+        title: page.title,
+        metaDescription: page.metaDescription,
+        status: page.status === "indexed" ? "published" : "draft",
+        lastModified: page.lastCrawled,
+        traffic: page.traffic || 0,
+        conversions: 0, // Not provided by API
+        avgPosition: 0, // Not provided by API
+        citations: page.keywords || 0, // Using keywords count as proxy
+        schema: [], // Not provided by API
+        wordCount: 0, // Not provided by API
+      }))
+    : mockPages;
+
   // Filter pages
-  const filteredPages = pages.filter((page) => {
+  const filteredPages = pagesData.filter((page) => {
     const searchMatch =
       searchQuery === "" ||
       page.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -149,12 +172,12 @@ export default function ContentManagementPage() {
   });
 
   // Calculate summary stats
-  const totalPages = pages.length;
-  const publishedPages = pages.filter((p) => p.status === "published").length;
-  const totalTraffic = pages.reduce((sum, p) => sum + p.traffic, 0);
-  const totalCitations = pages.reduce((sum, p) => sum + p.citations, 0);
+  const totalPages = pagesData.length;
+  const publishedPages = pagesData.filter((p) => p.status === "published").length;
+  const totalTraffic = pagesData.reduce((sum, p) => sum + (p.traffic || 0), 0);
+  const totalCitations = pagesData.reduce((sum, p) => sum + (p.citations || 0), 0);
   const avgPosition =
-    pages.reduce((sum, p) => sum + p.avgPosition, 0) / pages.filter((p) => p.avgPosition > 0).length;
+    pagesData.reduce((sum, p) => sum + (p.avgPosition || 0), 0) / (pagesData.filter((p) => (p.avgPosition || 0) > 0).length || 1);
 
   return (
     <div className="space-y-6">
@@ -171,7 +194,35 @@ export default function ContentManagementPage() {
         </Button>
       </div>
 
-      {/* Summary Stats */}
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading pages data...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load pages data</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching SEO pages"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content - Only show when not loading and no error */}
+      {!isLoading && !isError && (
+        <>
+          {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card className="p-4 bg-gray-800/50 border-gray-700">
           <div className="flex items-center gap-2 mb-2">
@@ -363,6 +414,8 @@ export default function ContentManagementPage() {
             </p>
           </div>
         </Card>
+      )}
+        </>
       )}
     </div>
   );
