@@ -1,10 +1,11 @@
 "use client";
 
 import React, { use, useState } from "react";
-import { ArrowLeft, Play, Pause, Copy, Edit, Users, TrendingUp, Mail, Target } from "lucide-react";
+import { ArrowLeft, Play, Pause, Copy, Edit, Users, TrendingUp, Mail, Target, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSequence } from "@/hooks/useMarketing";
 
 // Mock sequences data (same as automation page)
 const mockSequences = [
@@ -128,10 +129,24 @@ export default function SequenceDetailPage({ params }: { params: Promise<{ id: s
   // Unwrap async params
   const { id } = use(params);
 
-  // Find sequence
-  const sequence = mockSequences.find((s) => s.id === id) || mockSequences[0];
+  // API data with fallback to mock data
+  const { sequence: apiSequence, isLoading, isError, error } = useSequence(id);
+  const sequence = apiSequence || mockSequences.find((s) => s.id === id) || mockSequences[0];
+
   const emails = mockEmailDetails[id as keyof typeof mockEmailDetails] || [];
   const enrolledLeads = mockEnrolledLeads[id as keyof typeof mockEnrolledLeads] || [];
+
+  // Safe field access
+  const subscribers = sequence.stats?.subscribers || 0;
+  const conversions = sequence.stats?.conversions || 0;
+  const conversionRate = sequence.stats?.conversionRate || 0;
+  const sent = sequence.stats?.sent || 0;
+  const opened = sequence.stats?.opened || 0;
+  const clicked = sequence.stats?.clicked || 0;
+  const openRate = sequence.stats?.openRate || 0;
+  const clickRate = sequence.stats?.clickRate || 0;
+  const emailCount = sequence.emails?.length || 0;
+  const isActive = sequence.status === "active";
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -194,19 +209,19 @@ export default function SequenceDetailPage({ params }: { params: Promise<{ id: s
           </Button>
           <div>
             <h1 className="text-3xl font-bold text-white">{sequence.name}</h1>
-            <p className="text-muted-foreground mt-1">{sequence.description}</p>
+            <p className="text-muted-foreground mt-1">{sequence.description || "No description"}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             className={
-              sequence.isActive
+              isActive
                 ? "border-yellow-500 text-yellow-400 hover:bg-yellow-500/10"
                 : "border-green-500 text-green-400 hover:bg-green-500/10"
             }
           >
-            {sequence.isActive ? (
+            {isActive ? (
               <>
                 <Pause className="h-4 w-4 mr-2" />
                 Pause
@@ -229,14 +244,42 @@ export default function SequenceDetailPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading sequence details...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load sequence</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching sequence details"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {!isLoading && !isError && (
+        <>
+          {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card-secondary p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total Enrollments</p>
               <p className="text-2xl font-bold text-white mt-1">
-                {sequence.enrollmentCount.toLocaleString()}
+                {subscribers.toLocaleString()}
               </p>
               <p className="text-xs text-cyan-400 mt-1">
                 {enrolledLeads.filter((l) => l.status === "active").length} active
@@ -251,10 +294,10 @@ export default function SequenceDetailPage({ params }: { params: Promise<{ id: s
             <div>
               <p className="text-sm text-muted-foreground">Conversions</p>
               <p className="text-2xl font-bold text-white mt-1">
-                {sequence.conversionCount.toLocaleString()}
+                {conversions.toLocaleString()}
               </p>
               <p className="text-xs text-green-400 mt-1">
-                {sequence.conversionRate.toFixed(1)}% rate
+                {conversionRate.toFixed(1)}% rate
               </p>
             </div>
             <Target className="h-8 w-8 text-purple-400" />
@@ -266,7 +309,7 @@ export default function SequenceDetailPage({ params }: { params: Promise<{ id: s
             <div>
               <p className="text-sm text-muted-foreground">Emails in Sequence</p>
               <p className="text-2xl font-bold text-white mt-1">
-                {sequence.emailIds.length}
+                {emailCount}
               </p>
               <p className="text-xs text-muted-foreground mt-1">total emails</p>
             </div>
@@ -363,14 +406,14 @@ export default function SequenceDetailPage({ params }: { params: Promise<{ id: s
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-muted-foreground">Enrollment Rate</span>
                     <span className="text-white font-medium">
-                      {sequence.enrollmentCount > 0 ? "100%" : "0%"}
+                      {subscribers > 0 ? "100%" : "0%"}
                     </span>
                   </div>
                   <div className="w-full bg-background rounded-full h-2">
                     <div
                       className="bg-cyan-500 h-2 rounded-full"
                       style={{
-                        width: sequence.enrollmentCount > 0 ? "100%" : "0%",
+                        width: subscribers > 0 ? "100%" : "0%",
                       }}
                     />
                   </div>
@@ -380,14 +423,14 @@ export default function SequenceDetailPage({ params }: { params: Promise<{ id: s
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-muted-foreground">Conversion Rate</span>
                     <span className="text-white font-medium">
-                      {sequence.conversionRate.toFixed(1)}%
+                      {conversionRate.toFixed(1)}%
                     </span>
                   </div>
                   <div className="w-full bg-background rounded-full h-2">
                     <div
                       className="bg-green-500 h-2 rounded-full"
                       style={{
-                        width: `${Math.min(sequence.conversionRate, 100)}%`,
+                        width: `${Math.min(conversionRate, 100)}%`,
                       }}
                     />
                   </div>
@@ -528,7 +571,7 @@ export default function SequenceDetailPage({ params }: { params: Promise<{ id: s
                         {lead.email}
                       </td>
                       <td className="px-4 py-3 text-sm text-white">
-                        Email {lead.currentStep} of {sequence.emailIds.length}
+                        Email {lead.currentStep} of {emailCount}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -536,12 +579,12 @@ export default function SequenceDetailPage({ params }: { params: Promise<{ id: s
                             <div
                               className="bg-cyan-500 h-2 rounded-full"
                               style={{
-                                width: `${(lead.currentStep / sequence.emailIds.length) * 100}%`,
+                                width: `${(lead.currentStep / emailCount) * 100}%`,
                               }}
                             />
                           </div>
                           <span className="text-xs text-muted-foreground">
-                            {Math.round((lead.currentStep / sequence.emailIds.length) * 100)}%
+                            {Math.round((lead.currentStep / emailCount) * 100)}%
                           </span>
                         </div>
                       </td>
@@ -573,6 +616,8 @@ export default function SequenceDetailPage({ params }: { params: Promise<{ id: s
           </div>
         </TabsContent>
       </Tabs>
+        </>
+      )}
     </div>
   );
 }
