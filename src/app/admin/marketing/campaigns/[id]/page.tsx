@@ -2,9 +2,10 @@
 
 import React, { useState, use } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Mail, Users, DollarSign, TrendingUp, Target, Calendar, Play, Pause, Archive, Copy, Edit } from "lucide-react";
+import { ArrowLeft, Mail, Users, DollarSign, TrendingUp, Target, Calendar, Play, Pause, Archive, Copy, Edit, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCampaign } from "@/hooks/useMarketing";
 
 // Mock campaign data matching the campaigns list
 const mockCampaigns = [
@@ -108,8 +109,11 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
   // Unwrap async params (Next.js 16 pattern)
   const { id } = use(params);
 
-  // Find campaign by ID
-  const campaign = mockCampaigns.find((c) => c.id === id) || mockCampaigns[0];
+  // Fetch campaign data from API
+  const { campaign: apiCampaign, isLoading, isError, error } = useCampaign(id);
+
+  // Use API data or fallback to mock data
+  const campaign = apiCampaign || mockCampaigns.find((c) => c.id === id) || mockCampaigns[0];
   const emailPerformance = mockEmailPerformance[id as keyof typeof mockEmailPerformance] || [];
   const leadSources = mockLeadSources[id as keyof typeof mockLeadSources] || [];
 
@@ -130,10 +134,17 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
     });
   };
 
-  const roi = campaign.budget > 0 ? ((campaign.revenue - campaign.budget) / campaign.budget) * 100 : 0;
-  const openRate = campaign.leads > 0 ? (campaign.opens / campaign.leads) * 100 : 0;
-  const clickRate = campaign.opens > 0 ? (campaign.clicks / campaign.opens) * 100 : 0;
-  const conversionRate = campaign.clicks > 0 ? (campaign.conversions / campaign.clicks) * 100 : 0;
+  const budget = campaign.budget || 0;
+  const revenue = campaign.revenue || 0;
+  const leads = campaign.leads || 0;
+  const opens = campaign.opens || 0;
+  const clicks = campaign.clicks || 0;
+  const conversions = campaign.conversions || 0;
+
+  const roi = budget > 0 ? ((revenue - budget) / budget) * 100 : 0;
+  const openRate = leads > 0 ? (opens / leads) * 100 : 0;
+  const clickRate = opens > 0 ? (clicks / opens) * 100 : 0;
+  const conversionRate = clicks > 0 ? (conversions / clicks) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -177,6 +188,34 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
 
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load campaign</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching campaign details"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading campaign details...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Campaign Content - Only show when data is loaded */}
+      {!isLoading && !isError && (
+        <>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card-secondary p-4">
@@ -184,7 +223,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
             <div>
               <p className="text-sm text-muted-foreground">Total Leads</p>
               <p className="text-2xl font-bold text-white mt-1">
-                {campaign.leads.toLocaleString()}
+                {leads.toLocaleString()}
               </p>
               <p className="text-xs text-cyan-400 mt-1">
                 {openRate.toFixed(1)}% open rate
@@ -199,7 +238,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
             <div>
               <p className="text-sm text-muted-foreground">Conversions</p>
               <p className="text-2xl font-bold text-white mt-1">
-                {campaign.conversions}
+                {conversions}
               </p>
               <p className="text-xs text-purple-400 mt-1">
                 {conversionRate.toFixed(1)}% conversion rate
@@ -214,10 +253,10 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
             <div>
               <p className="text-sm text-muted-foreground">Revenue</p>
               <p className="text-2xl font-bold text-white mt-1">
-                {formatCurrency(campaign.revenue)}
+                {formatCurrency(revenue)}
               </p>
               <p className="text-xs text-green-400 mt-1">
-                {formatCurrency(campaign.budget)} spent
+                {formatCurrency(budget)} spent
               </p>
             </div>
             <DollarSign className="h-8 w-8 text-green-400" />
@@ -273,13 +312,13 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
                   <div className="flex items-center gap-2 mt-1">
                     <Calendar className="h-4 w-4 text-cyan-400" />
                     <p className="text-sm text-white">
-                      {formatDate(campaign.startDate)} - {formatDate(campaign.endDate)}
+                      {campaign.startDate ? formatDate(campaign.startDate) : "N/A"} - {campaign.endDate ? formatDate(campaign.endDate) : "N/A"}
                     </p>
                   </div>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Budget</p>
-                  <p className="text-sm text-white mt-1">{formatCurrency(campaign.budget)}</p>
+                  <p className="text-sm text-white mt-1">{formatCurrency(budget)}</p>
                 </div>
                 {campaign.metadata?.subjects && (
                   <div>
@@ -311,7 +350,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Emails Sent</p>
-                    <p className="text-lg font-semibold text-white mt-1">{campaign.leads.toLocaleString()}</p>
+                    <p className="text-lg font-semibold text-white mt-1">{leads.toLocaleString()}</p>
                   </div>
                   <Mail className="h-5 w-5 text-cyan-400" />
                 </div>
@@ -319,7 +358,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
                   <div>
                     <p className="text-sm text-muted-foreground">Opens</p>
                     <p className="text-lg font-semibold text-white mt-1">
-                      {campaign.opens.toLocaleString()}
+                      {opens.toLocaleString()}
                       <span className="text-xs text-muted-foreground ml-2">
                         ({openRate.toFixed(1)}%)
                       </span>
@@ -331,7 +370,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
                   <div>
                     <p className="text-sm text-muted-foreground">Clicks</p>
                     <p className="text-lg font-semibold text-white mt-1">
-                      {campaign.clicks.toLocaleString()}
+                      {clicks.toLocaleString()}
                       <span className="text-xs text-muted-foreground ml-2">
                         ({clickRate.toFixed(1)}%)
                       </span>
@@ -343,7 +382,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
                   <div>
                     <p className="text-sm text-muted-foreground">Conversions</p>
                     <p className="text-lg font-semibold text-white mt-1">
-                      {campaign.conversions}
+                      {conversions}
                       <span className="text-xs text-muted-foreground ml-2">
                         ({conversionRate.toFixed(1)}%)
                       </span>
@@ -355,7 +394,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
                   <div>
                     <p className="text-sm text-muted-foreground">Total Revenue</p>
                     <p className="text-lg font-semibold text-white mt-1">
-                      {formatCurrency(campaign.revenue)}
+                      {formatCurrency(revenue)}
                     </p>
                   </div>
                   <DollarSign className="h-5 w-5 text-green-400" />
@@ -448,6 +487,8 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
           </div>
         </TabsContent>
       </Tabs>
+        </>
+      )}
     </div>
   );
 }
