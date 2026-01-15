@@ -2,13 +2,14 @@
 
 **Master Document**: This index organizes all Product Requirements Documents for the Apex platform (Admin Operations + Customer Dashboard).
 
-**Status**: ✅ IMPLEMENTATION & DOCUMENTATION COMPLETE - 11 PRDs documenting 100+ pages (admin + customer systems)
+**Status**: ✅ IMPLEMENTATION & DOCUMENTATION COMPLETE - 12 PRDs documenting 100+ pages (admin + customer systems + mobile)
 **Last Updated**: 2026-01-15
 **Owner**: Product & Engineering
 
 **Systems Documented**:
 - **Admin Operations** (PRD-001 through PRD-010): 55+ pages for internal company operations
 - **Customer Dashboard** (PRD-011): 46 pages for white-label GEO/AEO platform
+- **Mobile & Responsive** (PRD-012): Cross-cutting mobile-first responsive architecture
 
 ---
 
@@ -155,6 +156,52 @@
 - Sentiment analysis (positive, neutral, negative)
 
 **Note**: Customer-facing system is SEPARATE from Admin Operations (PRD-001 through PRD-010). Admin Operations manages internal company operations; Customer Dashboard is the white-label product for clients.
+
+---
+
+### PRD-012: MOBILE-FIRST RESPONSIVE ARCHITECTURE (CROSS-CUTTING)
+**File**: `admin-operations-prd-012.md`
+**Status**: ✅ IMPLEMENTED
+**Scope**: Cross-cutting mobile support for all admin and customer pages
+**Type**: Responsive web design (not native mobile app)
+
+**Mobile Components**:
+- **MobileBottomNav** - 5-icon bottom navigation bar (Home, Recs, Score, Settings, Profile)
+- **MobileMenuTrigger** - Hamburger menu button (top-left corner)
+- **MobileSidebarDrawer** - Full-screen slide-in drawer (9 navigation items)
+- **MobileHeader** - Sticky mobile header with branding and AI status
+- **SwipeableCard** - Touch-optimized swipeable component (left/right gestures)
+- **BottomSheet** - Modal bottom sheet for actions and filters
+
+**Responsive Features**:
+- Mobile-first breakpoint system (320px, 768px, 1024px, 1280px, 1920px)
+- Touch target sizing (44px minimum per WCAG 2.1 AA)
+- Safe area handling for notched devices (iPhone X+)
+- Responsive grid system (1/2/3 columns)
+- Mobile-first typography scale
+- Swipe interactions with visual feedback
+- Keyboard navigation support (accessibility)
+
+**Progressive Web App (PWA)**:
+- Manifest file with app metadata
+- Service worker for offline support
+- "Add to Home Screen" install prompt
+- Full-screen mode when installed
+- Background sync for form submissions
+
+**Performance**:
+- Mobile page load <3s on 3G
+- First Contentful Paint (FCP) <1.8s
+- Largest Contentful Paint (LCP) <2.5s
+- Lighthouse mobile score target: ≥90
+
+**Coverage**:
+- All 55+ admin operations pages (mobile-responsive)
+- All 46 customer dashboard pages (mobile-responsive)
+- Authentication pages (sign-in, sign-up)
+- Onboarding wizard (mobile-optimized)
+
+**Note**: PRD-012 is cross-cutting and applies to ALL pages across admin and customer systems. Mobile support is implemented via responsive web design, not separate native apps.
 
 ---
 
