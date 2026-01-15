@@ -19,7 +19,9 @@ import {
   ExternalLink,
   Filter,
   Download,
+  AlertCircle,
 } from "lucide-react";
+import { usePlatformMentions } from "@/hooks/usePlatformMonitoring";
 
 // Mock data for platform mentions
 const mockPlatformMentions = [
@@ -138,8 +140,25 @@ export default function OurVisibilityPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sentimentFilter, setSentimentFilter] = useState<string>("all");
 
+  // API data with fallback to mock data
+  const {
+    mentions: apiMentions,
+    platformStats: apiPlatformStats,
+    topCitedPages: apiTopCitedPages,
+    totalMentions: apiTotalMentions,
+    avgVisibility: apiAvgVisibility,
+    isLoading,
+    isError,
+    error,
+  } = usePlatformMentions();
+
+  // Use API data if available, otherwise fallback to mock
+  const mentions = apiMentions.length > 0 ? apiMentions : mockPlatformMentions;
+  const platformStats = apiPlatformStats.length > 0 ? apiPlatformStats : mockPlatformStats;
+  const topCitedPages = apiTopCitedPages.length > 0 ? apiTopCitedPages : mockTopCitedPages;
+
   // Filter mentions
-  const filteredMentions = mockPlatformMentions.filter((mention) => {
+  const filteredMentions = mentions.filter((mention) => {
     const platformMatch = selectedPlatform === "all" || mention.platform === selectedPlatform;
     const searchMatch = searchQuery === "" ||
       mention.query.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -196,18 +215,46 @@ export default function OurVisibilityPage() {
     return date.toLocaleDateString();
   };
 
-  // Calculate total stats
-  const totalMentions = platformStats.reduce((sum, stat) => sum + stat.mentions, 0);
-  const avgVisibility = Math.round(
-    platformStats.reduce((sum, stat) => sum + stat.avgVisibility, 0) / platformStats.length
+  // Calculate total stats with safe access
+  const totalMentions = apiTotalMentions || platformStats.reduce((sum, stat) => sum + (stat.mentions || 0), 0);
+  const avgVisibility = apiAvgVisibility || Math.round(
+    platformStats.reduce((sum, stat) => sum + (stat.avgVisibility || 0), 0) / (platformStats.length || 1)
   );
-  const topPlatform = platformStats.reduce((max, stat) =>
-    stat.mentions > max.mentions ? stat : max
-  );
+  const topPlatform = platformStats.length > 0
+    ? platformStats.reduce((max, stat) => (stat.mentions || 0) > (max.mentions || 0) ? stat : max)
+    : { platform: "chatgpt", mentions: 0, avgPosition: 0, avgVisibility: 0, trend: 0 };
 
   return (
     <div className="space-y-6 p-6">
-      {/* Header */}
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading platform visibility data...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load platform visibility data</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching platform mentions"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content - Only show when not loading and no error */}
+      {!isLoading && !isError && (
+        <>
+          {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Our Visibility</h1>
@@ -442,6 +489,8 @@ export default function OurVisibilityPage() {
           </div>
         )}
       </div>
+        </>
+      )}
     </div>
   );
 }
