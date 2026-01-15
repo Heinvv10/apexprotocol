@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, use } from "react";
 import { ArrowLeft, Mail, Phone, Building2, Zap, Calendar, MapPin, Edit2, MoreVertical } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -232,13 +232,16 @@ function getInteractionIcon(type: string) {
   }
 }
 
-export default function LeadDetailPage({ params }: { params: { id: string } }) {
+export default function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"overview" | "interactions" | "notes">("overview");
 
+  // Unwrap the async params using React.use()
+  const { id } = use(params);
+
   // Find lead by ID, fallback to first lead if not found
-  const leadDetail = mockLeads.find((lead) => lead.id === params.id) || mockLeads[0];
-  const interactions = mockInteractions[params.id as keyof typeof mockInteractions] || [];
+  const leadDetail = mockLeads.find((lead) => lead.id === id) || mockLeads[0];
+  const interactions = mockInteractions[id as keyof typeof mockInteractions] || [];
 
   return (
     <div className="space-y-6">
