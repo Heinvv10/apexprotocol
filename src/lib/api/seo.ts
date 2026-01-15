@@ -102,3 +102,89 @@ export async function createAudit(url: string): Promise<{ data: Audit; meta: { s
 
   return handleResponse(response);
 }
+
+// SEO Summary Types
+export interface SEOSummary {
+  overallScore: number;
+  technicalHealth: number;
+  contentQuality: number;
+  totalPages: number;
+  indexedPages: number;
+  trackedKeywords: number;
+  avgPosition: number;
+  organicTraffic: number;
+  recentIssues: number;
+}
+
+// SEO Page Types
+export interface SEOPage {
+  id: string;
+  url: string;
+  title: string;
+  metaDescription: string;
+  status: "indexed" | "not-indexed" | "error";
+  traffic: number;
+  keywords: number;
+  lastCrawled: string;
+  issues: string[];
+}
+
+// Keyword Types
+export interface Keyword {
+  id: string;
+  keyword: string;
+  position: number;
+  previousPosition: number;
+  searchVolume: number;
+  difficulty: number;
+  url: string;
+  traffic: number;
+  trend: "up" | "down" | "stable";
+}
+
+// Platform Monitoring Types
+export interface SEOPlatform {
+  platform: string;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+  avgPosition: number;
+  indexedPages: number;
+  trend: number;
+}
+
+/**
+ * Fetch SEO overview summary
+ */
+export async function getSEOSummary(): Promise<SEOSummary> {
+  const response = await fetch(`${API_BASE_URL}/api/seo/summary`);
+  if (!response.ok) throw new Error('Failed to fetch SEO summary');
+  return response.json();
+}
+
+/**
+ * Fetch all SEO pages
+ */
+export async function getSEOPages(): Promise<SEOPage[]> {
+  const response = await fetch(`${API_BASE_URL}/api/seo/pages`);
+  if (!response.ok) throw new Error('Failed to fetch SEO pages');
+  return response.json();
+}
+
+/**
+ * Fetch tracked keywords
+ */
+export async function getKeywords(): Promise<Keyword[]> {
+  const response = await fetch(`${API_BASE_URL}/api/seo/keywords`);
+  if (!response.ok) throw new Error('Failed to fetch keywords');
+  return response.json();
+}
+
+/**
+ * Fetch SEO platform monitoring data
+ */
+export async function getSEOPlatforms(): Promise<SEOPlatform[]> {
+  const response = await fetch(`${API_BASE_URL}/api/seo/platforms`);
+  if (!response.ok) throw new Error('Failed to fetch SEO platforms');
+  return response.json();
+}
