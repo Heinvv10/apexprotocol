@@ -107,6 +107,31 @@ export interface SocialSummary {
   lastUpdated: string;
 }
 
+// Social Post Types
+export interface SocialPost {
+  id: string;
+  platform: string;
+  content: string;
+  mediaUrls?: string[];
+  status: "draft" | "scheduled" | "published" | "failed";
+  scheduledFor?: string;
+  publishedAt?: string;
+  engagement?: {
+    likes: number;
+    comments: number;
+    shares: number;
+    views: number;
+  };
+  author?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SocialPostsResponse {
+  posts: SocialPost[];
+  total: number;
+}
+
 /**
  * Social Media API Functions
  */
@@ -165,5 +190,14 @@ export async function getSocialSummary(brandId: string): Promise<SocialSummary> 
     },
     dataSource: "calculated",
     lastUpdated: new Date().toISOString(),
+  };
+}
+
+export async function getSocialPosts(brandId: string): Promise<SocialPostsResponse> {
+  // For now, return mock data since Social API may not exist yet
+  // TODO: Replace with actual API call when backend is ready
+  return {
+    posts: [],
+    total: 0,
   };
 }

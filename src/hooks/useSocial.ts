@@ -9,10 +9,12 @@ import {
   getSocialMentions,
   getSocialMetrics,
   getSocialSummary,
+  getSocialPosts,
   type SocialAccountsResponse,
   type SocialMentionsResponse,
   type SocialMetricsResponse,
   type SocialSummary,
+  type SocialPostsResponse,
 } from "@/lib/api/social";
 
 /**
@@ -115,6 +117,33 @@ export function useSocialSummary(
 
   return {
     summary: data ?? null,
+    isLoading,
+    isError: !!error,
+    error,
+    mutate,
+  };
+}
+
+/**
+ * Hook to fetch social posts for a brand
+ */
+export function useSocialPosts(
+  brandId: string | null,
+  config?: SWRConfiguration<SocialPostsResponse>
+) {
+  const { data, error, isLoading, mutate } = useSWR<SocialPostsResponse>(
+    brandId ? `/api/social/posts?brandId=${brandId}` : null,
+    () => (brandId ? getSocialPosts(brandId) : null),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      ...config,
+    }
+  );
+
+  return {
+    posts: data?.posts ?? [],
+    total: data?.total ?? 0,
     isLoading,
     isError: !!error,
     error,
