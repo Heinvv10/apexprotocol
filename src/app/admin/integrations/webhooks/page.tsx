@@ -25,7 +25,9 @@ import {
   ExternalLink,
   Clock,
   Zap,
+  AlertCircle,
 } from "lucide-react";
+import { useWebhooksAdmin } from "@/hooks/useIntegrations";
 
 // Mock webhook data
 const webhooks = [
@@ -277,8 +279,16 @@ export default function WebhooksPage() {
   const [integrationFilter, setIntegrationFilter] = useState("all");
   const [selectedWebhook, setSelectedWebhook] = useState<string | null>(null);
 
+  // API data with fallback to mock data
+  const { webhooks: apiWebhooks, isLoading, isError, error } = useWebhooksAdmin();
+
+  // Use API data if available, otherwise use mock
+  const data = apiWebhooks?.webhooks && apiWebhooks.webhooks.length > 0
+    ? apiWebhooks.webhooks
+    : webhooks;
+
   // Filter webhooks
-  const filteredWebhooks = webhooks.filter((webhook) => {
+  const filteredWebhooks = data.filter((webhook) => {
     const searchMatch =
       searchQuery === "" ||
       webhook.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -295,14 +305,14 @@ export default function WebhooksPage() {
     : deliveryHistory;
 
   // Calculate summary stats
-  const totalWebhooks = webhooks.length;
-  const activeWebhooks = webhooks.filter((w) => w.status === "active").length;
-  const totalDeliveries = webhooks.reduce((sum, w) => sum + w.totalDeliveries, 0);
-  const failedDeliveries = webhooks.reduce((sum, w) => sum + w.failedDeliveries, 0);
+  const totalWebhooks = data.length;
+  const activeWebhooks = data.filter((w) => w.status === "active").length;
+  const totalDeliveries = data.reduce((sum, w) => sum + w.totalDeliveries, 0);
+  const failedDeliveries = data.reduce((sum, w) => sum + w.failedDeliveries, 0);
   const avgDeliveryRate =
-    webhooks.reduce((sum, w) => sum + w.deliveryRate, 0) / webhooks.length;
+    data.length > 0 ? data.reduce((sum, w) => sum + w.deliveryRate, 0) / data.length : 0;
   const avgResponseTime =
-    webhooks.reduce((sum, w) => sum + w.avgResponseTime, 0) / webhooks.length;
+    data.length > 0 ? data.reduce((sum, w) => sum + w.avgResponseTime, 0) / data.length : 0;
 
   return (
     <div className="space-y-6">
@@ -319,6 +329,32 @@ export default function WebhooksPage() {
         </Button>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <Card className="p-8 bg-gray-800/50 border-gray-700">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500" />
+            <span className="ml-3 text-gray-400">Loading webhooks...</span>
+          </div>
+        </Card>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <Card className="p-8 bg-gray-800/50 border-gray-700 border-red-500/50">
+          <div className="flex items-center justify-center text-red-400">
+            <AlertCircle className="h-8 w-8 mr-3" />
+            <div>
+              <p className="font-semibold">Failed to load webhooks</p>
+              <p className="text-sm text-gray-400">{error?.message || "Please try again later"}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Main Content */}
+      {!isLoading && !isError && (
+      <>
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card className="p-4 bg-gray-800/50 border-gray-700">
@@ -587,6 +623,8 @@ export default function WebhooksPage() {
             </p>
           </div>
         </Card>
+      )}
+      </>
       )}
     </div>
   );

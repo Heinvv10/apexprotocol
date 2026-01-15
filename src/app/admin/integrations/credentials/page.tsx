@@ -27,7 +27,9 @@ import {
   Lock,
   Search,
   Filter,
+  AlertCircle,
 } from "lucide-react";
+import { useCredentialsAdmin } from "@/hooks/useIntegrations";
 
 // Mock credential data
 const credentials = [
@@ -297,8 +299,16 @@ export default function CredentialsPage() {
   const [showKey, setShowKey] = useState<Record<string, boolean>>({});
   const [selectedCredential, setSelectedCredential] = useState<string | null>(null);
 
+  // API data with fallback to mock data
+  const { credentials: apiCredentials, isLoading, isError, error } = useCredentialsAdmin();
+
+  // Use API data if available, otherwise use mock
+  const data = apiCredentials && apiCredentials.length > 0
+    ? apiCredentials
+    : credentials;
+
   // Filter credentials
-  const filteredCredentials = credentials.filter((cred) => {
+  const filteredCredentials = data.filter((cred) => {
     const searchMatch =
       searchQuery === "" ||
       cred.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -314,13 +324,13 @@ export default function CredentialsPage() {
     : auditLogs;
 
   // Calculate summary stats
-  const totalCredentials = credentials.length;
-  const activeCredentials = credentials.filter((c) => c.status === "active").length;
-  const expiredCredentials = credentials.filter((c) => c.status === "expired").length;
-  const needsRotation = credentials.filter(
+  const totalCredentials = data.length;
+  const activeCredentials = data.filter((c) => c.status === "active").length;
+  const expiredCredentials = data.filter((c) => c.status === "expired").length;
+  const needsRotation = data.filter(
     (c) => c.needsRefresh || (c.expiresAt && new Date(c.expiresAt) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000))
   ).length;
-  const encryptedCredentials = credentials.filter((c) => c.encrypted).length;
+  const encryptedCredentials = data.filter((c) => c.encrypted).length;
 
   return (
     <div className="space-y-6">
@@ -337,8 +347,34 @@ export default function CredentialsPage() {
         </Button>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      {/* Loading State */}
+      {isLoading && (
+        <Card className="p-8 bg-gray-800/50 border-gray-700">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500" />
+            <span className="ml-3 text-gray-400">Loading credentials data...</span>
+          </div>
+        </Card>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <Card className="p-8 bg-gray-800/50 border-gray-700 border-red-500/50">
+          <div className="flex items-center justify-center text-red-400">
+            <AlertCircle className="h-8 w-8 mr-3" />
+            <div>
+              <p className="font-semibold">Failed to load credentials</p>
+              <p className="text-sm text-gray-400">{error?.message || "Please try again later"}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Main Content - Only show when not loading and no error */}
+      {!isLoading && !isError && (
+        <>
+          {/* Summary Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card className="p-4 bg-gray-800/50 border-gray-700">
           <div className="flex items-center gap-2 mb-2">
             <Key className="h-5 w-5 text-cyan-400" />
@@ -599,16 +635,18 @@ export default function CredentialsPage() {
         </div>
       </Card>
 
-      {filteredCredentials.length === 0 && (
-        <Card className="p-8 bg-gray-800/50 border-gray-700">
-          <div className="text-center">
-            <Key className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-white mb-2">No credentials found</h3>
-            <p className="text-sm text-gray-400">
-              Try adjusting your search or filter criteria
-            </p>
-          </div>
-        </Card>
+          {filteredCredentials.length === 0 && (
+            <Card className="p-8 bg-gray-800/50 border-gray-700">
+              <div className="text-center">
+                <Key className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-white mb-2">No credentials found</h3>
+                <p className="text-sm text-gray-400">
+                  Try adjusting your search or filter criteria
+                </p>
+              </div>
+            </Card>
+          )}
+        </>
       )}
     </div>
   );

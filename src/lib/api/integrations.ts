@@ -95,24 +95,19 @@ export interface IntegrationHealth {
 
 export interface Webhook {
   id: string;
-  name: string;
   integration: string;
-  url: string;
+  name: string;
+  endpoint: string;
   events: string[];
-  status: "active" | "inactive" | "failed";
-  secret: string;
+  status: "active" | "warning" | "paused" | "failed";
   createdAt: string;
-  lastTriggered: string | null;
-  successCount: number;
-  failureCount: number;
-  recentDeliveries: Array<{
-    id: string;
-    event: string;
-    status: "success" | "failed" | "pending";
-    responseCode: number | null;
-    duration: number;
-    timestamp: string;
-  }>;
+  lastTriggered: string;
+  deliveryRate: number;
+  totalDeliveries: number;
+  failedDeliveries: number;
+  avgResponseTime: number;
+  retryPolicy: string;
+  maxRetries: number;
 }
 
 export interface WebhooksList {
@@ -125,14 +120,18 @@ export interface Credential {
   id: string;
   integration: string;
   name: string;
-  type: "api_key" | "oauth" | "basic" | "token";
-  status: "active" | "expired" | "revoked";
+  type: "api_key" | "oauth_token" | "connection_string" | "oauth" | "basic" | "token";
+  status: "active" | "expired" | "revoked" | "warning";
   createdAt: string;
   expiresAt: string | null;
-  lastUsed: string | null;
-  rotationDue: string | null;
+  lastUsed: string;
+  lastRotated: string;
+  rotationPolicy: string;
   permissions: string[];
-  maskedValue: string;
+  keyPreview: string;
+  encrypted: boolean;
+  auditLogs: number;
+  needsRefresh?: boolean;
 }
 
 export interface CredentialsList {
