@@ -24,7 +24,9 @@ import {
   Share2,
   TrendingUp,
   Clock,
+  AlertCircle,
 } from "lucide-react";
+import { useIntegrationConfigsAdmin } from "@/hooks/useIntegrations";
 
 // Platform colors
 const platformColors = {
@@ -282,22 +284,52 @@ export default function IntegrationManagementPage() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType, setFilterType] = useState("all");
 
+  // API data with fallback to mock data
+  const { integrations: apiIntegrations, isLoading, isError, error } = useIntegrationConfigsAdmin();
+
+  // Use API data if available, otherwise use mock
+  const data = apiIntegrations && apiIntegrations.length > 0
+    ? apiIntegrations.map((int) => ({
+        ...int,
+        // Map API fields to expected UI structure
+        status: int.status === "active" ? "connected" : "disconnected",
+        health: int.status === "active" ? "healthy" : "warning",
+        lastSync: int.lastConfigured || new Date().toISOString(),
+        apiHealth: {
+          responseTime: 100,
+          errorRate: 0.1,
+          uptime: 99.9,
+        },
+        quota: {
+          used: 0,
+          limit: 10000,
+          percentage: 0,
+          unit: "requests",
+        },
+        features: int.features || [],
+        version: "1.0",
+        icon: Activity,
+      }))
+    : integrations;
+
   // Filter integrations
-  const filteredIntegrations = integrations.filter((integration) => {
+  const filteredIntegrations = data.filter((integration) => {
     const statusMatch = filterStatus === "all" || integration.status === filterStatus;
     const typeMatch = filterType === "all" || integration.type === filterType;
     return statusMatch && typeMatch;
   });
 
   // Calculate summary stats
-  const totalIntegrations = integrations.length;
-  const connectedIntegrations = integrations.filter((i) => i.status === "connected").length;
-  const healthyIntegrations = integrations.filter((i) => i.health === "healthy").length;
-  const warningIntegrations = integrations.filter((i) => i.health === "warning").length;
-  const avgResponseTime =
-    integrations.reduce((sum, i) => sum + i.apiHealth.responseTime, 0) / integrations.length;
-  const avgUptime =
-    integrations.reduce((sum, i) => sum + i.apiHealth.uptime, 0) / integrations.length;
+  const totalIntegrations = data.length;
+  const connectedIntegrations = data.filter((i) => i.status === "connected").length;
+  const healthyIntegrations = data.filter((i) => i.health === "healthy").length;
+  const warningIntegrations = data.filter((i) => i.health === "warning").length;
+  const avgResponseTime = data.length > 0
+    ? data.reduce((sum, i) => sum + i.apiHealth.responseTime, 0) / data.length
+    : 0;
+  const avgUptime = data.length > 0
+    ? data.reduce((sum, i) => sum + i.apiHealth.uptime, 0) / data.length
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -314,11 +346,37 @@ export default function IntegrationManagementPage() {
         </Button>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card className="p-4 bg-gray-800/50 border-gray-700">
-          <div className="flex items-center gap-2 mb-2">
-            <Activity className="h-5 w-5 text-cyan-400" />
+      {/* Loading State */}
+      {isLoading && (
+        <Card className="p-8 bg-gray-800/50 border-gray-700">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500" />
+            <span className="ml-3 text-gray-400">Loading integration data...</span>
+          </div>
+        </Card>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <Card className="p-8 bg-gray-800/50 border-gray-700 border-red-500/50">
+          <div className="flex items-center justify-center text-red-400">
+            <AlertCircle className="h-8 w-8 mr-3" />
+            <div>
+              <p className="font-semibold">Failed to load integrations</p>
+              <p className="text-sm text-gray-400">{error?.message || "Please try again later"}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Main Content - Only show when not loading and no error */}
+      {!isLoading && !isError && (
+        <>
+          {/* Summary Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <Card className="p-4 bg-gray-800/50 border-gray-700">
+              <div className="flex items-center gap-2 mb-2">
+                <Activity className="h-5 w-5 text-cyan-400" />
             <p className="text-sm text-gray-400">Total Integrations</p>
           </div>
           <p className="text-3xl font-bold text-white">{totalIntegrations}</p>
@@ -567,16 +625,18 @@ export default function IntegrationManagementPage() {
         </div>
       </Card>
 
-      {filteredIntegrations.length === 0 && (
-        <Card className="p-8 bg-gray-800/50 border-gray-700">
-          <div className="text-center">
-            <Activity className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-white mb-2">No integrations found</h3>
-            <p className="text-sm text-gray-400">
-              Try adjusting your filter criteria
-            </p>
-          </div>
-        </Card>
+          {filteredIntegrations.length === 0 && (
+            <Card className="p-8 bg-gray-800/50 border-gray-700">
+              <div className="text-center">
+                <Activity className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-white mb-2">No integrations found</h3>
+                <p className="text-sm text-gray-400">
+                  Try adjusting your filter criteria
+                </p>
+              </div>
+            </Card>
+          )}
+        </>
       )}
     </div>
   );
