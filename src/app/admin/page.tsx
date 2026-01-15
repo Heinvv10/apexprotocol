@@ -17,6 +17,8 @@ import {
   Settings,
   FileText,
   Loader2,
+  DollarSign,
+  Cpu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/lib/utils";
@@ -54,6 +56,21 @@ interface ActivityItem {
   relativeTime: string;
 }
 
+interface AICostsSummary {
+  totalCost: number;
+  totalTokens: number;
+  byProvider: Record<string, {
+    cost: number;
+    tokens: number;
+    models: Record<string, { cost: number; tokens: number }>;
+  }>;
+  period: {
+    days: number;
+    startDate: string;
+    endDate: string;
+  };
+}
+
 // Stats card component following design system
 function StatsCard({
   title,
@@ -63,6 +80,8 @@ function StatsCard({
   icon: Icon,
   tier = "secondary",
   loading = false,
+  href,
+  onClick,
 }: {
   title: string;
   value: string | number;
@@ -71,6 +90,8 @@ function StatsCard({
   icon: React.ComponentType<{ className?: string }>;
   tier?: "primary" | "secondary" | "tertiary";
   loading?: boolean;
+  href?: string;
+  onClick?: () => void;
 }) {
   const tierClasses = {
     primary: "card-primary",
@@ -78,8 +99,10 @@ function StatsCard({
     tertiary: "card-tertiary",
   };
 
-  return (
-    <div className={tierClasses[tier]}>
+  const isClickable = href || onClick;
+
+  const content = (
+    <div className={`${tierClasses[tier]} ${isClickable ? "cursor-pointer hover:ring-2 hover:ring-red-500/30 transition-all" : ""}`}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-muted-foreground">{title}</p>
@@ -113,6 +136,16 @@ function StatsCard({
       </div>
     </div>
   );
+
+  if (href) {
+    return <Link href={href}>{content}</Link>;
+  }
+
+  if (onClick) {
+    return <div onClick={onClick}>{content}</div>;
+  }
+
+  return content;
 }
 
 // System health indicator
@@ -196,6 +229,7 @@ export default function AdminDashboardPage() {
   const [health, setHealth] = React.useState<SystemHealth | null>(null);
   const [resources, setResources] = React.useState<ResourceUsage | null>(null);
   const [activities, setActivities] = React.useState<ActivityItem[]>([]);
+  const [aiCosts, setAiCosts] = React.useState<AICostsSummary | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -204,11 +238,12 @@ export default function AdminDashboardPage() {
     try {
       setError(null);
 
-      const [statsRes, healthRes, resourcesRes, activityRes] = await Promise.all([
+      const [statsRes, healthRes, resourcesRes, activityRes, aiCostsRes] = await Promise.all([
         fetch("/api/admin/dashboard/stats"),
         fetch("/api/admin/dashboard/health"),
         fetch("/api/admin/dashboard/resources"),
         fetch("/api/admin/dashboard/activity?limit=5"),
+        fetch("/api/admin/dashboard/ai-costs?days=30"),
       ]);
 
       if (statsRes.ok) {
@@ -229,6 +264,11 @@ export default function AdminDashboardPage() {
       if (activityRes.ok) {
         const activityData = await activityRes.json();
         setActivities(activityData.activities || []);
+      }
+
+      if (aiCostsRes.ok) {
+        const aiCostsData = await aiCostsRes.json();
+        setAiCosts(aiCostsData.data);
       }
     } catch (err) {
       setError("Failed to fetch dashboard data");
@@ -293,7 +333,7 @@ export default function AdminDashboardPage() {
       )}
 
       {/* Key Metrics - Primary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatsCard
           title="Total Organizations"
           value={stats?.totalOrganizations ?? 0}
@@ -302,6 +342,7 @@ export default function AdminDashboardPage() {
           icon={Building2}
           tier="primary"
           loading={loading}
+          href="/admin/organizations"
         />
         <StatsCard
           title="Total Users"
@@ -311,6 +352,7 @@ export default function AdminDashboardPage() {
           icon={Users}
           tier="primary"
           loading={loading}
+          href="/admin/users"
         />
         <StatsCard
           title="Active Sessions"
@@ -320,6 +362,7 @@ export default function AdminDashboardPage() {
           icon={Activity}
           tier="primary"
           loading={loading}
+          href="/admin/audit-logs"
         />
         <StatsCard
           title="API Requests (24h)"
@@ -329,6 +372,27 @@ export default function AdminDashboardPage() {
           icon={TrendingUp}
           tier="primary"
           loading={loading}
+          href="/admin/audit-logs"
+        />
+        <StatsCard
+          title="AI Costs (30d)"
+          value={aiCosts ? `$${aiCosts.totalCost.toFixed(2)}` : "$0.00"}
+          change={aiCosts ? `${aiCosts.period.days} day period` : undefined}
+          changeType="neutral"
+          icon={DollarSign}
+          tier="primary"
+          loading={loading}
+          href="/admin/ai-costs"
+        />
+        <StatsCard
+          title="AI Tokens (30d)"
+          value={formatNumber(aiCosts?.totalTokens ?? 0, { abbreviate: true })}
+          change={aiCosts ? `${Object.keys(aiCosts.byProvider).length} providers` : undefined}
+          changeType="neutral"
+          icon={Cpu}
+          tier="primary"
+          loading={loading}
+          href="/admin/ai-costs"
         />
       </div>
 
@@ -473,11 +537,11 @@ export default function AdminDashboardPage() {
       {/* Quick Actions */}
       <div className="card-secondary">
         <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <Link href="/admin/organizations">
             <Button
               variant="outline"
-              className="w-full h-auto py-4 flex-col gap-2 border-white/10 hover:bg-white/5 hover:border-red-500/30"
+              className="w-full h-auto py-4 flex-col gap-2 border-white/20 hover:bg-white/10 hover:border-red-500/50 text-gray-200"
             >
               <Building2 className="h-5 w-5 text-red-400" />
               <span className="text-xs">Organizations</span>
@@ -486,7 +550,7 @@ export default function AdminDashboardPage() {
           <Link href="/admin/users">
             <Button
               variant="outline"
-              className="w-full h-auto py-4 flex-col gap-2 border-white/10 hover:bg-white/5 hover:border-red-500/30"
+              className="w-full h-auto py-4 flex-col gap-2 border-white/20 hover:bg-white/10 hover:border-red-500/50 text-gray-200"
             >
               <Users className="h-5 w-5 text-red-400" />
               <span className="text-xs">Manage Users</span>
@@ -495,19 +559,28 @@ export default function AdminDashboardPage() {
           <Link href="/admin/audit-logs">
             <Button
               variant="outline"
-              className="w-full h-auto py-4 flex-col gap-2 border-white/10 hover:bg-white/5 hover:border-red-500/30"
+              className="w-full h-auto py-4 flex-col gap-2 border-white/20 hover:bg-white/10 hover:border-red-500/50 text-gray-200"
             >
               <FileText className="h-5 w-5 text-red-400" />
               <span className="text-xs">Audit Logs</span>
             </Button>
           </Link>
-          <Link href="/admin/api-config">
+          <Link href="/admin/api-keys">
             <Button
               variant="outline"
-              className="w-full h-auto py-4 flex-col gap-2 border-white/10 hover:bg-white/5 hover:border-red-500/30"
+              className="w-full h-auto py-4 flex-col gap-2 border-white/20 hover:bg-white/10 hover:border-red-500/50 text-gray-200"
             >
               <Settings className="h-5 w-5 text-red-400" />
-              <span className="text-xs">API Config</span>
+              <span className="text-xs">API Keys</span>
+            </Button>
+          </Link>
+          <Link href="/admin/ai-costs">
+            <Button
+              variant="outline"
+              className="w-full h-auto py-4 flex-col gap-2 border-white/20 hover:bg-white/10 hover:border-red-500/50 text-gray-200"
+            >
+              <DollarSign className="h-5 w-5 text-red-400" />
+              <span className="text-xs">AI Costs</span>
             </Button>
           </Link>
         </div>
