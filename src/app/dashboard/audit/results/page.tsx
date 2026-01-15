@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   AlertCircle,
@@ -25,8 +26,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { GeoScoreGauge } from "@/components/dashboard/geo-score-gauge";
 import { cn } from "@/lib/utils";
-import { useAuditsByBrand, useAuditIssues, Audit, AuditIssue } from "@/hooks/useAudit";
+import { useAuditsByBrand, useAudit, Audit, AuditIssue } from "@/hooks/useAudit";
 import { useSelectedBrand } from "@/stores";
+import { formatDateCustom } from "@/lib/utils/formatters";
+import { useQuickExport } from "@/hooks/useExport";
+import { Download } from "lucide-react";
 
 // Audit result data interfaces
 export interface SubScore {
@@ -102,7 +106,7 @@ function transformAuditToResult(audit: Audit, issues: AuditIssue[]): AuditResult
 
   return {
     url: audit.url,
-    auditDate: new Date(audit.startedAt).toLocaleDateString("en-US", {
+    auditDate: formatDateCustom(audit.startedAt, {
       month: "long",
       day: "numeric",
       year: "numeric",
@@ -275,62 +279,138 @@ function SubScoreCard({
   max: number;
   icon: React.ElementType;
 }) {
-  const percentage = (score / max) * 100;
-  const color =
-    percentage >= 80
-      ? "bg-success"
-      : percentage >= 60
-      ? "bg-primary"
-      : percentage >= 40
-      ? "bg-warning"
-      : "bg-error";
+  const percentage = Math.round((score / max) * 100);
+
+  // Determine color based on percentage
+  const getColor = () => {
+    if (percentage >= 80) return { bg: "#22C55E", text: "text-success" }; // green
+    if (percentage >= 60) return { bg: "#00E5CC", text: "text-primary" }; // cyan
+    if (percentage >= 40) return { bg: "#F59E0B", text: "text-warning" }; // amber
+    return { bg: "#EF4444", text: "text-error" }; // red
+  };
+
+  const colorInfo = getColor();
 
   return (
-    <div className="card-secondary p-4 space-y-3">
-      <div className="flex items-center gap-2">
+    <div className="card-secondary p-4 flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-3">
         <Icon className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium">{label}</span>
+        <span className="text-sm font-medium text-foreground">{label}</span>
       </div>
-      <div className="flex items-end gap-2">
-        <span className="text-3xl font-bold">{score}</span>
-        <span className="text-sm text-muted-foreground mb-1">/ {max}</span>
+
+      {/* Score - centered vertically */}
+      <div className="flex-1 flex items-center">
+        <div className="flex items-baseline gap-1">
+          <span className={cn("text-5xl font-bold", colorInfo.text)}>{score}</span>
+          <span className="text-lg text-muted-foreground">/ {max}</span>
+        </div>
       </div>
-      <div className="h-2 bg-muted rounded-full overflow-hidden">
+
+      {/* Progress bar at bottom */}
+      <div className="mt-auto pt-3">
         <div
-          className={cn("h-full rounded-full transition-all duration-500", color)}
-          style={{ width: `${percentage}%` }}
-        />
+          className="h-2 rounded-full overflow-hidden"
+          style={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+        >
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${percentage}%`,
+              backgroundColor: colorInfo.bg,
+            }}
+          />
+        </div>
+        <div className="text-xs text-muted-foreground mt-1">
+          {percentage}% score
+        </div>
       </div>
     </div>
   );
 }
 
-export default function AuditResultsPage() {
+function AuditResultsContent() {
   const [expandedSections, setExpandedSections] = React.useState<IssueSeverity[]>(["critical", "high"]);
+  const [isExporting, setIsExporting] = React.useState(false);
+  const [exportStatus, setExportStatus] = React.useState<string | null>(null);
   const selectedBrand = useSelectedBrand();
+  const searchParams = useSearchParams();
+  const auditIdFromUrl = searchParams.get("id");
+  const { exportAndDownload, isLoading: isExportLoading } = useQuickExport();
 
-  // Fetch audits for the brand - get the most recent completed audit
+  // Export handler
+  const handleExport = async () => {
+    if (!selectedBrand?.id) return;
+
+    setIsExporting(true);
+    setExportStatus("Generating report...");
+
+    try {
+      await exportAndDownload(
+        {
+          format: "pdf",
+          dataType: "audits",
+          brandId: selectedBrand.id,
+        },
+        (status) => {
+          if (status === "processing") {
+            setExportStatus("Processing...");
+          } else if (status === "completed") {
+            setExportStatus("Download starting...");
+          }
+        }
+      );
+      setExportStatus(null);
+    } catch (error) {
+      console.error("Export failed:", error);
+      setExportStatus("Export failed");
+      setTimeout(() => setExportStatus(null), 3000);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // If we have an audit ID from URL, fetch that specific audit
+  const { data: specificAudit, isLoading: isLoadingSpecificAudit } = useAudit(
+    auditIdFromUrl || "",
+    { enabled: !!auditIdFromUrl }
+  );
+
+  // Otherwise, fetch audits for the brand - get the most recent completed audit
   const { data: auditsData, isLoading: isLoadingAudits } = useAuditsByBrand(
     selectedBrand?.id || "",
     { limit: 1, status: "completed" }
   );
 
-  // Get the most recent audit
-  const latestAudit = auditsData?.audits?.[0];
+  // Get the audit to display - prefer specific audit from URL, fallback to latest
+  const latestAudit = auditIdFromUrl && specificAudit ? specificAudit : auditsData?.audits?.[0];
 
-  // Fetch issues for the latest audit
-  const { data: issuesData, isLoading: isLoadingIssues } = useAuditIssues(
-    latestAudit?.id || "",
-    { enabled: !!latestAudit?.id }
-  );
+  // Transform embedded issues to AuditIssue format
+  const embeddedIssues: AuditIssue[] = React.useMemo(() => {
+    if (!latestAudit?.issues) return [];
+    return latestAudit.issues.map((issue) => ({
+      id: issue.id,
+      auditId: latestAudit.id,
+      category: issue.category as AuditIssue["category"],
+      severity: issue.severity,
+      type: issue.category,
+      title: issue.title,
+      description: issue.description,
+      url: issue.url || (issue.affectedPages?.[0]),
+      recommendation: issue.recommendation || "",
+      impact: issue.impact || "",
+      effort: "medium" as const,
+      status: "open" as const,
+    }));
+  }, [latestAudit]);
 
-  // Transform to UI format
+  // Transform to UI format - use embedded issues from audit
   const auditResult = React.useMemo<AuditResult | null>(() => {
     if (!latestAudit) return null;
-    return transformAuditToResult(latestAudit, issuesData || []);
-  }, [latestAudit, issuesData]);
+    return transformAuditToResult(latestAudit, embeddedIssues);
+  }, [latestAudit, embeddedIssues]);
 
-  const isLoading = isLoadingAudits || (latestAudit && isLoadingIssues);
+  const isLoading = (auditIdFromUrl ? isLoadingSpecificAudit : isLoadingAudits);
   const hasData = auditResult !== null;
 
   const toggleSection = (severity: IssueSeverity) => {
@@ -416,9 +496,22 @@ export default function AuditResultsPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline">
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Export Report
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            disabled={isExporting || isExportLoading}
+          >
+            {isExporting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {exportStatus || "Exporting..."}
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4 mr-2" />
+                Export Report
+              </>
+            )}
           </Button>
           <Button>Re-run Audit</Button>
         </div>
@@ -513,5 +606,14 @@ export default function AuditResultsPage() {
         })}
       </div>
     </div>
+  );
+}
+
+// Wrapper with Suspense for useSearchParams
+export default function AuditResultsPage() {
+  return (
+    <React.Suspense fallback={<ResultsLoadingState />}>
+      <AuditResultsContent />
+    </React.Suspense>
   );
 }
