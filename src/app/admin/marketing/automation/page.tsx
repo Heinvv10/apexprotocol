@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search, Play, Pause, Users, TrendingUp, Mail, Clock, Copy, Plus } from "lucide-react";
+import { Search, Play, Pause, Users, TrendingUp, Mail, Clock, Copy, Plus, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
+import { useSequences } from "@/hooks/useMarketing";
 
 // Mock email sequences data
 const mockSequences = [
@@ -151,42 +152,46 @@ const mockAutomationLogs = [
 ];
 
 export default function AutomationPage() {
+  // API data with fallback to mock data
+  const { sequences: apiSequences, isLoading, isError, error } = useSequences();
+  const sequences = apiSequences.length > 0 ? apiSequences : mockSequences;
+
   const [searchQuery, setSearchQuery] = useState("");
   const [triggerFilter, setTriggerFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
   // Filter sequences
-  const filteredSequences = mockSequences.filter((seq) => {
+  const filteredSequences = sequences.filter((seq) => {
     const matchesSearch =
       searchQuery === "" ||
       seq.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      seq.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (seq.description && seq.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesTrigger =
-      triggerFilter === "all" || seq.triggerType === triggerFilter;
+      triggerFilter === "all" || seq.trigger === triggerFilter;
 
     const matchesStatus =
       statusFilter === "all" ||
-      (statusFilter === "active" && seq.isActive) ||
-      (statusFilter === "inactive" && !seq.isActive);
+      (statusFilter === "active" && seq.status === "active") ||
+      (statusFilter === "inactive" && seq.status !== "active");
 
     return matchesSearch && matchesTrigger && matchesStatus;
   });
 
-  // Calculate stats
-  const totalSequences = mockSequences.length;
-  const activeSequences = mockSequences.filter((s) => s.isActive).length;
-  const totalEnrollments = mockSequences.reduce(
-    (sum, s) => sum + s.enrollmentCount,
+  // Calculate stats with safe field access
+  const totalSequences = sequences.length;
+  const activeSequences = sequences.filter((s) => s.status === "active").length;
+  const totalEnrollments = sequences.reduce(
+    (sum, s) => sum + (s.stats?.subscribers || 0),
     0
   );
-  const totalConversions = mockSequences.reduce(
-    (sum, s) => sum + s.conversionCount,
+  const totalConversions = sequences.reduce(
+    (sum, s) => sum + (s.stats?.conversions || 0),
     0
   );
   const avgConversionRate =
     totalSequences > 0
-      ? mockSequences.reduce((sum, s) => sum + s.conversionRate, 0) /
+      ? sequences.reduce((sum, s) => sum + (s.stats?.conversionRate || 0), 0) /
         totalSequences
       : 0;
 
@@ -259,7 +264,35 @@ export default function AutomationPage() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading sequences...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load sequences</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching sequences"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {!isLoading && !isError && (
+        <>
+          {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card-secondary p-4">
           <div className="flex items-center justify-between">
@@ -397,91 +430,93 @@ export default function AutomationPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filteredSequences.map((sequence) => (
-                <tr
-                  key={sequence.id}
-                  className="hover:bg-background/50 transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/marketing/automation/${sequence.id}`}
-                      className="font-medium text-white hover:text-cyan-400"
-                    >
-                      {sequence.name}
-                    </Link>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      {sequence.description}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    {sequence.isTemplate ? (
-                      <span className="text-xs px-2 py-1 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                        Template
-                      </span>
-                    ) : (
+              {filteredSequences.map((sequence) => {
+                const emailCount = sequence.emails?.length || 0;
+                const subscribers = sequence.stats?.subscribers || 0;
+                const conversions = sequence.stats?.conversions || 0;
+                const conversionRate = sequence.stats?.conversionRate || 0;
+                const isActive = sequence.status === "active";
+
+                return (
+                  <tr
+                    key={sequence.id}
+                    className="hover:bg-background/50 transition-colors"
+                  >
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/admin/marketing/automation/${sequence.id}`}
+                        className="font-medium text-white hover:text-cyan-400"
+                      >
+                        {sequence.name}
+                      </Link>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {sequence.description || "No description"}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
                       <span className="text-xs px-2 py-1 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                        Custom
+                        Sequence
                       </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`text-xs px-2 py-1 rounded text-white ${getTriggerColor(
-                        sequence.triggerType
-                      )}`}
-                    >
-                      {getTriggerLabel(sequence.triggerType)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-white">
-                    {sequence.emailIds.length} emails
-                  </td>
-                  <td className="px-4 py-3 text-sm text-white">
-                    {sequence.enrollmentCount.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-white">
-                    {sequence.conversionCount.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-sm font-medium text-green-400">
-                      {sequence.conversionRate.toFixed(1)}%
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {sequence.isActive ? (
-                      <span className="text-xs px-2 py-1 rounded bg-green-500/10 text-green-400 border border-green-500/20">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="text-xs px-2 py-1 rounded bg-red-500/10 text-red-400 border border-red-500/20">
-                        Inactive
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-muted-foreground hover:text-cyan-400"
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`text-xs px-2 py-1 rounded text-white ${getTriggerColor(
+                          sequence.trigger
+                        )}`}
                       >
-                        {sequence.isActive ? (
-                          <Pause className="h-4 w-4" />
-                        ) : (
-                          <Play className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-muted-foreground hover:text-cyan-400"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {getTriggerLabel(sequence.trigger)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-white">
+                      {emailCount} emails
+                    </td>
+                    <td className="px-4 py-3 text-sm text-white">
+                      {subscribers.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-white">
+                      {conversions.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm font-medium text-green-400">
+                        {conversionRate.toFixed(1)}%
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {isActive ? (
+                        <span className="text-xs px-2 py-1 rounded bg-green-500/10 text-green-400 border border-green-500/20">
+                          Active
+                        </span>
+                      ) : (
+                        <span className="text-xs px-2 py-1 rounded bg-red-500/10 text-red-400 border border-red-500/20">
+                          Inactive
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-cyan-400"
+                        >
+                          {isActive ? (
+                            <Pause className="h-4 w-4" />
+                          ) : (
+                            <Play className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-cyan-400"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -528,6 +563,8 @@ export default function AutomationPage() {
           ))}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

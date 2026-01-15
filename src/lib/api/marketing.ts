@@ -301,3 +301,225 @@ export async function createSocialPost(data: {
 
   return handleResponse(response);
 }
+
+/**
+ * Email Sequence Types
+ */
+
+export interface SequenceEmail {
+  id: string;
+  subject: string;
+  delay: number; // hours
+  template?: string;
+}
+
+export interface Sequence {
+  id: string;
+  name: string;
+  description?: string;
+  status: "active" | "draft" | "paused";
+  trigger: "immediate" | "delayed" | "event" | "behavior";
+  emails: SequenceEmail[];
+  stats: {
+    subscribers: number;
+    sent: number;
+    opened: number;
+    clicked: number;
+    conversions: number;
+    openRate: number;
+    clickRate: number;
+    conversionRate: number;
+  };
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface SequenceListResponse {
+  data: Sequence[];
+  meta: {
+    total: number;
+    success: boolean;
+  };
+}
+
+/**
+ * Email Template Types
+ */
+
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  content: string;
+  category: "welcome" | "promotional" | "transactional" | "newsletter" | "custom";
+  stats: {
+    sent: number;
+    opened: number;
+    clicked: number;
+    openRate: number;
+    clickRate: number;
+  };
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface EmailTemplateListResponse {
+  data: EmailTemplate[];
+  meta: {
+    total: number;
+    success: boolean;
+  };
+}
+
+/**
+ * Content Calendar Types
+ */
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  type: "email" | "social" | "blog" | "webinar" | "event";
+  status: "draft" | "scheduled" | "published" | "cancelled";
+  scheduledDate: string;
+  campaignId?: string;
+  assignee?: string;
+  description?: string;
+}
+
+export interface ContentCalendarResponse {
+  data: CalendarEvent[];
+  meta: {
+    total: number;
+    success: boolean;
+  };
+}
+
+/**
+ * Marketing Overview Types
+ */
+
+export interface MarketingOverviewResponse {
+  data: {
+    campaigns: {
+      total: number;
+      active: number;
+      avgROI: number;
+    };
+    emailLists: {
+      total: number;
+      totalSubscribers: number;
+      avgOpenRate: number;
+      avgClickRate: number;
+    };
+    sequences: {
+      total: number;
+      active: number;
+      avgConversionRate: number;
+    };
+    contentCalendar: {
+      scheduled: number;
+      published: number;
+      draft: number;
+    };
+  };
+  meta: {
+    success: boolean;
+  };
+}
+
+/**
+ * Email Sequence API Functions
+ */
+
+export async function getSequences(): Promise<SequenceListResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/marketing/sequences`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  return handleResponse<SequenceListResponse>(response);
+}
+
+export async function getSequence(id: string): Promise<{ data: Sequence; meta: { success: boolean } }> {
+  const response = await fetch(`${API_BASE_URL}/api/marketing/sequences/${id}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  return handleResponse(response);
+}
+
+/**
+ * Email Template API Functions
+ */
+
+export async function getEmailTemplates(): Promise<EmailTemplateListResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/marketing/templates`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  return handleResponse<EmailTemplateListResponse>(response);
+}
+
+export async function getEmailTemplate(id: string): Promise<{ data: EmailTemplate; meta: { success: boolean } }> {
+  const response = await fetch(`${API_BASE_URL}/api/marketing/templates/${id}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  return handleResponse(response);
+}
+
+/**
+ * Content Calendar API Functions
+ */
+
+export async function getContentCalendar(params?: {
+  startDate?: string;
+  endDate?: string;
+  type?: string;
+}): Promise<ContentCalendarResponse> {
+  const queryParams = new URLSearchParams();
+  if (params?.startDate) queryParams.append("startDate", params.startDate);
+  if (params?.endDate) queryParams.append("endDate", params.endDate);
+  if (params?.type) queryParams.append("type", params.type);
+
+  const response = await fetch(`${API_BASE_URL}/api/marketing/calendar?${queryParams.toString()}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  return handleResponse<ContentCalendarResponse>(response);
+}
+
+/**
+ * Marketing Overview API Functions
+ */
+
+export async function getMarketingOverview(): Promise<MarketingOverviewResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/marketing/overview`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  return handleResponse<MarketingOverviewResponse>(response);
+}
