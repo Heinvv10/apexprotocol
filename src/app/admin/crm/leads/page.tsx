@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, ChevronDown, Plus, Trash2, Download, MoreHorizontal } from "lucide-react";
+import { Search, ChevronDown, Plus, Trash2, Download, MoreHorizontal, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLeads } from "@/hooks/useCRM";
 
 // Mock data - will be replaced with API call
 const mockLeads = [
@@ -129,9 +130,15 @@ export default function LeadsPage() {
   const [sortBy, setSortBy] = useState<"name" | "score" | "date">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
+  // Fetch leads from API
+  const { leads, isLoading, isError, error } = useLeads();
+
+  // Use API data if available, fallback to mock data for development
+  const allLeads = leads.length > 0 ? leads : mockLeads;
+
   // Filter and search logic
   const filteredLeads = useMemo(() => {
-    let filtered = mockLeads.filter((lead) => {
+    let filtered = allLeads.filter((lead: any) => {
       const matchesSearch =
         searchTerm === "" ||
         lead.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -164,13 +171,13 @@ export default function LeadsPage() {
     });
 
     return filtered;
-  }, [searchTerm, statusFilter, sourceFilter, sortBy, sortOrder]);
+  }, [allLeads, searchTerm, statusFilter, sourceFilter, sortBy, sortOrder]);
 
   const stats = {
-    total: mockLeads.length,
-    new: mockLeads.filter((l) => l.status === "new").length,
-    mql: mockLeads.filter((l) => l.status === "mql").length,
-    sql: mockLeads.filter((l) => l.status === "sql").length,
+    total: allLeads.length,
+    new: allLeads.filter((l: any) => l.status === "new").length,
+    mql: allLeads.filter((l: any) => l.status === "mql").length,
+    sql: allLeads.filter((l: any) => l.status === "sql").length,
   };
 
   const toggleLeadSelection = (leadId: string) => {
@@ -204,6 +211,31 @@ export default function LeadsPage() {
           New Lead
         </Button>
       </div>
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load leads</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching leads"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading leads...</p>
+          </div>
+        </div>
+      )}
 
       {/* Filters and Search */}
       <div className="card-secondary p-4 space-y-3">
