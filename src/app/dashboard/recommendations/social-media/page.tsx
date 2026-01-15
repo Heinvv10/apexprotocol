@@ -43,6 +43,13 @@ interface SocialMediaStrategy {
   };
 }
 
+interface ActionPlan {
+  quickWins?: string[];
+  firstMonth?: string[];
+  threeMonths?: string[];
+  sixMonths?: string[];
+}
+
 const PLATFORM_COLORS: Record<string, string> = {
   linkedin: "bg-blue-500/20 text-blue-600",
   twitter: "bg-sky-500/20 text-sky-600",
@@ -57,7 +64,7 @@ export default function SocialMediaDashboard() {
   const [selectedPlatform, setSelectedPlatform] = React.useState<string>("linkedin");
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [actionPlan, setActionPlan] = React.useState(null);
+  const [actionPlan, setActionPlan] = React.useState<ActionPlan | null>(null);
 
   const fetchStrategies = React.useCallback(async () => {
     setIsLoading(true);

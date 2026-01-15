@@ -361,7 +361,7 @@ function generateCompetitorSnapshots(brandId: string): schema.NewCompetitorSnaps
       const geoScore = randomInRange(60, 88);
       const mentionCount = randomInRange(35, 95);
 
-      const platformBreakdown: schema.PlatformMetrics[] = platforms.map((p) => ({
+      const platformBreakdown: schema.CompetitorPlatformMetrics[] = platforms.map((p) => ({
         platform: p,
         mentions: randomInRange(6, 18),
         avgPosition: Number((Math.random() * 3.5 + 1).toFixed(1)),

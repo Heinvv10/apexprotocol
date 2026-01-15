@@ -6,7 +6,8 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown, Trash2, User, Puzzle, Bell, Users, CreditCard, Key, Loader2, Check, AlertCircle, X, Upload, ExternalLink } from "lucide-react";
 import { ApiKeysSection, IntegrationsSection, NotificationsSection } from "@/components/settings/settings-sections";
-import { useUser } from "@clerk/nextjs";
+import { useUserSafe } from "@/components/providers/clerk-provider";
+import { formatDate } from "@/lib/utils/formatters";
 
 // Available languages
 const LANGUAGES = [
@@ -364,7 +365,7 @@ function BillingSection() {
                 {subscription.cancelAtPeriodEnd
                   ? "Cancels on "
                   : "Renews on "}
-                {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                {formatDate(subscription.currentPeriodEnd, "short")}
               </p>
             )}
           </div>
@@ -459,7 +460,7 @@ function DecorativeStar() {
 }
 
 export default function SettingsClient() {
-  const { user, isLoaded: isUserLoaded } = useUser();
+  const { user, isLoaded: isUserLoaded } = useUserSafe();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -717,7 +718,7 @@ export default function SettingsClient() {
 
                 <p className="text-xs text-muted-foreground/70">
                   {isUserLoaded && user
-                    ? `Signed in since ${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}`
+                    ? `Signed in since ${formatDate(user.createdAt, "short")}`
                     : "Loading profile information..."}
                 </p>
 

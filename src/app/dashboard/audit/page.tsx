@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Search, Globe, Loader2, AlertCircle, CheckCircle2, Clock, Bot, ArrowRight, RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, Globe, Loader2, AlertCircle, CheckCircle2, Clock, Bot, ArrowRight, RefreshCw, XCircle, RotateCcw, ExternalLink } from "lucide-react";
 
 // Decorative star component
 function DecorativeStar() {
@@ -26,10 +27,24 @@ function DecorativeStar() {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSelectedBrand } from "@/stores";
-import { useAuditsByBrand, useStartAudit, Audit } from "@/hooks/useAudit";
+import { useAuditsByBrand, useStartAudit, useCancelAudit, useRetryAudit, Audit } from "@/hooks/useAudit";
+import { formatDate } from "@/lib/utils/formatters";
 
 // URL validation regex - validates http/https URLs
 const URL_REGEX = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$/;
+
+// Threshold for considering an audit "stuck" (10 minutes)
+const STUCK_AUDIT_THRESHOLD_MS = 10 * 60 * 1000;
+
+// Check if an audit is potentially stuck (running too long)
+function isAuditStuck(audit: Audit): boolean {
+  if (audit.status !== "pending" && audit.status !== "crawling" && audit.status !== "analyzing") {
+    return false;
+  }
+  const startTime = new Date(audit.startedAt).getTime();
+  const now = Date.now();
+  return (now - startTime) > STUCK_AUDIT_THRESHOLD_MS;
+}
 
 export interface AuditHistoryItem {
   id: string;
@@ -37,6 +52,8 @@ export interface AuditHistoryItem {
   score: number;
   status: "completed" | "in_progress" | "failed";
   date: string;
+  startedAt: string;
+  isStuck: boolean;
 }
 
 // Transform API audit to history item format
@@ -49,20 +66,17 @@ function auditToHistoryItem(audit: Audit): AuditHistoryItem {
     failed: "failed",
   };
 
-  // Get date from completedAt or startedAt
-  let dateString = "";
-  if (audit.completedAt) {
-    dateString = new Date(audit.completedAt).toLocaleDateString();
-  } else if (audit.startedAt) {
-    dateString = new Date(audit.startedAt).toLocaleDateString();
-  }
+  // Get date from completedAt or startedAt using safe formatter
+  const dateString = formatDate(audit.completedAt || audit.startedAt, "short");
 
   return {
     id: audit.id,
     url: audit.url,
     score: audit.overallScore || 0,
     status: statusMap[audit.status] || "in_progress",
-    date: dateString || "Unknown date",
+    date: dateString !== "N/A" ? dateString : "Unknown date",
+    startedAt: audit.startedAt,
+    isStuck: isAuditStuck(audit),
   };
 }
 
@@ -140,6 +154,8 @@ function AuditHistoryErrorState({ error, onRetry }: { error: Error; onRetry: () 
 }
 
 export default function AuditPage() {
+  const router = useRouter();
+
   // Get selected brand from global state
   const selectedBrand = useSelectedBrand();
 
@@ -155,6 +171,10 @@ export default function AuditPage() {
 
   // Start audit mutation
   const startAuditMutation = useStartAudit();
+
+  // Cancel and retry audit mutations
+  const cancelAuditMutation = useCancelAudit();
+  const retryAuditMutation = useRetryAudit();
 
   // Transform API audits to history items
   const auditHistory: AuditHistoryItem[] = React.useMemo(() => {
@@ -409,15 +429,38 @@ export default function AuditPage() {
             {auditHistory.map((item) => (
               <div
                 key={item.id}
-                className="card-tertiary p-4 flex items-center justify-between hover:bg-accent/50 transition-colors cursor-pointer"
+                className="card-tertiary p-4 flex items-center justify-between hover:bg-accent/50 transition-colors cursor-pointer group"
+                onClick={() => {
+                  if (item.status === "completed") {
+                    router.push(`/dashboard/audit/results?id=${item.id}`);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if ((e.key === "Enter" || e.key === " ") && item.status === "completed") {
+                    e.preventDefault();
+                    router.push(`/dashboard/audit/results?id=${item.id}`);
+                  }
+                }}
               >
                 <div className="flex items-center gap-3">
                   <Globe className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <div className="font-medium">{item.url}</div>
+                    <div className="font-medium flex items-center gap-2">
+                      {item.url}
+                      {item.status === "completed" && (
+                        <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       {item.date}
+                      {item.status === "completed" && (
+                        <span className="ml-2 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                          Click to view details
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -435,15 +478,79 @@ export default function AuditPage() {
                     </div>
                   )}
                   {item.status === "in_progress" && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-sm">In Progress</span>
+                    <div className="flex items-center gap-3">
+                      <div className={`flex items-center gap-2 ${item.isStuck ? "text-warning" : "text-muted-foreground"}`}>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm">
+                          {item.isStuck ? "Possibly Stuck" : "In Progress"}
+                        </span>
+                      </div>
+                      {item.isStuck && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-primary hover:text-primary hover:bg-primary/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Cancel first, then retry
+                            cancelAuditMutation.mutate(item.id, {
+                              onSuccess: () => {
+                                retryAuditMutation.mutate(item.id);
+                              }
+                            });
+                          }}
+                          disabled={cancelAuditMutation.isPending || retryAuditMutation.isPending}
+                          title="Force restart audit"
+                        >
+                          {(cancelAuditMutation.isPending || retryAuditMutation.isPending) ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <RotateCcw className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-error hover:text-error hover:bg-error/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          cancelAuditMutation.mutate(item.id);
+                        }}
+                        disabled={cancelAuditMutation.isPending}
+                        title="Cancel audit"
+                      >
+                        {cancelAuditMutation.isPending ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <XCircle className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
                     </div>
                   )}
                   {item.status === "failed" && (
-                    <div className="flex items-center gap-2 text-error">
-                      <AlertCircle className="h-4 w-4" />
-                      <span className="text-sm">Failed</span>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 text-error">
+                        <AlertCircle className="h-4 w-4" />
+                        <span className="text-sm">Failed</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-primary hover:text-primary hover:bg-primary/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          retryAuditMutation.mutate(item.id);
+                        }}
+                        disabled={retryAuditMutation.isPending}
+                        title="Retry audit"
+                      >
+                        {retryAuditMutation.isPending ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
                     </div>
                   )}
                 </div>

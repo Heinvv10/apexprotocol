@@ -88,6 +88,10 @@ export const schemaMarkupGuide: ImplementationGuide = {
       estimatedTime: "5 minutes",
       difficulty: "easy",
       prerequisites: ["CMS login credentials or FTP access"],
+      verification: [
+        "You can access the HTML head section of your page",
+        "You have permission to edit and save changes",
+      ],
       notes: [
         "If using WordPress: Dashboard → Pages/Posts → Edit → Code Editor",
         "If using Webflow: Designer → Settings → Custom Code → Head Code",

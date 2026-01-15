@@ -16,8 +16,10 @@ import {
   RefreshCw,
   Clock,
   CheckCircle2,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/utils/formatters";
 import { useSelectedBrand } from "@/stores";
 import {
   useInsightsStore,
@@ -295,6 +297,7 @@ function RecentAnalysesSection() {
   const isLoadingHistory = useIsLoadingHistory();
   const historyError = useHistoryError();
   const fetchHistory = useInsightsStore((state) => state.fetchHistory);
+  const loadHistoryEntry = useInsightsStore((state) => state.loadHistoryEntry);
   const selectedBrand = useSelectedBrand();
 
   React.useEffect(() => {
@@ -302,6 +305,12 @@ function RecentAnalysesSection() {
       fetchHistory(selectedBrand.id);
     }
   }, [selectedBrand?.id, fetchHistory]);
+
+  const handleRerun = (entry: typeof history[0]) => {
+    loadHistoryEntry(entry);
+    // Scroll to top to show the query input
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   if (isLoadingHistory) {
     return (
@@ -363,7 +372,7 @@ function RecentAnalysesSection() {
         {history.slice(0, 5).map((entry) => (
           <div
             key={entry.id}
-            className="card-tertiary p-4 hover:bg-accent/50 transition-colors cursor-pointer"
+            className="card-tertiary p-4 hover:bg-accent/50 transition-colors group"
           >
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
@@ -371,7 +380,7 @@ function RecentAnalysesSection() {
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    {new Date(entry.createdAt).toLocaleDateString()}
+                    {formatDate(entry.createdAt, "short")}
                   </div>
                   <div className="flex items-center gap-1">
                     <Bot className="w-3 h-3" />
@@ -379,7 +388,7 @@ function RecentAnalysesSection() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 ml-4">
+              <div className="flex items-center gap-3 ml-4">
                 {entry.status === "completed" ? (
                   <>
                     <div className="text-lg font-bold text-foreground">
@@ -392,6 +401,15 @@ function RecentAnalysesSection() {
                 ) : (
                   <AlertCircle className="w-4 h-4 text-error" />
                 )}
+                {/* Rerun Button */}
+                <button
+                  onClick={() => handleRerun(entry)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded-md bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium flex items-center gap-1"
+                  title="Rerun this analysis"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  Rerun
+                </button>
               </div>
             </div>
           </div>

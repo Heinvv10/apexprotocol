@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect, afterAll, beforeEach } from "vitest";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import {
   setupIntegrationTest,
   isDatabaseConfigured,
@@ -520,13 +520,13 @@ describe("Brand Integration Tests", () => {
         .where(eq(schema.brands.id, testBrandId!))
         .limit(1);
 
-      // Wait a bit to ensure timestamp difference
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      // Wait to ensure timestamp difference
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // Update brand
+      // Update brand (use SQL NOW() to get database server time)
       const [updatedBrand] = await db
         .update(schema.brands)
-        .set({ name: "Timestamp Test", updatedAt: new Date() })
+        .set({ name: "Timestamp Test", updatedAt: sql`NOW()` })
         .where(eq(schema.brands.id, testBrandId!))
         .returning();
 

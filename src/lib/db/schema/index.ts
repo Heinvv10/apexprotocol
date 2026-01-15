@@ -426,11 +426,25 @@ export {
 export {
   predictions,
   modelMetadata,
+  predictiveAlerts,
+  // Enums
+  entityTypeEnum,
+  predictionStatusEnum,
+  alertTypeEnum,
+  modelStatusEnum,
+  // Types
   type Prediction,
   type NewPrediction,
+  type PredictionMetadata,
   type ModelMetadataRecord,
   type NewModelMetadata,
+  type PerformanceMetrics,
+  type ModelHyperparameters,
+  type PredictiveAlert,
+  type NewPredictiveAlert,
+  // Relations
   predictionsRelations,
+  predictiveAlertsRelations,
 } from "./predictions";
 
 // Content Publishing

@@ -17,7 +17,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { audits } from "@/lib/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
 import { getUserId } from "@/lib/auth";
 import { getRedisClient } from "@/lib/redis";
@@ -69,25 +69,24 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "0", 10);
     const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
 
-    // Fetch audit records
-    let query = db.select().from(audits);
-
-    // Filter by status
-    if (status && ["pending", "in_progress", "completed", "failed"].includes(status)) {
-      query = query.where(eq(audits.status, status as any));
-    }
+    // Build status filter condition
+    const validStatuses = ["pending", "in_progress", "completed", "failed"] as const;
+    const statusFilter = status && validStatuses.includes(status as any)
+      ? eq(audits.status, status as typeof validStatuses[number])
+      : undefined;
 
     // Get total count
-    const countResult = await db
-      .select({ count: db.sql`count(*)` })
-      .from(audits);
+    const countQuery = statusFilter
+      ? db.select({ count: sql`count(*)` }).from(audits).where(statusFilter)
+      : db.select({ count: sql`count(*)` }).from(audits);
+    const countResult = await countQuery;
     const total = parseInt((countResult[0]?.count as any) || "0", 10);
 
-    // Apply pagination and sorting
-    const records = await (query as any)
-      .orderBy((audits: any) => audits.createdAt, "desc")
-      .limit(limit)
-      .offset(page * limit);
+    // Fetch audit records with optional filter
+    const recordsQuery = statusFilter
+      ? db.select().from(audits).where(statusFilter).orderBy(audits.createdAt).limit(limit).offset(page * limit)
+      : db.select().from(audits).orderBy(audits.createdAt).limit(limit).offset(page * limit);
+    const records = await recordsQuery;
 
     // Transform to job info
     const jobs: AuditJobInfo[] = records.map((audit: any) => ({

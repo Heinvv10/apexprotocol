@@ -113,6 +113,7 @@ const mockRecommendation = {
 // ============================================================================
 
 const mockAuth = vi.fn();
+const mockGetUserId = vi.fn();
 const mockGetOrganizationId = vi.fn();
 const mockClaudeCreate = vi.fn();
 const mockBrandsFindFirst = vi.fn();
@@ -121,6 +122,7 @@ const mockAuditsFindFirst = vi.fn();
 const mockCreateRecommendationsWithDuplicateDetection = vi.fn();
 const mockGetRecommendations = vi.fn();
 const mockGenerateRecommendations = vi.fn();
+const mockGenerateAIRecommendations = vi.fn();
 
 // ============================================================================
 // Helper Functions
@@ -214,6 +216,7 @@ describe("Recommendations API Integration Tests", () => {
       orgId: TEST_ORG_ID,
     });
 
+    mockGetUserId.mockResolvedValue(TEST_USER_ID);
     mockGetOrganizationId.mockResolvedValue(TEST_ORG_ID);
 
     mockBrandsFindFirst.mockResolvedValue(mockBrand);
@@ -255,12 +258,33 @@ describe("Recommendations API Integration Tests", () => {
       },
     ]);
 
+    mockGenerateAIRecommendations.mockResolvedValue({
+      success: true,
+      recommendations: [
+        {
+          category: "content_optimization",
+          priority: "high",
+          impactScore: 85,
+          title: "AI Recommendation 1",
+          description: "AI-generated recommendation description",
+          impact: "high",
+          effort: "moderate",
+          steps: ["Step 1", "Step 2"],
+          aiPlatforms: ["ChatGPT", "Claude"],
+          expectedOutcome: "Improved visibility",
+          estimatedTimeframe: "2-4 weeks",
+        },
+      ],
+      tokenUsage: { input: 500, output: 300 },
+    });
+
     // Set up mocks
     vi.doMock("@clerk/nextjs/server", () => ({
       auth: mockAuth,
     }));
 
     vi.doMock("@/lib/auth", () => ({
+      getUserId: mockGetUserId,
       getOrganizationId: mockGetOrganizationId,
     }));
 
@@ -292,6 +316,10 @@ describe("Recommendations API Integration Tests", () => {
 
     vi.doMock("@/lib/recommendations", () => ({
       generateRecommendations: mockGenerateRecommendations,
+    }));
+
+    vi.doMock("@/lib/ai/recommendations", () => ({
+      generateAIRecommendations: mockGenerateAIRecommendations,
     }));
 
     vi.doMock("@/lib/db", () => ({
@@ -378,6 +406,7 @@ describe("Recommendations API Integration Tests", () => {
   describe("POST /api/recommendations/generate", () => {
     it("should return 401 when user is not authenticated", async () => {
       mockAuth.mockResolvedValue({ userId: null, orgId: null });
+      mockGetUserId.mockResolvedValue(null);
 
       const request = createMockPostRequest(
         "http://localhost:3000/api/recommendations/generate",
@@ -516,6 +545,11 @@ describe("Recommendations API Integration Tests", () => {
     it("should return 200 with empty recommendations when no visibility data", async () => {
       mockBrandMentionsFindMany.mockResolvedValue([]);
       mockAuditsFindFirst.mockResolvedValue(null);
+      mockGenerateAIRecommendations.mockResolvedValue({
+        success: false,
+        error: "Insufficient visibility data to generate recommendations",
+        recommendations: [],
+      });
 
       const request = createMockPostRequest(
         "http://localhost:3000/api/recommendations/generate",
@@ -537,7 +571,11 @@ describe("Recommendations API Integration Tests", () => {
     });
 
     it("should handle AI API failure gracefully", async () => {
-      mockClaudeCreate.mockRejectedValue(new Error("API rate limit exceeded"));
+      mockGenerateAIRecommendations.mockResolvedValue({
+        success: false,
+        error: "API rate limit exceeded",
+        recommendations: [],
+      });
 
       const request = createMockPostRequest(
         "http://localhost:3000/api/recommendations/generate",
@@ -673,9 +711,10 @@ describe("Recommendations API Integration Tests", () => {
     });
 
     it("should handle malformed JSON in AI response", async () => {
-      mockClaudeCreate.mockResolvedValue({
-        content: [{ type: "text", text: "This is not valid JSON" }],
-        usage: { input_tokens: 100, output_tokens: 50 },
+      mockGenerateAIRecommendations.mockResolvedValue({
+        success: false,
+        error: "Failed to parse AI response: invalid JSON",
+        recommendations: [],
       });
 
       const request = createMockPostRequest(
@@ -692,9 +731,10 @@ describe("Recommendations API Integration Tests", () => {
     });
 
     it("should handle AI response missing recommendations array", async () => {
-      mockClaudeCreate.mockResolvedValue({
-        content: [{ type: "text", text: JSON.stringify({ data: [] }) }],
-        usage: { input_tokens: 100, output_tokens: 50 },
+      mockGenerateAIRecommendations.mockResolvedValue({
+        success: false,
+        error: "Invalid AI response: missing recommendations array",
+        recommendations: [],
       });
 
       const request = createMockPostRequest(

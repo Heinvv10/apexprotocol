@@ -94,10 +94,10 @@ export function MentionFilters({
               key={option.value}
               onClick={() => onDateRangeChange(option.value)}
               className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150",
+                "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 border",
                 dateRange === option.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white"
               )}
             >
               {option.label}
@@ -123,7 +123,7 @@ export function MentionFilters({
                   "border",
                   isSelected
                     ? "border-current"
-                    : "border-transparent bg-muted/50 text-muted-foreground hover:bg-muted"
+                    : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white"
                 )}
                 style={{
                   color: isSelected ? option.color : undefined,

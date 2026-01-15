@@ -7,6 +7,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { GET, PATCH, DELETE } from "./route";
+import {
+  TEST_CREDENTIALS,
+  TEST_USER_IDS,
+  createMockIntegration,
+} from "../__test-constants";
 
 // Mock Clerk auth
 vi.mock("@clerk/nextjs/server", () => ({
@@ -67,7 +72,7 @@ const mockUpdateChain = {
       status: "configured",
       isEnabled: true,
       config: {
-        apiKey: "sk-ant-api03-new-key-5678",
+        apiKey: TEST_CREDENTIALS.ANTHROPIC_API_KEY_NEW,
         endpoint: "https://api.anthropic.com/v1",
       },
       updatedAt: new Date().toISOString(),
@@ -189,7 +194,7 @@ describe("PATCH /api/admin/api-config/:id - Update Integration (FR-2, FR-4)", ()
       method: "PATCH",
       body: JSON.stringify({
         config: {
-          apiKey: "sk-ant-api03-new-key-5678",
+          apiKey: TEST_CREDENTIALS.ANTHROPIC_API_KEY_NEW,
           endpoint: "https://api.anthropic.com/v1",
         },
       }),

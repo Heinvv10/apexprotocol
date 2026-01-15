@@ -17,6 +17,7 @@ import {
   Copy,
   Shield,
 } from "lucide-react";
+import { formatDate, formatTimestamp } from "@/lib/utils/formatters";
 
 interface ApiKey {
   id: string;
@@ -539,7 +540,7 @@ export default function AdminApiKeysPage() {
                         <div className="flex items-center gap-2 text-gray-400">
                           <Clock className="w-4 h-4" />
                           <span className="text-sm">
-                            {new Date(key.lastRotatedAt).toLocaleDateString()}
+                            {formatDate(key.lastRotatedAt, "short")}
                           </span>
                         </div>
                       ) : (
@@ -657,29 +658,29 @@ export default function AdminApiKeysPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">Created</p>
-                  <p className="font-medium">{new Date(selectedKey.createdAt).toLocaleString()}</p>
+                  <p className="font-medium">{formatTimestamp(selectedKey.createdAt)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Last Updated</p>
-                  <p className="font-medium">{new Date(selectedKey.updatedAt).toLocaleString()}</p>
+                  <p className="font-medium">{formatTimestamp(selectedKey.updatedAt)}</p>
                 </div>
               </div>
-              {selectedKey.lastRotatedAt && (
+              {selectedKey.lastRotatedAt && formatTimestamp(selectedKey.lastRotatedAt) !== "N/A" && (
                 <div>
                   <p className="text-sm text-gray-500">Last Rotated</p>
-                  <p className="font-medium">{new Date(selectedKey.lastRotatedAt).toLocaleString()}</p>
+                  <p className="font-medium">{formatTimestamp(selectedKey.lastRotatedAt)}</p>
                 </div>
               )}
-              {selectedKey.lastUsedAt && (
+              {selectedKey.lastUsedAt && formatTimestamp(selectedKey.lastUsedAt) !== "N/A" && (
                 <div>
                   <p className="text-sm text-gray-500">Last Used</p>
-                  <p className="font-medium">{new Date(selectedKey.lastUsedAt).toLocaleString()}</p>
+                  <p className="font-medium">{formatTimestamp(selectedKey.lastUsedAt)}</p>
                 </div>
               )}
-              {selectedKey.expiresAt && (
+              {selectedKey.expiresAt && formatTimestamp(selectedKey.expiresAt) !== "N/A" && (
                 <div>
                   <p className="text-sm text-gray-500">Expires At</p>
-                  <p className="font-medium">{new Date(selectedKey.expiresAt).toLocaleString()}</p>
+                  <p className="font-medium">{formatTimestamp(selectedKey.expiresAt)}</p>
                 </div>
               )}
             </div>

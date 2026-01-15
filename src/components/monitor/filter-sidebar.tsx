@@ -113,7 +113,7 @@ export function FilterSidebar({
           <Button
             variant="ghost"
             size="icon-sm"
-            className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            className="text-gray-300 hover:text-white hover:bg-white/10"
           >
             <MoreHorizontal className="w-5 h-5" />
           </Button>

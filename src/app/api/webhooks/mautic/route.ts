@@ -193,7 +193,7 @@ async function handleEmailOpen(
       .update(leads)
       .set({
         lastEngagedAt: new Date(),
-        leadScore: lead[0].leadScore + 5,
+        leadScore: (lead[0].leadScore ?? 0) + 5,
       })
       .where(eq(leads.id, lead[0].id));
   }
@@ -244,7 +244,7 @@ async function handleEmailClick(
       .update(leads)
       .set({
         lastEngagedAt: new Date(),
-        leadScore: lead[0].leadScore + 15,
+        leadScore: (lead[0].leadScore ?? 0) + 15,
       })
       .where(eq(leads.id, lead[0].id));
   }

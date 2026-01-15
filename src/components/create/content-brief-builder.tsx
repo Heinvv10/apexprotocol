@@ -36,6 +36,7 @@ import type {
   SectionBrief,
   EntityMention,
   SchemaRecommendation,
+  BriefQualityReport,
 } from "@/lib/content";
 
 // Content type options
@@ -65,6 +66,104 @@ function ScoreBadge({ score, label }: { score: number; label: string }) {
         {score}
       </div>
       <span className="text-xs text-muted-foreground mt-1">{label}</span>
+    </div>
+  );
+}
+
+// Quality Indicator Component
+function QualityIndicator({ report }: { report: BriefQualityReport }) {
+  const qualityColors = {
+    excellent: "text-success bg-success/10 border-success/30",
+    good: "text-primary bg-primary/10 border-primary/30",
+    fair: "text-warning bg-warning/10 border-warning/30",
+    poor: "text-error bg-error/10 border-error/30",
+  };
+
+  const severityColors = {
+    error: "text-error",
+    warning: "text-warning",
+    info: "text-muted-foreground",
+  };
+
+  const [expanded, setExpanded] = React.useState(false);
+  const errorCount = report.issues.filter((i) => i.severity === "error").length;
+  const warningCount = report.issues.filter((i) => i.severity === "warning").length;
+
+  return (
+    <div className="card-tertiary p-3 space-y-2">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between"
+      >
+        <div className="flex items-center gap-3">
+          <span
+            className={cn(
+              "px-2 py-1 rounded-md text-xs font-medium border",
+              qualityColors[report.overallQuality]
+            )}
+          >
+            {report.overallQuality.charAt(0).toUpperCase() + report.overallQuality.slice(1)} Quality
+          </span>
+          <span className="text-sm text-muted-foreground">
+            Score: <span className="font-medium text-foreground">{report.qualityScore}/100</span>
+          </span>
+          {errorCount > 0 && (
+            <span className="text-xs text-error">
+              {errorCount} error{errorCount !== 1 ? "s" : ""}
+            </span>
+          )}
+          {warningCount > 0 && (
+            <span className="text-xs text-warning">
+              {warningCount} warning{warningCount !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+        <ChevronRight
+          className={cn(
+            "h-4 w-4 text-muted-foreground transition-transform",
+            expanded && "rotate-90"
+          )}
+        />
+      </button>
+
+      {expanded && (
+        <div className="pt-2 border-t border-border/50 space-y-2">
+          {report.issues.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">Issues</p>
+              {report.issues.map((issue, i) => (
+                <div key={i} className="flex items-start gap-2 text-xs">
+                  <AlertCircle
+                    className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0", severityColors[issue.severity])}
+                  />
+                  <div>
+                    <span className={severityColors[issue.severity]}>{issue.message}</span>
+                    {issue.actual !== undefined && (
+                      <span className="text-muted-foreground">
+                        {" "}
+                        (got {issue.actual}, expected {issue.expected})
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {report.suggestions.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">Suggestions</p>
+              <ul className="text-xs text-muted-foreground space-y-1 pl-4">
+                {report.suggestions.map((suggestion, i) => (
+                  <li key={i} className="list-disc">
+                    {suggestion}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -204,6 +303,7 @@ export function ContentBriefBuilder({
   const selectedBrand = useSelectedBrand();
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [brief, setBrief] = React.useState<ContentBrief | null>(null);
+  const [qualityReport, setQualityReport] = React.useState<BriefQualityReport | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
   // Form state
@@ -249,6 +349,7 @@ export function ContentBriefBuilder({
       }
 
       setBrief(data.data);
+      setQualityReport(data.quality || null);
       onBriefGenerated?.(data.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate brief");
@@ -417,6 +518,11 @@ export function ContentBriefBuilder({
               </div>
             </div>
           </div>
+
+          {/* Quality Report */}
+          {qualityReport && (
+            <QualityIndicator report={qualityReport} />
+          )}
 
           {/* Content Structure */}
           <div className="card-secondary rounded-lg overflow-hidden">

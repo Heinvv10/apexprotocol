@@ -31,6 +31,24 @@ export interface Audit {
   error?: string;
   config?: Record<string, unknown>;
   metadata?: Record<string, unknown>;
+  // Issues embedded in audit response
+  issues?: Array<{
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+    severity: "critical" | "high" | "medium" | "low";
+    impact?: string;
+    affectedPages?: string[];
+    recommendation?: string;
+    url?: string;
+  }>;
+  categoryScores?: Array<{
+    category: string;
+    score: number;
+    maxScore: number;
+    issues: number;
+  }>;
 }
 
 export interface AuditIssue {
@@ -101,7 +119,9 @@ async function fetchAudit(id: string): Promise<Audit> {
   if (!response.ok) {
     throw new Error("Failed to fetch audit");
   }
-  return response.json();
+  const data = await response.json();
+  // API returns { success: true, audit: {...} }
+  return data.audit || data;
 }
 
 async function fetchAuditIssues(auditId: string): Promise<AuditIssue[]> {

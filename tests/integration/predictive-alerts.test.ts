@@ -53,7 +53,7 @@ describe("Predictive Alert Integration Tests", () => {
       brandId,
       userId,
       alertType: "predicted_drop" as const,
-      severity: "high" as const,
+      severity: "critical" as const,
       confidence: 0.85,
       currentValue: 75.0,
       predictedValue: 50.0,
@@ -106,7 +106,7 @@ describe("Predictive Alert Integration Tests", () => {
       expect(insertedAlert.brandId).toBe(alertData.brandId);
       expect(insertedAlert.userId).toBe(alertData.userId);
       expect(insertedAlert.alertType).toBe("predicted_drop");
-      expect(insertedAlert.severity).toBe("high");
+      expect(insertedAlert.severity).toBe("critical");
       expect(insertedAlert.confidence).toBe(0.85);
       expect(insertedAlert.isRead).toBe(false);
       expect(insertedAlert.isDismissed).toBe(false);
@@ -142,9 +142,9 @@ describe("Predictive Alert Integration Tests", () => {
       const schema = getSchemaFn();
 
       const alertTypes = [
-        { type: "predicted_drop" as const, severity: "high" as const },
-        { type: "emerging_opportunity" as const, severity: "medium" as const },
-        { type: "trend_reversal" as const, severity: "low" as const },
+        { type: "predicted_drop" as const, severity: "critical" as const },
+        { type: "emerging_opportunity" as const, severity: "warning" as const },
+        { type: "trend_reversal" as const, severity: "info" as const },
       ];
 
       for (const { type, severity } of alertTypes) {
@@ -291,14 +291,14 @@ describe("Predictive Alert Integration Tests", () => {
       const db = getDb();
       const schema = getSchemaFn();
 
-      const highSeverityAlerts = await db
+      const criticalSeverityAlerts = await db
         .select()
         .from(schema.predictiveAlerts)
-        .where(eq(schema.predictiveAlerts.severity, "high"));
+        .where(eq(schema.predictiveAlerts.severity, "critical"));
 
-      expect(highSeverityAlerts.length).toBeGreaterThanOrEqual(1);
-      highSeverityAlerts.forEach((a) => {
-        expect(a.severity).toBe("high");
+      expect(criticalSeverityAlerts.length).toBeGreaterThanOrEqual(1);
+      criticalSeverityAlerts.forEach((a) => {
+        expect(a.severity).toBe("critical");
       });
     });
 
@@ -501,7 +501,7 @@ describe("Predictive Alert Integration Tests", () => {
         brandId,
         userId,
         alertType: "predicted_drop",
-        severity: "high",
+        severity: "critical",
         confidence: 0.8,
         currentValue: 70.0,
         predictedValue: 50.0,
@@ -583,7 +583,7 @@ describe("Predictive Alert Integration Tests", () => {
   });
 
   describe("Alert Triggering Logic", () => {
-    it("should trigger alert for high severity drop (>30%)", async () => {
+    it("should trigger alert for critical severity drop (>30%)", async () => {
       const db = getDb();
       const schema = getSchemaFn();
 
@@ -600,7 +600,7 @@ describe("Predictive Alert Integration Tests", () => {
           confidenceLower: 45.0,
           confidenceUpper: 55.0,
           confidence: 0.85,
-          modelVersion: "test-trigger-high",
+          modelVersion: "test-trigger-critical",
         })
         .returning();
 
@@ -611,14 +611,14 @@ describe("Predictive Alert Integration Tests", () => {
       });
 
       expect(evaluation.trigger).toBe(true);
-      expect(evaluation.severity).toBe("high");
+      expect(evaluation.severity).toBe("critical");
       expect(evaluation.leadTime).toBeGreaterThan(0);
 
       // Cleanup
       await db.delete(schema.predictions).where(eq(schema.predictions.id, prediction.id));
     });
 
-    it("should trigger alert for medium severity drop (20-30%)", async () => {
+    it("should trigger alert for warning severity drop (20-30%)", async () => {
       const db = getDb();
       const schema = getSchemaFn();
 
@@ -634,7 +634,7 @@ describe("Predictive Alert Integration Tests", () => {
           confidenceLower: 60.0,
           confidenceUpper: 70.0,
           confidence: 0.75,
-          modelVersion: "test-trigger-medium",
+          modelVersion: "test-trigger-warning",
         })
         .returning();
 
@@ -645,7 +645,7 @@ describe("Predictive Alert Integration Tests", () => {
       });
 
       expect(evaluation.trigger).toBe(true);
-      expect(evaluation.severity).toBe("medium");
+      expect(evaluation.severity).toBe("warning");
 
       // Cleanup
       await db.delete(schema.predictions).where(eq(schema.predictions.id, prediction.id));
@@ -684,7 +684,7 @@ describe("Predictive Alert Integration Tests", () => {
       await db.delete(schema.predictions).where(eq(schema.predictions.id, prediction.id));
     });
 
-    it("should NOT trigger alert for low confidence (<70%)", async () => {
+    it("should NOT trigger alert for info confidence (<70%)", async () => {
       const db = getDb();
       const schema = getSchemaFn();
 
@@ -696,7 +696,7 @@ describe("Predictive Alert Integration Tests", () => {
         .values({
           brandId: TEST_IDS.BRANDS[0],
           targetDate,
-          predictedValue: 50.0, // Big drop but low confidence
+          predictedValue: 50.0, // Big drop but info confidence
           confidenceLower: 40.0,
           confidenceUpper: 60.0,
           confidence: 0.65, // Below 70% threshold

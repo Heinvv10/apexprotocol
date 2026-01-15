@@ -6,7 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Check, Copy, Eye, EyeOff, Upload, Trash2, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useAPIKeys, useCreateAPIKey, useRevokeAPIKey } from "@/hooks/useSettings";
+import { useAPIKeys, useCreateAPIKey, useRevokeAPIKey, useNotificationPreferences, useUpdateNotificationPreferences, useIntegrations } from "@/hooks/useSettings";
+import { formatDate } from "@/lib/utils/formatters";
 
 // Fetch API usage stats
 interface ApiUsageStats {
@@ -229,13 +230,106 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
 
 // Notifications Section
 export function NotificationsSection() {
-  const notifications = [
-    { id: "mentions", label: "New brand mentions", description: "Get notified when your brand is mentioned", enabled: true },
-    { id: "citations", label: "Citation alerts", description: "Alert when cited by AI platforms", enabled: true },
-    { id: "competitors", label: "Competitor activity", description: "Track competitor mentions", enabled: false },
-    { id: "weekly", label: "Weekly digest", description: "Summary of weekly performance", enabled: true },
-    { id: "recommendations", label: "New recommendations", description: "Alert for new optimization suggestions", enabled: true },
-  ];
+  const { data: preferences, isLoading, error } = useNotificationPreferences();
+  const updatePreferences = useUpdateNotificationPreferences();
+
+  // Map API preferences to UI notification items
+  const getNotificationItems = () => {
+    if (!preferences) return [];
+    return [
+      {
+        id: "mentionNotifications",
+        label: "New brand mentions",
+        description: "Get notified when your brand is mentioned",
+        enabled: preferences.mentionNotifications
+      },
+      {
+        id: "scoreChangeNotifications",
+        label: "Score change alerts",
+        description: "Alert when your GEO score changes significantly",
+        enabled: preferences.scoreChangeNotifications
+      },
+      {
+        id: "recommendationNotifications",
+        label: "New recommendations",
+        description: "Alert for new optimization suggestions",
+        enabled: preferences.recommendationNotifications
+      },
+      {
+        id: "importantNotifications",
+        label: "Important updates",
+        description: "Critical platform and competitor alerts",
+        enabled: preferences.importantNotifications
+      },
+      {
+        id: "emailDigest",
+        label: "Email digest",
+        description: `${preferences.emailDigestFrequency === "none" ? "Disabled" : `${preferences.emailDigestFrequency.charAt(0).toUpperCase() + preferences.emailDigestFrequency.slice(1)} summary of performance`}`,
+        enabled: preferences.emailDigestFrequency !== "none"
+      },
+    ];
+  };
+
+  const handleToggle = (id: string, currentEnabled: boolean) => {
+    if (id === "emailDigest") {
+      // Toggle between weekly and none for email digest
+      updatePreferences.mutate({
+        emailDigestFrequency: currentEnabled ? "none" : "weekly"
+      });
+    } else {
+      // Toggle boolean preferences
+      updatePreferences.mutate({
+        [id]: !currentEnabled
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Notifications</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Configure how and when you receive alerts
+          </p>
+        </div>
+        <div className="card-tertiary">
+          <div className="animate-pulse space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center justify-between py-2">
+                <div className="space-y-2">
+                  <div className="h-4 w-32 bg-muted/30 rounded" />
+                  <div className="h-3 w-48 bg-muted/20 rounded" />
+                </div>
+                <div className="w-11 h-6 bg-muted/30 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Notifications</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Configure how and when you receive alerts
+          </p>
+        </div>
+        <div className="card-tertiary">
+          <div className="text-center py-8">
+            <p className="text-sm text-red-400">Failed to load notification preferences</p>
+            <p className="text-xs text-muted-foreground mt-1">Please try refreshing the page</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const notifications = getNotificationItems();
 
   return (
     <div className="space-y-6">
@@ -265,15 +359,41 @@ export function NotificationsSection() {
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
-                  defaultChecked={notification.enabled}
+                  checked={notification.enabled}
+                  onChange={() => handleToggle(notification.id, notification.enabled)}
+                  disabled={updatePreferences.isPending}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-muted/30 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary" />
+                <div className={cn(
+                  "w-11 h-6 bg-muted/30 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary",
+                  updatePreferences.isPending && "opacity-50 cursor-not-allowed"
+                )} />
               </label>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Email Settings */}
+      {preferences?.emailEnabled && (
+        <div className="card-tertiary">
+          <h3 className="text-sm font-medium text-foreground mb-4">Email Settings</h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Email address</span>
+              <span className="text-sm text-foreground">{preferences.emailAddress || "Not configured"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Timezone</span>
+              <span className="text-sm text-foreground">{preferences.timezone}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Digest time</span>
+              <span className="text-sm text-foreground">{preferences.digestHour}:00</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -344,12 +464,73 @@ export function AppearanceSection() {
 
 // Integrations Section
 export function IntegrationsSection() {
-  const integrations = [
-    { id: "slack", name: "Slack", description: "Send notifications to Slack channels", connected: true, icon: "S" },
-    { id: "zapier", name: "Zapier", description: "Automate workflows with Zapier", connected: false, icon: "Z" },
-    { id: "hubspot", name: "HubSpot", description: "Sync data with HubSpot CRM", connected: true, icon: "H" },
-    { id: "analytics", name: "Google Analytics", description: "Track website analytics", connected: false, icon: "A" },
-  ];
+  const { data, isLoading, error } = useIntegrations();
+  const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
+
+  const handleConnect = (integrationId: string) => {
+    // Navigate to integration-specific configuration
+    // This could open a modal or navigate to a dedicated page
+    console.log("Connect integration:", integrationId);
+    // TODO: Implement integration-specific OAuth flows
+  };
+
+  const handleDisconnect = (integrationId: string) => {
+    // Disconnect integration
+    console.log("Disconnect integration:", integrationId);
+    // TODO: Call specific disconnect endpoint
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Integrations</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Connect APEX with your favorite tools
+          </p>
+        </div>
+        <div className="grid gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="card-tertiary flex items-center justify-between animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-muted/30" />
+                <div className="space-y-2">
+                  <div className="h-4 w-24 bg-muted/30 rounded" />
+                  <div className="h-3 w-40 bg-muted/20 rounded" />
+                </div>
+              </div>
+              <div className="h-8 w-20 bg-muted/30 rounded" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Integrations</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Connect APEX with your favorite tools
+          </p>
+        </div>
+        <div className="card-tertiary text-center py-8">
+          <p className="text-sm text-red-400">Failed to load integrations</p>
+          <p className="text-xs text-muted-foreground mt-1">Please try refreshing the page</p>
+        </div>
+      </div>
+    );
+  }
+
+  const integrations = data?.integrations || [];
+  const categories = data?.categories || [];
+  const summary = data?.summary || { total: 0, connected: 0, available: 0 };
+
+  const filteredIntegrations = selectedCategory
+    ? integrations.filter((i) => i.category === selectedCategory)
+    : integrations;
 
   return (
     <div className="space-y-6">
@@ -360,34 +541,98 @@ export function IntegrationsSection() {
         </p>
       </div>
 
+      {/* Summary Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="card-tertiary p-3 text-center">
+          <p className="text-2xl font-bold text-foreground">{summary.total}</p>
+          <p className="text-xs text-muted-foreground">Total</p>
+        </div>
+        <div className="card-tertiary p-3 text-center">
+          <p className="text-2xl font-bold text-green-500">{summary.connected}</p>
+          <p className="text-xs text-muted-foreground">Connected</p>
+        </div>
+        <div className="card-tertiary p-3 text-center">
+          <p className="text-2xl font-bold text-muted-foreground">{summary.available}</p>
+          <p className="text-xs text-muted-foreground">Available</p>
+        </div>
+      </div>
+
+      {/* Category Filter */}
+      <div className="flex gap-2 flex-wrap">
+        <Button
+          variant={selectedCategory === null ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSelectedCategory(null)}
+          className={selectedCategory === null ? "gradient-primary text-white" : ""}
+        >
+          All
+        </Button>
+        {categories.map((cat) => (
+          <Button
+            key={cat.id}
+            variant={selectedCategory === cat.id ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSelectedCategory(cat.id)}
+            className={selectedCategory === cat.id ? "gradient-primary text-white" : ""}
+          >
+            {cat.name} ({cat.count})
+          </Button>
+        ))}
+      </div>
+
+      {/* Integrations List */}
       <div className="grid gap-4">
-        {integrations.map((integration) => (
+        {filteredIntegrations.map((integration) => (
           <div
             key={integration.id}
             className="card-tertiary flex items-center justify-between"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-muted/30 flex items-center justify-center font-bold text-foreground">
+              <div className={cn(
+                "w-10 h-10 rounded-lg flex items-center justify-center font-bold text-foreground",
+                integration.connected ? "bg-primary/20" : "bg-muted/30"
+              )}>
                 {integration.icon}
               </div>
               <div>
-                <p className="text-sm font-medium text-foreground">
-                  {integration.name}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-foreground">
+                    {integration.name}
+                  </p>
+                  {integration.connected && (
+                    <span className="px-2 py-0.5 text-xs bg-green-500/20 text-green-400 rounded-full">
+                      Connected
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {integration.description}
                 </p>
               </div>
             </div>
-            <Button
-              variant={integration.connected ? "outline" : "default"}
-              size="sm"
-              className={integration.connected ? "" : "gradient-primary text-white"}
-            >
-              {integration.connected ? "Disconnect" : "Connect"}
-            </Button>
+            {integration.configurable ? (
+              <Button
+                variant={integration.connected ? "outline" : "default"}
+                size="sm"
+                onClick={() => integration.connected
+                  ? handleDisconnect(integration.id)
+                  : handleConnect(integration.id)
+                }
+                className={integration.connected ? "" : "gradient-primary text-white"}
+              >
+                {integration.connected ? "Disconnect" : "Connect"}
+              </Button>
+            ) : (
+              <span className="text-xs text-muted-foreground px-3 py-1.5">Coming Soon</span>
+            )}
           </div>
         ))}
+
+        {filteredIntegrations.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-sm text-muted-foreground">No integrations in this category</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -401,6 +646,7 @@ export interface ApiKeyData {
   created: string;
   lastUsed: string;
   status: "active" | "inactive";
+  type?: string; // Service type: anthropic, openai, serper, pinecone, custom
 }
 
 interface ApiKeysSectionProps {
@@ -424,6 +670,8 @@ export function ApiKeysSection({ apiKeys: propKeys }: ApiKeysSectionProps) {
   const [copiedKey, setCopiedKey] = React.useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = React.useState(false);
   const [newKeyName, setNewKeyName] = React.useState("");
+  const [newKeyType, setNewKeyType] = React.useState<"anthropic" | "openai" | "serper" | "pinecone" | "custom">("custom");
+  const [newKeyValue, setNewKeyValue] = React.useState("");
   const [newlyCreatedKey, setNewlyCreatedKey] = React.useState<string | null>(null);
 
   // Transform API data to component format (with prop fallback)
@@ -433,10 +681,11 @@ export function ApiKeysSection({ apiKeys: propKeys }: ApiKeysSectionProps) {
     return apiKeysData.map(key => ({
       id: key.id,
       name: key.name,
-      key: key.keyPrefix + "..." + "••••••••", // Only prefix available, full key shown once on creation
-      created: key.createdAt ? new Date(key.createdAt).toLocaleDateString() : "Unknown",
-      lastUsed: key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : "Never",
-      status: key.status === "active" ? "active" : "inactive",
+      key: key.keyPrefix || "***", // keyPrefix from hook transformation
+      created: formatDate(key.createdAt, "short"),
+      lastUsed: key.lastUsedAt ? formatDate(key.lastUsedAt, "short") : "Never",
+      status: key.isActive ? "active" : "inactive",
+      type: key.type,
     }));
   }, [propKeys, apiKeysData]);
 
@@ -458,16 +707,18 @@ export function ApiKeysSection({ apiKeys: propKeys }: ApiKeysSectionProps) {
   };
 
   const handleCreateKey = async () => {
-    if (!newKeyName.trim()) return;
+    if (!newKeyName.trim() || !newKeyValue.trim()) return;
     try {
       const result = await createKeyMutation.mutateAsync({
         name: newKeyName,
-        permissions: ["read", "write"],
-        expiresIn: "90d",
+        type: newKeyType,
+        key: newKeyValue,
       });
-      // Show the newly created key (only shown once!)
+      // Show the newly created key (masked for confirmation)
       setNewlyCreatedKey(result.key);
       setNewKeyName("");
+      setNewKeyValue("");
+      setNewKeyType("custom");
     } catch {
       // Error is handled by mutation state
     }
@@ -490,15 +741,15 @@ export function ApiKeysSection({ apiKeys: propKeys }: ApiKeysSectionProps) {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">API Keys</h2>
+            <h2 className="text-lg font-semibold text-foreground">Service API Keys</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Manage your API keys for programmatic access to APEX
+              Manage API keys for external services (AI providers, search, etc.)
             </p>
           </div>
         </div>
         <div className="card-tertiary flex items-center justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          <span className="ml-2 text-sm text-muted-foreground">Loading API keys...</span>
+          <span className="ml-2 text-sm text-muted-foreground">Loading service keys...</span>
         </div>
       </div>
     );
@@ -508,9 +759,9 @@ export function ApiKeysSection({ apiKeys: propKeys }: ApiKeysSectionProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">API Keys</h2>
+          <h2 className="text-lg font-semibold text-foreground">Service API Keys</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage your API keys for programmatic access to APEX
+            Manage API keys for external services (AI providers, search, etc.)
           </p>
         </div>
         <Button
@@ -523,7 +774,7 @@ export function ApiKeysSection({ apiKeys: propKeys }: ApiKeysSectionProps) {
           ) : (
             <span className="mr-2">+</span>
           )}
-          Create New Key
+          Add Service Key
         </Button>
       </div>
 
@@ -532,14 +783,16 @@ export function ApiKeysSection({ apiKeys: propKeys }: ApiKeysSectionProps) {
         <div className="card-tertiary border-l-4 border-l-primary">
           <div className="flex items-start justify-between mb-3">
             <div>
-              <h3 className="text-sm font-medium text-foreground">Create New API Key</h3>
+              <h3 className="text-sm font-medium text-foreground">Add External Service Key</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Give your key a descriptive name to identify it later.
+                Configure an API key for an external service like Claude, OpenAI, or other providers.
               </p>
             </div>
             <Button variant="ghost" size="icon" onClick={() => {
               setShowCreateDialog(false);
               setNewKeyName("");
+              setNewKeyType("custom");
+              setNewKeyValue("");
               setNewlyCreatedKey(null);
             }} className="h-8 w-8">
               <Trash2 className="w-4 h-4" />
@@ -581,25 +834,64 @@ export function ApiKeysSection({ apiKeys: propKeys }: ApiKeysSectionProps) {
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={newKeyName}
-                onChange={(e) => setNewKeyName(e.target.value)}
-                placeholder="e.g., Production Server, Development"
-                className="flex-1 h-9 px-3 rounded-lg bg-muted/30 border border-border/50 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              />
-              <Button
-                onClick={handleCreateKey}
-                disabled={!newKeyName.trim() || createKeyMutation.isPending}
-                className="gradient-primary text-white"
-              >
-                {createKeyMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Create"
-                )}
-              </Button>
+            <div className="space-y-3">
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newKeyName}
+                    onChange={(e) => setNewKeyName(e.target.value)}
+                    placeholder="e.g., Production Claude Key"
+                    className="w-full h-9 px-3 rounded-lg bg-muted/30 border border-border/50 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                    Service Type
+                  </label>
+                  <select
+                    value={newKeyType}
+                    onChange={(e) => setNewKeyType(e.target.value as typeof newKeyType)}
+                    className="w-full h-9 px-3 rounded-lg bg-muted/30 border border-border/50 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                  >
+                    <option value="anthropic">Anthropic (Claude)</option>
+                    <option value="openai">OpenAI (GPT)</option>
+                    <option value="serper">Serper (Search)</option>
+                    <option value="pinecone">Pinecone (Vector DB)</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                  API Key
+                </label>
+                <input
+                  type="password"
+                  value={newKeyValue}
+                  onChange={(e) => setNewKeyValue(e.target.value)}
+                  placeholder="sk-..."
+                  className="w-full h-9 px-3 rounded-lg bg-muted/30 border border-border/50 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                />
+                <p className="text-xs text-muted-foreground/70 mt-1">
+                  Your API key will be encrypted and stored securely.
+                </p>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleCreateKey}
+                  disabled={!newKeyName.trim() || !newKeyValue.trim() || createKeyMutation.isPending}
+                  className="gradient-primary text-white"
+                >
+                  {createKeyMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : null}
+                  Add API Key
+                </Button>
+              </div>
             </div>
           )}
         </div>

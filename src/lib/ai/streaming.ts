@@ -136,7 +136,7 @@ export async function* streamOpenAIResponse(
   options: StreamOptions = {}
 ): AsyncGenerator<StreamEvent> {
   const client = getOpenAIClient();
-  const model = options.model || "gpt-4-turbo-preview";
+  const model = options.model || "gpt-4o";
   const startTime = Date.now();
 
   yield {

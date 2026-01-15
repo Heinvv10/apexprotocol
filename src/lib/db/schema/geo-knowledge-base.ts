@@ -89,6 +89,7 @@ export interface ImplementationStep {
   platformNotes?: Record<string, string>;
   codeSnippet?: string;
   verificationMethod?: string;
+  estimatedTime?: string;
 }
 
 /**

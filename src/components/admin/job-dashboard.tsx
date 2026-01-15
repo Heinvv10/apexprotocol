@@ -439,7 +439,8 @@ function JobCard({
             {job.status === "running" && (
               <button
                 onClick={() => onPause(job.id)}
-                className="p-1.5 rounded-lg hover:bg-muted/30 text-muted-foreground hover:text-foreground transition-colors"
+                className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 hover:border-amber-500/30 transition-colors"
+                title="Pause job"
               >
                 <Pause className="w-4 h-4" />
               </button>
@@ -447,7 +448,8 @@ function JobCard({
             {job.status === "paused" && (
               <button
                 onClick={() => onResume(job.id)}
-                className="p-1.5 rounded-lg hover:bg-muted/30 text-muted-foreground hover:text-foreground transition-colors"
+                className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/30 transition-colors"
+                title="Resume job"
               >
                 <Play className="w-4 h-4" />
               </button>
@@ -455,14 +457,16 @@ function JobCard({
             {(job.status === "queued" || job.status === "paused") && (
               <button
                 onClick={() => onCancel(job.id)}
-                className="p-1.5 rounded-lg hover:bg-error/20 text-muted-foreground hover:text-error transition-colors"
+                className="p-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:border-red-500/30 transition-colors"
+                title="Cancel job"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
             )}
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1.5 rounded-lg hover:bg-muted/30 text-muted-foreground hover:text-foreground transition-colors"
+              className="p-1.5 rounded-lg bg-gray-500/10 border border-gray-500/20 text-gray-300 hover:bg-gray-500/20 hover:border-gray-500/30 transition-colors"
+              title={isExpanded ? "Collapse" : "Expand"}
             >
               <MoreVertical className="w-4 h-4" />
             </button>

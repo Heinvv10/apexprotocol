@@ -167,7 +167,7 @@ const MODEL_STRATEGIES: Record<OperationType, ModelConfig[]> = {
     },
     {
       provider: "openai",
-      model: "gpt-4-turbo",
+      model: "gpt-4o",
       temperature: 0.8,
       maxTokens: 4096,
       costBand: "quality",
@@ -186,7 +186,7 @@ const MODEL_STRATEGIES: Record<OperationType, ModelConfig[]> = {
     },
     {
       provider: "openai",
-      model: "gpt-4-turbo",
+      model: "gpt-4o",
       temperature: 0.3,
       maxTokens: 3000,
       costBand: "balanced",
@@ -205,7 +205,7 @@ const MODEL_STRATEGIES: Record<OperationType, ModelConfig[]> = {
     },
     {
       provider: "openai",
-      model: "gpt-4-turbo",
+      model: "gpt-4o",
       temperature: 0.5,
       maxTokens: 4096,
       costBand: "quality",

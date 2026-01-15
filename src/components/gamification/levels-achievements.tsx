@@ -22,6 +22,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/utils/formatters";
 import {
   useGamificationProfile,
   useAchievements,
@@ -491,7 +492,7 @@ function AchievementCard({ achievement }: { achievement: Achievement }) {
           {isUnlocked && (
             <div className="flex items-center gap-1 mt-2 text-[10px] text-success">
               <CheckCircle2 className="w-3 h-3" />
-              Unlocked {new Date(achievement.unlockedAt!).toLocaleDateString()}
+              Unlocked {formatDate(achievement.unlockedAt, "medium")}
             </div>
           )}
         </div>

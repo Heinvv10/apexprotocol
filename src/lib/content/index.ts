@@ -27,6 +27,7 @@ export {
 export {
   generateContentBrief,
   analyzeBriefAlignment,
+  validateBriefQuality,
   type ContentBriefRequest,
   type ContentBrief,
   type BrandContext,
@@ -44,6 +45,8 @@ export {
   type CompetitorGap,
   type SchemaRecommendation,
   type PredictedScores,
+  type BriefQualityReport,
+  type BriefQualityIssue,
 } from "./brief-generator";
 
 // Citation Optimizer (Phase 4)

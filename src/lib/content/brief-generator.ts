@@ -193,6 +193,35 @@ export interface PredictedScores {
   confidence: number;
 }
 
+// Quality validation thresholds
+const QUALITY_THRESHOLDS = {
+  minH2Sections: 5,
+  maxH2Sections: 10,
+  minH3PerH2: 1,
+  minQuestions: 6,
+  minEntities: 5,
+  minSnippetOpportunities: 2,
+  minCompetitorGaps: 2,
+  minSectionLength: 200,
+  maxSectionLength: 600,
+};
+
+export interface BriefQualityReport {
+  isValid: boolean;
+  overallQuality: "excellent" | "good" | "fair" | "poor";
+  qualityScore: number; // 0-100
+  issues: BriefQualityIssue[];
+  suggestions: string[];
+}
+
+export interface BriefQualityIssue {
+  severity: "error" | "warning" | "info";
+  field: string;
+  message: string;
+  actual?: number | string;
+  expected?: number | string;
+}
+
 /**
  * Generate a comprehensive content brief
  */
@@ -617,5 +646,213 @@ export function analyzeBriefAlignment(
     questionsAnswered: questionsPercent,
     entitiesMentioned,
     recommendations,
+  };
+}
+
+/**
+ * Validate content brief quality and provide feedback
+ * Ensures the AI generated sufficient, high-quality content
+ */
+export function validateBriefQuality(brief: ContentBrief): BriefQualityReport {
+  const issues: BriefQualityIssue[] = [];
+  const suggestions: string[] = [];
+  let qualityScore = 100;
+
+  // Check H2 sections count
+  const h2Count = brief.headers.h2s.length;
+  if (h2Count < QUALITY_THRESHOLDS.minH2Sections) {
+    issues.push({
+      severity: "error",
+      field: "headers.h2s",
+      message: `Insufficient H2 sections`,
+      actual: h2Count,
+      expected: `${QUALITY_THRESHOLDS.minH2Sections}+`,
+    });
+    qualityScore -= 15;
+    suggestions.push("Add more main sections (H2 headings) to provide comprehensive coverage");
+  } else if (h2Count > QUALITY_THRESHOLDS.maxH2Sections) {
+    issues.push({
+      severity: "warning",
+      field: "headers.h2s",
+      message: `Too many H2 sections may dilute focus`,
+      actual: h2Count,
+      expected: `${QUALITY_THRESHOLDS.minH2Sections}-${QUALITY_THRESHOLDS.maxH2Sections}`,
+    });
+    qualityScore -= 5;
+  }
+
+  // Check H3 subsections
+  const h3Count = brief.headers.h3s.length;
+  const avgH3PerH2 = h2Count > 0 ? h3Count / h2Count : 0;
+  if (avgH3PerH2 < QUALITY_THRESHOLDS.minH3PerH2) {
+    issues.push({
+      severity: "warning",
+      field: "headers.h3s",
+      message: `Low H3 density per H2 section`,
+      actual: avgH3PerH2.toFixed(1),
+      expected: `${QUALITY_THRESHOLDS.minH3PerH2}+ per H2`,
+    });
+    qualityScore -= 5;
+    suggestions.push("Add subsections (H3 headings) to break down complex topics");
+  }
+
+  // Check questions to answer
+  const questionCount = brief.questionsToAnswer.length;
+  if (questionCount < QUALITY_THRESHOLDS.minQuestions) {
+    issues.push({
+      severity: "error",
+      field: "questionsToAnswer",
+      message: `Insufficient questions for AEO optimization`,
+      actual: questionCount,
+      expected: `${QUALITY_THRESHOLDS.minQuestions}+`,
+    });
+    qualityScore -= 15;
+    suggestions.push("Add more questions to answer for better AI assistant visibility");
+  }
+
+  // Check entities
+  const entityCount = brief.entities.length;
+  if (entityCount < QUALITY_THRESHOLDS.minEntities) {
+    issues.push({
+      severity: "warning",
+      field: "entities",
+      message: `Few entity mentions suggested`,
+      actual: entityCount,
+      expected: `${QUALITY_THRESHOLDS.minEntities}+`,
+    });
+    qualityScore -= 10;
+    suggestions.push("Include more named entities (people, organizations, concepts) for semantic richness");
+  }
+
+  // Check required entities exist
+  const requiredEntities = brief.entities.filter((e) => e.importance === "required");
+  if (requiredEntities.length === 0 && entityCount > 0) {
+    issues.push({
+      severity: "info",
+      field: "entities",
+      message: `No entities marked as required`,
+    });
+    suggestions.push("Consider marking key entities as 'required' for content completeness");
+  }
+
+  // Check featured snippet opportunities
+  const snippetCount = brief.featuredSnippetOpportunities.length;
+  if (snippetCount < QUALITY_THRESHOLDS.minSnippetOpportunities) {
+    issues.push({
+      severity: "warning",
+      field: "featuredSnippetOpportunities",
+      message: `Few snippet opportunities identified`,
+      actual: snippetCount,
+      expected: `${QUALITY_THRESHOLDS.minSnippetOpportunities}+`,
+    });
+    qualityScore -= 5;
+  }
+
+  // Check competitor gaps
+  const gapCount = brief.competitorGaps.length;
+  if (gapCount < QUALITY_THRESHOLDS.minCompetitorGaps) {
+    issues.push({
+      severity: "info",
+      field: "competitorGaps",
+      message: `Few competitor gaps identified`,
+      actual: gapCount,
+      expected: `${QUALITY_THRESHOLDS.minCompetitorGaps}+`,
+    });
+  }
+
+  // Check sections have reasonable lengths
+  const sectionsWithBadLength = brief.sections.filter(
+    (s) =>
+      s.targetLength < QUALITY_THRESHOLDS.minSectionLength ||
+      s.targetLength > QUALITY_THRESHOLDS.maxSectionLength
+  );
+  if (sectionsWithBadLength.length > 0) {
+    issues.push({
+      severity: "info",
+      field: "sections",
+      message: `${sectionsWithBadLength.length} section(s) have unusual target lengths`,
+      actual: sectionsWithBadLength.map((s) => s.targetLength).join(", "),
+      expected: `${QUALITY_THRESHOLDS.minSectionLength}-${QUALITY_THRESHOLDS.maxSectionLength}`,
+    });
+  }
+
+  // Check schema recommendations
+  if (brief.recommendedSchemas.length === 0) {
+    issues.push({
+      severity: "warning",
+      field: "recommendedSchemas",
+      message: `No schema markup recommended`,
+    });
+    qualityScore -= 5;
+    suggestions.push("Add schema markup recommendations for better search visibility");
+  }
+
+  // Check title quality
+  if (!brief.title.primary || brief.title.primary.length < 30) {
+    issues.push({
+      severity: "warning",
+      field: "title",
+      message: `Title may be too short for SEO`,
+      actual: brief.title.primary?.length || 0,
+      expected: "30-60 characters",
+    });
+    qualityScore -= 5;
+  }
+
+  // Check meta description
+  if (!brief.metaDescription || brief.metaDescription.length < 120) {
+    issues.push({
+      severity: "warning",
+      field: "metaDescription",
+      message: `Meta description may be too short`,
+      actual: brief.metaDescription?.length || 0,
+      expected: "120-160 characters",
+    });
+    qualityScore -= 5;
+  } else if (brief.metaDescription.length > 160) {
+    issues.push({
+      severity: "info",
+      field: "metaDescription",
+      message: `Meta description may be truncated in search results`,
+      actual: brief.metaDescription.length,
+      expected: "120-160 characters",
+    });
+  }
+
+  // Check unique angle
+  if (!brief.uniqueAngle || brief.uniqueAngle.length < 20) {
+    issues.push({
+      severity: "info",
+      field: "uniqueAngle",
+      message: `Unique angle is missing or vague`,
+    });
+    suggestions.push("Define a clear unique angle to differentiate content from competitors");
+  }
+
+  // Ensure score doesn't go below 0
+  qualityScore = Math.max(0, qualityScore);
+
+  // Determine overall quality rating
+  let overallQuality: BriefQualityReport["overallQuality"];
+  if (qualityScore >= 85) {
+    overallQuality = "excellent";
+  } else if (qualityScore >= 70) {
+    overallQuality = "good";
+  } else if (qualityScore >= 50) {
+    overallQuality = "fair";
+  } else {
+    overallQuality = "poor";
+  }
+
+  // Check if valid (no critical errors)
+  const hasErrors = issues.some((i) => i.severity === "error");
+  const isValid = !hasErrors && qualityScore >= 50;
+
+  return {
+    isValid,
+    overallQuality,
+    qualityScore,
+    issues,
+    suggestions,
   };
 }

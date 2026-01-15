@@ -12,6 +12,8 @@ import {
   XCircle,
   Shield,
   X,
+  ShieldCheck,
+  Loader2,
 } from "lucide-react";
 
 interface AuditLog {
@@ -69,6 +71,21 @@ interface Filters {
   search?: string;
 }
 
+interface VerificationResult {
+  isValid: boolean;
+  totalLogs: number;
+  logsVerified: number;
+  firstBrokenAt?: {
+    logId: string;
+    position: number;
+    expectedHash: string;
+    actualHash: string;
+    timestamp: string;
+  };
+  verificationTime: number;
+  message: string;
+}
+
 export default function AdminAuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,6 +103,9 @@ export default function AdminAuditLogsPage() {
   });
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   useEffect(() => {
     fetchLogs();
@@ -178,6 +198,52 @@ export default function AdminAuditLogsPage() {
     }
   };
 
+  const verifyIntegrity = async () => {
+    try {
+      setVerifying(true);
+      setVerificationResult(null);
+      setShowVerificationModal(true);
+
+      const response = await fetch("/api/admin/audit-logs/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: 1000 }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setVerificationResult({
+          isValid: data.isValid,
+          totalLogs: data.totalLogs,
+          logsVerified: data.logsVerified,
+          firstBrokenAt: data.firstBrokenAt,
+          verificationTime: data.verificationTime,
+          message: data.message,
+        });
+      } else {
+        setVerificationResult({
+          isValid: false,
+          totalLogs: 0,
+          logsVerified: 0,
+          verificationTime: 0,
+          message: data.error || "Verification failed",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to verify integrity:", error);
+      setVerificationResult({
+        isValid: false,
+        totalLogs: 0,
+        logsVerified: 0,
+        verificationTime: 0,
+        message: "Failed to connect to verification service",
+      });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "success":
@@ -235,6 +301,18 @@ export default function AdminAuditLogsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={verifyIntegrity}
+            disabled={verifying}
+            className="px-4 py-2 bg-[#00E5CC]/10 border border-[#00E5CC]/30 rounded-lg text-[#00E5CC] hover:bg-[#00E5CC]/20 transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            {verifying ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ShieldCheck className="w-4 h-4" />
+            )}
+            Verify Integrity
+          </button>
           <button
             onClick={() => exportLogs("csv")}
             disabled={exporting}
@@ -724,6 +802,146 @@ export default function AdminAuditLogsPage() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Verification Result Modal */}
+      {showVerificationModal && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-8 z-50"
+          onClick={() => setShowVerificationModal(false)}
+        >
+          <div
+            className="bg-[#141930] border border-gray-800 rounded-lg max-w-lg w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="border-b border-gray-800 p-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="w-6 h-6 text-[#00E5CC]" />
+                <h2 className="text-xl font-bold text-white">Hash Chain Verification</h2>
+              </div>
+              <button
+                onClick={() => setShowVerificationModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              {verifying ? (
+                <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                  <Loader2 className="w-12 h-12 text-[#00E5CC] animate-spin" />
+                  <div className="text-white">Verifying hash chain integrity...</div>
+                  <div className="text-sm text-gray-400">
+                    This may take a few moments for large audit logs
+                  </div>
+                </div>
+              ) : verificationResult ? (
+                <div className="space-y-6">
+                  {/* Result Status */}
+                  <div
+                    className={`p-4 rounded-lg border ${
+                      verificationResult.isValid
+                        ? "bg-green-500/10 border-green-500/30"
+                        : "bg-red-500/10 border-red-500/30"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {verificationResult.isValid ? (
+                        <CheckCircle className="w-8 h-8 text-green-400" />
+                      ) : (
+                        <XCircle className="w-8 h-8 text-red-400" />
+                      )}
+                      <div>
+                        <div
+                          className={`text-lg font-semibold ${
+                            verificationResult.isValid ? "text-green-400" : "text-red-400"
+                          }`}
+                        >
+                          {verificationResult.isValid
+                            ? "Integrity Verified"
+                            : "Integrity Compromised"}
+                        </div>
+                        <div className="text-sm text-gray-400 mt-1">
+                          {verificationResult.message}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-[#0a0f1a] border border-gray-800 rounded-lg p-4">
+                      <div className="text-gray-400 text-xs">Total Logs</div>
+                      <div className="text-xl font-bold text-white mt-1">
+                        {verificationResult.totalLogs.toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="bg-[#0a0f1a] border border-gray-800 rounded-lg p-4">
+                      <div className="text-gray-400 text-xs">Verified</div>
+                      <div className="text-xl font-bold text-white mt-1">
+                        {verificationResult.logsVerified.toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="bg-[#0a0f1a] border border-gray-800 rounded-lg p-4">
+                      <div className="text-gray-400 text-xs">Time</div>
+                      <div className="text-xl font-bold text-white mt-1">
+                        {verificationResult.verificationTime}ms
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Broken Link Details */}
+                  {verificationResult.firstBrokenAt && (
+                    <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-4 space-y-3">
+                      <div className="text-red-400 font-medium">
+                        Chain Broken at Position #{verificationResult.firstBrokenAt.position}
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="text-gray-500">Log ID: </span>
+                          <span className="text-white font-mono">
+                            {verificationResult.firstBrokenAt.logId}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Timestamp: </span>
+                          <span className="text-white">
+                            {formatDate(verificationResult.firstBrokenAt.timestamp)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Expected Hash: </span>
+                          <div className="text-white font-mono text-xs break-all mt-1">
+                            {verificationResult.firstBrokenAt.expectedHash}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Actual Hash: </span>
+                          <div className="text-white font-mono text-xs break-all mt-1">
+                            {verificationResult.firstBrokenAt.actualHash}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Button */}
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => setShowVerificationModal(false)}
+                      className="px-4 py-2 bg-[#00E5CC] text-black font-medium rounded-lg hover:bg-[#00E5CC]/90 transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

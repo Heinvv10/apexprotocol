@@ -19,6 +19,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { brands } from "./brands";
+import { alertSeverityEnum } from "./geo-knowledge-base";
 
 // Enums
 export const entityTypeEnum = pgEnum("entity_type", [
@@ -32,12 +33,6 @@ export const predictionStatusEnum = pgEnum("prediction_status", [
   "active",
   "stale",
   "superseded",
-]);
-
-export const alertSeverityEnum = pgEnum("alert_severity", [
-  "low",
-  "medium",
-  "high",
 ]);
 
 export const alertTypeEnum = pgEnum("predictive_alert_type", [

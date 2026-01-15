@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatPeriod } from "@/lib/utils/formatters";
 
 // Types from benchmarking service
 interface BenchmarkMetric {
@@ -338,8 +339,7 @@ export function CompetitorComparisonCard({ brandId, className }: CompetitorCompa
 
       {/* Period info */}
       <div className="px-4 py-2 border-t border-border/30 text-[10px] text-muted-foreground">
-        Data period: {new Date(data.period.start).toLocaleDateString()} -{" "}
-        {new Date(data.period.end).toLocaleDateString()}
+        Data period: {formatPeriod(data.period.start, data.period.end)}
       </div>
     </div>
   );

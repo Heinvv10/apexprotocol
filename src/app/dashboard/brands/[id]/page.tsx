@@ -226,7 +226,7 @@ export default function BrandDetailPage() {
                   <img
                     src={brand.logoUrl}
                     alt={brand.name}
-                    className="h-8 w-8 rounded object-cover"
+                    className="h-8 w-8 rounded object-contain"
                   />
                 ) : (
                   <Building2 className="h-5 w-5 text-primary" />

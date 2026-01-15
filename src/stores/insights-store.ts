@@ -204,6 +204,11 @@ interface InsightsState {
   addRecentQuery: (query: string) => void;
   clearRecentQueries: () => void;
 
+  // Actions - Load Historical Entry
+  loadedHistoryEntry: HistoryEntry | null;
+  loadHistoryEntry: (entry: HistoryEntry) => void;
+  clearLoadedHistoryEntry: () => void;
+
   // Actions - Reset
   reset: () => void;
 }
@@ -244,6 +249,7 @@ const initialState = {
   historyError: null as string | null,
   selectedPlatform: null as AIPlatform | null,
   recentQueries: [] as string[],
+  loadedHistoryEntry: null as HistoryEntry | null,
 };
 
 // ============================================================================
@@ -533,6 +539,16 @@ export const useInsightsStore = create<InsightsState>()(
       clearRecentQueries: () => set({ recentQueries: [] }),
 
       // ========================================================================
+      // Load Historical Entry Actions
+      // ========================================================================
+
+      loadedHistoryEntry: null,
+
+      loadHistoryEntry: (entry) => set({ loadedHistoryEntry: entry }),
+
+      clearLoadedHistoryEntry: () => set({ loadedHistoryEntry: null }),
+
+      // ========================================================================
       // Reset Action
       // ========================================================================
 
@@ -681,3 +697,9 @@ export const useFailedPlatforms = () =>
       .filter(([, result]) => result?.status === "failed")
       .map(([platform]) => platform);
   });
+
+/**
+ * Get the loaded history entry for rerun
+ */
+export const useLoadedHistoryEntry = () =>
+  useInsightsStore((state) => state.loadedHistoryEntry);

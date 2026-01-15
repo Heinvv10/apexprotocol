@@ -5,7 +5,7 @@ import { Brain, Sparkles, Loader2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSelectedBrand } from "@/stores";
-import { useInsightsStore, useIsAnalyzing, useAnalysisError } from "@/stores/insights-store";
+import { useInsightsStore, useIsAnalyzing, useAnalysisError, useLoadedHistoryEntry } from "@/stores/insights-store";
 
 // ============================================================================
 // Types
@@ -52,6 +52,8 @@ export function QueryInput({
   const analysisError = useAnalysisError();
   const analyzeQuery = useInsightsStore((state) => state.analyzeQuery);
   const recentQueries = useInsightsStore((state) => state.recentQueries);
+  const loadedHistoryEntry = useLoadedHistoryEntry();
+  const clearLoadedHistoryEntry = useInsightsStore((state) => state.clearLoadedHistoryEntry);
 
   // Form state
   const [queryText, setQueryText] = React.useState("");
@@ -64,6 +66,28 @@ export function QueryInput({
     queryText?: string;
     platforms?: string;
   }>({});
+  const [isRerun, setIsRerun] = React.useState(false);
+
+  // Load historical entry when it changes
+  React.useEffect(() => {
+    if (loadedHistoryEntry) {
+      setQueryText(loadedHistoryEntry.queryText);
+      setBrandContext(loadedHistoryEntry.brandContext || "");
+      // Map platforms from history - filter to valid current platforms
+      const validPlatforms = loadedHistoryEntry.platforms.filter(
+        (p): p is typeof PLATFORMS[0]["key"] => PLATFORMS.some(plat => plat.key === p)
+      );
+      if (validPlatforms.length > 0) {
+        setSelectedPlatforms(validPlatforms);
+      }
+      setIsRerun(true);
+      setErrors({});
+      // Show advanced options if there was brand context
+      if (loadedHistoryEntry.brandContext) {
+        setShowAdvanced(true);
+      }
+    }
+  }, [loadedHistoryEntry]);
 
   // Toggle platform selection
   const togglePlatform = (platformKey: typeof PLATFORMS[0]["key"]) => {
@@ -155,6 +179,8 @@ export function QueryInput({
     setQueryText("");
     setBrandContext("");
     setErrors({});
+    setIsRerun(false);
+    clearLoadedHistoryEntry();
   };
 
   return (
@@ -165,8 +191,13 @@ export function QueryInput({
           <div className="flex items-center gap-2">
             <Brain className="h-5 w-5 text-primary" />
             <span className="font-semibold text-foreground">
-              Analyze Brand Visibility Across AI Platforms
+              {isRerun ? "Rerun Analysis" : "Analyze Brand Visibility Across AI Platforms"}
             </span>
+            {isRerun && loadedHistoryEntry && (
+              <span className="px-2 py-0.5 rounded-full bg-accent-purple/10 text-accent-purple text-xs font-medium">
+                From {new Date(loadedHistoryEntry.createdAt).toLocaleDateString()}
+              </span>
+            )}
           </div>
           {queryText && (
             <button
@@ -174,7 +205,7 @@ export function QueryInput({
               onClick={handleClear}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              Clear
+              {isRerun ? "Cancel Rerun" : "Clear"}
             </button>
           )}
         </div>
@@ -243,7 +274,7 @@ export function QueryInput({
                     "disabled:opacity-50 disabled:cursor-not-allowed",
                     isSelected
                       ? "bg-primary/10 border-primary/50 text-foreground"
-                      : "bg-muted/30 border-border hover:border-primary/30 hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+                      : "bg-white/5 border-white/15 hover:border-primary/30 hover:bg-white/10 text-gray-300 hover:text-white"
                   )}
                 >
                   {/* Checkbox */}
@@ -368,7 +399,7 @@ export function QueryInput({
           ) : (
             <>
               <Sparkles className="h-4 w-4 mr-2" />
-              Analyze Brand Visibility
+              {isRerun ? "Rerun Analysis" : "Analyze Brand Visibility"}
             </>
           )}
         </Button>

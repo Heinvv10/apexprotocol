@@ -512,7 +512,37 @@ async function generateSuggestions(input: GenerateSuggestionsInput): Promise<AIS
     return [];
   }
   const data = await response.json();
-  return data.suggestions || [];
+
+  // Transform API response format to AISuggestion format
+  const rawSuggestions = data.suggestions || [];
+  return rawSuggestions.map((s: { type?: string; suggested?: string; explanation?: string; impact?: string }, index: number) => {
+    // Map API types to frontend types
+    const typeMap: Record<string, AISuggestion["type"]> = {
+      seo: "seo",
+      readability: "improvement",
+      tone: "improvement",
+      structure: "structure",
+      keywords: "seo",
+      engagement: "addition",
+      general: "improvement",
+    };
+
+    // Map impact to confidence
+    const confidenceMap: Record<string, number> = {
+      high: 90,
+      medium: 70,
+      low: 50,
+    };
+
+    return {
+      id: `suggestion-${Date.now()}-${index}`,
+      type: typeMap[s.type || "general"] || "improvement",
+      title: s.type ? `${s.type.charAt(0).toUpperCase()}${s.type.slice(1)} Improvement` : "Suggestion",
+      preview: s.explanation || "Improve your content",
+      fullContent: s.suggested || "",
+      confidence: confidenceMap[s.impact || "medium"] || 70,
+    };
+  });
 }
 
 /**

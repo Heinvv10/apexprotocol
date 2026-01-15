@@ -34,11 +34,14 @@ export function getClaudeClient(): Anthropic {
  * Available Claude models
  */
 export const CLAUDE_MODELS = {
-  // Latest and most capable
-  SONNET_3_5: "claude-3-5-sonnet-20241022",
+  // Latest and most capable (Claude 4 generation)
+  SONNET_4: "claude-sonnet-4-20250514",
+  OPUS_4: "claude-opus-4-20250514",
   // Fast and efficient
   HAIKU_3_5: "claude-3-5-haiku-20241022",
-  // Previous generation
+  // Previous generation (3.5)
+  SONNET_3_5: "claude-sonnet-4-20250514", // Alias to latest
+  // Previous generation (3)
   OPUS_3: "claude-3-opus-20240229",
   SONNET_3: "claude-3-sonnet-20240229",
   HAIKU_3: "claude-3-haiku-20240307",

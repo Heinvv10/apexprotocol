@@ -11,6 +11,7 @@ import {
   Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/utils/formatters";
 import { ConfidenceIndicator } from "./ConfidenceIndicator";
 import { PredictiveChart, PredictiveDataPoint } from "./PredictiveChart";
 import {
@@ -431,7 +432,7 @@ export function EmergingOpportunities({
                   <div>
                     <span className="text-muted-foreground">Target Date:</span>
                     <span className="ml-2 font-medium text-foreground">
-                      {new Date(selectedOpportunity.targetDate).toLocaleDateString()}
+                      {formatDate(selectedOpportunity.targetDate, "medium")}
                     </span>
                   </div>
                   <div>

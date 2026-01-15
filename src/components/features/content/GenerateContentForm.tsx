@@ -54,9 +54,8 @@ export default function GenerateContentForm() {
         return;
       }
 
-      // Determine API endpoint based on streaming mode
-      const endpoint = useStreaming ? '/api/generate/stream' : '/api/generate';
-      const streamingParam = useStreaming ? { streaming: true } : {};
+      // Use single endpoint with streaming parameter
+      const endpoint = '/api/generate';
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -66,7 +65,7 @@ export default function GenerateContentForm() {
           keywords,
           brandVoice,
           aiProvider,
-          ...streamingParam
+          streaming: useStreaming
         }),
         signal: controller.signal
       });

@@ -8,7 +8,7 @@ import { getUserId, getOrganizationId } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { organizations, users } from "@/lib/db/schema";
+import { organizations, users, brands } from "@/lib/db/schema";
 import { eq, sql, ilike, or, desc } from "drizzle-orm";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
 import { createAuditLog } from "@/lib/audit-logger";
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(organizations.isActive, false));
     }
 
-    // Get organizations with user count
+    // Get organizations with user count and brand count
     const orgsQuery = db
       .select({
         id: organizations.id,
@@ -103,9 +103,11 @@ export async function GET(request: NextRequest) {
         createdAt: organizations.createdAt,
         updatedAt: organizations.updatedAt,
         userCount: sql<number>`cast(count(distinct ${users.id}) as int)`,
+        brandCount: sql<number>`cast(count(distinct ${brands.id}) as int)`,
       })
       .from(organizations)
       .leftJoin(users, eq(users.organizationId, organizations.id))
+      .leftJoin(brands, eq(brands.organizationId, organizations.id))
       .groupBy(organizations.id)
       .orderBy(desc(organizations.createdAt))
       .limit(limit)

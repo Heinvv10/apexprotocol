@@ -498,7 +498,7 @@ export default function PortfolioSettingsPage() {
                           <img
                             src={pb.brand.logoUrl}
                             alt={pb.brand.name}
-                            className="h-6 w-6 rounded object-cover"
+                            className="h-6 w-6 rounded object-contain"
                           />
                         ) : (
                           <SettingsIcon className="h-4 w-4 text-primary" />
@@ -565,7 +565,7 @@ export default function PortfolioSettingsPage() {
                           <img
                             src={brand.logoUrl}
                             alt={brand.name}
-                            className="h-6 w-6 rounded object-cover"
+                            className="h-6 w-6 rounded object-contain"
                           />
                         ) : (
                           <SettingsIcon className="h-4 w-4 text-primary" />

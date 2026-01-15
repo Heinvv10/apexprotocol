@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Search, Users as UsersIcon, Calendar, CheckCircle, XCircle, MoreVertical, Eye, Edit, Ban, CheckCircle2, Shield, ShieldOff } from "lucide-react";
+import { formatDate, formatTimestamp } from "@/lib/utils/formatters";
 
 interface User {
   id: string;
@@ -160,14 +161,14 @@ export default function AdminUsersPage() {
             placeholder="Search users..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red-500/50"
+            className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red-500/50"
           />
         </div>
 
         <select
           value={organizationFilter}
           onChange={(e) => setOrganizationFilter(e.target.value)}
-          className="px-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-red-500/50"
+          className="px-4 py-2.5 bg-card border border-border rounded-lg text-white focus:outline-none focus:border-red-500/50"
         >
           <option value="all">All Organizations</option>
           {organizations.map((org) => (
@@ -266,7 +267,7 @@ export default function AdminUsersPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-gray-400">
                         <Calendar className="w-4 h-4" />
-                        <span className="text-sm">{new Date(user.createdAt).toLocaleDateString()}</span>
+                        <span className="text-sm">{formatDate(user.createdAt, "short")}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -407,13 +408,13 @@ export default function AdminUsersPage() {
               <p><strong>Organization:</strong> {selectedUser.organizationName || "No Organization"}</p>
               <p><strong>Role:</strong> {getRoleLabel(selectedUser)}</p>
               <p><strong>Status:</strong> {selectedUser.isActive ? "Active" : "Inactive"}</p>
-              <p><strong>Created:</strong> {new Date(selectedUser.createdAt).toLocaleString()}</p>
-              {selectedUser.lastLoginAt && (
-                <p><strong>Last Login:</strong> {new Date(selectedUser.lastLoginAt).toLocaleString()}</p>
+              <p><strong>Created:</strong> {formatTimestamp(selectedUser.createdAt)}</p>
+              {selectedUser.lastLoginAt && formatTimestamp(selectedUser.lastLoginAt) !== "N/A" && (
+                <p><strong>Last Login:</strong> {formatTimestamp(selectedUser.lastLoginAt)}</p>
               )}
-              {selectedUser.isSuperAdmin && selectedUser.superAdminGrantedAt && (
+              {selectedUser.isSuperAdmin && selectedUser.superAdminGrantedAt && formatTimestamp(selectedUser.superAdminGrantedAt) !== "N/A" && (
                 <>
-                  <p><strong>Super Admin Granted:</strong> {new Date(selectedUser.superAdminGrantedAt).toLocaleString()}</p>
+                  <p><strong>Super Admin Granted:</strong> {formatTimestamp(selectedUser.superAdminGrantedAt)}</p>
                   <p><strong>Granted By:</strong> {selectedUser.superAdminGrantedBy}</p>
                 </>
               )}

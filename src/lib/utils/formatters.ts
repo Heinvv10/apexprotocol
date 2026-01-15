@@ -79,6 +79,13 @@ export function formatDate(
       return "Invalid date";
     }
 
+    // Treat Unix epoch (Jan 1, 1970) as invalid/unset date
+    // Any date before Jan 1, 1971 is considered invalid
+    const epochCutoff = new Date("1971-01-01").getTime();
+    if (dateObj.getTime() < epochCutoff) {
+      return "N/A";
+    }
+
     const formatOptions: Record<DateFormatStyle, Intl.DateTimeFormatOptions> = {
       short: { month: "numeric", day: "numeric", year: "2-digit" },
       medium: { month: "short", day: "numeric", year: "numeric" },
@@ -123,6 +130,13 @@ export function formatRelativeTime(timestamp: number | Date | string | null | un
     time = timestamp.getTime();
   }
 
+  // Treat Unix epoch (Jan 1, 1970) as invalid/unset date
+  // Any date before Jan 1, 1971 is considered invalid
+  const epochCutoff = new Date("1971-01-01").getTime();
+  if (time < epochCutoff || isNaN(time)) {
+    return "Never";
+  }
+
   const diff = now - time;
 
   const seconds = Math.floor(diff / 1000);
@@ -156,7 +170,7 @@ export function formatRelativeTime(timestamp: number | Date | string | null | un
  * formatTimestamp("2024-12-26T10:30:00Z") // "Dec 26, 2024 at 10:30 AM"
  */
 // ðŸŸ¢ WORKING: Timestamp formatting tested
-export function formatTimestamp(timestamp: string | Date | number): string {
+export function formatTimestamp(timestamp: string | Date | number | null | undefined): string {
   if (!timestamp) return "N/A";
 
   try {
@@ -170,6 +184,13 @@ export function formatTimestamp(timestamp: string | Date | number): string {
       return "Invalid timestamp";
     }
 
+    // Treat Unix epoch (Jan 1, 1970) as invalid/unset date
+    // Any date before Jan 1, 1971 is considered invalid
+    const epochCutoff = new Date("1971-01-01").getTime();
+    if (date.getTime() < epochCutoff) {
+      return "N/A";
+    }
+
     return date.toLocaleString("en-US", {
       month: "short",
       day: "numeric",
@@ -180,6 +201,47 @@ export function formatTimestamp(timestamp: string | Date | number): string {
     });
   } catch (error) {
     return "Invalid timestamp";
+  }
+}
+
+/**
+ * Format a date with custom Intl.DateTimeFormatOptions
+ *
+ * @param date - Date string, Date object, or null/undefined
+ * @param options - Intl.DateTimeFormatOptions for custom formatting
+ * @param fallback - Fallback string for invalid dates (default: "N/A")
+ * @returns Formatted date string or fallback
+ *
+ * @example
+ * formatDateCustom("2024-12-26", { month: "short", day: "numeric" }) // "Dec 26"
+ * formatDateCustom("2024-12-26", { weekday: "long", month: "long", day: "numeric", year: "numeric" })
+ * // "Thursday, December 26, 2024"
+ */
+// 🟢 WORKING: Custom date formatting with epoch protection
+export function formatDateCustom(
+  date: string | Date | null | undefined,
+  options: Intl.DateTimeFormatOptions,
+  fallback: string = "N/A"
+): string {
+  if (!date) return fallback;
+
+  try {
+    const dateObj = typeof date === "string" ? new Date(date) : date;
+
+    if (isNaN(dateObj.getTime())) {
+      return fallback;
+    }
+
+    // Treat Unix epoch (Jan 1, 1970) as invalid/unset date
+    // Any date before Jan 1, 1971 is considered invalid
+    const epochCutoff = new Date("1971-01-01").getTime();
+    if (dateObj.getTime() < epochCutoff) {
+      return fallback;
+    }
+
+    return dateObj.toLocaleDateString("en-US", options);
+  } catch (error) {
+    return fallback;
   }
 }
 

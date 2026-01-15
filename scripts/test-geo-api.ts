@@ -182,7 +182,6 @@ async function testAlertsAPI() {
   const {
     getOrganizationAlerts,
     getAlertSummary,
-    generatePlatformChangeAlert
   } = await import("../src/lib/geo/alert-generator");
   const { recordPlatformChange } = await import("../src/lib/geo/knowledge-base");
 
@@ -204,9 +203,8 @@ async function testAlertsAPI() {
     console.log(`   ✅ Alert summary:`);
     console.log(`      - Total: ${summary.total}`);
     console.log(`      - Unread: ${summary.unread}`);
-    console.log(`      - Critical: ${summary.bySeverity?.critical || 0}`);
-    console.log(`      - Warning: ${summary.bySeverity?.warning || 0}`);
-    console.log(`      - Info: ${summary.bySeverity?.info || 0}`);
+    console.log(`      - Critical: ${summary.critical}`);
+    console.log(`      - Action Required: ${summary.actionRequired}`);
   } catch (err) {
     console.log(`   ❌ Error: ${err}`);
   }

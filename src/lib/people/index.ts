@@ -46,3 +46,14 @@ export {
   type ThoughtLeadershipScore,
   type ActivityScoreWeights,
 } from "./thought-leadership";
+
+// Team Suggestions - LinkedIn integration for team member suggestions (Phase 5.1)
+export {
+  generateTeamSuggestions,
+  analyzeTeamCompleteness,
+  calculateProfileCompleteness,
+  getMissingProfileFields,
+  type TeamSuggestion,
+  type TeamCompletenessReport,
+  type LinkedInCandidate,
+} from "./suggestions";

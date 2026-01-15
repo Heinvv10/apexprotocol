@@ -14,6 +14,7 @@ import {
   ArrowRight,
   BarChart3,
   Loader2,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,8 +30,9 @@ import {
   AreaChart,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import { useAuditsByBrand, Audit } from "@/hooks/useAudit";
+import { useAuditsByBrand, useRetryAudit, Audit } from "@/hooks/useAudit";
 import { useSelectedBrand } from "@/stores";
+import { formatDateCustom } from "@/lib/utils/formatters";
 
 // Loading state component
 function HistoryLoadingState() {
@@ -137,7 +139,7 @@ function transformToHistoricalData(audits: Audit[]): HistoricalDataPoint[] {
     .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
 
   return sortedAudits.map((audit) => ({
-    date: new Date(audit.startedAt).toLocaleDateString("en-US", {
+    date: formatDateCustom(audit.startedAt, {
       month: "short",
       day: "numeric",
     }),
@@ -164,7 +166,7 @@ function transformToAuditHistory(audits: Audit[]): AuditHistoryItem[] {
 
     return {
       id: audit.id,
-      date: new Date(audit.startedAt).toLocaleDateString("en-US", {
+      date: formatDateCustom(audit.startedAt, {
         weekday: "long",
         month: "long",
         day: "numeric",
@@ -184,6 +186,14 @@ export default function AuditHistoryPage() {
     limit: 100,
     status: "completed",
   });
+
+  // Retry audit mutation
+  const retryAuditMutation = useRetryAudit();
+
+  // Handle rerun audit
+  const handleRerunAudit = (auditId: string) => {
+    retryAuditMutation.mutate(auditId);
+  };
 
   // Transform API data to UI formats
   const historicalData = React.useMemo(() => {
@@ -400,7 +410,7 @@ export default function AuditHistoryPage() {
             <div
               key={audit.id}
               className={cn(
-                "card-tertiary p-4 flex items-center justify-between",
+                "card-tertiary p-4 flex items-center justify-between group",
                 index === 0 && "ring-2 ring-primary/50"
               )}
             >
@@ -442,6 +452,15 @@ export default function AuditHistoryPage() {
                     First audit
                   </div>
                 )}
+                <button
+                  onClick={() => handleRerunAudit(audit.id)}
+                  disabled={retryAuditMutation.isPending}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded-md bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium flex items-center gap-1 disabled:opacity-50"
+                  title="Rerun this audit"
+                >
+                  <RotateCcw className={cn("w-3 h-3", retryAuditMutation.isPending && "animate-spin")} />
+                  Rerun
+                </button>
                 <Link href="/dashboard/audit/results">
                   <Button variant="ghost" size="sm">
                     View Details

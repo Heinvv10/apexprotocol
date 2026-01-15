@@ -22,7 +22,9 @@ import {
   CheckCircle,
   Plus,
   User,
+  Sparkles,
 } from "lucide-react";
+import { TeamSuggestions } from "@/components/people/team-suggestions";
 import { useSelectedBrand } from "@/stores";
 import { useQuery } from "@tanstack/react-query";
 
@@ -677,6 +679,23 @@ export default function PeoplePage() {
             />
           </div>
         )}
+
+        {/* Team Suggestions - LinkedIn Integration */}
+        <TeamSuggestions
+          brandId={brandId}
+          onAddPerson={() => {
+            // TODO: Open add person modal
+            console.log("Add person clicked");
+          }}
+          onDiscoverTeam={() => {
+            // Navigate to team discovery
+            router.push(`/dashboard/people/discover?brandId=${brandId}`);
+          }}
+          onEnrichProfile={(personId) => {
+            // Navigate to person enrichment
+            router.push(`/dashboard/people/${personId}/enrich`);
+          }}
+        />
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

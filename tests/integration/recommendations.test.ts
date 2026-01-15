@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, afterAll, beforeEach } from "vitest";
-import { eq, and, desc, inArray } from "drizzle-orm";
+import { eq, and, desc, inArray, sql } from "drizzle-orm";
 import {
   setupIntegrationTest,
   isDatabaseConfigured,
@@ -481,13 +481,13 @@ describe("Recommendation Integration Tests", () => {
       const [created] = await db.insert(schema.recommendations).values(recData).returning();
       const originalUpdatedAt = created.updatedAt;
 
-      // Wait a bit to ensure timestamp difference
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      // Wait to ensure timestamp difference
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // Update status
+      // Update status (use SQL NOW() to get database server time)
       const [updated] = await db
         .update(schema.recommendations)
-        .set({ status: "in_progress", updatedAt: new Date() })
+        .set({ status: "in_progress", updatedAt: sql`NOW()` })
         .where(eq(schema.recommendations.id, recData.id))
         .returning();
 

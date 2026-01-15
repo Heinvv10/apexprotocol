@@ -191,8 +191,7 @@ function RecommendationCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-[#27272A] transition-all duration-200",
-        "bg-[#18181B] hover:border-[#3F3F46]",
+        "card-secondary transition-all duration-200 hover:border-primary/30",
         recommendation.status === "completed" && "opacity-60",
         recommendation.status === "dismissed" && "opacity-40"
       )}
@@ -237,7 +236,7 @@ function RecommendationCard({
           {/* Meta Row */}
           <div className="flex items-center gap-4 pt-1">
             {/* Type Badge */}
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs text-muted-foreground border border-[#3F3F46] rounded-full">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs text-muted-foreground border border-border/50 rounded-full">
               <TypeIcon className="h-3 w-3" />
               {type.label}
             </span>
@@ -274,7 +273,7 @@ function RecommendationCard({
           isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
         )}
       >
-        <div className="px-4 pb-4 pt-0 pl-12 space-y-4 border-t border-[#27272A]">
+        <div className="px-4 pb-4 pt-0 pl-12 space-y-4 border-t border-border">
           {/* Full Description */}
           <div className="pt-4">
             <p className="text-sm text-muted-foreground">
@@ -294,7 +293,7 @@ function RecommendationCard({
           </div>
 
           {/* Suggested Action */}
-          <div className="p-3 rounded-lg bg-[#0A0A0B] border border-[#27272A]">
+          <div className="p-3 rounded-lg bg-background border border-border">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
               Suggested Action
             </div>
@@ -313,7 +312,7 @@ function RecommendationCard({
                 {recommendation.affectedPages.map((page) => (
                   <span
                     key={page}
-                    className="px-2 py-1 text-xs bg-[#0A0A0B] border border-[#27272A] rounded text-muted-foreground"
+                    className="px-2 py-1 text-xs bg-background border border-border rounded text-muted-foreground"
                   >
                     {page}
                   </span>
@@ -323,7 +322,7 @@ function RecommendationCard({
           )}
 
           {/* Completion Tracker - Score-based status tracking */}
-          <div className="p-3 rounded-lg bg-[#0A0A0B] border border-[#27272A]">
+          <div className="p-3 rounded-lg bg-background border border-border">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
               Completion Tracking
             </div>
@@ -726,13 +725,13 @@ export default function RecommendationsPage() {
 
       {/* View Toggle */}
       <div className="flex justify-end">
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-[#18181B] border border-[#27272A]">
+        <div className="flex items-center gap-1 p-1 rounded-lg bg-card border border-border">
           <Button variant="ghost" size="sm" className="h-8 px-3 bg-primary/20 text-primary">
             <List className="h-4 w-4 mr-1.5" />
             List
           </Button>
           <Link href="/dashboard/recommendations/kanban">
-            <Button variant="ghost" size="sm" className="h-8 px-3 text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="sm" className="h-8 px-3 text-gray-300 hover:text-white hover:bg-white/10">
               <LayoutGrid className="h-4 w-4 mr-1.5" />
               Kanban
             </Button>
@@ -788,12 +787,12 @@ export default function RecommendationsPage() {
             placeholder="Search recommendations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-[#18181B] border-[#27272A]"
+            className="pl-10 bg-card border-border"
           />
         </div>
 
         {/* Status Filter - Pill-shaped tabs */}
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-[#18181B] border border-[#27272A]">
+        <div className="flex items-center gap-1 p-1 rounded-lg bg-card border border-border">
           {filterTabs.map((tab) => (
             <button
               key={tab.id}
@@ -802,7 +801,7 @@ export default function RecommendationsPage() {
                 "px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150",
                 statusFilter === tab.id
                   ? "bg-primary/20 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-[#27272A]"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               )}
             >
               {tab.label}
@@ -816,7 +815,7 @@ export default function RecommendationsPage() {
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
-            className="h-9 px-3 rounded-lg text-sm bg-[#18181B] border border-[#27272A] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="h-9 px-3 rounded-lg text-sm bg-card border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             {priorityTabs.map((tab) => (
               <option key={tab.id} value={tab.id}>

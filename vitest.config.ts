@@ -27,7 +27,7 @@ export default defineConfig({
     poolOptions: {
       threads: {
         // Use single thread for integration tests to avoid race conditions
-        singleThread: false,
+        singleThread: true,
       },
     },
     // Limit concurrency for integration tests

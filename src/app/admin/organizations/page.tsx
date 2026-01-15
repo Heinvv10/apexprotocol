@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Search, Filter, Users, Calendar, CheckCircle, XCircle, MoreVertical, Eye, Edit, Ban, CheckCircle2 } from "lucide-react";
+import { formatDate, formatTimestamp } from "@/lib/utils/formatters";
 
 interface Organization {
   id: string;
@@ -9,6 +10,7 @@ interface Organization {
   slug: string;
   plan: "starter" | "professional" | "enterprise";
   brandLimit: number;
+  brandCount: number;
   userLimit: number;
   userCount: number;
   isActive: boolean;
@@ -197,7 +199,7 @@ export default function AdminOrganizationsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-gray-300">
-                        0 / {org.brandLimit}
+                        {org.brandCount} / {org.brandLimit}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -216,7 +218,7 @@ export default function AdminOrganizationsPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-gray-400">
                         <Calendar className="w-4 h-4" />
-                        <span className="text-sm">{new Date(org.createdAt).toLocaleDateString()}</span>
+                        <span className="text-sm">{formatDate(org.createdAt, "short")}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -366,18 +368,19 @@ export default function AdminOrganizationsPage() {
                 </p>
               </div>
               <div className="p-4 bg-[#0a0f1a] rounded-lg border border-gray-800">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Brand Limit</p>
-                <p className="text-sm text-cyan-400 font-semibold">{selectedOrg.brandLimit}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Brands</p>
+                <p className="text-sm text-white">
+                  <span className="text-cyan-400 font-semibold">{selectedOrg.brandCount}</span>
+                  <span className="text-gray-500"> / {selectedOrg.brandLimit} max</span>
+                </p>
               </div>
               <div className="p-4 bg-[#0a0f1a] rounded-lg border border-gray-800">
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Created</p>
-                <p className="text-sm text-white">{new Date(selectedOrg.createdAt).toLocaleDateString()}</p>
-                <p className="text-xs text-gray-500">{new Date(selectedOrg.createdAt).toLocaleTimeString()}</p>
+                <p className="text-sm text-white">{formatTimestamp(selectedOrg.createdAt)}</p>
               </div>
               <div className="p-4 bg-[#0a0f1a] rounded-lg border border-gray-800">
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Last Updated</p>
-                <p className="text-sm text-white">{new Date(selectedOrg.updatedAt).toLocaleDateString()}</p>
-                <p className="text-xs text-gray-500">{new Date(selectedOrg.updatedAt).toLocaleTimeString()}</p>
+                <p className="text-sm text-white">{formatTimestamp(selectedOrg.updatedAt)}</p>
               </div>
             </div>
 

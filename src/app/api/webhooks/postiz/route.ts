@@ -109,7 +109,7 @@ async function handlePostEngagement(
         comments: postData.comments || 0,
         shares: postData.shares || 0,
         views: postData.views || 0,
-        engagementRate: parseFloat(engagementRate),
+        engagementRate: engagementRate,
         updatedAt: new Date(),
       })
       .where(eq(socialPosts.id, post[0].id));

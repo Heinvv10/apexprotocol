@@ -66,6 +66,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useSelectedBrand } from "@/stores";
 import { useContentByBrand, useDeleteContent, useUpdateContent, Content } from "@/hooks/useContent";
+import { formatDate } from "@/lib/utils/formatters";
 
 // Transform API Content to UI ContentItem
 function contentToItem(content: Content): ContentItem {
@@ -94,8 +95,8 @@ function contentToItem(content: Content): ContentItem {
     excerpt: content.excerpt || content.content?.substring(0, 150) + "..." || "",
     status: statusMap[content.status] || "draft",
     type: typeMap[content.type] || "article",
-    createdAt: new Date(content.createdAt).toLocaleDateString(),
-    updatedAt: new Date(content.updatedAt).toLocaleDateString(),
+    createdAt: formatDate(content.createdAt, "short"),
+    updatedAt: formatDate(content.updatedAt, "short"),
     wordCount: content.wordCount || content.content?.split(/\s+/).length || 0,
     aiScore: content.seoScore,
   };

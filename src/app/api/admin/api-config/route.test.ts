@@ -7,6 +7,13 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { GET, POST } from "./route";
+import {
+  TEST_CREDENTIALS,
+  MOCK_INTEGRATION_CONFIG,
+  TEST_USER_IDS,
+  createMockIntegration,
+  createMockAuditLog,
+} from "./__test-constants";
 
 // Mock Clerk auth
 vi.mock("@clerk/nextjs/server", () => ({
@@ -20,15 +27,7 @@ vi.mock("@/lib/auth/super-admin", () => ({
 
 // Mock audit logger to prevent schema access
 vi.mock("@/lib/audit-logger", () => ({
-  createAuditLog: vi.fn().mockResolvedValue({
-    id: "log_123",
-    actorId: "test-super-admin-id",
-    action: "test_action",
-    actionType: "access",
-    description: "Test action",
-    integrityHash: "abc123",
-    timestamp: new Date(),
-  }),
+  createAuditLog: vi.fn().mockResolvedValue(createMockAuditLog()),
 }));
 
 // Mock database with proper query chain
@@ -43,31 +42,7 @@ const mockQueryChain = {
 const mockInsertChain = {
   insert: vi.fn().mockReturnThis(),
   values: vi.fn().mockReturnThis(),
-  returning: vi.fn().mockResolvedValue([
-    {
-      id: "test-integration-id",
-      serviceName: "Claude API",
-      provider: "Anthropic",
-      description: "Anthropic's Claude AI",
-      category: "ai_models",
-      status: "configured",
-      isEnabled: true,
-      config: {
-        apiKey: "sk-ant-api03-test-key-1234",
-        endpoint: "https://api.anthropic.com/v1",
-        model: "claude-3-5-sonnet-20241022",
-      },
-      lastVerified: null,
-      lastError: null,
-      usageThisMonth: 0,
-      quotaRemaining: null,
-      rateLimit: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdBy: "test-super-admin-id",
-      updatedBy: "test-super-admin-id",
-    },
-  ]),
+  returning: vi.fn().mockResolvedValue([createMockIntegration()]),
 };
 
 vi.mock("@/lib/db", () => ({
@@ -269,7 +244,7 @@ describe("POST /api/admin/api-config - Create Integration (FR-2)", () => {
         provider: "Anthropic",
         category: "ai_models",
         config: {
-          apiKey: "sk-ant-api03-test-key-1234",
+          apiKey: TEST_CREDENTIALS.ANTHROPIC_API_KEY,
           endpoint: "https://api.anthropic.com/v1",
           model: "claude-3-5-sonnet-20241022",
         },
@@ -292,7 +267,7 @@ describe("POST /api/admin/api-config - Create Integration (FR-2)", () => {
         provider: "Anthropic",
         category: "ai_models",
         config: {
-          apiKey: "sk-ant-api03-test-key-1234",
+          apiKey: TEST_CREDENTIALS.ANTHROPIC_API_KEY,
         },
       }),
     });
@@ -311,7 +286,7 @@ describe("POST /api/admin/api-config - Create Integration (FR-2)", () => {
         provider: "Anthropic",
         category: "ai_models",
         config: {
-          apiKey: "sk-ant-api03-test-key-1234",
+          apiKey: TEST_CREDENTIALS.ANTHROPIC_API_KEY,
         },
       }),
     });

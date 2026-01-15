@@ -28,6 +28,31 @@ export interface AlertRecommendation {
   estimatedImpact?: string;
 }
 
+/**
+ * Prediction object from database
+ */
+export interface Prediction {
+  id: string;
+  brandId: string;
+  targetDate: Date;
+  predictedValue: number;
+  confidenceLower: number;
+  confidenceUpper: number;
+  confidence: number;
+  modelVersion: string;
+}
+
+/**
+ * Result of evaluating whether a prediction should trigger an alert
+ */
+export interface PredictionAlertEvaluation {
+  trigger: boolean;
+  severity?: "info" | "warning" | "critical";
+  leadTime?: number;
+  reason?: string;
+  percentageChange?: number;
+}
+
 // Constants
 const ALERT_THRESHOLDS = {
   SCORE_CHANGE_MIN: 5, // Minimum points change to trigger alert
@@ -38,11 +63,85 @@ const ALERT_THRESHOLDS = {
 };
 
 /**
- * Determines if a predictive alert should be triggered based on score changes
+ * Thresholds for prediction-based alerts
+ */
+const PREDICTION_THRESHOLDS = {
+  MIN_CONFIDENCE: 0.70, // 70% confidence required
+  CRITICAL_DROP: 30, // 30%+ drop = critical
+  WARNING_DROP: 20, // 20-30% drop = warning
+  MIN_DROP: 20, // Below 20% = no alert
+};
+
+/**
+ * Evaluates a prediction to determine if it should trigger an alert
+ */
+function evaluatePredictionAlert(
+  prediction: Prediction,
+  currentScore: number
+): PredictionAlertEvaluation {
+  const { predictedValue, confidence, targetDate } = prediction;
+
+  // Calculate percentage change
+  const percentageChange = ((predictedValue - currentScore) / currentScore) * 100;
+  const percentageDrop = -percentageChange; // Positive value for drops
+
+  // Calculate lead time in days
+  const now = new Date();
+  const leadTime = Math.ceil(
+    (targetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  // Check confidence threshold
+  if (confidence < PREDICTION_THRESHOLDS.MIN_CONFIDENCE) {
+    return {
+      trigger: false,
+      reason: `Confidence ${(confidence * 100).toFixed(0)}% is below threshold`,
+      percentageChange,
+    };
+  }
+
+  // Check if drop is below minimum threshold
+  if (percentageDrop < PREDICTION_THRESHOLDS.MIN_DROP) {
+    return {
+      trigger: false,
+      reason: `Drop ${percentageDrop.toFixed(1)}% is below threshold`,
+      percentageChange,
+    };
+  }
+
+  // Determine severity based on drop magnitude
+  let severity: "warning" | "critical";
+  if (percentageDrop >= PREDICTION_THRESHOLDS.CRITICAL_DROP) {
+    severity = "critical";
+  } else {
+    severity = "warning";
+  }
+
+  return {
+    trigger: true,
+    severity,
+    leadTime,
+    percentageChange,
+  };
+}
+
+/**
+ * Determines if a predictive alert should be triggered.
+ *
+ * Supports both:
+ * 1. PredictiveAlertContext (for general alerts based on score changes)
+ * 2. { prediction, currentScore } (for prediction-based alerts from database)
  */
 export function shouldTriggerPredictiveAlert(
-  context: PredictiveAlertContext
-): boolean {
+  input: PredictiveAlertContext | { prediction: Prediction; currentScore: number }
+): boolean | PredictionAlertEvaluation {
+  // Check if this is a prediction-based input
+  if ("prediction" in input && "currentScore" in input) {
+    return evaluatePredictionAlert(input.prediction, input.currentScore);
+  }
+
+  // Original behavior for PredictiveAlertContext
+  const context = input as PredictiveAlertContext;
   const { scoreChange, changePercentage } = context;
 
   // Check if change exceeds minimum thresholds
@@ -53,9 +152,21 @@ export function shouldTriggerPredictiveAlert(
 }
 
 /**
- * Generates an alert title based on the context
+ * Generates an alert title based on the context or evaluation
  */
-export function generateAlertTitle(context: PredictiveAlertContext): string {
+export function generateAlertTitle(
+  input: PredictiveAlertContext | PredictionAlertEvaluation
+): string {
+  // Check if this is a PredictionAlertEvaluation
+  if ("trigger" in input) {
+    const evaluation = input as PredictionAlertEvaluation;
+    const severityEmoji = evaluation.severity === "critical" ? "🚨" : "⚠️";
+    const severityText = evaluation.severity === "critical" ? "Critical" : "Warning";
+    return `${severityEmoji} ${severityText}: Predicted GEO Score Drop`;
+  }
+
+  // Original behavior for PredictiveAlertContext
+  const context = input as PredictiveAlertContext;
   const { brandName, trendDirection, scoreChange } = context;
   const direction = trendDirection === "up" ? "Increased" : "Decreased";
   const magnitude = Math.abs(scoreChange);
@@ -71,11 +182,42 @@ export function generateAlertTitle(context: PredictiveAlertContext): string {
 
 /**
  * Generates a detailed alert message
+ *
+ * Supports both:
+ * 1. PredictiveAlertContext (single argument)
+ * 2. (brandName, currentScore, prediction, evaluation) - for prediction-based alerts
  */
-export function generateAlertMessage(context: PredictiveAlertContext): string {
+export function generateAlertMessage(
+  inputOrBrandName: PredictiveAlertContext | string,
+  currentScore?: number,
+  prediction?: Prediction,
+  evaluation?: PredictionAlertEvaluation
+): string {
+  // Check if this is a prediction-based call with multiple arguments
+  if (typeof inputOrBrandName === "string" && currentScore !== undefined && prediction && evaluation) {
+    const brandName = inputOrBrandName;
+    const { predictedValue, targetDate } = prediction;
+    const { severity, leadTime, percentageChange } = evaluation;
+
+    const severityText = severity === "critical" ? "URGENT" : "Important";
+    const formattedDate = targetDate.toLocaleDateString();
+
+    return `${severityText}: Your brand "${brandName}" is predicted to experience a significant GEO score change.
+
+Current Score: ${currentScore.toFixed(1)}
+Predicted Score: ${predictedValue.toFixed(1)}
+Expected Change: ${percentageChange?.toFixed(1)}%
+Predicted Date: ${formattedDate}
+Lead Time: ${leadTime} days
+
+This prediction is based on trend analysis and historical patterns. Review your brand's performance metrics to prepare for this change.`;
+  }
+
+  // Original behavior for PredictiveAlertContext
+  const context = inputOrBrandName as PredictiveAlertContext;
   const {
     brandName,
-    currentScore,
+    currentScore: ctxCurrentScore,
     previousScore,
     scoreChange,
     changePercentage,
@@ -88,7 +230,7 @@ export function generateAlertMessage(context: PredictiveAlertContext): string {
 
   return `Your brand "${brandName}" has shown a ${trend} trend over the ${timeframe}.
 
-Current GEO Score: ${currentScore}
+Current GEO Score: ${ctxCurrentScore}
 Previous Score: ${previousScore}
 Change: ${scoreChange > 0 ? '+' : ''}${scoreChange} points (${changePercentage > 0 ? '+' : ''}${changePercentage.toFixed(1)}%)
 
@@ -102,11 +244,22 @@ Review the detailed analytics to understand the factors driving this change.`;
 }
 
 /**
- * Generates action recommendations based on the alert context
+ * Generates action recommendations based on alert context or evaluation
  */
 export function generateActionRecommendation(
-  context: PredictiveAlertContext
-): AlertRecommendation {
+  input: PredictiveAlertContext | PredictionAlertEvaluation
+): AlertRecommendation | string {
+  // Check if this is a PredictionAlertEvaluation
+  if ("trigger" in input) {
+    const evaluation = input as PredictionAlertEvaluation;
+    const isUrgent = evaluation.severity === "critical";
+    return isUrgent
+      ? "URGENT: Immediate action recommended. Review brand performance and implement optimization strategies."
+      : "Important: Monitor closely and prepare optimization strategies.";
+  }
+
+  // Original behavior for PredictiveAlertContext
+  const context = input as PredictiveAlertContext;
   const { scoreChange, trendDirection, changePercentage } = context;
   const magnitude = Math.abs(scoreChange);
 
@@ -177,7 +330,8 @@ export function calculateAlertPriority(
  * Generates a complete alert object ready for notification system
  */
 export function generatePredictiveAlert(context: PredictiveAlertContext) {
-  if (!shouldTriggerPredictiveAlert(context)) {
+  const shouldTrigger = shouldTriggerPredictiveAlert(context);
+  if (typeof shouldTrigger === "boolean" && !shouldTrigger) {
     return null;
   }
 

@@ -158,11 +158,15 @@ export const leads = pgTable(
     metadata: jsonb('metadata').$type<{
       mauticId?: string;
       listmonkId?: string;
+      listId?: string;
       website?: string;
       industry?: string;
       companySize?: string;
       budget?: string;
       timezone?: string;
+      attributes?: Record<string, unknown>;
+      createdAt?: string;
+      rawData?: unknown;
     }>(),
     lastEngagedAt: timestamp('last_engaged_at'),
     createdAt: timestamp('created_at').defaultNow(),
@@ -238,6 +242,16 @@ export const emailEvents = pgTable(
       device?: string;
       os?: string;
       region?: string;
+      listmonkId?: string;
+      campaignId?: string;
+      linkId?: string;
+      clickCount?: number;
+      reason?: string;
+      bounceType?: string;
+      mauticEventId?: string;
+      subject?: string;
+      fromEmail?: string;
+      clickedUrl?: string;
     }>(),
     timestamp: timestamp('timestamp').defaultNow(),
   },
@@ -287,6 +301,7 @@ export const socialPosts = pgTable(
       tiktokId?: string;
       instagramId?: string;
       twitterId?: string;
+      failureReason?: string;
     }>(),
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),

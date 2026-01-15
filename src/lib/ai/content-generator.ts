@@ -45,7 +45,7 @@ export async function generateContent(params: ContentGenerationParams): Promise<
   } else {
     // Generate content using OpenAI
     const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4o',
       messages: [
         { role: 'system', content: prompt.systemPrompt },
         { role: 'user', content: prompt.userPrompt }
@@ -99,7 +99,7 @@ export async function* streamContent(
   } else {
     // Stream using OpenAI
     const stream = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: prompt.systemPrompt },
         { role: "user", content: prompt.userPrompt },
@@ -119,7 +119,7 @@ export async function* streamContent(
 
 export function getAvailableModels() {
   return {
-    chatgpt: ['gpt-3.5-turbo', 'gpt-4-turbo']
+    chatgpt: ['gpt-4o', 'gpt-4o-mini']
   };
 }
 

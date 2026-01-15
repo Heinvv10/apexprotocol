@@ -693,8 +693,8 @@ function BrandsPageContent() {
                 {brands.length} of {meta?.limit ?? 1} brands used
               </p>
               <p className="text-sm text-muted-foreground">
-                {meta?.plan === "starter" && "Starter plan - 1 brand included"}
-                {meta?.plan === "professional" && "Professional plan - 5 brands included"}
+                {meta?.plan === "starter" && `Starter plan - ${meta?.limit ?? 1} brand${(meta?.limit ?? 1) > 1 ? 's' : ''} included`}
+                {meta?.plan === "professional" && `Professional plan - ${meta?.limit ?? 5} brands included`}
                 {meta?.plan === "enterprise" && "Enterprise plan - Unlimited brands"}
               </p>
             </div>
@@ -1006,7 +1006,7 @@ function BrandsPageContent() {
                         <img
                           src={editingBrand.logoUrl}
                           alt={editingBrand.name}
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-contain p-1"
                         />
                       ) : editingBrand ? (
                         editingBrand.name?.substring(0, 2).toUpperCase() || "BR"
@@ -1154,7 +1154,7 @@ function BrandsPageContent() {
                         <img
                           src={formData.logoUrl}
                           alt="Brand logo"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain p-1"
                         />
                       ) : (
                         <Upload className="w-5 h-5 text-muted-foreground" />

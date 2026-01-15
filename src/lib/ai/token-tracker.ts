@@ -32,6 +32,8 @@ export const TOKEN_PRICING: Record<
   "claude-3-opus-20240229": { input: 15.0, output: 75.0 },
   "claude-3-haiku-20240307": { input: 0.25, output: 1.25 },
   // OpenAI models
+  "gpt-4o": { input: 2.5, output: 10.0 },
+  "gpt-4o-mini": { input: 0.15, output: 0.6 },
   "gpt-4-turbo-preview": { input: 10.0, output: 30.0 },
   "gpt-4-turbo": { input: 10.0, output: 30.0 },
   "gpt-4": { input: 30.0, output: 60.0 },

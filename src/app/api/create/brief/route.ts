@@ -19,6 +19,7 @@ import {
   generateContentBrief,
   analyzeForCitation,
   extractAndValidateFAQs,
+  validateBriefQuality,
   type BrandContext,
   type ContentBrief,
 } from "@/lib/content";
@@ -171,9 +172,13 @@ async function handleBriefGeneration(
     trackingInfo
   );
 
+  // Validate brief quality
+  const qualityReport = validateBriefQuality(brief);
+
   return NextResponse.json({
     success: true,
     data: brief,
+    quality: qualityReport,
   });
 }
 

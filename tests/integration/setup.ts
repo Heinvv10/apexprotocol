@@ -201,10 +201,13 @@ async function cleanupByTestPrefix(db: IntegrationDatabase): Promise<void> {
 export async function seedTestData(): Promise<SeedResult> {
   const db = getIntegrationDb();
 
-  // Clean up any existing test data first
-  await cleanupAllTestData();
+  // If seed data already exists, reuse it instead of cleaning up and recreating
+  // This prevents race conditions when test files run sequentially
+  if (_seededData) {
+    return _seededData;
+  }
 
-  // Create fresh test data
+  // Create fresh test data (only on first call)
   _seededData = await createTestSeedData(db);
 
   return _seededData;
@@ -261,7 +264,7 @@ export function setupIntegrationTest(options: {
   autoSeed?: boolean;
   autoCleanup?: boolean;
 } = {}) {
-  const { autoSeed = true, autoCleanup = true } = options;
+  const { autoSeed = true, autoCleanup = false } = options;
 
   // Auto-seed before all tests
   if (autoSeed) {
@@ -287,6 +290,9 @@ export function setupIntegrationTest(options: {
   }
 
   // Auto-cleanup after all tests
+  // Note: Cleanup is disabled by default to allow seed data to persist across test files
+  // When tests run sequentially, each file's afterAll would delete shared seed data
+  // To manually cleanup, set autoCleanup: true or call cleanup() explicitly
   if (autoCleanup) {
     afterAll(async () => {
       if (_databaseConnected) {

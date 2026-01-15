@@ -78,15 +78,17 @@ export interface TeamInvite {
 export interface APIKey {
   id: string;
   name: string;
-  keyPrefix: string; // First 8 chars for display
+  keyPrefix: string; // First 8 chars for display (derived from maskedKey or type prefix)
+  type: string; // Service type: anthropic, openai, serper, pinecone, custom
   permissions: string[];
   scopes?: string[];
   rateLimit?: number;
   lastUsedAt?: string;
   expiresAt?: string;
   status: "active" | "revoked" | "expired";
+  isActive: boolean;
   createdAt: string;
-  createdBy: string;
+  createdBy?: string;
 }
 
 export interface APIKeyCreateResponse {
@@ -132,7 +134,8 @@ async function fetchTeamMembers(orgId: string): Promise<TeamMember[]> {
     throw new Error("Failed to fetch team members");
   }
   const data = await response.json();
-  return data.members || data;
+  // API returns { success: true, data: [...] }
+  return data.data || data.members || [];
 }
 
 async function fetchAPIKeys(orgId: string): Promise<APIKey[]> {
@@ -141,7 +144,30 @@ async function fetchAPIKeys(orgId: string): Promise<APIKey[]> {
     throw new Error("Failed to fetch API keys");
   }
   const data = await response.json();
-  return data.keys || data;
+  // API returns { success: true, data: [...] } with fields:
+  // { id, name, type, isActive, lastUsedAt, expiresAt, createdAt }
+  // Transform to match the APIKey interface
+  const rawKeys = data.data || data.keys || [];
+  return rawKeys.map((key: {
+    id: string;
+    name: string;
+    type: string;
+    isActive: boolean;
+    lastUsedAt?: string;
+    expiresAt?: string;
+    createdAt: string;
+  }) => ({
+    id: key.id,
+    name: key.name,
+    type: key.type || 'custom',
+    keyPrefix: key.type ? `${key.type.toUpperCase()}_***` : '***',
+    permissions: ['read', 'write'], // Default permissions for service keys
+    isActive: key.isActive,
+    status: key.isActive ? 'active' as const : 'revoked' as const,
+    lastUsedAt: key.lastUsedAt,
+    expiresAt: key.expiresAt,
+    createdAt: key.createdAt,
+  }));
 }
 
 // =============================================================================
@@ -462,7 +488,7 @@ export function useAPIKeys(
 }
 
 /**
- * Hook to create API key
+ * Hook to create API key (for external service keys like Anthropic, OpenAI, etc.)
  */
 export function useCreateAPIKey() {
   const queryClient = useQueryClient();
@@ -471,22 +497,35 @@ export function useCreateAPIKey() {
   return useMutation({
     mutationFn: async ({
       name,
-      permissions,
-      expiresIn,
+      type,
+      key,
+      expiresAt,
     }: {
       name: string;
-      permissions: string[];
-      expiresIn?: string; // e.g., "30d", "90d", "1y", "never"
+      type: "anthropic" | "openai" | "serper" | "pinecone" | "custom";
+      key: string;
+      expiresAt?: string; // ISO date string or null
     }): Promise<APIKeyCreateResponse> => {
       const response = await fetch("/api/settings/api-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, permissions, expiresIn, orgId }),
+        body: JSON.stringify({ name, type, key, expiresAt }),
       });
       if (!response.ok) {
-        throw new Error("Failed to create API key");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to create API key");
       }
-      return response.json();
+      const data = await response.json();
+      // Transform response to match APIKeyCreateResponse
+      return {
+        id: data.data?.id || data.id,
+        name: data.data?.name || data.name,
+        key: data.data?.maskedKey || key.slice(0, 4) + "..." + key.slice(-4),
+        keyPrefix: type.toUpperCase() + "_***",
+        permissions: ["read", "write"],
+        expiresAt: data.data?.expiresAt,
+        createdAt: data.data?.createdAt || new Date().toISOString(),
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -505,11 +544,13 @@ export function useRevokeAPIKey() {
 
   return useMutation({
     mutationFn: async (keyId: string) => {
-      const response = await fetch(`/api/settings/api-keys/${keyId}`, {
+      // API expects keyId as query parameter
+      const response = await fetch(`/api/settings/api-keys?keyId=${keyId}`, {
         method: "DELETE",
       });
       if (!response.ok) {
-        throw new Error("Failed to revoke API key");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to revoke API key");
       }
     },
     onMutate: async (keyId) => {
@@ -641,5 +682,116 @@ export function useUpdateUserPreferences() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user", "preferences"] });
     },
+  });
+}
+
+// =============================================================================
+// Notification Preferences Hooks
+// =============================================================================
+
+export interface NotificationPreferences {
+  id: string;
+  userId: string;
+  organizationId: string;
+  emailEnabled: boolean;
+  emailDigestFrequency: "none" | "daily" | "weekly";
+  emailAddress: string | null;
+  inAppEnabled: boolean;
+  mentionNotifications: boolean;
+  scoreChangeNotifications: boolean;
+  recommendationNotifications: boolean;
+  importantNotifications: boolean;
+  timezone: string;
+  digestHour: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Hook to fetch notification preferences
+ */
+export function useNotificationPreferences() {
+  return useQuery({
+    queryKey: ["notifications", "preferences"],
+    queryFn: async (): Promise<NotificationPreferences> => {
+      const response = await fetch("/api/notifications/preferences");
+      if (!response.ok) {
+        throw new Error("Failed to fetch notification preferences");
+      }
+      const result = await response.json();
+      return result.data;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+/**
+ * Hook to update notification preferences
+ */
+export function useUpdateNotificationPreferences() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (preferences: Partial<NotificationPreferences>) => {
+      const response = await fetch("/api/notifications/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(preferences),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to update notification preferences");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications", "preferences"] });
+    },
+  });
+}
+
+// ============================================================================
+// Integrations Hooks
+// ============================================================================
+
+export interface Integration {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  connected: boolean;
+  category: "notifications" | "analytics" | "crm" | "productivity";
+  configurable: boolean;
+  requiresBrand?: boolean;
+}
+
+export interface IntegrationsResponse {
+  integrations: Integration[];
+  summary: {
+    total: number;
+    connected: number;
+    available: number;
+  };
+  categories: {
+    id: string;
+    name: string;
+    count: number;
+  }[];
+}
+
+export function useIntegrations(brandId?: string) {
+  return useQuery({
+    queryKey: ["integrations", brandId],
+    queryFn: async (): Promise<IntegrationsResponse> => {
+      const params = new URLSearchParams();
+      if (brandId) params.set("brandId", brandId);
+
+      const response = await fetch(`/api/integrations?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch integrations");
+      }
+      const result = await response.json();
+      return result.data;
+    },
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 }

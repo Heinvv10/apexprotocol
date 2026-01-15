@@ -152,10 +152,10 @@ describe("Audit Logger - Sensitive Data Redaction", () => {
 
     const redacted = redactSensitiveData(changes);
 
-    expect(redacted.before.password).toBe("[REDACTED]");
-    expect(redacted.after.password).toBe("[REDACTED]");
-    expect(redacted.before.name).toBe("John");
-    expect(redacted.after.name).toBe("Jane");
+    expect(redacted.before?.password).toBe("[REDACTED]");
+    expect(redacted.after?.password).toBe("[REDACTED]");
+    expect(redacted.before?.name).toBe("John");
+    expect(redacted.after?.name).toBe("Jane");
   });
 
   it("should redact API key fields in changes", () => {
@@ -166,8 +166,8 @@ describe("Audit Logger - Sensitive Data Redaction", () => {
 
     const redacted = redactSensitiveData(changes);
 
-    expect(redacted.before.apiKey).toBe("[REDACTED]");
-    expect(redacted.after.apiKey).toBe("[REDACTED]");
+    expect(redacted.before?.apiKey).toBe("[REDACTED]");
+    expect(redacted.after?.apiKey).toBe("[REDACTED]");
   });
 
   it("should redact token fields in changes", () => {
@@ -178,10 +178,10 @@ describe("Audit Logger - Sensitive Data Redaction", () => {
 
     const redacted = redactSensitiveData(changes);
 
-    expect(redacted.before.accessToken).toBe("[REDACTED]");
-    expect(redacted.before.refreshToken).toBe("[REDACTED]");
-    expect(redacted.after.accessToken).toBe("[REDACTED]");
-    expect(redacted.after.refreshToken).toBe("[REDACTED]");
+    expect(redacted.before?.accessToken).toBe("[REDACTED]");
+    expect(redacted.before?.refreshToken).toBe("[REDACTED]");
+    expect(redacted.after?.accessToken).toBe("[REDACTED]");
+    expect(redacted.after?.refreshToken).toBe("[REDACTED]");
   });
 
   it("should redact sensitive data in nested objects", () => {
@@ -204,10 +204,12 @@ describe("Audit Logger - Sensitive Data Redaction", () => {
 
     const redacted = redactSensitiveData(changes);
 
-    expect(redacted.before.credentials.password).toBe("[REDACTED]");
-    expect(redacted.before.credentials.apiKey).toBe("[REDACTED]");
-    expect(redacted.after.credentials.password).toBe("[REDACTED]");
-    expect(redacted.after.credentials.apiKey).toBe("[REDACTED]");
+    const beforeCreds = redacted.before?.credentials as Record<string, unknown>;
+    const afterCreds = redacted.after?.credentials as Record<string, unknown>;
+    expect(beforeCreds?.password).toBe("[REDACTED]");
+    expect(beforeCreds?.apiKey).toBe("[REDACTED]");
+    expect(afterCreds?.password).toBe("[REDACTED]");
+    expect(afterCreds?.apiKey).toBe("[REDACTED]");
   });
 });
 

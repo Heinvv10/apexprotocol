@@ -7,6 +7,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { POST } from "./route";
+import { TEST_CREDENTIALS } from "../../__test-constants";
 
 // Mock Clerk auth
 vi.mock("@clerk/nextjs/server", () => ({
@@ -32,7 +33,7 @@ const mockQueryChain = {
         provider: "Anthropic",
         category: "ai_models",
         config: {
-          apiKey: "sk-ant-api03-test-key-1234",
+          apiKey: TEST_CREDENTIALS.ANTHROPIC_API_KEY,
           endpoint: "https://api.anthropic.com/v1",
         },
       },
@@ -76,7 +77,7 @@ describe("POST /api/admin/api-config/:id/test - Test Connection (FR-3)", () => {
       method: "POST",
       body: JSON.stringify({
         config: {
-          apiKey: "sk-ant-api03-test-key-1234",
+          apiKey: TEST_CREDENTIALS.ANTHROPIC_API_KEY,
           endpoint: "https://api.anthropic.com/v1",
         },
       }),
@@ -96,7 +97,7 @@ describe("POST /api/admin/api-config/:id/test - Test Connection (FR-3)", () => {
       method: "POST",
       body: JSON.stringify({
         config: {
-          apiKey: "sk-ant-api03-test-key-1234",
+          apiKey: TEST_CREDENTIALS.ANTHROPIC_API_KEY,
           endpoint: "https://api.anthropic.com/v1",
         },
       }),
@@ -137,7 +138,7 @@ describe("POST /api/admin/api-config/:id/test - Test Connection (FR-3)", () => {
       method: "POST",
       body: JSON.stringify({
         config: {
-          apiKey: "sk-ant-api03-test-key-1234",
+          apiKey: TEST_CREDENTIALS.ANTHROPIC_API_KEY,
           endpoint: "https://invalid-endpoint.example.com",
         },
       }),
@@ -159,7 +160,7 @@ describe("POST /api/admin/api-config/:id/test - Test Connection (FR-3)", () => {
       method: "POST",
       body: JSON.stringify({
         config: {
-          apiKey: "sk-ant-api03-test-key-1234",
+          apiKey: TEST_CREDENTIALS.ANTHROPIC_API_KEY,
           endpoint: "https://api.anthropic.com/v1",
         },
       }),
@@ -236,7 +237,7 @@ describe("POST /api/admin/api-config/:id/test - Security (SR-1, SR-2, SR-5)", ()
       method: "POST",
       body: JSON.stringify({
         config: {
-          apiKey: "sk-ant-api03-test-key-1234",
+          apiKey: TEST_CREDENTIALS.ANTHROPIC_API_KEY,
         },
       }),
     });
