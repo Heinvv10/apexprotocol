@@ -357,10 +357,19 @@ export default function SocialMediaChannelsPage() {
           <h1 className="text-3xl font-bold text-white">Social Media Channels</h1>
           <p className="text-muted-foreground mt-1">Manage your social media presence across platforms</p>
         </div>
-        <Button className="bg-gradient-to-r from-[#00E5CC] to-[#8B5CF6] hover:opacity-90">
-          <Plus className="h-4 w-4 mr-2" />
-          Connect Channel
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => router.push("/admin/social-media/compose")}
+            className="bg-gradient-to-r from-[#00E5CC] to-[#8B5CF6] hover:opacity-90"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create Post
+          </Button>
+          <Button variant="outline">
+            <Plus className="h-4 w-4 mr-2" />
+            Connect Channel
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
