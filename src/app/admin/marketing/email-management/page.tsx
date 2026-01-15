@@ -284,6 +284,34 @@ export default function EmailManagementPage() {
         </Button>
       </div>
 
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load email lists</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching email lists"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading email lists...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Email Lists Content - Only show when data is loaded */}
+      {!isLoading && !isError && (
+        <>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card-primary p-4">
@@ -545,6 +573,8 @@ export default function EmailManagementPage() {
           ))}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
