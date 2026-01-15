@@ -15,6 +15,14 @@ import {
   ChevronRight,
   Shield,
   ArrowLeft,
+  BarChart3,
+  TrendingUp,
+  Share2,
+  Search,
+  Network,
+  BookOpen,
+  Zap,
+  ChevronDown,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -33,14 +41,11 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
+  children?: NavItem[];
 }
 
-const adminNavItems: NavItem[] = [
-  {
-    title: "Dashboard",
-    href: "/admin",
-    icon: LayoutDashboard,
-  },
+// System Management Section (existing)
+const systemNavItems: NavItem[] = [
   {
     title: "Organizations",
     href: "/admin/organizations",
@@ -57,19 +62,66 @@ const adminNavItems: NavItem[] = [
     icon: Key,
   },
   {
-    title: "Feature Flags",
-    href: "/admin/feature-flags",
-    icon: Flag,
-  },
-  {
-    title: "System Settings",
-    href: "/admin/system-settings",
-    icon: Settings,
-  },
-  {
     title: "Audit Logs",
     href: "/admin/audit-logs",
     icon: FileText,
+  },
+];
+
+// Operations Management Section (Phase 0+)
+const operationsNavItems: NavItem[] = [
+  {
+    title: "CRM",
+    href: "/admin/crm",
+    icon: TrendingUp,
+    children: [
+      { title: "Leads", href: "/admin/crm/leads", icon: BookOpen },
+      { title: "Accounts", href: "/admin/crm/accounts", icon: Building2 },
+      { title: "Pipeline", href: "/admin/crm/pipeline", icon: BarChart3 },
+    ],
+  },
+  {
+    title: "Marketing",
+    href: "/admin/marketing",
+    icon: Zap,
+    children: [
+      { title: "Campaigns", href: "/admin/marketing/campaigns", icon: Zap },
+      { title: "Automation", href: "/admin/marketing/automation", icon: TrendingUp },
+      { title: "Email Lists", href: "/admin/marketing/email-management", icon: FileText },
+    ],
+  },
+  {
+    title: "Social Media",
+    href: "/admin/social-media",
+    icon: Share2,
+    children: [
+      { title: "Channels", href: "/admin/social-media/channels", icon: Share2 },
+      { title: "Posting", href: "/admin/social-media/posting", icon: Zap },
+      { title: "Analytics", href: "/admin/social-media/analytics", icon: BarChart3 },
+    ],
+  },
+  {
+    title: "SEO",
+    href: "/admin/seo",
+    icon: Search,
+  },
+  {
+    title: "Integrations",
+    href: "/admin/integrations",
+    icon: Network,
+  },
+  {
+    title: "Analytics",
+    href: "/admin/analytics",
+    icon: BarChart3,
+  },
+];
+
+const adminNavItems: NavItem[] = [
+  {
+    title: "Dashboard",
+    href: "/admin",
+    icon: LayoutDashboard,
   },
 ];
 
@@ -80,10 +132,20 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ collapsed = false, onCollapsedChange }: AdminSidebarProps) {
   const pathname = usePathname();
+  const [expandedSections, setExpandedSections] = React.useState<Record<string, boolean>>({});
 
-  const NavLink = ({ item }: { item: NavItem }) => {
+  const toggleSection = (href: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [href]: !prev[href]
+    }));
+  };
+
+  const NavLink = ({ item, indent = false }: { item: NavItem; indent?: boolean }) => {
     const isActive = pathname === item.href || (item.href !== "/admin" && pathname?.startsWith(`${item.href}/`));
     const Icon = item.icon;
+    const hasChildren = item.children && item.children.length > 0;
+    const isExpanded = expandedSections[item.href];
 
     const linkContent = (
       <Link
@@ -91,7 +153,8 @@ export function AdminSidebar({ collapsed = false, onCollapsedChange }: AdminSide
         className={cn(
           "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150",
           "text-muted-foreground hover:text-foreground hover:bg-white/5",
-          isActive && "text-red-400 bg-red-500/10 hover:bg-red-500/15"
+          isActive && "text-red-400 bg-red-500/10 hover:bg-red-500/15",
+          indent && "ml-4"
         )}
       >
         <Icon className="h-5 w-5 shrink-0" />
@@ -113,6 +176,56 @@ export function AdminSidebar({ collapsed = false, onCollapsedChange }: AdminSide
         )}
       </Link>
     );
+
+    if (hasChildren) {
+      const toggleButton = (
+        <button
+          onClick={() => !collapsed && toggleSection(item.href)}
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150",
+            "text-muted-foreground hover:text-foreground hover:bg-white/5",
+            isActive && "text-red-400 bg-red-500/10 hover:bg-red-500/15"
+          )}
+        >
+          <Icon className="h-5 w-5 shrink-0" />
+          {!collapsed && (
+            <>
+              <span className="flex-1">{item.title}</span>
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-transform duration-150",
+                  isExpanded && "rotate-180"
+                )}
+              />
+            </>
+          )}
+        </button>
+      );
+
+      if (collapsed) {
+        return (
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>{toggleButton}</TooltipTrigger>
+            <TooltipContent side="right" className="glass-tooltip">
+              {item.title}
+            </TooltipContent>
+          </Tooltip>
+        );
+      }
+
+      return (
+        <div>
+          {toggleButton}
+          {isExpanded && !collapsed && (
+            <div className="space-y-1 mt-1">
+              {item.children?.map(child => (
+                <NavLink key={child.href} item={child} indent />
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
 
     if (collapsed) {
       return (
@@ -188,7 +301,32 @@ export function AdminSidebar({ collapsed = false, onCollapsedChange }: AdminSide
         {/* Main Navigation */}
         <ScrollArea className="flex-1 px-3 py-4">
           <nav className="space-y-1">
+            {/* Dashboard */}
             {adminNavItems.map((item) => (
+              <NavLink key={item.href} item={item} />
+            ))}
+
+            {/* Operations Section */}
+            {!collapsed && (
+              <div className="pt-4">
+                <p className="text-xs font-semibold text-muted-foreground px-3 mb-2 uppercase">
+                  Operations
+                </p>
+              </div>
+            )}
+            {operationsNavItems.map((item) => (
+              <NavLink key={item.href} item={item} />
+            ))}
+
+            {/* System Section */}
+            {!collapsed && (
+              <div className="pt-4">
+                <p className="text-xs font-semibold text-muted-foreground px-3 mb-2 uppercase">
+                  System
+                </p>
+              </div>
+            )}
+            {systemNavItems.map((item) => (
               <NavLink key={item.href} item={item} />
             ))}
           </nav>
