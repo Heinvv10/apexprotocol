@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useSocialAccounts } from "@/hooks/useSocial";
 import {
   Select,
   SelectContent,
@@ -212,18 +213,44 @@ export default function SocialMediaChannelsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [platformFilter, setPlatformFilter] = useState("all");
 
+  // Fetch social accounts from API (brandId would come from context/URL in real app)
+  const { accounts, isLoading, isError, error } = useSocialAccounts(null);
+
+  // Use API data if available, fallback to mock data for development
+  const allChannels = accounts.length > 0 ? accounts.map((acc: any) => ({
+    id: acc.id,
+    platform: acc.platform,
+    accountName: acc.accountName || "",
+    handle: acc.accountHandle || "",
+    status: acc.isActive ? "active" : "inactive",
+    followers: acc.followersCount || 0,
+    followersGrowth: 0,
+    postsThisMonth: acc.postsCount || 0,
+    engagement: acc.engagementRate || 0,
+    engagementGrowth: 0,
+    avgReach: 0,
+    avgLikes: 0,
+    avgComments: 0,
+    avgShares: 0,
+    lastPost: acc.lastSyncedAt || new Date().toISOString(),
+    connectedAt: new Date().toISOString(),
+    health: acc.isActive ? "good" : "inactive",
+    apiQuota: 100,
+    postingFrequency: "N/A",
+  })) : mockChannels;
+
   // Calculate stats
-  const totalChannels = mockChannels.length;
-  const activeChannels = mockChannels.filter((c) => c.status === "active").length;
-  const totalFollowers = mockChannels.reduce((sum, c) => sum + c.followers, 0);
+  const totalChannels = allChannels.length;
+  const activeChannels = allChannels.filter((c: any) => c.status === "active").length;
+  const totalFollowers = allChannels.reduce((sum: number, c: any) => sum + (c.followers || 0), 0);
   const avgEngagement =
-    mockChannels.length > 0
-      ? mockChannels.reduce((sum, c) => sum + c.engagement, 0) / mockChannels.length
+    allChannels.length > 0
+      ? allChannels.reduce((sum: number, c: any) => sum + (c.engagement || 0), 0) / allChannels.length
       : 0;
-  const totalPosts = mockChannels.reduce((sum, c) => sum + c.postsThisMonth, 0);
+  const totalPosts = allChannels.reduce((sum: number, c: any) => sum + (c.postsThisMonth || 0), 0);
 
   // Filter channels
-  const filteredChannels = mockChannels.filter((channel) => {
+  const filteredChannels = allChannels.filter((channel: any) => {
     const matchesSearch =
       searchQuery === "" ||
       channel.accountName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -371,6 +398,31 @@ export default function SocialMediaChannelsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load social channels</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching social media channels"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading social media channels...</p>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
