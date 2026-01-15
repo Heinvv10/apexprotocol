@@ -21,6 +21,7 @@ import {
   Share2,
   BarChart3,
 } from "lucide-react";
+import { useEmailTemplate } from "@/hooks/useMarketing";
 
 // Mock template data
 const mockEmailTemplates: Record<string, any> = {
@@ -201,10 +202,18 @@ export default function EmailTemplateDetailPage({ params }: { params: Promise<{ 
   // Unwrap async params
   const { id } = use(params);
 
-  // Find template
-  const template = mockEmailTemplates[id] || mockEmailTemplates["template_001"];
+  // API data with fallback to mock data
+  const { template: apiTemplate, isLoading, isError, error } = useEmailTemplate(id);
+  const template = apiTemplate || mockEmailTemplates[id] || mockEmailTemplates["template_001"];
   const performanceData = mockPerformanceData[id] || mockPerformanceData["template_001"];
   const usageHistory = mockUsageHistory[id] || mockUsageHistory["template_001"];
+
+  // Safe field access
+  const useCount = template.useCount || 0;
+  const openRate = template.openRate || 0;
+  const clickRate = template.clickRate || 0;
+  const unsubscribeRate = template.unsubscribeRate || 0;
+  const bounceRate = template.bounceRate || 0;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -240,8 +249,36 @@ export default function EmailTemplateDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading template...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load template</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching the template"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content - Only show when not loading and no error */}
+      {!isLoading && !isError && (
+        <>
+          {/* Header */}
+          <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => router.push("/admin/marketing/email-templates")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -281,7 +318,7 @@ export default function EmailTemplateDetailPage({ params }: { params: Promise<{ 
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total Uses</p>
-              <p className="text-2xl font-bold text-white mt-1">{template.useCount.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-white mt-1">{useCount.toLocaleString()}</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
               <Mail className="h-5 w-5 text-purple-400" />
@@ -293,7 +330,7 @@ export default function EmailTemplateDetailPage({ params }: { params: Promise<{ 
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Avg Open Rate</p>
-              <p className="text-2xl font-bold text-cyan-400 mt-1">{template.openRate.toFixed(1)}%</p>
+              <p className="text-2xl font-bold text-cyan-400 mt-1">{openRate.toFixed(1)}%</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
               <Eye className="h-5 w-5 text-cyan-400" />
@@ -305,7 +342,7 @@ export default function EmailTemplateDetailPage({ params }: { params: Promise<{ 
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Avg Click Rate</p>
-              <p className="text-2xl font-bold text-green-400 mt-1">{template.clickRate.toFixed(1)}%</p>
+              <p className="text-2xl font-bold text-green-400 mt-1">{clickRate.toFixed(1)}%</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
               <MousePointer className="h-5 w-5 text-green-400" />
@@ -317,7 +354,7 @@ export default function EmailTemplateDetailPage({ params }: { params: Promise<{ 
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Unsubscribe Rate</p>
-              <p className="text-2xl font-bold text-yellow-400 mt-1">{template.unsubscribeRate.toFixed(1)}%</p>
+              <p className="text-2xl font-bold text-yellow-400 mt-1">{unsubscribeRate.toFixed(1)}%</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-yellow-500/10 flex items-center justify-center">
               <AlertCircle className="h-5 w-5 text-yellow-400" />
@@ -513,6 +550,8 @@ export default function EmailTemplateDetailPage({ params }: { params: Promise<{ 
           </div>
         </TabsContent>
       </Tabs>
+        </>
+      )}
     </div>
   );
 }
