@@ -28,6 +28,15 @@ interface CostBreakdown {
   usageCount: number;
 }
 
+interface UserCostData {
+  userId: string;
+  provider: string;
+  operation: string;
+  cost: number;
+  tokens: number;
+  usageCount: number;
+}
+
 interface CostSummary {
   totalCost: number;
   totalTokens: number;
@@ -40,6 +49,16 @@ interface CostSummary {
     cost: number;
     tokens: number;
     providers: Record<string, { cost: number; tokens: number }>;
+  }>;
+  byUser: Record<string, {
+    cost: number;
+    tokens: number;
+    usageCount: number;
+    providers: Record<string, {
+      cost: number;
+      tokens: number;
+      operations: Record<string, { cost: number; tokens: number }>;
+    }>;
   }>;
   breakdown: CostBreakdown[];
   timestamp: string;
@@ -91,6 +110,7 @@ async function getAICosts(
       totalTokens: 0,
       byProvider: {},
       byOperation: {},
+      byUser: {},
       breakdown: [],
       timestamp: new Date().toISOString(),
       period: {
@@ -172,6 +192,42 @@ async function getAICosts(
       }
       summary.byOperation[record.operation].providers[record.provider].cost += cost;
       summary.byOperation[record.operation].providers[record.provider].tokens += record.totalTokens || 0;
+
+      // Update by user (if userId exists)
+      if (record.userId) {
+        if (!summary.byUser[record.userId]) {
+          summary.byUser[record.userId] = {
+            cost: 0,
+            tokens: 0,
+            usageCount: 0,
+            providers: {},
+          };
+        }
+        summary.byUser[record.userId].cost += cost;
+        summary.byUser[record.userId].tokens += record.totalTokens || 0;
+        summary.byUser[record.userId].usageCount += 1;
+
+        // Update providers within user
+        if (!summary.byUser[record.userId].providers[record.provider]) {
+          summary.byUser[record.userId].providers[record.provider] = {
+            cost: 0,
+            tokens: 0,
+            operations: {},
+          };
+        }
+        summary.byUser[record.userId].providers[record.provider].cost += cost;
+        summary.byUser[record.userId].providers[record.provider].tokens += record.totalTokens || 0;
+
+        // Update operations within provider within user
+        if (!summary.byUser[record.userId].providers[record.provider].operations[record.operation]) {
+          summary.byUser[record.userId].providers[record.provider].operations[record.operation] = {
+            cost: 0,
+            tokens: 0,
+          };
+        }
+        summary.byUser[record.userId].providers[record.provider].operations[record.operation].cost += cost;
+        summary.byUser[record.userId].providers[record.provider].operations[record.operation].tokens += record.totalTokens || 0;
+      }
     }
 
     // Convert grouped map to breakdown array

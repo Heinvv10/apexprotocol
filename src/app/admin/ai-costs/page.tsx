@@ -15,6 +15,7 @@ import {
   Bot,
   Brain,
   Sparkles,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/lib/utils";
@@ -43,6 +44,16 @@ interface CostSummary {
     cost: number;
     tokens: number;
     providers: Record<string, { cost: number; tokens: number }>;
+  }>;
+  byUser: Record<string, {
+    cost: number;
+    tokens: number;
+    usageCount: number;
+    providers: Record<string, {
+      cost: number;
+      tokens: number;
+      operations: Record<string, { cost: number; tokens: number }>;
+    }>;
   }>;
   breakdown: CostBreakdown[];
   timestamp: string;
@@ -177,6 +188,82 @@ function OperationCard({
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function UserCostsTable({
+  byUser,
+  totalCost
+}: {
+  byUser: Record<string, {
+    cost: number;
+    tokens: number;
+    usageCount: number;
+    providers: Record<string, {
+      cost: number;
+      tokens: number;
+      operations: Record<string, { cost: number; tokens: number }>;
+    }>;
+  }>;
+  totalCost: number;
+}) {
+  const users = Object.entries(byUser)
+    .sort(([, a], [, b]) => b.cost - a.cost);
+
+  return (
+    <div className="card-secondary overflow-hidden">
+      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+        <Users className="h-5 w-5 text-blue-400" />
+        Cost Attribution by User & Provider
+      </h3>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-white/10">
+              <th className="text-left py-3 px-4 font-medium text-muted-foreground">User ID</th>
+              <th className="text-right py-3 px-4 font-medium text-muted-foreground">Requests</th>
+              <th className="text-right py-3 px-4 font-medium text-muted-foreground">Tokens Used</th>
+              <th className="text-right py-3 px-4 font-medium text-muted-foreground">Cost</th>
+              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Provider Pool</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map(([userId, userData]) => {
+              const percentage = totalCost > 0 ? ((userData.cost / totalCost) * 100).toFixed(1) : "0";
+              return (
+                <tr key={userId} className="border-b border-white/5 hover:bg-white/5">
+                  <td className="py-3 px-4 font-mono text-xs">{userId.slice(0, 8)}...</td>
+                  <td className="py-3 px-4 text-right text-muted-foreground">{userData.usageCount}</td>
+                  <td className="py-3 px-4 text-right text-muted-foreground">{formatNumber(userData.tokens, { abbreviate: true })}</td>
+                  <td className="py-3 px-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="font-bold text-emerald-400">${userData.cost.toFixed(4)}</span>
+                      <span className="text-xs text-muted-foreground">({percentage}%)</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {Object.entries(userData.providers).map(([provider, providerData]) => {
+                        const config = providerConfig[provider] || { color: "text-gray-400", bgColor: "bg-gray-500/20" };
+                        const opList = Object.keys(providerData.operations)
+                          .map(op => op.replace(/_/g, " "))
+                          .join(", ");
+                        return (
+                          <div key={provider} title={opList} className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${config.bgColor}`}>
+                            <span className={`font-medium ${config.color} capitalize`}>{provider}</span>
+                            <span className="text-muted-foreground">${providerData.cost.toFixed(3)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -412,6 +499,11 @@ export default function AICostsPage() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* User Attribution */}
+      {data && Object.keys(data.byUser).length > 0 && (
+        <UserCostsTable byUser={data.byUser} totalCost={data.totalCost} />
       )}
 
       {/* Operations Breakdown */}
