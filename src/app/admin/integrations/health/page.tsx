@@ -24,7 +24,9 @@ import {
   Search,
   Filter,
   Download,
+  AlertCircle,
 } from "lucide-react";
+import { useIntegrationHealthAdmin } from "@/hooks/useIntegrations";
 
 // Mock integration health data
 const integrationHealth = [
@@ -302,8 +304,19 @@ export default function IntegrationHealthPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
 
+  // API data with fallback to mock data
+  const { health, isLoading, isError, error } = useIntegrationHealthAdmin();
+
+  // Use API data if available, otherwise use mock
+  const data = health?.integrations && health.integrations.length > 0
+    ? health.integrations
+    : integrationHealth;
+  const alerts = health?.alerts && health.alerts.length > 0
+    ? health.alerts
+    : recentAlerts;
+
   // Filter integrations
-  const filteredIntegrations = integrationHealth.filter((integration) => {
+  const filteredIntegrations = data.filter((integration) => {
     const searchMatch =
       searchQuery === "" ||
       integration.integration.toLowerCase().includes(searchQuery.toLowerCase());
@@ -314,23 +327,23 @@ export default function IntegrationHealthPage() {
   });
 
   // Calculate summary stats
-  const totalIntegrations = integrationHealth.length;
-  const healthyCount = integrationHealth.filter((i) => i.status === "healthy").length;
-  const degradedCount = integrationHealth.filter((i) => i.status === "degraded").length;
-  const downCount = integrationHealth.filter((i) => i.status === "down").length;
+  const totalIntegrations = data.length;
+  const healthyCount = data.filter((i) => i.status === "healthy").length;
+  const degradedCount = data.filter((i) => i.status === "degraded").length;
+  const downCount = data.filter((i) => i.status === "down").length;
   const avgUptime =
-    integrationHealth.reduce((sum, i) => sum + i.uptime, 0) / integrationHealth.length;
+    data.reduce((sum, i) => sum + i.uptime, 0) / data.length;
   const avgResponseTime =
-    integrationHealth.reduce((sum, i) => sum + i.avgResponseTime, 0) / integrationHealth.length;
-  const totalRequests = integrationHealth.reduce((sum, i) => sum + i.totalRequests, 0);
-  const totalErrors = integrationHealth.reduce((sum, i) => sum + i.failedRequests, 0);
+    data.reduce((sum, i) => sum + i.avgResponseTime, 0) / data.length;
+  const totalRequests = data.reduce((sum, i) => sum + i.totalRequests, 0);
+  const totalErrors = data.reduce((sum, i) => sum + i.failedRequests, 0);
   const avgErrorRate = (totalErrors / totalRequests) * 100;
-  const activeAlerts = recentAlerts.filter((a) => !a.acknowledged).length;
+  const activeAlerts = alerts.filter((a) => !a.acknowledged).length;
 
   // Filter alerts by selected integration
   const filteredAlerts = selectedIntegration
-    ? recentAlerts.filter((a) => a.integration === selectedIntegration)
-    : recentAlerts;
+    ? alerts.filter((a) => a.integration === selectedIntegration)
+    : alerts;
 
   return (
     <div className="space-y-6">
@@ -347,6 +360,32 @@ export default function IntegrationHealthPage() {
         </Button>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <Card className="p-8 bg-gray-800/50 border-gray-700">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500" />
+            <span className="ml-3 text-gray-400">Loading integration health data...</span>
+          </div>
+        </Card>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <Card className="p-8 bg-gray-800/50 border-gray-700 border-red-500/50">
+          <div className="flex items-center justify-center text-red-400">
+            <AlertCircle className="h-8 w-8 mr-3" />
+            <div>
+              <p className="font-semibold">Failed to load integration health data</p>
+              <p className="text-sm text-gray-400">{error?.message || "Please try again later"}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Main Content */}
+      {!isLoading && !isError && (
+      <>
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card className="p-4 bg-gray-800/50 border-gray-700">
@@ -659,6 +698,8 @@ export default function IntegrationHealthPage() {
             <p className="text-sm text-gray-400">Try adjusting your search or filter criteria</p>
           </div>
         </Card>
+      )}
+      </>
       )}
     </div>
   );

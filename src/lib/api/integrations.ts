@@ -46,42 +46,51 @@ export interface IntegrationSummary {
   }>;
 }
 
+export interface IntegrationHealthItem {
+  id: string;
+  integration: string;
+  status: "healthy" | "degraded" | "down";
+  uptime: number;
+  uptimeChange: number;
+  avgResponseTime: number;
+  responseTimeChange: number;
+  errorRate: number;
+  errorRateChange: number;
+  totalRequests: number;
+  failedRequests: number;
+  lastIncident: string;
+  lastCheck: string;
+  metrics: {
+    latency: number[];
+    errors: number[];
+    requests: number[];
+  };
+  endpoints: Array<{
+    path: string;
+    avgTime: number;
+    errorRate: number;
+    requests: number;
+  }>;
+}
+
+export interface IntegrationHealthAlert {
+  id: string;
+  integration: string;
+  severity: "info" | "warning" | "error";
+  type: string;
+  message: string;
+  timestamp: string;
+  acknowledged: boolean;
+}
+
 export interface IntegrationHealth {
   overall: "healthy" | "warning" | "critical";
   uptime: number;
   avgResponseTime: number;
   errorRate: number;
   lastCheck: string;
-  integrations: Array<{
-    id: string;
-    name: string;
-    type: string;
-    status: "healthy" | "warning" | "critical";
-    uptime: number;
-    responseTime: number;
-    errorRate: number;
-    lastSync: string;
-    nextSync: string;
-    metrics: {
-      requestsToday: number;
-      successfulRequests: number;
-      failedRequests: number;
-      avgLatency: number;
-    };
-    recentErrors: Array<{
-      timestamp: string;
-      message: string;
-      code: string;
-    }>;
-  }>;
-  alerts: Array<{
-    id: string;
-    integration: string;
-    severity: "info" | "warning" | "critical";
-    message: string;
-    timestamp: string;
-    acknowledged: boolean;
-  }>;
+  integrations: IntegrationHealthItem[];
+  alerts: IntegrationHealthAlert[];
 }
 
 export interface Webhook {
