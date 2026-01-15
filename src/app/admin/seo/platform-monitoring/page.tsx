@@ -22,7 +22,9 @@ import {
   XCircle,
   ExternalLink,
   RefreshCw,
+  AlertCircle,
 } from "lucide-react";
+import { useSEOPlatforms } from "@/hooks/useSEO";
 
 // Mock platform monitoring data
 const searchConsoleData = {
@@ -252,6 +254,9 @@ function formatTimestamp(timestamp: string) {
 export default function PlatformMonitoringPage() {
   const [dateRange, setDateRange] = useState("30d");
 
+  // API data with fallback to mock data
+  const { platforms, isLoading, isError, error } = useSEOPlatforms();
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -278,6 +283,35 @@ export default function PlatformMonitoringPage() {
           </Button>
         </div>
       </div>
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading platform data...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load platform data</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching SEO platforms"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content - Only show when not loading and no error */}
+      {!isLoading && !isError && (
+        <>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -700,6 +734,8 @@ export default function PlatformMonitoringPage() {
           </div>
         </Card>
       </div>
+        </>
+      )}
     </div>
   );
 }
