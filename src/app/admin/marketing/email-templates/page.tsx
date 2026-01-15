@@ -24,7 +24,9 @@ import {
   BarChart3,
   Clock,
   CheckCircle,
+  AlertCircle,
 } from "lucide-react";
+import { useEmailTemplates } from "@/hooks/useMarketing";
 
 // Mock email templates data
 const mockEmailTemplates = [
@@ -201,26 +203,31 @@ const mockRecentActivity = [
 
 export default function EmailTemplatesPage() {
   const router = useRouter();
+
+  // API data with fallback to mock data
+  const { templates: apiTemplates, isLoading, isError, error } = useEmailTemplates();
+  const templates = apiTemplates.length > 0 ? apiTemplates : mockEmailTemplates;
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-  // Calculate stats
-  const totalTemplates = mockEmailTemplates.length;
-  const activeTemplates = mockEmailTemplates.filter((t) => t.status === "active").length;
-  const draftTemplates = mockEmailTemplates.filter((t) => t.status === "draft").length;
+  // Calculate stats with safe field access
+  const totalTemplates = templates.length;
+  const activeTemplates = templates.filter((t) => t.category !== "draft").length;
+  const draftTemplates = templates.filter((t) => t.category === "draft" || t.category === "custom").length;
   const avgOpenRate =
     totalTemplates > 0
-      ? mockEmailTemplates.reduce((sum, t) => sum + t.openRate, 0) / totalTemplates
+      ? templates.reduce((sum, t) => sum + (t.openRate || 0), 0) / totalTemplates
       : 0;
   const avgClickRate =
     totalTemplates > 0
-      ? mockEmailTemplates.reduce((sum, t) => sum + t.clickRate, 0) / totalTemplates
+      ? templates.reduce((sum, t) => sum + (t.clickRate || 0), 0) / totalTemplates
       : 0;
-  const totalUses = mockEmailTemplates.reduce((sum, t) => sum + t.useCount, 0);
+  const totalUses = templates.reduce((sum, t) => sum + (t.useCount || 0), 0);
 
   // Filter templates
-  const filteredTemplates = mockEmailTemplates.filter((template) => {
+  const filteredTemplates = templates.filter((template) => {
     const matchesSearch =
       searchQuery === "" ||
       template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -341,7 +348,35 @@ export default function EmailTemplatesPage() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading email templates...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load email templates</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching email templates"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content - Only show when not loading and no error */}
+      {!isLoading && !isError && (
+        <>
+          {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card-secondary p-4">
           <div className="flex items-center justify-between">
@@ -593,6 +628,8 @@ export default function EmailTemplatesPage() {
           ))}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
