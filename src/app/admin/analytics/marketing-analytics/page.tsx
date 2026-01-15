@@ -23,7 +23,9 @@ import {
   Send,
   RefreshCw,
   Download,
+  AlertCircle,
 } from "lucide-react";
+import { useMarketingMetrics } from "@/hooks/useAnalytics";
 
 // Mock marketing analytics data
 const marketingData = {
@@ -236,8 +238,14 @@ export default function MarketingAnalyticsPage() {
   const [timeRange, setTimeRange] = useState("30d");
   const [campaignFilter, setCampaignFilter] = useState("all");
 
+  // API data with fallback to mock data
+  const { metrics, isLoading, isError, error } = useMarketingMetrics();
+
+  // Use API data if available, otherwise use mock
+  const data = metrics ?? marketingData;
+
   // Filter campaigns
-  const filteredCampaigns = marketingData.campaignPerformance.filter((campaign) => {
+  const filteredCampaigns = data.campaignPerformance.filter((campaign) => {
     if (campaignFilter === "all") return true;
     if (campaignFilter === "active") return campaign.status === "active";
     if (campaignFilter === "completed") return campaign.status === "completed";
@@ -276,6 +284,34 @@ export default function MarketingAnalyticsPage() {
         </div>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading marketing metrics...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load marketing metrics</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching marketing metrics"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content - Only show when not loading and no error */}
+      {!isLoading && !isError && (
+        <>
       {/* Key Performance Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4 bg-gray-800/50 border-gray-700">
@@ -285,21 +321,21 @@ export default function MarketingAnalyticsPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <p className="text-3xl font-bold text-white">
-              {formatCurrency(marketingData.overview.totalSpend)}
+              {formatCurrency(data.overview.totalSpend)}
             </p>
             <div className="flex items-center gap-1 text-sm">
-              {marketingData.overview.totalSpendChange > 0 ? (
+              {data.overview.totalSpendChange > 0 ? (
                 <>
                   <TrendingUp className="h-4 w-4 text-red-400" />
                   <span className="text-red-400">
-                    {marketingData.overview.totalSpendChange}%
+                    {data.overview.totalSpendChange}%
                   </span>
                 </>
               ) : (
                 <>
                   <TrendingDown className="h-4 w-4 text-green-400" />
                   <span className="text-green-400">
-                    {Math.abs(marketingData.overview.totalSpendChange)}%
+                    {Math.abs(data.overview.totalSpendChange)}%
                   </span>
                 </>
               )}
@@ -315,12 +351,12 @@ export default function MarketingAnalyticsPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <p className="text-3xl font-bold text-white">
-              {marketingData.overview.leadsGenerated.toLocaleString()}
+              {data.overview.leadsGenerated.toLocaleString()}
             </p>
             <div className="flex items-center gap-1 text-sm">
               <TrendingUp className="h-4 w-4 text-green-400" />
               <span className="text-green-400">
-                {marketingData.overview.leadsGeneratedChange}%
+                {data.overview.leadsGeneratedChange}%
               </span>
             </div>
           </div>
@@ -334,12 +370,12 @@ export default function MarketingAnalyticsPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <p className="text-3xl font-bold text-white">
-              ${marketingData.overview.costPerLead.toFixed(2)}
+              ${data.overview.costPerLead.toFixed(2)}
             </p>
             <div className="flex items-center gap-1 text-sm">
               <TrendingDown className="h-4 w-4 text-green-400" />
               <span className="text-green-400">
-                {Math.abs(marketingData.overview.costPerLeadChange)}%
+                {Math.abs(data.overview.costPerLeadChange)}%
               </span>
             </div>
           </div>
@@ -353,12 +389,12 @@ export default function MarketingAnalyticsPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <p className="text-3xl font-bold text-white">
-              {marketingData.overview.roi.toFixed(1)}x
+              {data.overview.roi.toFixed(1)}x
             </p>
             <div className="flex items-center gap-1 text-sm">
               <TrendingUp className="h-4 w-4 text-green-400" />
               <span className="text-green-400">
-                {marketingData.overview.roiChange}%
+                {data.overview.roiChange}%
               </span>
             </div>
           </div>
@@ -376,19 +412,19 @@ export default function MarketingAnalyticsPage() {
           <div>
             <p className="text-sm text-gray-400 mb-1">Total Sent</p>
             <p className="text-2xl font-bold text-white">
-              {marketingData.emailPerformance.totalSent.toLocaleString()}
+              {data.emailPerformance.totalSent.toLocaleString()}
             </p>
           </div>
           <div>
             <p className="text-sm text-gray-400 mb-1">Open Rate</p>
             <div className="flex items-baseline gap-2">
               <p className="text-2xl font-bold text-white">
-                {marketingData.emailPerformance.openRate}%
+                {data.emailPerformance.openRate}%
               </p>
               <div className="flex items-center gap-1 text-xs">
                 <TrendingUp className="h-3 w-3 text-green-400" />
                 <span className="text-green-400">
-                  {marketingData.emailPerformance.openRateChange}%
+                  {data.emailPerformance.openRateChange}%
                 </span>
               </div>
             </div>
@@ -397,12 +433,12 @@ export default function MarketingAnalyticsPage() {
             <p className="text-sm text-gray-400 mb-1">Click Rate</p>
             <div className="flex items-baseline gap-2">
               <p className="text-2xl font-bold text-white">
-                {marketingData.emailPerformance.clickRate}%
+                {data.emailPerformance.clickRate}%
               </p>
               <div className="flex items-center gap-1 text-xs">
                 <TrendingUp className="h-3 w-3 text-green-400" />
                 <span className="text-green-400">
-                  {marketingData.emailPerformance.clickRateChange}%
+                  {data.emailPerformance.clickRateChange}%
                 </span>
               </div>
             </div>
@@ -411,12 +447,12 @@ export default function MarketingAnalyticsPage() {
             <p className="text-sm text-gray-400 mb-1">Unsub Rate</p>
             <div className="flex items-baseline gap-2">
               <p className="text-2xl font-bold text-white">
-                {marketingData.emailPerformance.unsubscribeRate}%
+                {data.emailPerformance.unsubscribeRate}%
               </p>
               <div className="flex items-center gap-1 text-xs">
                 <TrendingDown className="h-3 w-3 text-green-400" />
                 <span className="text-green-400">
-                  {Math.abs(marketingData.emailPerformance.unsubscribeRateChange)}%
+                  {Math.abs(data.emailPerformance.unsubscribeRateChange)}%
                 </span>
               </div>
             </div>
@@ -425,12 +461,12 @@ export default function MarketingAnalyticsPage() {
             <p className="text-sm text-gray-400 mb-1">Bounce Rate</p>
             <div className="flex items-baseline gap-2">
               <p className="text-2xl font-bold text-white">
-                {marketingData.emailPerformance.bounceRate}%
+                {data.emailPerformance.bounceRate}%
               </p>
               <div className="flex items-center gap-1 text-xs">
                 <TrendingUp className="h-3 w-3 text-red-400" />
                 <span className="text-red-400">
-                  {marketingData.emailPerformance.bounceRateChange}%
+                  {data.emailPerformance.bounceRateChange}%
                 </span>
               </div>
             </div>
@@ -532,7 +568,7 @@ export default function MarketingAnalyticsPage() {
         <Card className="p-6 bg-gray-800/50 border-gray-700">
           <h2 className="text-xl font-semibold text-white mb-4">Channel Performance</h2>
           <div className="space-y-3">
-            {marketingData.channelPerformance.map((channel, index) => (
+            {data.channelPerformance.map((channel, index) => (
               <div key={index} className="p-3 bg-gray-900/50 border border-gray-700 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-semibold text-white">{channel.channel}</h3>
@@ -566,7 +602,7 @@ export default function MarketingAnalyticsPage() {
         <Card className="p-6 bg-gray-800/50 border-gray-700">
           <h2 className="text-xl font-semibold text-white mb-4">Top Content Performance</h2>
           <div className="space-y-3">
-            {marketingData.contentPerformance.map((content, index) => (
+            {data.contentPerformance.map((content, index) => (
               <div key={index} className="p-3 bg-gray-900/50 border border-gray-700 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex-1 min-w-0">
@@ -622,7 +658,7 @@ export default function MarketingAnalyticsPage() {
                   <span className="text-sm text-gray-400">Visitors</span>
                 </div>
                 <span className="text-lg font-bold text-white">
-                  {marketingData.funnelMetrics.visitors.toLocaleString()}
+                  {data.funnelMetrics.visitors.toLocaleString()}
                 </span>
               </div>
               <div className="w-full bg-gray-700 rounded-full h-3">
@@ -639,18 +675,18 @@ export default function MarketingAnalyticsPage() {
                     variant="outline"
                     className="bg-cyan-500/10 text-cyan-400 border-cyan-500/20 text-xs"
                   >
-                    {marketingData.funnelMetrics.visitorToLeadRate}%
+                    {data.funnelMetrics.visitorToLeadRate}%
                   </Badge>
                 </div>
                 <span className="text-lg font-bold text-white">
-                  {marketingData.funnelMetrics.leads.toLocaleString()}
+                  {data.funnelMetrics.leads.toLocaleString()}
                 </span>
               </div>
               <div className="w-full bg-gray-700 rounded-full h-3">
                 <div
                   className="bg-cyan-500 h-3 rounded-full"
                   style={{
-                    width: `${(marketingData.funnelMetrics.leads / marketingData.funnelMetrics.visitors) * 100}%`,
+                    width: `${(data.funnelMetrics.leads / data.funnelMetrics.visitors) * 100}%`,
                   }}
                 ></div>
               </div>
@@ -665,18 +701,18 @@ export default function MarketingAnalyticsPage() {
                     variant="outline"
                     className="bg-purple-500/10 text-purple-400 border-purple-500/20 text-xs"
                   >
-                    {marketingData.funnelMetrics.leadToMqlRate}%
+                    {data.funnelMetrics.leadToMqlRate}%
                   </Badge>
                 </div>
                 <span className="text-lg font-bold text-white">
-                  {marketingData.funnelMetrics.mql.toLocaleString()}
+                  {data.funnelMetrics.mql.toLocaleString()}
                 </span>
               </div>
               <div className="w-full bg-gray-700 rounded-full h-3">
                 <div
                   className="bg-purple-500 h-3 rounded-full"
                   style={{
-                    width: `${(marketingData.funnelMetrics.mql / marketingData.funnelMetrics.visitors) * 100}%`,
+                    width: `${(data.funnelMetrics.mql / data.funnelMetrics.visitors) * 100}%`,
                   }}
                 ></div>
               </div>
@@ -691,18 +727,18 @@ export default function MarketingAnalyticsPage() {
                     variant="outline"
                     className="bg-purple-500/10 text-purple-400 border-purple-500/20 text-xs"
                   >
-                    {marketingData.funnelMetrics.mqlToSqlRate}%
+                    {data.funnelMetrics.mqlToSqlRate}%
                   </Badge>
                 </div>
                 <span className="text-lg font-bold text-white">
-                  {marketingData.funnelMetrics.sql.toLocaleString()}
+                  {data.funnelMetrics.sql.toLocaleString()}
                 </span>
               </div>
               <div className="w-full bg-gray-700 rounded-full h-3">
                 <div
                   className="bg-purple-500 h-3 rounded-full"
                   style={{
-                    width: `${(marketingData.funnelMetrics.sql / marketingData.funnelMetrics.visitors) * 100}%`,
+                    width: `${(data.funnelMetrics.sql / data.funnelMetrics.visitors) * 100}%`,
                   }}
                 ></div>
               </div>
@@ -717,18 +753,18 @@ export default function MarketingAnalyticsPage() {
                     variant="outline"
                     className="bg-green-500/10 text-green-400 border-green-500/20 text-xs"
                   >
-                    {marketingData.funnelMetrics.sqlToCustomerRate}%
+                    {data.funnelMetrics.sqlToCustomerRate}%
                   </Badge>
                 </div>
                 <span className="text-lg font-bold text-white">
-                  {marketingData.funnelMetrics.customers.toLocaleString()}
+                  {data.funnelMetrics.customers.toLocaleString()}
                 </span>
               </div>
               <div className="w-full bg-gray-700 rounded-full h-3">
                 <div
                   className="bg-green-500 h-3 rounded-full"
                   style={{
-                    width: `${(marketingData.funnelMetrics.customers / marketingData.funnelMetrics.visitors) * 100}%`,
+                    width: `${(data.funnelMetrics.customers / data.funnelMetrics.visitors) * 100}%`,
                   }}
                 ></div>
               </div>
@@ -743,7 +779,7 @@ export default function MarketingAnalyticsPage() {
             <div className="p-4 bg-gray-900/50 border border-gray-700 rounded-lg">
               <p className="text-sm text-gray-400 mb-1">Total Contacts</p>
               <p className="text-3xl font-bold text-white">
-                {marketingData.audienceGrowth.totalContacts.toLocaleString()}
+                {data.audienceGrowth.totalContacts.toLocaleString()}
               </p>
             </div>
 
@@ -752,7 +788,7 @@ export default function MarketingAnalyticsPage() {
                 <p className="text-xs text-gray-400 mb-1">New This Month</p>
                 <div className="flex items-baseline gap-2">
                   <p className="text-xl font-bold text-green-400">
-                    +{marketingData.audienceGrowth.newThisMonth}
+                    +{data.audienceGrowth.newThisMonth}
                   </p>
                 </div>
               </div>
@@ -761,7 +797,7 @@ export default function MarketingAnalyticsPage() {
                 <p className="text-xs text-gray-400 mb-1">Unsubscribed</p>
                 <div className="flex items-baseline gap-2">
                   <p className="text-xl font-bold text-red-400">
-                    -{marketingData.audienceGrowth.unsubscribedThisMonth}
+                    -{data.audienceGrowth.unsubscribedThisMonth}
                   </p>
                 </div>
               </div>
@@ -770,18 +806,18 @@ export default function MarketingAnalyticsPage() {
             <div className="p-4 bg-gray-900/50 border border-gray-700 rounded-lg">
               <p className="text-sm text-gray-400 mb-1">Active Subscribers</p>
               <p className="text-2xl font-bold text-white">
-                {marketingData.audienceGrowth.activeSubscribers.toLocaleString()}
+                {data.audienceGrowth.activeSubscribers.toLocaleString()}
               </p>
               <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
                 <div
                   className="bg-cyan-500 h-2 rounded-full"
                   style={{
-                    width: `${(marketingData.audienceGrowth.activeSubscribers / marketingData.audienceGrowth.totalContacts) * 100}%`,
+                    width: `${(data.audienceGrowth.activeSubscribers / data.audienceGrowth.totalContacts) * 100}%`,
                   }}
                 ></div>
               </div>
               <p className="text-xs text-gray-400 mt-1">
-                {((marketingData.audienceGrowth.activeSubscribers / marketingData.audienceGrowth.totalContacts) * 100).toFixed(1)}% of total
+                {((data.audienceGrowth.activeSubscribers / data.audienceGrowth.totalContacts) * 100).toFixed(1)}% of total
               </p>
             </div>
 
@@ -791,7 +827,7 @@ export default function MarketingAnalyticsPage() {
                 <div className="flex items-center gap-1">
                   <TrendingUp className="h-4 w-4 text-green-400" />
                   <span className="text-lg font-bold text-green-400">
-                    {marketingData.audienceGrowth.growthRate}%
+                    {data.audienceGrowth.growthRate}%
                   </span>
                 </div>
               </div>
@@ -800,6 +836,8 @@ export default function MarketingAnalyticsPage() {
           </div>
         </Card>
       </div>
+        </>
+      )}
     </div>
   );
 }
