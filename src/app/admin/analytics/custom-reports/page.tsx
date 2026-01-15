@@ -27,7 +27,9 @@ import {
   TrendingUp,
   AlertTriangle,
   CheckCircle,
+  AlertCircle,
 } from "lucide-react";
+import { useReports } from "@/hooks/useAnalytics";
 
 // Mock custom reports data
 const customReports = [
@@ -205,8 +207,14 @@ export default function CustomReportsPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  // API data with fallback to mock data
+  const { reports, totalReports: apiTotalReports, isLoading, isError, error } = useReports();
+
+  // Use API data if available, otherwise use mock
+  const data = reports.length > 0 ? reports : customReports;
+
   // Filter reports
-  const filteredReports = customReports.filter((report) => {
+  const filteredReports = data.filter((report) => {
     const searchMatch =
       searchQuery === "" ||
       report.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -219,9 +227,9 @@ export default function CustomReportsPage() {
   });
 
   // Calculate summary stats
-  const totalReports = customReports.length;
-  const activeReports = customReports.filter((r) => r.status === "active").length;
-  const scheduledReports = customReports.filter((r) => r.schedule !== "manual").length;
+  const totalReports = data.length;
+  const activeReports = data.filter((r) => r.status === "active").length;
+  const scheduledReports = data.filter((r) => r.schedule !== "manual").length;
   const totalAlerts = alertConfigurations.length;
   const activeAlerts = alertConfigurations.filter((a) => a.status === "active").length;
 
@@ -240,7 +248,35 @@ export default function CustomReportsPage() {
         </Button>
       </div>
 
-      {/* Summary Stats */}
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading reports data...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load reports data</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching reports"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content - Only show when not loading and no error */}
+      {!isLoading && !isError && (
+        <>
+          {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card className="p-4 bg-gray-800/50 border-gray-700">
           <div className="flex items-center gap-2 mb-2">
@@ -266,7 +302,7 @@ export default function CustomReportsPage() {
             <p className="text-sm text-gray-400">Recipients</p>
           </div>
           <p className="text-3xl font-bold text-white">
-            {new Set(customReports.flatMap((r) => r.recipients)).size}
+            {new Set(data.flatMap((r) => r.recipients)).size}
           </p>
           <p className="text-xs text-gray-400 mt-1">Unique emails</p>
         </Card>
@@ -524,6 +560,8 @@ export default function CustomReportsPage() {
           ))}
         </div>
       </Card>
+        </>
+      )}
     </div>
   );
 }
