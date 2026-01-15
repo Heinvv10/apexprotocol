@@ -20,6 +20,7 @@ import {
   Target,
   Activity,
   AlertTriangle,
+  AlertCircle,
   CheckCircle,
   Calendar,
   Download,
@@ -196,6 +197,13 @@ export default function ExecutiveDashboardPage() {
   const [timeRange, setTimeRange] = useState("30d");
   const [lastUpdated] = useState(new Date().toISOString());
 
+  // Fetch analytics dashboard data from API
+  const { dashboard, isLoading, isError, error } = useAnalyticsDashboard(null);
+
+  // Use API data if available, fallback to mock data
+  const hasDashboardData = dashboard && dashboard.geoScore > 0;
+  const allData = hasDashboardData ? dashboard : null;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -232,6 +240,31 @@ export default function ExecutiveDashboardPage() {
         <Calendar className="h-4 w-4" />
         <span>Last updated: {new Date(lastUpdated).toLocaleString()}</span>
       </div>
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading dashboard data...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load dashboard data</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching analytics data"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Revenue Metrics */}
       <div>
