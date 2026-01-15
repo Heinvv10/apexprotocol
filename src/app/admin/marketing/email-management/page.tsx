@@ -23,8 +23,9 @@ import {
   Download,
   Upload,
 } from "lucide-react";
+import { useEmailLists } from "@/hooks/useMarketing";
 
-// Mock email lists data
+// Mock email lists data (fallback if API not ready)
 const mockEmailLists = [
   {
     id: "list_001",
@@ -180,30 +181,36 @@ export default function EmailManagementPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [automationFilter, setAutomationFilter] = useState<string>("all");
 
+  // Fetch email lists from API
+  const { emailLists, isLoading, isError, error } = useEmailLists();
+
+  // Use API data if available, fallback to mock data
+  const lists = emailLists.length > 0 ? emailLists : mockEmailLists;
+
   // Calculate stats
-  const totalLists = mockEmailLists.length;
-  const activeLists = mockEmailLists.filter((list) => list.status === "active").length;
-  const totalSubscribers = mockEmailLists.reduce((sum, list) => sum + list.subscriberCount, 0);
+  const totalLists = lists.length;
+  const activeLists = lists.filter((list: any) => list.status === "active").length;
+  const totalSubscribers = lists.reduce((sum: number, list: any) => sum + (list.subscribers || list.subscriberCount || 0), 0);
   const avgOpenRate =
     totalLists > 0
-      ? mockEmailLists.reduce((sum, list) => sum + list.openRate, 0) / totalLists
+      ? lists.reduce((sum: number, list: any) => sum + (list.openRate || 0), 0) / totalLists
       : 0;
   const avgClickRate =
     totalLists > 0
-      ? mockEmailLists.reduce((sum, list) => sum + list.clickRate, 0) / totalLists
+      ? lists.reduce((sum: number, list: any) => sum + (list.clickRate || 0), 0) / totalLists
       : 0;
-  const totalUnsubscribes = mockEmailLists.reduce((sum, list) => sum + list.unsubscribeCount, 0);
+  const totalUnsubscribes = lists.reduce((sum: number, list: any) => sum + (list.unsubscribeCount || 0), 0);
 
   // Filter lists
-  const filteredLists = mockEmailLists.filter((list) => {
+  const filteredLists = lists.filter((list: any) => {
     const matchesSearch =
       list.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      list.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (list.description || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || list.status === statusFilter;
     const matchesAutomation =
       automationFilter === "all" ||
-      (automationFilter === "automated" && list.metadata.automation) ||
-      (automationFilter === "manual" && !list.metadata.automation);
+      (automationFilter === "automated" && list.metadata?.automation) ||
+      (automationFilter === "manual" && !list.metadata?.automation);
 
     return matchesSearch && matchesStatus && matchesAutomation;
   });

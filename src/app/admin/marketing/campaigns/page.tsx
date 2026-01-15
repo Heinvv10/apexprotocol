@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search, TrendingUp, DollarSign, Target, Users, Play, Pause, Archive, Copy } from "lucide-react";
+import { Search, TrendingUp, DollarSign, Target, Users, Play, Pause, Archive, Copy, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,106 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
-
-// Mock campaigns data based on marketing.ts schema
-const mockCampaigns = [
-  {
-    id: "camp_001",
-    name: "Q1 2026 Product Launch",
-    description: "Launch campaign for new AI features",
-    type: "email",
-    status: "active",
-    budget: 15000,
-    leads: 1250,
-    opens: 3420,
-    clicks: 856,
-    conversions: 127,
-    revenue: 45600,
-    startDate: new Date("2026-01-01").toISOString(),
-    endDate: new Date("2026-03-31").toISOString(),
-    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "camp_002",
-    name: "LinkedIn Lead Gen",
-    description: "B2B lead generation via LinkedIn ads",
-    type: "social",
-    status: "active",
-    budget: 8000,
-    leads: 420,
-    opens: 0,
-    clicks: 1280,
-    conversions: 52,
-    revenue: 18700,
-    startDate: new Date("2026-01-10").toISOString(),
-    endDate: new Date("2026-02-28").toISOString(),
-    createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "camp_003",
-    name: "Webinar: GEO Masterclass",
-    description: "Educational webinar on GEO best practices",
-    type: "webinar",
-    status: "scheduled",
-    budget: 5000,
-    leads: 230,
-    opens: 890,
-    clicks: 312,
-    conversions: 87,
-    revenue: 12400,
-    startDate: new Date("2026-02-15").toISOString(),
-    endDate: new Date("2026-02-15").toISOString(),
-    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "camp_004",
-    name: "Content Hub Launch",
-    description: "Launch of resource center landing page",
-    type: "landing_page",
-    status: "active",
-    budget: 12000,
-    leads: 840,
-    opens: 0,
-    clicks: 2140,
-    conversions: 156,
-    revenue: 32800,
-    startDate: new Date("2025-12-01").toISOString(),
-    endDate: new Date("2026-01-31").toISOString(),
-    createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "camp_005",
-    name: "Holiday Email Series",
-    description: "End of year promotional email campaign",
-    type: "email",
-    status: "completed",
-    budget: 6000,
-    leads: 2100,
-    opens: 5820,
-    clicks: 1240,
-    conversions: 310,
-    revenue: 78500,
-    startDate: new Date("2025-11-20").toISOString(),
-    endDate: new Date("2025-12-31").toISOString(),
-    createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "camp_006",
-    name: "Customer Retargeting",
-    description: "Re-engagement campaign for inactive users",
-    type: "retargeting",
-    status: "paused",
-    budget: 4500,
-    leads: 320,
-    opens: 1120,
-    clicks: 267,
-    conversions: 45,
-    revenue: 8900,
-    startDate: new Date("2026-01-05").toISOString(),
-    endDate: new Date("2026-02-05").toISOString(),
-    createdAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
+import { useCampaigns } from "@/hooks/useMarketing";
 
 const campaignTypes = {
   email: { label: "Email", color: "bg-blue-500" },
@@ -135,8 +36,11 @@ export default function CampaignsPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  // Fetch campaigns from API
+  const { campaigns, isLoading, isError, error } = useCampaigns();
+
   // Filter campaigns based on search and filters
-  const filteredCampaigns = mockCampaigns.filter((campaign) => {
+  const filteredCampaigns = campaigns.filter((campaign) => {
     const matchesSearch =
       searchQuery === "" ||
       campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -149,17 +53,12 @@ export default function CampaignsPage() {
   });
 
   // Calculate stats
-  const totalCampaigns = mockCampaigns.length;
-  const activeCampaigns = mockCampaigns.filter((c) => c.status === "active").length;
-  const totalLeads = mockCampaigns.reduce((sum, c) => sum + c.leads, 0);
-  const totalRevenue = mockCampaigns.reduce((sum, c) => sum + c.revenue, 0);
-  const totalBudget = mockCampaigns.reduce((sum, c) => sum + c.budget, 0);
+  const totalCampaigns = campaigns.length;
+  const activeCampaigns = campaigns.filter((c) => c.status === "active").length;
+  const totalLeads = campaigns.reduce((sum, c) => sum + (c.leads || 0), 0);
+  const totalRevenue = campaigns.reduce((sum, c) => sum + (c.revenue || 0), 0);
+  const totalBudget = campaigns.reduce((sum, c) => sum + (c.budget || 0), 0);
   const avgROI = totalBudget > 0 ? ((totalRevenue - totalBudget) / totalBudget) * 100 : 0;
-  const avgConversionRate =
-    filteredCampaigns.length > 0
-      ? (filteredCampaigns.reduce((sum, c) => sum + (c.clicks > 0 ? (c.conversions / c.clicks) * 100 : 0), 0) /
-          filteredCampaigns.length)
-      : 0;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -201,7 +100,33 @@ export default function CampaignsPage() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load campaigns</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching campaigns"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading campaigns...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Cards - Only show when data is loaded */}
+      {!isLoading && !isError && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card-secondary p-4">
           <div className="flex items-center justify-between">
@@ -345,8 +270,12 @@ export default function CampaignsPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {filteredCampaigns.map((campaign) => {
-                const roi = campaign.budget > 0 ? ((campaign.revenue - campaign.budget) / campaign.budget) * 100 : 0;
-                const conversionRate = campaign.clicks > 0 ? (campaign.conversions / campaign.clicks) * 100 : 0;
+                const budget = campaign.budget || 0;
+                const revenue = campaign.revenue || 0;
+                const clicks = campaign.clicks || 0;
+                const conversions = campaign.conversions || 0;
+                const roi = budget > 0 ? ((revenue - budget) / budget) * 100 : 0;
+                const conversionRate = clicks > 0 ? (conversions / clicks) * 100 : 0;
 
                 return (
                   <tr
@@ -376,16 +305,16 @@ export default function CampaignsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-white">
-                      {campaign.leads.toLocaleString()}
+                      {(campaign.leads || 0).toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-sm text-white">
-                      {campaign.conversions}
+                      {conversions}
                       <div className="text-xs text-muted-foreground">
                         {conversionRate.toFixed(1)}%
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-white">
-                      {formatCurrency(campaign.revenue)}
+                      {formatCurrency(revenue)}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`text-sm font-medium ${roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -393,10 +322,12 @@ export default function CampaignsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {formatDate(campaign.startDate)}
-                      <div className="text-xs">
-                        to {formatDate(campaign.endDate)}
-                      </div>
+                      {campaign.startDate ? formatDate(campaign.startDate) : "N/A"}
+                      {campaign.endDate && (
+                        <div className="text-xs">
+                          to {formatDate(campaign.endDate)}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -439,6 +370,7 @@ export default function CampaignsPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
