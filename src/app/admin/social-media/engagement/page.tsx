@@ -34,6 +34,7 @@ import {
   UserPlus,
   Clock,
 } from "lucide-react";
+import { useSocialMentions } from "@/hooks/useSocial";
 
 // Mock engagement data
 const mockMentions = [
@@ -186,16 +187,22 @@ export default function EngagementPage() {
   const [leadFilter, setLeadFilter] = useState("all");
   const [selectedMention, setSelectedMention] = useState<string | null>(null);
 
+  // Fetch social mentions from API
+  const { mentions, isLoading, isError, error } = useSocialMentions(null);
+
+  // Use API data if available, fallback to mock data
+  const allMentions = mentions.length > 0 ? mentions : mockMentions;
+
   // Calculate stats
-  const totalMentions = mockMentions.length;
-  const positiveMentions = mockMentions.filter((m) => m.sentiment === "positive").length;
-  const negativeMentions = mockMentions.filter((m) => m.sentiment === "negative").length;
-  const neutralMentions = mockMentions.filter((m) => m.sentiment === "neutral").length;
-  const unrepliedMentions = mockMentions.filter((m) => !m.replied).length;
-  const leadMentions = mockMentions.filter((m) => m.isLead).length;
+  const totalMentions = allMentions.length;
+  const positiveMentions = allMentions.filter((m: any) => m.sentiment === "positive").length;
+  const negativeMentions = allMentions.filter((m: any) => m.sentiment === "negative").length;
+  const neutralMentions = allMentions.filter((m: any) => m.sentiment === "neutral").length;
+  const unrepliedMentions = allMentions.filter((m: any) => !m.replied).length;
+  const leadMentions = allMentions.filter((m: any) => m.isLead).length;
 
   // Filter mentions
-  const filteredMentions = mockMentions.filter((mention) => {
+  const filteredMentions = allMentions.filter((mention: any) => {
     const matchesSearch =
       searchQuery === "" ||
       mention.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -294,6 +301,31 @@ export default function EngagementPage() {
         <h1 className="text-3xl font-bold text-white">Social Media Engagement</h1>
         <p className="text-muted-foreground mt-1">Track mentions, replies, and lead opportunities</p>
       </div>
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading mentions...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load mentions</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching social media mentions"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
