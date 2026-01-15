@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -102,9 +102,15 @@ const mockPosts = [
 export default function PostingPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [platformFilter, setPlatformFilter] = useState("all");
+  const [isClient, setIsClient] = useState(false);
 
   // Fetch posts from API
   const { posts, isLoading, isError, error } = useSocialPosts(null);
+
+  // Fix hydration: Only format numbers on client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Use API data if available, fallback to mock data
   const allPosts = posts.length > 0 ? posts : mockPosts;
@@ -347,7 +353,7 @@ export default function PostingPage() {
                     <>
                       <span>•</span>
                       <div className="flex items-center gap-3">
-                        <span>{post.engagement.views.toLocaleString()} views</span>
+                        <span>{isClient ? post.engagement.views.toLocaleString() : post.engagement.views} views</span>
                         <span>{post.engagement.likes} likes</span>
                         <span>{post.engagement.comments} comments</span>
                         <span>{post.engagement.shares} shares</span>
