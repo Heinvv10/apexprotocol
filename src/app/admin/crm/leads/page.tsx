@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import { Search, ChevronDown, Plus, Trash2, Download, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -368,8 +369,10 @@ export default function LeadsPage() {
                         className="rounded border-white/20"
                       />
                     </td>
-                    <td className="px-4 py-3 font-medium cursor-pointer hover:text-cyan-400">
-                      {lead.firstName} {lead.lastName}
+                    <td className="px-4 py-3 font-medium">
+                      <Link href={`/admin/crm/leads/${lead.id}`} className="hover:text-cyan-400 cursor-pointer">
+                        {lead.firstName} {lead.lastName}
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{lead.email}</td>
                     <td className="px-4 py-3 text-sm">{lead.company}</td>
