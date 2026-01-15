@@ -650,3 +650,143 @@ export function useDeleteWebhook() {
     },
   });
 }
+
+// =============================================================================
+// Admin Page SWR Hooks (For API Integration Pattern)
+// =============================================================================
+
+import useSWR, { type SWRConfiguration } from "swr";
+import {
+  getIntegrationSummary,
+  getIntegrationHealth,
+  getWebhooks,
+  getCredentials,
+  getIntegrationConfigs,
+  type IntegrationSummary,
+  type IntegrationHealth as AdminIntegrationHealth,
+  type WebhooksList,
+  type CredentialsList,
+  type IntegrationConfigList,
+} from "@/lib/api/integrations";
+
+/**
+ * Hook to fetch integration summary (SWR-based for admin pages)
+ */
+export function useIntegrationSummary(config?: SWRConfiguration<IntegrationSummary>) {
+  const { data, error, isLoading, mutate } = useSWR<IntegrationSummary>(
+    "/api/admin/integrations/summary",
+    getIntegrationSummary,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      ...config,
+    }
+  );
+
+  return {
+    summary: data ?? null,
+    isLoading,
+    isError: !!error,
+    error,
+    mutate,
+  };
+}
+
+/**
+ * Hook to fetch integration health status (SWR-based for admin pages)
+ */
+export function useIntegrationHealthAdmin(config?: SWRConfiguration<AdminIntegrationHealth>) {
+  const { data, error, isLoading, mutate } = useSWR<AdminIntegrationHealth>(
+    "/api/admin/integrations/health",
+    getIntegrationHealth,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      refreshInterval: 30000, // Refresh every 30 seconds for health monitoring
+      ...config,
+    }
+  );
+
+  return {
+    health: data ?? null,
+    isLoading,
+    isError: !!error,
+    error,
+    mutate,
+  };
+}
+
+/**
+ * Hook to fetch webhooks list (SWR-based for admin pages)
+ */
+export function useWebhooksAdmin(config?: SWRConfiguration<WebhooksList>) {
+  const { data, error, isLoading, mutate } = useSWR<WebhooksList>(
+    "/api/admin/integrations/webhooks",
+    getWebhooks,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      ...config,
+    }
+  );
+
+  return {
+    webhooks: data?.webhooks ?? [],
+    totalWebhooks: data?.totalWebhooks ?? 0,
+    activeWebhooks: data?.activeWebhooks ?? 0,
+    isLoading,
+    isError: !!error,
+    error,
+    mutate,
+  };
+}
+
+/**
+ * Hook to fetch credentials list (SWR-based for admin pages)
+ */
+export function useCredentialsAdmin(config?: SWRConfiguration<CredentialsList>) {
+  const { data, error, isLoading, mutate } = useSWR<CredentialsList>(
+    "/api/admin/integrations/credentials",
+    getCredentials,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      ...config,
+    }
+  );
+
+  return {
+    credentials: data?.credentials ?? [],
+    totalCredentials: data?.totalCredentials ?? 0,
+    expiringCredentials: data?.expiringCredentials ?? 0,
+    isLoading,
+    isError: !!error,
+    error,
+    mutate,
+  };
+}
+
+/**
+ * Hook to fetch integration configurations (SWR-based for admin pages)
+ */
+export function useIntegrationConfigsAdmin(config?: SWRConfiguration<IntegrationConfigList>) {
+  const { data, error, isLoading, mutate } = useSWR<IntegrationConfigList>(
+    "/api/admin/integrations/configs",
+    getIntegrationConfigs,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      ...config,
+    }
+  );
+
+  return {
+    integrations: data?.integrations ?? [],
+    totalIntegrations: data?.totalIntegrations ?? 0,
+    configuredIntegrations: data?.configuredIntegrations ?? 0,
+    isLoading,
+    isError: !!error,
+    error,
+    mutate,
+  };
+}
