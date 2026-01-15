@@ -1,0 +1,116 @@
+/**
+ * Platform Monitoring API Client
+ *
+ * Handles API calls for platform mention tracking across AI platforms
+ * (ChatGPT, Claude, Gemini, Perplexity, Grok, DeepSeek, Janus)
+ */
+
+// Types
+export interface PlatformMention {
+  id: string;
+  platform: string;
+  timestamp: string;
+  query: string;
+  ourPage: string;
+  context: string;
+  sentiment: "positive" | "neutral" | "negative";
+  position: number;
+  visibility: number;
+}
+
+export interface PlatformStats {
+  platform: string;
+  mentions: number;
+  avgPosition: number;
+  avgVisibility: number;
+  trend: number;
+}
+
+export interface TopCitedPage {
+  page: string;
+  citations: number;
+  avgPosition: number;
+  platforms: string[];
+}
+
+export interface CompetitorMention {
+  id: string;
+  platform: string;
+  timestamp: string;
+  query: string;
+  competitor: string;
+  competitorPage: string;
+  context: string;
+  position: number;
+  visibility: number;
+}
+
+export interface ContentPerformance {
+  contentType: string;
+  citations: number;
+  avgPosition: number;
+  avgVisibility: number;
+  topPlatforms: string[];
+  trend: number;
+}
+
+/**
+ * Fetch our platform mentions
+ */
+export async function getPlatformMentions(): Promise<{
+  mentions: PlatformMention[];
+  platformStats: PlatformStats[];
+  topCitedPages: TopCitedPage[];
+  totalMentions: number;
+  avgVisibility: number;
+}> {
+  const response = await fetch('/api/platform-monitoring/our-visibility');
+  if (!response.ok) {
+    throw new Error('Failed to fetch platform mentions');
+  }
+  return response.json();
+}
+
+/**
+ * Fetch competitor platform mentions
+ */
+export async function getCompetitorMentions(): Promise<{
+  mentions: CompetitorMention[];
+  competitors: Array<{
+    name: string;
+    mentions: number;
+    avgPosition: number;
+    avgVisibility: number;
+    trend: number;
+  }>;
+  shareOfVoice: number;
+}> {
+  const response = await fetch('/api/platform-monitoring/competitor-visibility');
+  if (!response.ok) {
+    throw new Error('Failed to fetch competitor mentions');
+  }
+  return response.json();
+}
+
+/**
+ * Fetch content performance by type
+ */
+export async function getContentPerformance(): Promise<{
+  performanceByType: ContentPerformance[];
+  schemaImpact: {
+    withSchema: number;
+    withoutSchema: number;
+    improvement: number;
+  };
+  freshnessImpact: {
+    under30Days: number;
+    under90Days: number;
+    over90Days: number;
+  };
+}> {
+  const response = await fetch('/api/platform-monitoring/content-performance');
+  if (!response.ok) {
+    throw new Error('Failed to fetch content performance');
+  }
+  return response.json();
+}
