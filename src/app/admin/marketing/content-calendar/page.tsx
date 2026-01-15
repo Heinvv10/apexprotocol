@@ -32,9 +32,10 @@ import {
   Edit,
   Trash2,
 } from "lucide-react";
+import { useContentCalendar } from "@/hooks/useMarketing";
 
 // Mock content calendar data
-const mockContentItems = [
+const contentItems = [
   {
     id: "content_001",
     title: "New Feature Announcement: AI-Powered Insights",
@@ -212,13 +213,17 @@ export default function ContentCalendarPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [channelFilter, setChannelFilter] = useState("all");
 
+  // API data with fallback to mock data
+  const { events: apiEvents, isLoading, isError, error } = useContentCalendar();
+  const contentItems = apiEvents.length > 0 ? apiEvents : contentItems;
+
   // Calculate stats
-  const totalItems = mockContentItems.length;
-  const publishedItems = mockContentItems.filter((item) => item.status === "published").length;
-  const scheduledItems = mockContentItems.filter((item) => item.status === "scheduled").length;
-  const draftItems = mockContentItems.filter((item) => item.status === "draft").length;
-  const inReviewItems = mockContentItems.filter((item) => item.status === "in_review").length;
-  const inProgressItems = mockContentItems.filter((item) => item.status === "in_progress").length;
+  const totalItems = contentItems.length;
+  const publishedItems = contentItems.filter((item) => item.status === "published").length;
+  const scheduledItems = contentItems.filter((item) => item.status === "scheduled").length;
+  const draftItems = contentItems.filter((item) => item.status === "draft").length;
+  const inReviewItems = contentItems.filter((item) => item.status === "in_review").length;
+  const inProgressItems = contentItems.filter((item) => item.status === "in_progress").length;
 
   // Calendar helpers
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
@@ -252,7 +257,7 @@ export default function ContentCalendarPage() {
 
   const getContentForDate = (date: number) => {
     const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), date);
-    return mockContentItems.filter((item) => {
+    return contentItems.filter((item) => {
       const itemDate = new Date(item.publishDate);
       return (
         itemDate.getFullYear() === targetDate.getFullYear() &&
@@ -263,7 +268,7 @@ export default function ContentCalendarPage() {
   };
 
   // Filter content items
-  const filteredItems = mockContentItems.filter((item) => {
+  const filteredItems = contentItems.filter((item) => {
     const matchesSearch =
       searchQuery === "" ||
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -362,8 +367,36 @@ export default function ContentCalendarPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Loading State */}
+      {isLoading && (
+        <div className="card-secondary p-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400" />
+            <p className="ml-3 text-muted-foreground">Loading content calendar...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-4 bg-red-500/10 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Failed to load content calendar</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error?.message || "An error occurred while fetching calendar events"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content - Only show when not loading and no error */}
+      {!isLoading && !isError && (
+        <>
+          {/* Header */}
+          <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white">Content Calendar</h1>
           <p className="text-muted-foreground mt-1">Plan, schedule, and track content across all channels</p>
@@ -662,6 +695,8 @@ export default function ContentCalendarPage() {
             </div>
           )}
         </div>
+      )}
+        </>
       )}
     </div>
   );
