@@ -1,6 +1,6 @@
 # API Integration Progress Tracking
 
-**Status**: 13/49 pages integrated (27% complete)
+**Status**: 15/49 pages integrated (31% complete)
 **Last Updated**: 2026-01-15
 **Goal**: Connect all admin pages to backend APIs using SWR hooks
 
@@ -39,14 +39,14 @@ This document tracks the progress of integrating admin pages with backend APIs f
 
 ---
 
-### 🔄 Phase 3: Email Automation - 0% Complete (0/2 pages)
-| Page | Route | Hook | Status | Priority |
-|------|-------|------|--------|----------|
-| Automation List | `/admin/marketing/automation` | `useSequences()` | ⏳ Pending | HIGH |
-| Sequence Detail | `/admin/marketing/automation/[id]` | `useSequence(id)` | ⏳ Pending | MEDIUM |
+### ✅ Phase 3: Email Automation - 100% Complete (2/2 pages)
+| Page | Route | Hook | Status | Commit |
+|------|-------|------|--------|--------|
+| Automation List | `/admin/marketing/automation` | `useSequences()` | ✅ Complete | 96a143f8 |
+| Sequence Detail | `/admin/marketing/automation/[id]` | `useSequence(id)` | ✅ Complete | 3661e50a |
 
-**Required Hooks**: `useSequences()`, `useSequence(id)` in `useMarketing.ts`
-**API Client**: Need sequence functions in `marketing.ts`
+**Hooks Created**: `useSequences()`, `useSequence(id)` in `src/hooks/useMarketing.ts`
+**API Client**: Created `getSequences()`, `getSequence(id)` in `src/lib/api/marketing.ts`
 
 ---
 
@@ -151,11 +151,11 @@ This document tracks the progress of integrating admin pages with backend APIs f
 
 ## Summary Statistics
 
-**Overall Progress**: 13/49 pages (27%)
+**Overall Progress**: 15/49 pages (31%)
 
 **By Status**:
-- ✅ Complete: 13 pages
-- ⏳ Pending: 36 pages
+- ✅ Complete: 15 pages
+- ⏳ Pending: 34 pages
 - N/A (Clerk/Static): 3 pages
 
 **By Priority**:
