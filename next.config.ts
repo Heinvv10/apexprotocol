@@ -4,7 +4,7 @@ import path from "path";
 const nextConfig: NextConfig = {
   // Fix Turbopack root directory detection for git worktrees
   turbopack: {
-    root: path.resolve(__dirname, "../.."),
+    root: __dirname,
   },
 
   // Enable standalone output for Docker deployments
