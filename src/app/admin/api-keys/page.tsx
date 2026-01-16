@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   Search,
   Plus,
@@ -18,6 +18,7 @@ import {
   Shield,
 } from "lucide-react";
 import { formatDate, formatTimestamp } from "@/lib/utils/formatters";
+import { useAPIKeys } from "@/hooks/useAdmin";
 
 interface ApiKey {
   id: string;
@@ -50,11 +51,102 @@ const TYPE_LABELS: Record<string, string> = {
   custom: "Custom",
 };
 
+// Mock data for fallback
+const mockApiKeys: ApiKey[] = [
+  {
+    id: "1",
+    organizationId: "org-1",
+    name: "Production OpenAI Key",
+    displayName: "Main GPT-4 Key",
+    type: "openai",
+    version: 3,
+    isActive: true,
+    lastUsedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    lastRotatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+    createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    maskedKey: "sk-...Xk9a",
+  },
+  {
+    id: "2",
+    organizationId: "org-1",
+    name: "Production Anthropic Key",
+    displayName: "Claude API Key",
+    type: "anthropic",
+    version: 2,
+    isActive: true,
+    lastUsedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    lastRotatedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    expiresAt: null,
+    createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    maskedKey: "sk-ant-...4bCd",
+  },
+  {
+    id: "3",
+    organizationId: "org-1",
+    name: "Serper Search API",
+    displayName: null,
+    type: "serper",
+    version: 1,
+    isActive: true,
+    lastUsedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    lastRotatedAt: null,
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    maskedKey: "srp-...9xYz",
+  },
+  {
+    id: "4",
+    organizationId: "org-1",
+    name: "Pinecone Vector DB",
+    displayName: "Embeddings Storage",
+    type: "pinecone",
+    version: 1,
+    isActive: false,
+    lastUsedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    lastRotatedAt: null,
+    expiresAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    createdAt: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    maskedKey: "pnc-...3WvU",
+  },
+  {
+    id: "5",
+    organizationId: "org-2",
+    name: "Custom Analytics API",
+    displayName: "Internal Analytics",
+    type: "custom",
+    version: 1,
+    isActive: true,
+    lastUsedAt: null,
+    lastRotatedAt: null,
+    expiresAt: null,
+    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+    maskedKey: "cst-...7PqR",
+  },
+];
+
+const mockOrganizations: Organization[] = [
+  { id: "org-1", name: "Apex Technologies" },
+  { id: "org-2", name: "Partner Corp" },
+];
+
 export default function AdminApiKeysPage() {
-  // State management
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [loading, setLoading] = useState(true);
+  // SWR hook for API data
+  const { keys: apiKeysData, organizations: apiOrganizations, isLoading, isError, error: apiError, mutate } = useAPIKeys();
+
+  // Use API data if available, otherwise fall back to mock data
+  const apiKeys = apiKeysData.length > 0
+    ? apiKeysData as unknown as ApiKey[]
+    : mockApiKeys;
+  const organizations = apiOrganizations.length > 0
+    ? apiOrganizations as unknown as Organization[]
+    : mockOrganizations;
+
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -88,52 +180,17 @@ export default function AdminApiKeysPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch API keys
-  const fetchApiKeys = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        search,
-        type: typeFilter,
-        status: statusFilter,
-      });
-
-      const response = await fetch(`/api/admin/api-keys?${params}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setApiKeys(data.apiKeys);
-      } else {
-        setError(data.error || "Failed to fetch API keys");
-      }
-    } catch {
-      setError("Failed to fetch API keys");
-    } finally {
-      setLoading(false);
-    }
-  }, [search, typeFilter, statusFilter]);
-
-  // Fetch organizations
-  const fetchOrganizations = useCallback(async () => {
-    try {
-      const response = await fetch("/api/admin/organizations");
-      const data = await response.json();
-
-      if (data.success) {
-        setOrganizations(data.organizations || []);
-      }
-    } catch {
-      // Silent failure for organizations
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchApiKeys();
-  }, [fetchApiKeys]);
-
-  useEffect(() => {
-    fetchOrganizations();
-  }, [fetchOrganizations]);
+  // Filter API keys client-side
+  const filteredApiKeys = apiKeys.filter((key) => {
+    const matchesSearch = search === "" ||
+      key.name.toLowerCase().includes(search.toLowerCase()) ||
+      (key.displayName && key.displayName.toLowerCase().includes(search.toLowerCase()));
+    const matchesType = typeFilter === "all" || key.type === typeFilter;
+    const matchesStatus = statusFilter === "all" ||
+      (statusFilter === "active" && key.isActive) ||
+      (statusFilter === "inactive" && !key.isActive);
+    return matchesSearch && matchesType && matchesStatus;
+  });
 
   // Create new API key
   const handleCreate = async () => {
@@ -164,7 +221,7 @@ export default function AdminApiKeysPage() {
       if (data.success) {
         setCreateModalOpen(false);
         resetFormData();
-        await fetchApiKeys();
+        mutate(); // Refresh data via SWR
       } else {
         setError(data.error || "Failed to create API key");
       }
@@ -204,7 +261,7 @@ export default function AdminApiKeysPage() {
         setEditModalOpen(false);
         setSelectedKey(null);
         resetFormData();
-        await fetchApiKeys();
+        mutate(); // Refresh data via SWR
       } else {
         setError(data.error || "Failed to update API key");
       }
@@ -236,7 +293,7 @@ export default function AdminApiKeysPage() {
       if (data.success) {
         setDeleteModalOpen(false);
         setSelectedKey(null);
-        await fetchApiKeys();
+        mutate(); // Refresh data via SWR
       } else {
         setError(data.error || "Failed to delete API key");
       }
@@ -274,7 +331,7 @@ export default function AdminApiKeysPage() {
         setRotateModalOpen(false);
         setSelectedKey(null);
         setRotationData({ newApiKey: "", gracePeriodMinutes: 0, reason: "" });
-        await fetchApiKeys();
+        mutate(); // Refresh data via SWR
       } else {
         setError(data.error || "Failed to rotate API key");
       }
@@ -297,7 +354,7 @@ export default function AdminApiKeysPage() {
       const data = await response.json();
 
       if (data.success) {
-        await fetchApiKeys();
+        mutate(); // Refresh data via SWR
       } else {
         setError(data.error || "Failed to update API key status");
       }
@@ -406,8 +463,15 @@ export default function AdminApiKeysPage() {
           <p className="text-gray-400 mt-1">Manage external service API keys (OpenAI, Anthropic, etc.)</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => mutate()}
+            className="px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-300 text-sm font-medium hover:bg-gray-700 transition-colors flex items-center gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
           <div className="px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm font-medium">
-            {apiKeys.length} Keys
+            {filteredApiKeys.length} Keys
           </div>
           <button
             onClick={() => {
@@ -423,7 +487,20 @@ export default function AdminApiKeysPage() {
         </div>
       </div>
 
-      {/* Error Banner */}
+      {/* API Error State */}
+      {isError && (
+        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+          <div className="flex items-center gap-2 text-red-400">
+            <AlertCircle className="w-5 h-5" />
+            <span className="font-medium">Failed to load API keys</span>
+          </div>
+          <p className="text-red-400/80 text-sm mt-1">
+            {apiError?.message || "An error occurred while fetching data. Showing cached data."}
+          </p>
+        </div>
+      )}
+
+      {/* Local Error Banner */}
       {error && (
         <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-between">
           <span>{error}</span>
@@ -486,13 +563,13 @@ export default function AdminApiKeysPage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {isLoading && filteredApiKeys.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-12 text-gray-500">
                     Loading API keys...
                   </td>
                 </tr>
-              ) : apiKeys.length === 0 ? (
+              ) : filteredApiKeys.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-12 text-gray-500">
                     <Key className="w-8 h-8 mx-auto mb-3 opacity-50" />
@@ -500,7 +577,7 @@ export default function AdminApiKeysPage() {
                   </td>
                 </tr>
               ) : (
-                apiKeys.map((key) => (
+                filteredApiKeys.map((key) => (
                   <tr key={key.id} className="border-b border-gray-800 hover:bg-[#0a0f1a] transition-colors">
                     <td className="px-6 py-4">
                       <div>

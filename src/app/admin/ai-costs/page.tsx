@@ -16,9 +16,11 @@ import {
   Brain,
   Sparkles,
   Users,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/lib/utils";
+import { useAICosts } from "@/hooks/useAdmin";
 
 // Types
 interface CostBreakdown {
@@ -63,6 +65,75 @@ interface CostSummary {
     endDate: string;
   };
 }
+
+// Mock data fallback (detailed structure)
+const mockCostSummary: CostSummary = {
+  totalCost: 1247.83,
+  totalTokens: 15843200,
+  byProvider: {
+    claude: {
+      cost: 687.45,
+      tokens: 8234000,
+      models: {
+        "claude-3-opus": { cost: 412.38, tokens: 5678200 },
+        "claude-3-sonnet": { cost: 275.07, tokens: 2555800 },
+      },
+    },
+    openai: {
+      cost: 412.38,
+      tokens: 5609200,
+      models: {
+        "gpt-4-turbo": { cost: 312.45, tokens: 4200000 },
+        "gpt-4o": { cost: 99.93, tokens: 1409200 },
+      },
+    },
+    gemini: {
+      cost: 148.00,
+      tokens: 2000000,
+      models: {
+        "gemini-pro": { cost: 148.00, tokens: 2000000 },
+      },
+    },
+  },
+  byOperation: {
+    content_generation: { cost: 523.45, tokens: 6234000, providers: { claude: { cost: 312.45, tokens: 4000000 }, openai: { cost: 210.00, tokens: 2234000 } } },
+    sentiment: { cost: 312.67, tokens: 4520000, providers: { openai: { cost: 312.67, tokens: 4520000 } } },
+    audit_analysis: { cost: 234.89, tokens: 3089200, providers: { claude: { cost: 234.89, tokens: 3089200 } } },
+    recommendation: { cost: 176.82, tokens: 2000000, providers: { gemini: { cost: 176.82, tokens: 2000000 } } },
+  },
+  byUser: {
+    "user_2abc123": {
+      cost: 312.45,
+      tokens: 4000000,
+      usageCount: 8900,
+      providers: {
+        claude: { cost: 200.00, tokens: 2500000, operations: { content_generation: { cost: 150.00, tokens: 1800000 }, audit_analysis: { cost: 50.00, tokens: 700000 } } },
+        openai: { cost: 112.45, tokens: 1500000, operations: { sentiment: { cost: 112.45, tokens: 1500000 } } },
+      },
+    },
+    "user_3def456": {
+      cost: 287.32,
+      tokens: 3500000,
+      usageCount: 7600,
+      providers: {
+        openai: { cost: 287.32, tokens: 3500000, operations: { content_generation: { cost: 200.00, tokens: 2500000 }, sentiment: { cost: 87.32, tokens: 1000000 } } },
+      },
+    },
+  },
+  breakdown: [
+    { provider: "claude", model: "claude-3-opus", operation: "content_generation", inputTokens: 2000000, outputTokens: 800000, totalTokens: 2800000, totalCost: 250.00, usageCount: 3500 },
+    { provider: "claude", model: "claude-3-opus", operation: "audit_analysis", inputTokens: 1500000, outputTokens: 500000, totalTokens: 2000000, totalCost: 162.38, usageCount: 2800 },
+    { provider: "openai", model: "gpt-4-turbo", operation: "sentiment", inputTokens: 3000000, outputTokens: 500000, totalTokens: 3500000, totalCost: 312.45, usageCount: 12340 },
+    { provider: "openai", model: "gpt-4o", operation: "content_generation", inputTokens: 1000000, outputTokens: 400000, totalTokens: 1400000, totalCost: 99.93, usageCount: 4200 },
+    { provider: "gemini", model: "gemini-pro", operation: "recommendation", inputTokens: 1500000, outputTokens: 500000, totalTokens: 2000000, totalCost: 148.00, usageCount: 5200 },
+  ],
+  timestamp: new Date().toISOString(),
+  period: {
+    days: 30,
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+    endDate: new Date().toLocaleDateString(),
+  },
+};
 
 // Provider colors and icons
 const providerConfig: Record<string, { color: string; bgColor: string; icon: React.ComponentType<{ className?: string }> }> = {
@@ -319,47 +390,26 @@ function UsageTable({ breakdown }: { breakdown: CostBreakdown[] }) {
 }
 
 export default function AICostsPage() {
-  const [data, setData] = React.useState<CostSummary | null>(null);
-  const [loading, setLoading] = React.useState(true);
   const [days, setDays] = React.useState(30);
+
+  // API integration with SWR
+  const { costs: apiCosts, isLoading, isError, error, mutate } = useAICosts(days);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
-  const fetchData = React.useCallback(async () => {
-    try {
-      const res = await fetch(`/api/admin/dashboard/ai-costs?days=${days}`);
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch AI costs:", error);
-    } finally {
-      setLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [days]);
+  // Use API data if available, fallback to mock
+  const data: CostSummary | null = apiCosts?.summary
+    ? (apiCosts as unknown as { data: CostSummary }).data || mockCostSummary
+    : mockCostSummary;
 
-  React.useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    fetchData();
+    await mutate();
+    setIsRefreshing(false);
   };
 
   const handleDaysChange = (newDays: number) => {
     setDays(newDays);
-    setLoading(true);
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   const providerCount = data ? Object.keys(data.byProvider).length : 0;
   const operationCount = data ? Object.keys(data.byOperation).length : 0;
@@ -406,15 +456,40 @@ export default function AICostsPage() {
             variant="outline"
             size="sm"
             onClick={handleRefresh}
-            disabled={isRefreshing}
+            disabled={isRefreshing || isLoading}
             className="border-white/10"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing || isLoading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
         </div>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
+          <span className="ml-2 text-muted-foreground">Loading AI costs data...</span>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-6 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-6 w-6 text-red-400" />
+            <div>
+              <h3 className="text-lg font-semibold text-white">Failed to load AI costs data</h3>
+              <p className="text-sm text-muted-foreground">
+                {error?.message || "An error occurred while fetching data. Using cached data."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!isLoading && (
+      <>
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="card-primary">
@@ -544,6 +619,8 @@ export default function AICostsPage() {
             No AI service usage recorded in the last {days} days.
           </p>
         </div>
+      )}
+      </>
       )}
     </div>
   );

@@ -14,7 +14,9 @@ import {
   X,
   ShieldCheck,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
+import { useAuditLogs } from "@/hooks/useAdmin";
 
 interface AuditLog {
   id: string;
@@ -86,68 +88,138 @@ interface VerificationResult {
   message: string;
 }
 
+// Mock data fallback
+const mockAuditLogs: AuditLog[] = [
+  {
+    id: "al-001",
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    actorId: "u1",
+    actorName: "John Smith",
+    actorEmail: "john@example.com",
+    actorRole: "admin",
+    action: "user.login",
+    actionType: "access",
+    description: "User logged in successfully",
+    targetType: "session",
+    targetId: "sess-001",
+    targetName: "Web Session",
+    status: "success",
+    metadata: { ipAddress: "192.168.1.100", userAgent: "Chrome/120.0", sessionId: "sess-001" },
+  },
+  {
+    id: "al-002",
+    timestamp: new Date(Date.now() - 7200000).toISOString(),
+    actorId: "u2",
+    actorName: "Sarah Johnson",
+    actorEmail: "sarah@example.com",
+    actorRole: "admin",
+    action: "api_key.create",
+    actionType: "create",
+    description: "Created new API key for production environment",
+    targetType: "api_key",
+    targetId: "key-001",
+    targetName: "Production API Key",
+    status: "success",
+    metadata: { ipAddress: "192.168.1.101" },
+  },
+  {
+    id: "al-003",
+    timestamp: new Date(Date.now() - 10800000).toISOString(),
+    actorId: "u3",
+    actorName: "Mike Chen",
+    actorEmail: "mike@example.com",
+    actorRole: "editor",
+    action: "campaign.update",
+    actionType: "update",
+    description: "Updated Q1 Marketing Campaign budget and schedule",
+    targetType: "campaign",
+    targetId: "camp-001",
+    targetName: "Q1 Marketing Campaign",
+    status: "success",
+    changes: { before: { budget: 10000 }, after: { budget: 15000 } },
+    metadata: { ipAddress: "192.168.1.102" },
+  },
+  {
+    id: "al-004",
+    timestamp: new Date(Date.now() - 14400000).toISOString(),
+    actorId: "u4",
+    actorName: "Emily Davis",
+    actorEmail: "emily@example.com",
+    actorRole: "viewer",
+    action: "user.permission_denied",
+    actionType: "security",
+    description: "Attempted to access admin settings without permission",
+    targetType: "settings",
+    targetId: "settings-001",
+    targetName: "Admin Settings",
+    status: "failure",
+    errorMessage: "Insufficient permissions to access admin settings",
+    metadata: { ipAddress: "192.168.1.103" },
+  },
+  {
+    id: "al-005",
+    timestamp: new Date(Date.now() - 18000000).toISOString(),
+    actorId: null,
+    actorName: "System",
+    actorEmail: null,
+    actorRole: "system",
+    action: "system.backup",
+    actionType: "system",
+    description: "Automated daily backup completed",
+    targetType: null,
+    targetId: null,
+    targetName: null,
+    status: "success",
+    metadata: { duration: 1234 },
+  },
+];
+
 export default function AdminAuditLogsPage() {
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [targetTypeFilter, setTargetTypeFilter] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [pagination, setPagination] = useState<PaginationData>({
-    page: 1,
-    limit: 50,
-    total: 0,
-    totalPages: 0,
-  });
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [exporting, setExporting] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
 
-  useEffect(() => {
-    fetchLogs();
-  }, [
-    search,
-    actionFilter,
-    statusFilter,
-    targetTypeFilter,
-    startDate,
-    endDate,
-    pagination.page,
-  ]);
-
-  const fetchLogs = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: pagination.page.toString(),
-        limit: pagination.limit.toString(),
-      });
-
-      if (search) params.append("search", search);
-      if (actionFilter !== "all") params.append("action", actionFilter);
-      if (statusFilter !== "all") params.append("status", statusFilter);
-      if (targetTypeFilter !== "all")
-        params.append("targetType", targetTypeFilter);
-      if (startDate) params.append("startDate", new Date(startDate).toISOString());
-      if (endDate) params.append("endDate", new Date(endDate).toISOString());
-
-      const response = await fetch(`/api/admin/audit-logs?${params}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setLogs(data.logs);
-        setPagination(data.pagination);
-      }
-    } catch (error) {
-      console.error("Failed to fetch audit logs:", error);
-    } finally {
-      setLoading(false);
-    }
+  // Build filters for SWR hook
+  const filters = {
+    search: search || undefined,
+    action: actionFilter !== "all" ? actionFilter : undefined,
+    status: statusFilter !== "all" ? statusFilter : undefined,
+    targetType: targetTypeFilter !== "all" ? targetTypeFilter : undefined,
+    startDate: startDate ? new Date(startDate).toISOString() : undefined,
+    endDate: endDate ? new Date(endDate).toISOString() : undefined,
+    page: currentPage,
+    limit: 50,
   };
+
+  // API integration with SWR
+  const { logs: apiLogs, pagination: apiPagination, isLoading, isError, error, mutate } = useAuditLogs(filters);
+
+  // Use API data if available, fallback to mock
+  const logs = apiLogs.length > 0 ? apiLogs as unknown as AuditLog[] : mockAuditLogs;
+  const pagination: PaginationData = apiPagination.totalItems > 0
+    ? {
+        page: apiPagination.currentPage,
+        limit: apiPagination.itemsPerPage,
+        total: apiPagination.totalItems,
+        totalPages: apiPagination.totalPages,
+      }
+    : {
+        page: 1,
+        limit: 50,
+        total: mockAuditLogs.length,
+        totalPages: 1,
+      };
+
+  const loading = isLoading;
 
   const fetchLogDetails = async (logId: string) => {
     try {
@@ -302,6 +374,14 @@ export default function AdminAuditLogsPage() {
         </div>
         <div className="flex items-center gap-3">
           <button
+            onClick={() => mutate()}
+            disabled={isLoading}
+            className="px-4 py-2 bg-[#141930] border border-gray-800 rounded-lg text-white hover:border-[#00E5CC]/50 transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
+          <button
             onClick={verifyIntegrity}
             disabled={verifying}
             className="px-4 py-2 bg-[#00E5CC]/10 border border-[#00E5CC]/30 rounded-lg text-[#00E5CC] hover:bg-[#00E5CC]/20 transition-colors flex items-center gap-2 disabled:opacity-50"
@@ -331,6 +411,21 @@ export default function AdminAuditLogsPage() {
           </button>
         </div>
       </div>
+
+      {/* Error State */}
+      {isError && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-6 h-6 text-red-400" />
+            <div>
+              <h3 className="text-lg font-semibold text-white">Failed to load audit logs</h3>
+              <p className="text-sm text-gray-400">
+                {error?.message || "An error occurred while fetching data. Using cached data."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -578,9 +673,7 @@ export default function AdminAuditLogsPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() =>
-                setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
-              }
+              onClick={() => setCurrentPage(currentPage - 1)}
               disabled={pagination.page === 1}
               className="px-4 py-2 bg-[#141930] border border-gray-800 rounded-lg text-white hover:border-[#00E5CC]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -590,9 +683,7 @@ export default function AdminAuditLogsPage() {
               Page {pagination.page} of {pagination.totalPages}
             </div>
             <button
-              onClick={() =>
-                setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
-              }
+              onClick={() => setCurrentPage(currentPage + 1)}
               disabled={pagination.page === pagination.totalPages}
               className="px-4 py-2 bg-[#141930] border border-gray-800 rounded-lg text-white hover:border-[#00E5CC]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >

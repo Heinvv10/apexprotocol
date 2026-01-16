@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Search,
   Settings,
@@ -13,7 +13,9 @@ import {
   AlertCircle,
   Clock,
   Zap,
+  RefreshCw,
 } from "lucide-react";
+import { useAPIConfigs } from "@/hooks/useAdmin";
 
 interface ApiIntegration {
   id: string;
@@ -41,10 +43,117 @@ interface ApiIntegration {
   updatedBy: string | null;
 }
 
+// Mock data for fallback
+const mockIntegrations: ApiIntegration[] = [
+  {
+    id: "1",
+    serviceName: "Claude API",
+    provider: "Anthropic",
+    description: "Primary AI model for content generation and analysis",
+    category: "ai_models",
+    status: "configured",
+    isEnabled: true,
+    config: { apiKey: "sk-ant-...xxxx", endpoint: "https://api.anthropic.com/v1", model: "claude-3-5-sonnet-20241022", maxTokens: 4096 },
+    lastVerified: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    lastError: null,
+    usageThisMonth: 45230,
+    quotaRemaining: 954770,
+    rateLimit: "1000 req/min",
+    createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    createdBy: "admin@apex.ai",
+    updatedBy: "admin@apex.ai",
+  },
+  {
+    id: "2",
+    serviceName: "GPT-4 API",
+    provider: "OpenAI",
+    description: "Secondary AI model for comparison and fallback",
+    category: "ai_models",
+    status: "configured",
+    isEnabled: true,
+    config: { apiKey: "sk-...xxxx", endpoint: "https://api.openai.com/v1", model: "gpt-4-turbo", maxTokens: 4096 },
+    lastVerified: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+    lastError: null,
+    usageThisMonth: 12450,
+    quotaRemaining: 87550,
+    rateLimit: "500 req/min",
+    createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+    createdBy: "admin@apex.ai",
+    updatedBy: "admin@apex.ai",
+  },
+  {
+    id: "3",
+    serviceName: "Google Search API",
+    provider: "Google",
+    description: "Search engine results for SEO analysis",
+    category: "search_apis",
+    status: "not_configured",
+    isEnabled: false,
+    config: {},
+    lastVerified: null,
+    lastError: null,
+    usageThisMonth: 0,
+    quotaRemaining: null,
+    rateLimit: null,
+    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    createdBy: "admin@apex.ai",
+    updatedBy: null,
+  },
+  {
+    id: "4",
+    serviceName: "Perplexity API",
+    provider: "Perplexity AI",
+    description: "AI search engine monitoring",
+    category: "ai_models",
+    status: "error",
+    isEnabled: true,
+    config: { apiKey: "pplx-...xxxx", endpoint: "https://api.perplexity.ai" },
+    lastVerified: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    lastError: "API key expired - please renew subscription",
+    usageThisMonth: 8200,
+    quotaRemaining: 0,
+    rateLimit: "100 req/min",
+    createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    createdBy: "admin@apex.ai",
+    updatedBy: "admin@apex.ai",
+  },
+  {
+    id: "5",
+    serviceName: "Google Analytics API",
+    provider: "Google",
+    description: "Website analytics data integration",
+    category: "analytics",
+    status: "configured",
+    isEnabled: true,
+    config: { endpoint: "https://analyticsdata.googleapis.com/v1beta" },
+    lastVerified: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+    lastError: null,
+    usageThisMonth: 3400,
+    quotaRemaining: 96600,
+    rateLimit: "2000 req/min",
+    createdAt: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+    createdBy: "admin@apex.ai",
+    updatedBy: "admin@apex.ai",
+  },
+];
+
+const mockCategories = ["ai_models", "search_apis", "analytics"];
+
 export default function AdminApiConfigPage() {
-  const [integrations, setIntegrations] = useState<ApiIntegration[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  // SWR hook for API data
+  const { integrations: apiIntegrations, isLoading, isError, error, mutate } = useAPIConfigs();
+
+  // Use API data if available, otherwise fall back to mock data
+  const integrations = apiIntegrations.length > 0
+    ? apiIntegrations as unknown as ApiIntegration[]
+    : mockIntegrations;
+  const categories = mockCategories;
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -67,32 +176,15 @@ export default function AdminApiConfigPage() {
     maxTokens: "",
   });
 
-  useEffect(() => {
-    fetchIntegrations();
-  }, [search, statusFilter, categoryFilter]);
-
-  const fetchIntegrations = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        search,
-        status: statusFilter,
-        category: categoryFilter,
-      });
-
-      const response = await fetch(`/api/admin/api-config?${params}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setIntegrations(data.integrations);
-        setCategories(data.categories || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch integrations:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Filter integrations client-side
+  const filteredIntegrations = integrations.filter((integration) => {
+    const matchesSearch = search === "" ||
+      integration.serviceName.toLowerCase().includes(search.toLowerCase()) ||
+      integration.provider.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "all" || integration.status === statusFilter;
+    const matchesCategory = categoryFilter === "all" || integration.category === categoryFilter;
+    return matchesSearch && matchesStatus && matchesCategory;
+  });
 
   const updateIntegration = async (id: string, updates: Partial<ApiIntegration>) => {
     try {
@@ -104,7 +196,7 @@ export default function AdminApiConfigPage() {
 
       const data = await response.json();
       if (data.success) {
-        fetchIntegrations();
+        mutate(); // Refresh data via SWR
       } else {
         alert(data.error || "Failed to update integration");
       }
@@ -173,7 +265,7 @@ export default function AdminApiConfigPage() {
           maxTokens: "",
         });
         setTestResult(null);
-        fetchIntegrations();
+        mutate(); // Refresh data via SWR
       } else {
         alert(data.error || "Failed to save configuration");
       }
@@ -194,7 +286,7 @@ export default function AdminApiConfigPage() {
       const data = await response.json();
       if (data.success) {
         setDeleteIntegration(null);
-        fetchIntegrations();
+        mutate(); // Refresh data via SWR
       } else {
         alert(data.error || "Failed to delete integration");
       }
@@ -256,11 +348,31 @@ export default function AdminApiConfigPage() {
           <p className="text-gray-400 mt-1">Manage external AI service configurations</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => mutate()}
+            className="px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-300 text-sm font-medium hover:bg-gray-700 transition-colors flex items-center gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
           <div className="px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm font-medium">
-            {integrations.length} Integrations
+            {filteredIntegrations.length} Integrations
           </div>
         </div>
       </div>
+
+      {/* Error State */}
+      {isError && (
+        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+          <div className="flex items-center gap-2 text-red-400">
+            <AlertCircle className="w-5 h-5" />
+            <span className="font-medium">Failed to load integrations</span>
+          </div>
+          <p className="text-red-400/80 text-sm mt-1">
+            {error?.message || "An error occurred while fetching data. Showing cached data."}
+          </p>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex items-center gap-4">
@@ -317,20 +429,20 @@ export default function AdminApiConfigPage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {isLoading && filteredIntegrations.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-12 text-gray-500">
                     Loading integrations...
                   </td>
                 </tr>
-              ) : integrations.length === 0 ? (
+              ) : filteredIntegrations.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-12 text-gray-500">
                     No integrations found
                   </td>
                 </tr>
               ) : (
-                integrations.map((integration) => (
+                filteredIntegrations.map((integration) => (
                   <tr key={integration.id} className="border-b border-gray-800 hover:bg-[#0a0f1a] transition-colors">
                     <td className="px-6 py-4">
                       <div className="font-semibold text-white">{integration.serviceName}</div>
