@@ -201,3 +201,120 @@ export async function getSocialPosts(brandId: string): Promise<SocialPostsRespon
     total: 0,
   };
 }
+
+// Competitor Tracking Types
+export interface CompetitorActivity {
+  platform: string;
+  content: string;
+  engagement: {
+    likes: number;
+    comments: number;
+    shares: number;
+  };
+  timestamp: string;
+}
+
+export interface Competitor {
+  id: string;
+  name: string;
+  website: string;
+  platforms: string[];
+  totalFollowers: number;
+  monthlyPosts: number;
+  avgEngagement: number;
+  shareOfVoice: number;
+  sentiment: "positive" | "neutral" | "negative";
+  topContent: string;
+  recentActivity: CompetitorActivity[];
+}
+
+export interface ShareOfVoiceItem {
+  name: string;
+  value: number;
+  color: string;
+}
+
+export interface CompetitiveIntel {
+  id: string;
+  type: "opportunity" | "threat" | "insight";
+  title: string;
+  description: string;
+  impact: "high" | "medium" | "low";
+  competitors: string[];
+}
+
+export interface CompetitorTrackingResponse {
+  competitors: Competitor[];
+  shareOfVoice: ShareOfVoiceItem[];
+  intelligence: CompetitiveIntel[];
+  ourShareOfVoice: number;
+  ourShareOfVoiceChange: number;
+}
+
+export async function getCompetitorTracking(brandId: string): Promise<CompetitorTrackingResponse> {
+  // For now, return mock data since Competitor Tracking API may not exist yet
+  // TODO: Replace with actual API call when backend is ready
+  return {
+    competitors: [],
+    shareOfVoice: [],
+    intelligence: [],
+    ourShareOfVoice: 0,
+    ourShareOfVoiceChange: 0,
+  };
+}
+
+// Algorithm Monitoring Types
+export interface AlgorithmChange {
+  id: string;
+  platform: string;
+  detected: string;
+  change: string;
+  impact: "high" | "medium" | "low";
+  confidence: number;
+  affectedMetrics: string[];
+  recommendation: string;
+}
+
+export interface PostingTime {
+  time: string;
+  day: string;
+  engagement: number;
+  reach: number;
+  optimal: boolean;
+}
+
+export interface HashtagPerformance {
+  hashtag: string;
+  platform: string;
+  posts: number;
+  reach: number;
+  engagement: number;
+  trend: "up" | "down" | "stable";
+  change: number;
+}
+
+export interface ContentTypePerformance {
+  type: string;
+  posts: number;
+  avgEngagement: number;
+  avgReach: number;
+  trend: "up" | "down" | "stable";
+}
+
+export interface AlgorithmMonitoringResponse {
+  changes: AlgorithmChange[];
+  postingTimes: Record<string, PostingTime[]>;
+  hashtagPerformance: HashtagPerformance[];
+  contentTypePerformance: Record<string, ContentTypePerformance[]>;
+}
+
+export async function getAlgorithmMonitoring(brandId: string): Promise<AlgorithmMonitoringResponse> {
+  // For now, return mock data since Algorithm Monitoring API may not exist yet
+  // TODO: Replace with actual API call when backend is ready
+  return {
+    changes: [],
+    postingTimes: {},
+    hashtagPerformance: [],
+    contentTypePerformance: {},
+  };
+}

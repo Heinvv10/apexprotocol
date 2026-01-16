@@ -31,7 +31,9 @@ import {
   ArrowUp,
   ArrowDown,
   Minus,
+  Loader2,
 } from "lucide-react";
+import { useAlgorithmMonitoring } from "@/hooks/useSocial";
 
 // Mock algorithm change detection data
 const mockAlgorithmChanges = [
@@ -199,6 +201,34 @@ export default function AlgorithmMonitoringPage() {
   const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
   const [timeRange, setTimeRange] = useState("30d");
 
+  // API data with fallback to mock data
+  const {
+    changes: apiChanges,
+    postingTimes: apiPostingTimes,
+    hashtagPerformance: apiHashtagPerformance,
+    contentTypePerformance: apiContentTypePerformance,
+    isLoading,
+    isError,
+    error
+  } = useAlgorithmMonitoring("default-brand");
+
+  // Use API data if available, otherwise use mock data
+  const algorithmChanges = apiChanges && apiChanges.length > 0
+    ? apiChanges
+    : mockAlgorithmChanges;
+
+  const postingTimes = Object.keys(apiPostingTimes).length > 0
+    ? apiPostingTimes
+    : mockPostingTimes;
+
+  const hashtagPerformance = apiHashtagPerformance && apiHashtagPerformance.length > 0
+    ? apiHashtagPerformance
+    : mockHashtagPerformance;
+
+  const contentTypePerformance = Object.keys(apiContentTypePerformance).length > 0
+    ? apiContentTypePerformance
+    : mockContentTypePerformance;
+
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
       case "twitter":
@@ -274,8 +304,14 @@ export default function AlgorithmMonitoringPage() {
 
   const filteredChanges =
     selectedPlatform === "all"
-      ? mockAlgorithmChanges
-      : mockAlgorithmChanges.filter((c) => c.platform === selectedPlatform);
+      ? algorithmChanges
+      : algorithmChanges.filter((c) => c.platform === selectedPlatform);
+
+  // Calculate stats from data
+  const highImpactCount = algorithmChanges.filter(c => c.impact === "high").length;
+  const avgConfidence = algorithmChanges.length > 0
+    ? Math.round(algorithmChanges.reduce((sum, c) => sum + c.confidence, 0) / algorithmChanges.length)
+    : 0;
 
   return (
     <div className="p-6 space-y-6">
@@ -305,6 +341,32 @@ export default function AlgorithmMonitoringPage() {
         </div>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
+          <span className="ml-2 text-muted-foreground">Loading algorithm data...</span>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-6 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-6 w-6 text-red-400" />
+            <div>
+              <h3 className="text-lg font-semibold text-white">Failed to load algorithm data</h3>
+              <p className="text-sm text-muted-foreground">
+                {error?.message || "An error occurred while fetching data. Using cached data."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {!isLoading && (
+      <>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card-secondary p-4">
@@ -312,7 +374,7 @@ export default function AlgorithmMonitoringPage() {
             <div>
               <p className="text-sm text-muted-foreground">Changes Detected</p>
               <div className="flex items-baseline gap-2 mt-1">
-                <p className="text-2xl font-bold text-white">{mockAlgorithmChanges.length}</p>
+                <p className="text-2xl font-bold text-white">{algorithmChanges.length}</p>
                 <span className="text-xs text-green-400">+2 this week</span>
               </div>
             </div>
@@ -325,8 +387,8 @@ export default function AlgorithmMonitoringPage() {
             <div>
               <p className="text-sm text-muted-foreground">Avg Confidence</p>
               <div className="flex items-baseline gap-2 mt-1">
-                <p className="text-2xl font-bold text-white">90%</p>
-                <span className="text-xs text-green-400">High accuracy</span>
+                <p className="text-2xl font-bold text-white">{avgConfidence}%</p>
+                <span className="text-xs text-green-400">{avgConfidence >= 80 ? 'High accuracy' : 'Moderate'}</span>
               </div>
             </div>
             <CheckCircle className="h-5 w-5 text-green-400" />
@@ -338,7 +400,7 @@ export default function AlgorithmMonitoringPage() {
             <div>
               <p className="text-sm text-muted-foreground">High Impact</p>
               <div className="flex items-baseline gap-2 mt-1">
-                <p className="text-2xl font-bold text-red-400">3</p>
+                <p className="text-2xl font-bold text-red-400">{highImpactCount}</p>
                 <span className="text-xs text-muted-foreground">Require action</span>
               </div>
             </div>
@@ -351,7 +413,7 @@ export default function AlgorithmMonitoringPage() {
             <div>
               <p className="text-sm text-muted-foreground">Platforms Monitored</p>
               <div className="flex items-baseline gap-2 mt-1">
-                <p className="text-2xl font-bold text-white">5</p>
+                <p className="text-2xl font-bold text-white">{Object.keys(postingTimes).length}</p>
                 <span className="text-xs text-green-400">All active</span>
               </div>
             </div>
@@ -457,7 +519,7 @@ export default function AlgorithmMonitoringPage() {
           <div className="card-secondary p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Optimal Posting Times by Platform</h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {Object.entries(mockPostingTimes).map(([platform, times]) => (
+              {Object.entries(postingTimes).map(([platform, times]) => (
                 <div key={platform} className="card-tertiary">
                   <div className="flex items-center gap-2 mb-4">
                     <div className={`flex items-center gap-2 px-3 py-1.5 rounded border ${getPlatformColor(platform)}`}>
@@ -511,7 +573,7 @@ export default function AlgorithmMonitoringPage() {
           <div className="card-secondary p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Top Performing Hashtags</h2>
             <div className="space-y-3">
-              {mockHashtagPerformance.map((hashtag, idx) => (
+              {hashtagPerformance.map((hashtag, idx) => (
                 <div key={idx} className="card-tertiary">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -557,7 +619,7 @@ export default function AlgorithmMonitoringPage() {
           <div className="card-secondary p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Content Type Performance by Platform</h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {Object.entries(mockContentTypePerformance).map(([platform, contentTypes]) => (
+              {Object.entries(contentTypePerformance).map(([platform, contentTypes]) => (
                 <div key={platform} className="card-tertiary">
                   <div className="flex items-center gap-2 mb-4">
                     <div className={`flex items-center gap-2 px-3 py-1.5 rounded border ${getPlatformColor(platform)}`}>
@@ -603,6 +665,8 @@ export default function AlgorithmMonitoringPage() {
           </div>
         </TabsContent>
       </Tabs>
+      </>
+      )}
     </div>
   );
 }

@@ -10,11 +10,15 @@ import {
   getSocialMetrics,
   getSocialSummary,
   getSocialPosts,
+  getCompetitorTracking,
+  getAlgorithmMonitoring,
   type SocialAccountsResponse,
   type SocialMentionsResponse,
   type SocialMetricsResponse,
   type SocialSummary,
   type SocialPostsResponse,
+  type CompetitorTrackingResponse,
+  type AlgorithmMonitoringResponse,
 } from "@/lib/api/social";
 
 /**
@@ -144,6 +148,65 @@ export function useSocialPosts(
   return {
     posts: data?.posts ?? [],
     total: data?.total ?? 0,
+    isLoading,
+    isError: !!error,
+    error,
+    mutate,
+  };
+}
+
+/**
+ * Hook to fetch competitor tracking data for a brand
+ */
+export function useCompetitorTracking(
+  brandId: string | null,
+  config?: SWRConfiguration<CompetitorTrackingResponse>
+) {
+  const { data, error, isLoading, mutate } = useSWR<CompetitorTrackingResponse>(
+    brandId ? `/api/social/competitors?brandId=${brandId}` : null,
+    () => (brandId ? getCompetitorTracking(brandId) : null),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      ...config,
+    }
+  );
+
+  return {
+    competitors: data?.competitors ?? [],
+    shareOfVoice: data?.shareOfVoice ?? [],
+    intelligence: data?.intelligence ?? [],
+    ourShareOfVoice: data?.ourShareOfVoice ?? 0,
+    ourShareOfVoiceChange: data?.ourShareOfVoiceChange ?? 0,
+    isLoading,
+    isError: !!error,
+    error,
+    mutate,
+  };
+}
+
+/**
+ * Hook to fetch algorithm monitoring data for a brand
+ */
+export function useAlgorithmMonitoring(
+  brandId: string | null,
+  config?: SWRConfiguration<AlgorithmMonitoringResponse>
+) {
+  const { data, error, isLoading, mutate } = useSWR<AlgorithmMonitoringResponse>(
+    brandId ? `/api/social/algorithm-monitoring?brandId=${brandId}` : null,
+    () => (brandId ? getAlgorithmMonitoring(brandId) : null),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      ...config,
+    }
+  );
+
+  return {
+    changes: data?.changes ?? [],
+    postingTimes: data?.postingTimes ?? {},
+    hashtagPerformance: data?.hashtagPerformance ?? [],
+    contentTypePerformance: data?.contentTypePerformance ?? {},
     isLoading,
     isError: !!error,
     error,

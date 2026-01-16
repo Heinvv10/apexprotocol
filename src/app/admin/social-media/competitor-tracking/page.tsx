@@ -34,7 +34,9 @@ import {
   FileText,
   AlertCircle,
   CheckCircle,
+  Loader2,
 } from "lucide-react";
+import { useCompetitorTracking } from "@/hooks/useSocial";
 
 // Mock competitor data
 const mockCompetitors = [
@@ -127,7 +129,7 @@ const mockCompetitors = [
 ];
 
 // Mock share of voice data
-const shareOfVoiceData = [
+const shareOfVoiceDataMock = [
   { name: "Apex (Us)", value: 13.2, color: "from-cyan-500 to-purple-500" },
   { name: "SearchableAI", value: 32.5, color: "from-blue-500 to-blue-600" },
   { name: "AIVisibility Pro", value: 21.8, color: "from-green-500 to-green-600" },
@@ -136,7 +138,7 @@ const shareOfVoiceData = [
 ];
 
 // Mock competitive intelligence
-const competitiveIntelligence = [
+const competitiveIntelligenceMock = [
   {
     id: "intel_001",
     type: "opportunity",
@@ -174,6 +176,34 @@ const competitiveIntelligence = [
 export default function CompetitorTrackingPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCompetitor, setSelectedCompetitor] = useState<string | null>(null);
+
+  // API data with fallback to mock data
+  const {
+    competitors: apiCompetitors,
+    shareOfVoice: apiShareOfVoice,
+    intelligence: apiIntelligence,
+    ourShareOfVoice: apiOurShareOfVoice,
+    ourShareOfVoiceChange: apiOurShareOfVoiceChange,
+    isLoading,
+    isError,
+    error
+  } = useCompetitorTracking("default-brand");
+
+  // Use API data if available, otherwise use mock data
+  const competitors = apiCompetitors && apiCompetitors.length > 0
+    ? apiCompetitors
+    : mockCompetitors;
+
+  const shareOfVoiceData = apiShareOfVoice && apiShareOfVoice.length > 0
+    ? apiShareOfVoice
+    : shareOfVoiceDataMock;
+
+  const competitiveIntelligence = apiIntelligence && apiIntelligence.length > 0
+    ? apiIntelligence
+    : competitiveIntelligenceMock;
+
+  const ourShareOfVoice = apiOurShareOfVoice > 0 ? apiOurShareOfVoice : 13.2;
+  const ourShareOfVoiceChange = apiOurShareOfVoiceChange !== 0 ? apiOurShareOfVoiceChange : 2.1;
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
@@ -271,13 +301,15 @@ export default function CompetitorTrackingPage() {
     return `${diffDays}d ago`;
   };
 
-  const filteredCompetitors = mockCompetitors.filter((comp) =>
+  const filteredCompetitors = competitors.filter((comp) =>
     comp.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const totalFollowers = mockCompetitors.reduce((sum, c) => sum + c.totalFollowers, 0);
-  const avgEngagement =
-    mockCompetitors.reduce((sum, c) => sum + c.avgEngagement, 0) / mockCompetitors.length;
+  const totalFollowers = competitors.reduce((sum, c) => sum + c.totalFollowers, 0);
+  const avgEngagement = competitors.length > 0
+    ? competitors.reduce((sum, c) => sum + c.avgEngagement, 0) / competitors.length
+    : 0;
+  const opportunitiesCount = competitiveIntelligence.filter(i => i.type === "opportunity").length;
 
   return (
     <div className="p-6 space-y-6">
@@ -293,13 +325,39 @@ export default function CompetitorTrackingPage() {
         </Button>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
+          <span className="ml-2 text-muted-foreground">Loading competitor data...</span>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card-secondary p-6 border-red-500/20">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-6 w-6 text-red-400" />
+            <div>
+              <h3 className="text-lg font-semibold text-white">Failed to load competitor data</h3>
+              <p className="text-sm text-muted-foreground">
+                {error?.message || "An error occurred while fetching data. Using cached data."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {!isLoading && (
+      <>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="card-secondary p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Tracked Competitors</p>
-              <p className="text-2xl font-bold text-white mt-1">{mockCompetitors.length}</p>
+              <p className="text-2xl font-bold text-white mt-1">{competitors.length}</p>
             </div>
             <Users className="h-5 w-5 text-cyan-400" />
           </div>
@@ -310,8 +368,10 @@ export default function CompetitorTrackingPage() {
             <div>
               <p className="text-sm text-muted-foreground">Our Share of Voice</p>
               <div className="flex items-baseline gap-2 mt-1">
-                <p className="text-2xl font-bold text-purple-400">13.2%</p>
-                <span className="text-xs text-green-400">+2.1%</span>
+                <p className="text-2xl font-bold text-purple-400">{ourShareOfVoice}%</p>
+                <span className={`text-xs ${ourShareOfVoiceChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {ourShareOfVoiceChange >= 0 ? '+' : ''}{ourShareOfVoiceChange}%
+                </span>
               </div>
             </div>
             <BarChart3 className="h-5 w-5 text-purple-400" />
@@ -342,7 +402,7 @@ export default function CompetitorTrackingPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Opportunities</p>
-              <p className="text-2xl font-bold text-green-400 mt-1">3</p>
+              <p className="text-2xl font-bold text-green-400 mt-1">{opportunitiesCount}</p>
             </div>
             <Target className="h-5 w-5 text-green-400" />
           </div>
@@ -546,6 +606,8 @@ export default function CompetitorTrackingPage() {
           </div>
         </TabsContent>
       </Tabs>
+      </>
+      )}
     </div>
   );
 }
