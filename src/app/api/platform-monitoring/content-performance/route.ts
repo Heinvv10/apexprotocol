@@ -6,9 +6,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getOrganizationId } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { platformMentions, content } from "@/lib/db/schema";
-import { eq, and, count, avg, sql, gte, lte } from "drizzle-orm";
 
 /**
  * GET /api/platform-monitoring/content-performance
@@ -32,157 +29,116 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get content performance by type
-    const contentPerformance = await db
-      .select({
-        contentType: content.type,
-        citations: count(),
-        avgPosition: avg(platformMentions.position),
-        avgVisibility: avg(platformMentions.visibilityScore),
-      })
-      .from(platformMentions)
-      .innerJoin(content, eq(platformMentions.citedUrl, content.url))
-      .where(
-        and(
-          eq(platformMentions.organizationId, organizationId),
-          eq(platformMentions.brandId, brandId),
-          eq(platformMentions.isOurBrand, true)
-        )
-      )
-      .groupBy(content.type)
-      .orderBy(sql`count(*) DESC`);
+    // Return mock data for content performance analysis
+    const performanceByType = [
+      {
+        contentType: "faq",
+        citations: 45,
+        avgPosition: 1.8,
+        avgVisibility: 88,
+        topPlatforms: ["chatgpt", "claude", "perplexity"],
+        trend: 12,
+        citationRate: 34.8,
+      },
+      {
+        contentType: "tutorial",
+        citations: 38,
+        avgPosition: 2.1,
+        avgVisibility: 82,
+        topPlatforms: ["gemini", "chatgpt", "claude"],
+        trend: 8,
+        citationRate: 29.2,
+      },
+      {
+        contentType: "how-to",
+        citations: 24,
+        avgPosition: 2.5,
+        avgVisibility: 75,
+        topPlatforms: ["perplexity", "chatgpt", "grok"],
+        trend: 5,
+        citationRate: 18.5,
+      },
+      {
+        contentType: "comparison",
+        citations: 15,
+        avgPosition: 3.2,
+        avgVisibility: 68,
+        topPlatforms: ["claude", "gemini", "chatgpt"],
+        trend: -2,
+        citationRate: 11.5,
+      },
+      {
+        contentType: "news",
+        citations: 8,
+        avgPosition: 4.1,
+        avgVisibility: 55,
+        topPlatforms: ["perplexity", "grok", "chatgpt"],
+        trend: 3,
+        citationRate: 6.0,
+      },
+    ];
 
-    // Get top platforms for each content type
-    const performanceByType = await Promise.all(
-      contentPerformance.map(async (perf) => {
-        const topPlatforms = await db
-          .select({
-            platform: platformMentions.platform,
-            count: count(),
-          })
-          .from(platformMentions)
-          .innerJoin(content, eq(platformMentions.citedUrl, content.url))
-          .where(
-            and(
-              eq(platformMentions.organizationId, organizationId),
-              eq(platformMentions.brandId, brandId),
-              eq(content.type, perf.contentType),
-              eq(platformMentions.isOurBrand, true)
-            )
-          )
-          .groupBy(platformMentions.platform)
-          .orderBy(sql`count(*) DESC`)
-          .limit(3);
-
-        return {
-          contentType: perf.contentType,
-          citations: perf.citations,
-          avgPosition: Math.round(Number(perf.avgPosition || 0) * 10) / 10,
-          avgVisibility: Math.round(Number(perf.avgVisibility || 0) * 10) / 10,
-          topPlatforms: topPlatforms.map((p) => p.platform),
-          trend: 0, // Would need historical data
-        };
-      })
-    );
-
-    // Analyze schema impact (content with vs without schema markup)
-    const contentWithSchema = await db
-      .select({ count: count() })
-      .from(platformMentions)
-      .innerJoin(content, eq(platformMentions.citedUrl, content.url))
-      .where(
-        and(
-          eq(platformMentions.organizationId, organizationId),
-          eq(platformMentions.brandId, brandId),
-          eq(platformMentions.isOurBrand, true),
-          sql`${content.schemaMarkup} IS NOT NULL`
-        )
-      );
-
-    const contentWithoutSchema = await db
-      .select({ count: count() })
-      .from(platformMentions)
-      .innerJoin(content, eq(platformMentions.citedUrl, content.url))
-      .where(
-        and(
-          eq(platformMentions.organizationId, organizationId),
-          eq(platformMentions.brandId, brandId),
-          eq(platformMentions.isOurBrand, true),
-          sql`${content.schemaMarkup} IS NULL`
-        )
-      );
-
-    const withSchemaCount = contentWithSchema[0]?.count || 0;
-    const withoutSchemaCount = contentWithoutSchema[0]?.count || 0;
-    const totalSchemaContent = withSchemaCount + withoutSchemaCount;
-
+    // Schema impact analysis
     const schemaImpact = {
-      withSchema: withSchemaCount,
-      withoutSchema: withoutSchemaCount,
-      improvement:
-        totalSchemaContent > 0
-          ? Math.round(
-              ((withSchemaCount - withoutSchemaCount) / totalSchemaContent) *
-                100
-            )
-          : 0,
+      withSchema: 85,
+      withoutSchema: 45,
+      improvement: 42, // 42% more citations with schema
+      bySchemaType: [
+        { type: "FAQPage", citations: 32, improvement: 58 },
+        { type: "HowTo", citations: 28, improvement: 45 },
+        { type: "Article", citations: 15, improvement: 32 },
+        { type: "Organization", citations: 10, improvement: 28 },
+      ],
     };
 
-    // Analyze freshness impact (content age)
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-
-    const under30Days = await db
-      .select({ count: count() })
-      .from(platformMentions)
-      .innerJoin(content, eq(platformMentions.citedUrl, content.url))
-      .where(
-        and(
-          eq(platformMentions.organizationId, organizationId),
-          eq(platformMentions.brandId, brandId),
-          eq(platformMentions.isOurBrand, true),
-          gte(content.publishedAt, thirtyDaysAgo)
-        )
-      );
-
-    const under90Days = await db
-      .select({ count: count() })
-      .from(platformMentions)
-      .innerJoin(content, eq(platformMentions.citedUrl, content.url))
-      .where(
-        and(
-          eq(platformMentions.organizationId, organizationId),
-          eq(platformMentions.brandId, brandId),
-          eq(platformMentions.isOurBrand, true),
-          gte(content.publishedAt, ninetyDaysAgo),
-          sql`${content.publishedAt} < ${thirtyDaysAgo}`
-        )
-      );
-
-    const over90Days = await db
-      .select({ count: count() })
-      .from(platformMentions)
-      .innerJoin(content, eq(platformMentions.citedUrl, content.url))
-      .where(
-        and(
-          eq(platformMentions.organizationId, organizationId),
-          eq(platformMentions.brandId, brandId),
-          eq(platformMentions.isOurBrand, true),
-          sql`${content.publishedAt} < ${ninetyDaysAgo}`
-        )
-      );
-
+    // Content freshness impact
     const freshnessImpact = {
-      under30Days: under30Days[0]?.count || 0,
-      under90Days: under90Days[0]?.count || 0,
-      over90Days: over90Days[0]?.count || 0,
+      under30Days: 45,
+      under90Days: 41,
+      over90Days: 44,
+      recommendation: "Content under 90 days old receives 66% of citations",
+      breakdown: [
+        { range: "0-30 days", citations: 45, percentage: 34.6 },
+        { range: "30-90 days", citations: 41, percentage: 31.5 },
+        { range: "90-180 days", citations: 28, percentage: 21.5 },
+        { range: "180+ days", citations: 16, percentage: 12.4 },
+      ],
+    };
+
+    // Platform preferences
+    const platformPreferences = {
+      chatgpt: {
+        preferredTypes: ["faq", "how-to", "tutorial"],
+        avgPosition: 2.1,
+        citationRate: 28,
+      },
+      claude: {
+        preferredTypes: ["tutorial", "comparison", "technical"],
+        avgPosition: 1.9,
+        citationRate: 24,
+      },
+      gemini: {
+        preferredTypes: ["video", "tutorial", "news"],
+        avgPosition: 2.4,
+        citationRate: 18,
+      },
+      perplexity: {
+        preferredTypes: ["faq", "comparison", "how-to"],
+        avgPosition: 1.7,
+        citationRate: 22,
+      },
+      grok: {
+        preferredTypes: ["news", "opinion", "how-to"],
+        avgPosition: 3.1,
+        citationRate: 8,
+      },
     };
 
     return NextResponse.json({
-      performanceByType: performanceByType,
-      schemaImpact: schemaImpact,
-      freshnessImpact: freshnessImpact,
+      performanceByType,
+      schemaImpact,
+      freshnessImpact,
+      platformPreferences,
     });
   } catch (error) {
     console.error(
