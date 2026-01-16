@@ -149,60 +149,51 @@ export interface SocialPostsResponse {
  */
 
 export async function getSocialAccounts(brandId: string): Promise<SocialAccountsResponse> {
-  // For now, return mock data since Social API may not exist yet
-  // TODO: Replace with actual API call when backend is ready
-  return {
-    accounts: [],
-    total: 0,
-  };
+  const response = await fetch(`${API_BASE_URL}/api/social?brandId=${brandId}&type=accounts`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  return handleResponse(response);
 }
 
 export async function getSocialMentions(brandId: string): Promise<SocialMentionsResponse> {
-  // For now, return mock data since Social API may not exist yet
-  // TODO: Replace with actual API call when backend is ready
-  return {
-    mentions: [],
-    total: 0,
-  };
+  const response = await fetch(`${API_BASE_URL}/api/social?brandId=${brandId}&type=mentions`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  return handleResponse(response);
 }
 
 export async function getSocialMetrics(brandId: string): Promise<SocialMetricsResponse> {
-  // For now, return mock data since Social API may not exist yet
-  // TODO: Replace with actual API call when backend is ready
-  return {
-    metrics: [],
-    total: 0,
-  };
+  const response = await fetch(`${API_BASE_URL}/api/social?brandId=${brandId}&type=metrics`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  return handleResponse(response);
 }
 
 export async function getSocialSummary(brandId: string): Promise<SocialSummary> {
-  // For now, return mock data since Social API may not exist yet
-  // TODO: Replace with actual API call when backend is ready
-  return {
-    brandId,
-    brandName: "",
-    summary: {
-      smoScore: 0,
-      smoTrend: "stable",
-      totalFollowers: 0,
-      totalEngagements: 0,
-      avgEngagementRate: 0,
-      avgSentiment: 0,
-      connectedAccounts: 0,
-      positiveMentions: 0,
-      negativeMentions: 0,
-      neutralMentions: 0,
+  const response = await fetch(`${API_BASE_URL}/api/social?brandId=${brandId}&type=summary`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
     },
-    breakdown: {
-      reach: 0,
-      engagement: 0,
-      sentiment: 50,
-      growth: 50,
-      consistency: 0,
-    },
-    dataSource: "calculated",
-    lastUpdated: new Date().toISOString(),
-  };
+    credentials: "include",
+  });
+
+  return handleResponse(response);
 }
 
 export async function getSocialPosts(brandId: string): Promise<SocialPostsResponse> {
