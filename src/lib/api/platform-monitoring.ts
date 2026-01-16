@@ -59,14 +59,17 @@ export interface ContentPerformance {
 /**
  * Fetch our platform mentions
  */
-export async function getPlatformMentions(): Promise<{
+export async function getPlatformMentions(brandId?: string | null): Promise<{
   mentions: PlatformMention[];
   platformStats: PlatformStats[];
   topCitedPages: TopCitedPage[];
   totalMentions: number;
   avgVisibility: number;
 }> {
-  const response = await fetch('/api/platform-monitoring/our-visibility');
+  const url = brandId
+    ? `/api/platform-monitoring/our-visibility?brandId=${brandId}`
+    : '/api/platform-monitoring/our-visibility';
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error('Failed to fetch platform mentions');
   }
@@ -76,7 +79,7 @@ export async function getPlatformMentions(): Promise<{
 /**
  * Fetch competitor platform mentions
  */
-export async function getCompetitorMentions(): Promise<{
+export async function getCompetitorMentions(brandId?: string | null): Promise<{
   mentions: CompetitorMention[];
   competitors: Array<{
     id?: string;
@@ -91,7 +94,10 @@ export async function getCompetitorMentions(): Promise<{
   }>;
   shareOfVoice: number;
 }> {
-  const response = await fetch('/api/platform-monitoring/competitor-visibility');
+  const url = brandId
+    ? `/api/platform-monitoring/competitor-visibility?brandId=${brandId}`
+    : '/api/platform-monitoring/competitor-visibility';
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error('Failed to fetch competitor mentions');
   }
@@ -101,7 +107,7 @@ export async function getCompetitorMentions(): Promise<{
 /**
  * Fetch content performance by type
  */
-export async function getContentPerformance(): Promise<{
+export async function getContentPerformance(brandId?: string | null): Promise<{
   performanceByType: ContentPerformance[];
   schemaImpact: {
     withSchema: number;
@@ -114,7 +120,10 @@ export async function getContentPerformance(): Promise<{
     over90Days: number;
   };
 }> {
-  const response = await fetch('/api/platform-monitoring/content-performance');
+  const url = brandId
+    ? `/api/platform-monitoring/content-performance?brandId=${brandId}`
+    : '/api/platform-monitoring/content-performance';
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error('Failed to fetch content performance');
   }

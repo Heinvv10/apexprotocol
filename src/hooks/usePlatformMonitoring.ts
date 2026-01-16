@@ -19,10 +19,12 @@ import {
 /**
  * Hook to fetch our platform mentions
  */
-export function usePlatformMentions() {
+export function usePlatformMentions(brandId?: string | null) {
   const { data, error, isLoading } = useSWR(
-    '/api/platform-monitoring/our-visibility',
-    getPlatformMentions,
+    brandId
+      ? `/api/platform-monitoring/our-visibility?brandId=${brandId}`
+      : '/api/platform-monitoring/our-visibility',
+    () => getPlatformMentions(brandId),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
@@ -45,10 +47,12 @@ export function usePlatformMentions() {
 /**
  * Hook to fetch competitor platform mentions
  */
-export function useCompetitorMentions() {
+export function useCompetitorMentions(brandId?: string | null) {
   const { data, error, isLoading } = useSWR(
-    '/api/platform-monitoring/competitor-visibility',
-    getCompetitorMentions,
+    brandId
+      ? `/api/platform-monitoring/competitor-visibility?brandId=${brandId}`
+      : '/api/platform-monitoring/competitor-visibility',
+    () => getCompetitorMentions(brandId),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
@@ -69,10 +73,12 @@ export function useCompetitorMentions() {
 /**
  * Hook to fetch content performance by type
  */
-export function useContentPerformance() {
+export function useContentPerformance(brandId?: string | null) {
   const { data, error, isLoading } = useSWR(
-    '/api/platform-monitoring/content-performance',
-    getContentPerformance,
+    brandId
+      ? `/api/platform-monitoring/content-performance?brandId=${brandId}`
+      : '/api/platform-monitoring/content-performance',
+    () => getContentPerformance(brandId),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
