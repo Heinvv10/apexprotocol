@@ -104,15 +104,15 @@ export interface PipelineResponse {
  */
 
 export async function getLeads(): Promise<LeadListResponse> {
-  // For now, return mock data since CRM API may not exist yet
-  // TODO: Replace with actual API call when backend is ready
-  return {
-    data: [],
-    meta: {
-      total: 0,
-      success: true,
+  const response = await fetch(`${API_BASE_URL}/api/crm/leads`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
     },
-  };
+    credentials: "include",
+  });
+
+  return handleResponse(response);
 }
 
 export async function getLead(id: string): Promise<{ data: Lead; meta: { success: boolean } }> {
@@ -132,15 +132,15 @@ export async function getLead(id: string): Promise<{ data: Lead; meta: { success
  */
 
 export async function getAccounts(): Promise<AccountListResponse> {
-  // For now, return mock data since CRM API may not exist yet
-  // TODO: Replace with actual API call when backend is ready
-  return {
-    data: [],
-    meta: {
-      total: 0,
-      success: true,
+  const response = await fetch(`${API_BASE_URL}/api/crm/accounts`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
     },
-  };
+    credentials: "include",
+  });
+
+  return handleResponse(response);
 }
 
 export async function getAccount(id: string): Promise<{ data: Account; meta: { success: boolean } }> {
@@ -160,14 +160,13 @@ export async function getAccount(id: string): Promise<{ data: Account; meta: { s
  */
 
 export async function getPipeline(): Promise<PipelineResponse> {
-  // For now, return mock data since CRM API may not exist yet
-  // TODO: Replace with actual API call when backend is ready
-  return {
-    data: [],
-    meta: {
-      total: 0,
-      totalValue: 0,
-      success: true,
+  const response = await fetch(`${API_BASE_URL}/api/crm/pipeline`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
     },
-  };
+    credentials: "include",
+  });
+
+  return handleResponse(response);
 }
