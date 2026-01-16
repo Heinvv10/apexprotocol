@@ -141,8 +141,9 @@ export default function SocialAnalyticsPage() {
   // Fetch metrics from API
   const { metrics, isLoading, isError, error } = useSocialMetrics(null);
 
-  // Use API data if available, fallback to mock data
-  const analytics = metrics.length > 0 ? { /* transform API data */ } : mockAnalytics;
+  // Use mock data (API transform not implemented yet)
+  // TODO: Implement proper API data transformation when backend is ready
+  const analytics = mockAnalytics;
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {

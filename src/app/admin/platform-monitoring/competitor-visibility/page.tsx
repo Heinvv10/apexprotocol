@@ -30,7 +30,7 @@ import {
 import { useCompetitorMentions } from "@/hooks/usePlatformMonitoring";
 
 // Mock competitor data
-const competitorData = [
+const mockCompetitorData = [
   {
     id: "comp_001",
     name: "SearchableAI",
@@ -157,7 +157,7 @@ export default function CompetitorVisibilityPage() {
   // API data with fallback to mock data
   const {
     mentions: apiMentions,
-    competitorData: apiCompetitors,
+    competitors: apiCompetitors,
     shareOfVoice: apiShareOfVoice,
     isLoading,
     isError,
@@ -165,7 +165,7 @@ export default function CompetitorVisibilityPage() {
   } = useCompetitorMentions();
 
   // Use API data if available, otherwise fallback to mock
-  const competitorData = apiCompetitors.length > 0 ? apiCompetitors : competitorData;
+  const competitorData = apiCompetitors.length > 0 ? apiCompetitors : mockCompetitorData;
 
   const getPlatformIcon = (platform: string) => {
     const colors = {
@@ -366,8 +366,8 @@ export default function CompetitorVisibilityPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Competitors</SelectItem>
-                  {competitorData.map((comp) => (
-                    <SelectItem key={comp.id} value={comp.id}>
+                  {competitorData.map((comp, idx) => (
+                    <SelectItem key={comp.id || `comp-${idx}`} value={comp.id || comp.name}>
                       {comp.name}
                     </SelectItem>
                   ))}
@@ -377,9 +377,9 @@ export default function CompetitorVisibilityPage() {
 
             <div className="space-y-3">
               {competitorData
-                .filter((comp) => selectedCompetitor === "all" || comp.id === selectedCompetitor)
+                .filter((comp) => selectedCompetitor === "all" || (comp.id || comp.name) === selectedCompetitor)
                 .map((comp, index) => (
-                  <div key={comp.id} className="card-tertiary">
+                  <div key={comp.id || `comp-detail-${index}`} className="card-tertiary">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div className="text-2xl font-bold text-gray-500 w-8">#{index + 1}</div>
@@ -418,7 +418,7 @@ export default function CompetitorVisibilityPage() {
                       <div>
                         <div className="text-sm text-gray-400 mb-2">Top Platforms</div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          {comp.topPlatforms.map((platform) => (
+                          {(comp.topPlatforms || []).map((platform) => (
                             <span
                               key={platform}
                               className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getPlatformIcon(
@@ -433,7 +433,7 @@ export default function CompetitorVisibilityPage() {
                       <div>
                         <div className="text-sm text-gray-400 mb-2">Top Queries</div>
                         <div className="flex flex-wrap gap-2">
-                          {comp.topQueries.map((query, qIndex) => (
+                          {(comp.topQueries || []).map((query, qIndex) => (
                             <span
                               key={qIndex}
                               className="px-2 py-1 rounded-full text-xs bg-white/5 text-gray-300"

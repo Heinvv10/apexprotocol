@@ -28,7 +28,7 @@ export function useAnalyticsDashboard(
 ) {
   const { data, error, isLoading, mutate } = useSWR<AnalyticsDashboard>(
     brandId ? `/api/analytics/dashboard?brandId=${brandId}` : null,
-    () => (brandId ? getAnalyticsDashboard(brandId) : null),
+    brandId ? () => getAnalyticsDashboard(brandId) : null,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
@@ -54,7 +54,7 @@ export function useUnifiedScore(
 ) {
   const { data, error, isLoading, mutate } = useSWR<UnifiedScore>(
     brandId ? `/api/analytics/unified-score?brandId=${brandId}` : null,
-    () => (brandId ? getUnifiedScore(brandId) : null),
+    brandId ? () => getUnifiedScore(brandId) : null,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,

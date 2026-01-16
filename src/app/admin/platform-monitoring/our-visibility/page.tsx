@@ -116,7 +116,7 @@ const mockPlatformMentions = [
 ];
 
 // Platform statistics
-const platformStats = [
+const mockPlatformStats = [
   { platform: "chatgpt", mentions: 342, avgPosition: 2.3, avgVisibility: 89, trend: 12 },
   { platform: "claude", mentions: 287, avgPosition: 1.8, avgVisibility: 93, trend: 18 },
   { platform: "gemini", mentions: 256, avgPosition: 2.9, avgVisibility: 85, trend: -5 },
@@ -127,7 +127,7 @@ const platformStats = [
 ];
 
 // Most cited pages
-const topCitedPages = [
+const mockTopCitedPages = [
   { page: "/features/geo-optimization", citations: 234, avgPosition: 1.8, platforms: ["chatgpt", "claude", "perplexity"] },
   { page: "/blog/aeo-complete-guide", citations: 198, avgPosition: 2.1, platforms: ["claude", "gemini", "chatgpt"] },
   { page: "/features/monitoring", citations: 176, avgPosition: 2.3, platforms: ["chatgpt", "gemini", "janus"] },
@@ -401,13 +401,13 @@ export default function OurVisibilityPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               placeholder="Search mentions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-[#0a0f1a] border-white/10"
-              icon={<Search className="w-4 h-4" />}
+              className="bg-[#0a0f1a] border-white/10 pl-10"
             />
           </div>
           <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>

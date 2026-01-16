@@ -47,11 +47,13 @@ export interface CompetitorMention {
 
 export interface ContentPerformance {
   contentType: string;
+  type?: string;
   citations: number;
   avgPosition: number;
   avgVisibility: number;
   topPlatforms: string[];
   trend: number;
+  schemaImpact?: string;
 }
 
 /**
@@ -77,11 +79,15 @@ export async function getPlatformMentions(): Promise<{
 export async function getCompetitorMentions(): Promise<{
   mentions: CompetitorMention[];
   competitors: Array<{
+    id?: string;
     name: string;
     mentions: number;
     avgPosition: number;
     avgVisibility: number;
+    shareOfVoice?: number;
     trend: number;
+    topPlatforms?: string[];
+    topQueries?: string[];
   }>;
   shareOfVoice: number;
 }> {

@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -25,7 +26,7 @@ const platformColors = {
 };
 
 // Mock data for content performance analysis
-const performanceByType = [
+const mockPerformanceByType = [
   {
     type: "FAQ Pages",
     icon: List,
@@ -160,7 +161,7 @@ export function ContentPerformanceAnalyzer() {
   } = useContentPerformance();
 
   // Use API data if available, otherwise fallback to mock
-  const performanceByType = apiPerformanceByType.length > 0 ? apiPerformanceByType : performanceByType;
+  const performanceByType = apiPerformanceByType.length > 0 ? apiPerformanceByType : mockPerformanceByType;
   const totalCitations = performanceByType.reduce((sum, item) => sum + (item.citations || 0), 0);
 
   return (
@@ -200,25 +201,30 @@ export function ContentPerformanceAnalyzer() {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {performanceByType.map((content) => {
-            const Icon = content.icon;
-            const sharePercentage = ((content.citations / totalCitations) * 100).toFixed(1);
+            // Type cast to handle union type - mock data has icon, API data doesn't
+            const contentAny = content as Record<string, unknown>;
+            const Icon = (contentAny.icon as React.ComponentType<{ className?: string }>) || FileText;
+            const citations = (content.citations || 0);
+            const sharePercentage = totalCitations > 0 ? ((citations / totalCitations) * 100).toFixed(1) : "0";
+
+            const contentType = (contentAny.type || contentAny.contentType || "Unknown") as string;
 
             return (
-              <Card key={content.type} className="p-4 bg-gray-800/50 border-gray-700">
+              <Card key={contentType} className="p-4 bg-gray-800/50 border-gray-700">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-cyan-500/10">
                       <Icon className="h-5 w-5 text-cyan-400" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-white">{content.type}</h4>
+                      <h4 className="font-semibold text-white">{contentType}</h4>
                       <p className="text-sm text-gray-400">
-                        {content.citations} citations ({sharePercentage}%)
+                        {citations} citations ({sharePercentage}%)
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 text-sm">
-                    {content.trend > 0 ? (
+                    {(content.trend || 0) > 0 ? (
                       <>
                         <TrendingUp className="h-4 w-4 text-green-400" />
                         <span className="text-green-400">+{content.trend}%</span>

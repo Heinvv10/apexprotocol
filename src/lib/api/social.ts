@@ -42,18 +42,30 @@ export interface SocialAccountsResponse {
 export interface SocialMention {
   id: string;
   platform: string;
+  author?: string;
   authorHandle?: string;
   authorName?: string;
+  authorAvatar?: string;
   authorAvatarUrl?: string;
   content?: string;
-  sentiment?: "positive" | "neutral" | "negative";
+  timestamp?: string;
+  sentiment?: "positive" | "neutral" | "negative" | string;
   sentimentScore?: number;
+  engagement?: {
+    likes?: number;
+    comments?: number;
+    shares?: number;
+    views?: number;
+  };
   engagementLikes?: number;
   engagementShares?: number;
   engagementComments?: number;
   engagementViews?: number;
   postTimestamp?: string;
   postUrl?: string;
+  isLead?: boolean;
+  leadScore?: number;
+  replied?: boolean;
 }
 
 export interface SocialMentionsResponse {

@@ -167,32 +167,48 @@ export default function AutomationPage() {
       seq.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (seq.description && seq.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
+    const seqAny = seq as Record<string, unknown>;
     const matchesTrigger =
-      triggerFilter === "all" || seq.trigger === triggerFilter;
+      triggerFilter === "all" || (seqAny.trigger || seqAny.triggerType) === triggerFilter;
 
+    const isActive = seqAny.status === "active" || seqAny.isActive === true;
     const matchesStatus =
       statusFilter === "all" ||
-      (statusFilter === "active" && seq.status === "active") ||
-      (statusFilter === "inactive" && seq.status !== "active");
+      (statusFilter === "active" && isActive) ||
+      (statusFilter === "inactive" && !isActive);
 
     return matchesSearch && matchesTrigger && matchesStatus;
   });
 
   // Calculate stats with safe field access
   const totalSequences = sequences.length;
-  const activeSequences = sequences.filter((s) => s.status === "active").length;
+  const activeSequences = sequences.filter((s) => {
+    const sAny = s as Record<string, unknown>;
+    return sAny.status === "active" || sAny.isActive === true;
+  }).length;
   const totalEnrollments = sequences.reduce(
-    (sum, s) => sum + (s.stats?.subscribers || 0),
+    (sum, s) => {
+      const sAny = s as Record<string, unknown>;
+      const statsObj = sAny.stats as Record<string, number> | undefined;
+      return sum + (statsObj?.subscribers || (sAny.enrollmentCount as number) || 0);
+    },
     0
   );
   const totalConversions = sequences.reduce(
-    (sum, s) => sum + (s.stats?.conversions || 0),
+    (sum, s) => {
+      const sAny = s as Record<string, unknown>;
+      const statsObj = sAny.stats as Record<string, number> | undefined;
+      return sum + (statsObj?.conversions || (sAny.conversionCount as number) || 0);
+    },
     0
   );
   const avgConversionRate =
     totalSequences > 0
-      ? sequences.reduce((sum, s) => sum + (s.stats?.conversionRate || 0), 0) /
-        totalSequences
+      ? sequences.reduce((sum, s) => {
+          const sAny = s as Record<string, unknown>;
+          const statsObj = sAny.stats as Record<string, number> | undefined;
+          return sum + (statsObj?.conversionRate || (sAny.conversionRate as number) || 0);
+        }, 0) / totalSequences
       : 0;
 
   const formatDate = (dateString: string) => {
@@ -431,11 +447,16 @@ export default function AutomationPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {filteredSequences.map((sequence) => {
-                const emailCount = sequence.emails?.length || 0;
-                const subscribers = sequence.stats?.subscribers || 0;
-                const conversions = sequence.stats?.conversions || 0;
-                const conversionRate = sequence.stats?.conversionRate || 0;
-                const isActive = sequence.status === "active";
+                const seqAny = sequence as Record<string, unknown>;
+                const statsObj = seqAny.stats as Record<string, number> | undefined;
+                const emailsArr = seqAny.emails as unknown[] | undefined;
+                const emailIdsArr = seqAny.emailIds as unknown[] | undefined;
+                const emailCount = emailsArr?.length || emailIdsArr?.length || 0;
+                const subscribers = statsObj?.subscribers || (seqAny.enrollmentCount as number) || 0;
+                const conversions = statsObj?.conversions || (seqAny.conversionCount as number) || 0;
+                const conversionRate = statsObj?.conversionRate || (seqAny.conversionRate as number) || 0;
+                const isActive = seqAny.status === "active" || seqAny.isActive === true;
+                const triggerValue = (seqAny.trigger || seqAny.triggerType) as string;
 
                 return (
                   <tr
@@ -461,10 +482,10 @@ export default function AutomationPage() {
                     <td className="px-4 py-3">
                       <span
                         className={`text-xs px-2 py-1 rounded text-white ${getTriggerColor(
-                          sequence.trigger
+                          triggerValue
                         )}`}
                       >
-                        {getTriggerLabel(sequence.trigger)}
+                        {getTriggerLabel(triggerValue)}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-white">

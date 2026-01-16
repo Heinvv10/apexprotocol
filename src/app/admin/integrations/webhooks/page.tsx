@@ -283,8 +283,8 @@ export default function WebhooksPage() {
   const { webhooks: apiWebhooks, isLoading, isError, error } = useWebhooksAdmin();
 
   // Use API data if available, otherwise use mock
-  const data = apiWebhooks?.webhooks && apiWebhooks.webhooks.length > 0
-    ? apiWebhooks.webhooks
+  const data = apiWebhooks && apiWebhooks.length > 0
+    ? apiWebhooks
     : webhooks;
 
   // Filter webhooks

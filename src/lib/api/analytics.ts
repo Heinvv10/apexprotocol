@@ -76,68 +76,172 @@ export interface AnalyticsSummary {
 }
 
 export interface SalesMetrics {
-  totalDeals: number;
-  dealsWon: number;
-  dealsLost: number;
-  dealsInProgress: number;
-  totalRevenue: number;
-  avgDealSize: number;
-  avgSalesCycle: number;
-  winRate: number;
-  pipelineByStage: Array<{
-    stage: string;
+  pipeline: {
+    totalValue: number;
+    totalChange: number;
+    dealCount: number;
+    avgDealSize: number;
+    avgDealSizeChange: number;
+    byStage: Array<{
+      stage: string;
+      count: number;
+      value: number;
+      avgAge: number;
+    }>;
+  };
+  conversions: {
+    prospectToQualification: number;
+    qualificationToProposal: number;
+    proposalToNegotiation: number;
+    negotiationToClosing: number;
+    closingToWon: number;
+    overallWinRate: number;
+  };
+  performance: {
+    dealsWon: number;
+    dealsLost: number;
+    avgSalesCycle: number;
+    avgSalesCycleChange: number;
+    revenue: number;
+    revenueChange: number;
+  };
+  dealSizeDistribution: Array<{
+    range: string;
     count: number;
     value: number;
+    percentage: number;
   }>;
-  revenueByMonth: Array<{
-    month: string;
-    revenue: number;
-    deals: number;
-  }>;
-  topSalesReps: Array<{
-    id: string;
+  topPerformers: Array<{
     name: string;
-    deals: number;
+    dealsWon: number;
     revenue: number;
+    avgDealSize: number;
+    winRate: number;
+    salesCycle: number;
+  }>;
+  lossReasons: Array<{
+    reason: string;
+    count: number;
+    percentage: number;
+  }>;
+  forecast: {
+    thisMonth: {
+      expected: number;
+      committed: number;
+      bestCase: number;
+      worstCase: number;
+    };
+    nextMonth: {
+      expected: number;
+      committed: number;
+      bestCase: number;
+      worstCase: number;
+    };
+    nextQuarter: {
+      expected: number;
+      committed: number;
+      bestCase: number;
+      worstCase: number;
+    };
+  };
+  sourcePerformance: Array<{
+    source: string;
+    leads: number;
+    conversions: number;
+    conversionRate: number;
+    revenue: number;
+    avgDealSize: number;
   }>;
 }
 
 export interface MarketingMetrics {
-  totalCampaigns: number;
-  activeCampaigns: number;
-  totalLeads: number;
-  leadsThisMonth: number;
-  costPerLead: number;
-  campaignROI: number;
-  emailOpenRate: number;
-  emailClickRate: number;
-  leadsBySource: Array<{
-    source: string;
-    leads: number;
-    cost: number;
+  overview: {
+    totalSpend: number;
+    totalSpendChange: number;
+    leadsGenerated: number;
+    leadsGeneratedChange: number;
+    costPerLead: number;
+    costPerLeadChange: number;
     roi: number;
-  }>;
+    roiChange: number;
+  };
+  emailPerformance: {
+    totalSent: number;
+    openRate: number;
+    openRateChange: number;
+    clickRate: number;
+    clickRateChange: number;
+    unsubscribeRate: number;
+    unsubscribeRateChange: number;
+    bounceRate: number;
+    bounceRateChange: number;
+  };
   campaignPerformance: Array<{
     id: string;
     name: string;
     type: string;
+    status: "active" | "completed" | "paused";
+    spend: number;
     leads: number;
     conversions: number;
-    spend: number;
+    revenue: number;
     roi: number;
+    startDate: string;
+    endDate: string;
   }>;
+  channelPerformance: Array<{
+    channel: string;
+    spend: number;
+    leads: number;
+    conversions: number;
+    revenue: number;
+    roi: number;
+    costPerLead: number;
+  }>;
+  contentPerformance: Array<{
+    title: string;
+    type: string;
+    views: number;
+    leads: number;
+    conversions: number;
+    conversionRate: number;
+    publishedDays: number;
+  }>;
+  audienceGrowth: {
+    totalContacts: number;
+    newThisMonth: number;
+    activeSubscribers: number;
+    unsubscribedThisMonth: number;
+    growthRate: number;
+  };
+  funnelMetrics: {
+    visitors: number;
+    leads: number;
+    mql: number;
+    sql: number;
+    customers: number;
+    visitorToLeadRate: number;
+    leadToMqlRate: number;
+    mqlToSqlRate: number;
+    sqlToCustomerRate: number;
+  };
 }
 
 export interface Report {
   id: string;
   name: string;
   type: "sales" | "marketing" | "analytics" | "custom";
+  category: string;
   description: string;
   schedule: "daily" | "weekly" | "monthly" | "on-demand";
+  format: "pdf" | "csv" | "xlsx" | "json";
   lastRun: string;
   nextRun: string;
   status: "active" | "paused" | "draft";
   recipients: string[];
+  metrics: string[];
+  createdBy: string;
+  createdAt: string;
 }
 
 export interface ReportsList {
@@ -204,17 +308,39 @@ export async function getSalesMetrics(): Promise<SalesMetrics> {
   // For now, return mock data since Analytics API may not exist yet
   // TODO: Replace with actual API call when backend is ready
   return {
-    totalDeals: 0,
-    dealsWon: 0,
-    dealsLost: 0,
-    dealsInProgress: 0,
-    totalRevenue: 0,
-    avgDealSize: 0,
-    avgSalesCycle: 0,
-    winRate: 0,
-    pipelineByStage: [],
-    revenueByMonth: [],
-    topSalesReps: [],
+    pipeline: {
+      totalValue: 0,
+      totalChange: 0,
+      dealCount: 0,
+      avgDealSize: 0,
+      avgDealSizeChange: 0,
+      byStage: [],
+    },
+    conversions: {
+      prospectToQualification: 0,
+      qualificationToProposal: 0,
+      proposalToNegotiation: 0,
+      negotiationToClosing: 0,
+      closingToWon: 0,
+      overallWinRate: 0,
+    },
+    performance: {
+      dealsWon: 0,
+      dealsLost: 0,
+      avgSalesCycle: 0,
+      avgSalesCycleChange: 0,
+      revenue: 0,
+      revenueChange: 0,
+    },
+    dealSizeDistribution: [],
+    topPerformers: [],
+    lossReasons: [],
+    forecast: {
+      thisMonth: { expected: 0, committed: 0, bestCase: 0, worstCase: 0 },
+      nextMonth: { expected: 0, committed: 0, bestCase: 0, worstCase: 0 },
+      nextQuarter: { expected: 0, committed: 0, bestCase: 0, worstCase: 0 },
+    },
+    sourcePerformance: [],
   };
 }
 
@@ -222,16 +348,48 @@ export async function getMarketingMetrics(): Promise<MarketingMetrics> {
   // For now, return mock data since Analytics API may not exist yet
   // TODO: Replace with actual API call when backend is ready
   return {
-    totalCampaigns: 0,
-    activeCampaigns: 0,
-    totalLeads: 0,
-    leadsThisMonth: 0,
-    costPerLead: 0,
-    campaignROI: 0,
-    emailOpenRate: 0,
-    emailClickRate: 0,
-    leadsBySource: [],
+    overview: {
+      totalSpend: 0,
+      totalSpendChange: 0,
+      leadsGenerated: 0,
+      leadsGeneratedChange: 0,
+      costPerLead: 0,
+      costPerLeadChange: 0,
+      roi: 0,
+      roiChange: 0,
+    },
+    emailPerformance: {
+      totalSent: 0,
+      openRate: 0,
+      openRateChange: 0,
+      clickRate: 0,
+      clickRateChange: 0,
+      unsubscribeRate: 0,
+      unsubscribeRateChange: 0,
+      bounceRate: 0,
+      bounceRateChange: 0,
+    },
     campaignPerformance: [],
+    channelPerformance: [],
+    contentPerformance: [],
+    audienceGrowth: {
+      totalContacts: 0,
+      newThisMonth: 0,
+      activeSubscribers: 0,
+      unsubscribedThisMonth: 0,
+      growthRate: 0,
+    },
+    funnelMetrics: {
+      visitors: 0,
+      leads: 0,
+      mql: 0,
+      sql: 0,
+      customers: 0,
+      visitorToLeadRate: 0,
+      leadToMqlRate: 0,
+      mqlToSqlRate: 0,
+      sqlToCustomerRate: 0,
+    },
   };
 }
 

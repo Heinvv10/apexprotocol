@@ -440,7 +440,7 @@ export default function EmailListDetailPage({ params }: { params: Promise<{ id: 
                 <div className="flex items-center justify-between py-2 border-b border-border">
                   <span className="text-muted-foreground">Automation</span>
                   <span className="text-white">
-                    {list.metadata.automation ? (
+                    {list.metadata?.automation ? (
                       <span className="px-2 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-medium">
                         Enabled
                       </span>
@@ -458,7 +458,7 @@ export default function EmailListDetailPage({ params }: { params: Promise<{ id: 
                 <div className="flex items-center justify-between py-2 border-b border-border">
                   <span className="text-muted-foreground">ListMonk ID</span>
                   <span className="text-white font-mono text-sm">
-                    {list.metadata.listmonkId}
+                    {list.metadata?.listmonkId || "N/A"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between py-2">

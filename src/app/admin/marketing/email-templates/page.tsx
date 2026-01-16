@@ -228,12 +228,14 @@ export default function EmailTemplatesPage() {
 
   // Filter templates
   const filteredTemplates = templates.filter((template) => {
+    const tags = template.tags || [];
+    const description = template.description || "";
     const matchesSearch =
       searchQuery === "" ||
       template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       template.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesStatus = statusFilter === "all" || template.status === statusFilter;
     const matchesCategory = categoryFilter === "all" || template.category === categoryFilter;
     return matchesSearch && matchesStatus && matchesCategory;
@@ -494,7 +496,7 @@ export default function EmailTemplatesPage() {
                   </h3>
                   <p className="text-xs text-muted-foreground mt-1">{template.description}</p>
                 </div>
-                {getStatusBadge(template.status)}
+                {getStatusBadge(template.status || "active")}
               </div>
 
               {/* Subject Line */}
@@ -506,7 +508,7 @@ export default function EmailTemplatesPage() {
               {/* Category and Tags */}
               <div className="flex flex-wrap gap-2">
                 {getCategoryBadge(template.category)}
-                {template.tags.slice(0, 2).map((tag) => (
+                {(template.tags || []).slice(0, 2).map((tag) => (
                   <span
                     key={tag}
                     className="px-2 py-1 rounded-full bg-background/50 text-muted-foreground text-xs"
@@ -514,9 +516,9 @@ export default function EmailTemplatesPage() {
                     {tag}
                   </span>
                 ))}
-                {template.tags.length > 2 && (
+                {(template.tags || []).length > 2 && (
                   <span className="px-2 py-1 rounded-full bg-background/50 text-muted-foreground text-xs">
-                    +{template.tags.length - 2}
+                    +{(template.tags || []).length - 2}
                   </span>
                 )}
               </div>
@@ -526,15 +528,15 @@ export default function EmailTemplatesPage() {
                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/50">
                   <div>
                     <p className="text-xs text-muted-foreground">Uses</p>
-                    <p className="text-sm font-semibold text-white">{template.useCount.toLocaleString()}</p>
+                    <p className="text-sm font-semibold text-white">{(template.useCount || 0).toLocaleString()}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Open Rate</p>
-                    <p className="text-sm font-semibold text-cyan-400">{template.openRate.toFixed(1)}%</p>
+                    <p className="text-sm font-semibold text-cyan-400">{(template.openRate || 0).toFixed(1)}%</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Click Rate</p>
-                    <p className="text-sm font-semibold text-purple-400">{template.clickRate.toFixed(1)}%</p>
+                    <p className="text-sm font-semibold text-purple-400">{(template.clickRate || 0).toFixed(1)}%</p>
                   </div>
                 </div>
               )}
@@ -543,7 +545,7 @@ export default function EmailTemplatesPage() {
               <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  <span>Last used: {formatDate(template.lastUsed)}</span>
+                  <span>Last used: {formatDate(template.lastUsed || null)}</span>
                 </div>
               </div>
 

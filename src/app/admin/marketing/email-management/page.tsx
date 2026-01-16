@@ -466,33 +466,33 @@ export default function EmailManagementPage() {
                   <td className="px-4 py-3">
                     <div>
                       <p className="text-white font-medium">
-                        {formatNumber(list.subscriberCount)}
+                        {formatNumber(list.subscriberCount ?? (list as { subscribers?: number }).subscribers ?? 0)}
                       </p>
                       <p className="text-xs text-red-400">
-                        {list.unsubscribeCount} unsubscribed
+                        {list.unsubscribeCount || 0} unsubscribed
                       </p>
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     <p className="text-cyan-400 font-medium">
-                      {list.openRate.toFixed(1)}%
+                      {(list.openRate || 0).toFixed(1)}%
                     </p>
                   </td>
                   <td className="px-4 py-3">
                     <p className="text-purple-400 font-medium">
-                      {list.clickRate.toFixed(1)}%
+                      {(list.clickRate || 0).toFixed(1)}%
                     </p>
                   </td>
                   <td className="px-4 py-3">
-                    {list.growthRate > 0 ? (
+                    {(list.growthRate || 0) > 0 ? (
                       <p className="text-green-400 font-medium">
-                        +{list.growthRate.toFixed(1)}%
+                        +{(list.growthRate || 0).toFixed(1)}%
                       </p>
                     ) : (
                       <p className="text-gray-400 font-medium">0%</p>
                     )}
                   </td>
-                  <td className="px-4 py-3">{getStatusBadge(list.status)}</td>
+                  <td className="px-4 py-3">{getStatusBadge(list.status || "active")}</td>
                   <td className="px-4 py-3">
                     <p className="text-sm text-muted-foreground">
                       {formatDate(list.createdAt)}

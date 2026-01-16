@@ -35,7 +35,7 @@ import {
 import { useContentCalendar } from "@/hooks/useMarketing";
 
 // Mock content calendar data
-const contentItems = [
+const mockContentItems = [
   {
     id: "content_001",
     title: "New Feature Announcement: AI-Powered Insights",
@@ -215,7 +215,7 @@ export default function ContentCalendarPage() {
 
   // API data with fallback to mock data
   const { events: apiEvents, isLoading, isError, error } = useContentCalendar();
-  const contentItems = apiEvents.length > 0 ? apiEvents : contentItems;
+  const contentItems = apiEvents.length > 0 ? apiEvents : mockContentItems;
 
   // Calculate stats
   const totalItems = contentItems.length;
@@ -258,7 +258,10 @@ export default function ContentCalendarPage() {
   const getContentForDate = (date: number) => {
     const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), date);
     return contentItems.filter((item) => {
-      const itemDate = new Date(item.publishDate);
+      const itemAny = item as Record<string, unknown>;
+      const dateStr = (itemAny.publishDate || itemAny.scheduledDate) as string | undefined;
+      if (!dateStr) return false;
+      const itemDate = new Date(dateStr);
       return (
         itemDate.getFullYear() === targetDate.getFullYear() &&
         itemDate.getMonth() === targetDate.getMonth() &&
@@ -269,17 +272,20 @@ export default function ContentCalendarPage() {
 
   // Filter content items
   const filteredItems = contentItems.filter((item) => {
+    const itemAny = item as Record<string, unknown>;
+    const tags = (itemAny.tags || []) as string[];
+    const channel = itemAny.channel as string | undefined;
     const matchesSearch =
       searchQuery === "" ||
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesStatus = statusFilter === "all" || item.status === statusFilter;
-    const matchesChannel = channelFilter === "all" || item.channel === channelFilter;
+    const matchesChannel = channelFilter === "all" || channel === channelFilter;
     return matchesSearch && matchesStatus && matchesChannel;
   });
 
-  const getChannelIcon = (channel: string) => {
-    switch (channel) {
+  const getChannelIcon = (channel: string | undefined) => {
+    switch (channel || "blog") {
       case "email":
         return <Mail className="h-3 w-3" />;
       case "twitter":
@@ -297,7 +303,7 @@ export default function ContentCalendarPage() {
     }
   };
 
-  const getChannelColor = (channel: string) => {
+  const getChannelColor = (channel: string | undefined) => {
     const colors: Record<string, string> = {
       email: "bg-purple-500/10 text-purple-400 border-purple-500/30",
       twitter: "bg-blue-500/10 text-blue-400 border-blue-500/30",
@@ -306,7 +312,7 @@ export default function ContentCalendarPage() {
       youtube: "bg-red-500/10 text-red-400 border-red-500/30",
       blog: "bg-green-500/10 text-green-400 border-green-500/30",
     };
-    return colors[channel] || "bg-gray-500/10 text-gray-400 border-gray-500/30";
+    return colors[channel || "blog"] || "bg-gray-500/10 text-gray-400 border-gray-500/30";
   };
 
   const getStatusBadge = (status: string) => {
@@ -355,12 +361,14 @@ export default function ContentCalendarPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   };
 
-  const formatTime = (dateString: string) => {
+  const formatTime = (dateString: string | undefined) => {
+    if (!dateString) return "";
     const date = new Date(dateString);
     return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   };
@@ -640,7 +648,7 @@ export default function ContentCalendarPage() {
                       <span>By {item.author}</span>
                       <span>•</span>
                       <span>Assigned to {item.assignee}</span>
-                      {item.wordCount > 0 && (
+                      {(item.wordCount ?? 0) > 0 && (
                         <>
                           <span>•</span>
                           <span>{item.wordCount} words</span>
@@ -659,7 +667,7 @@ export default function ContentCalendarPage() {
 
                 <div className="flex items-center justify-between pt-3 border-t border-border/50">
                   <div className="flex flex-wrap gap-2">
-                    {item.tags.map((tag) => (
+                    {(item.tags || []).map((tag) => (
                       <span key={tag} className="px-2 py-1 rounded-full bg-background/50 text-xs text-muted-foreground">
                         {tag}
                       </span>

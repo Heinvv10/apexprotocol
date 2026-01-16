@@ -54,19 +54,19 @@ export default function MarketingPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="card-secondary p-4">
                 <p className="text-sm text-muted-foreground">Total Campaigns</p>
-                <p className="text-2xl font-bold text-white mt-1">{overview.totalCampaigns || 0}</p>
+                <p className="text-2xl font-bold text-white mt-1">{overview.campaigns?.total || 0}</p>
               </div>
               <div className="card-secondary p-4">
                 <p className="text-sm text-muted-foreground">Active Sequences</p>
-                <p className="text-2xl font-bold text-cyan-400 mt-1">{overview.activeSequences || 0}</p>
+                <p className="text-2xl font-bold text-cyan-400 mt-1">{overview.sequences?.active || 0}</p>
               </div>
               <div className="card-secondary p-4">
                 <p className="text-sm text-muted-foreground">Email Lists</p>
-                <p className="text-2xl font-bold text-purple-400 mt-1">{overview.emailLists || 0}</p>
+                <p className="text-2xl font-bold text-purple-400 mt-1">{overview.emailLists?.total || 0}</p>
               </div>
               <div className="card-secondary p-4">
                 <p className="text-sm text-muted-foreground">Total Subscribers</p>
-                <p className="text-2xl font-bold text-green-400 mt-1">{(overview.totalSubscribers || 0).toLocaleString()}</p>
+                <p className="text-2xl font-bold text-green-400 mt-1">{(overview.emailLists?.totalSubscribers || 0).toLocaleString()}</p>
               </div>
             </div>
           )}

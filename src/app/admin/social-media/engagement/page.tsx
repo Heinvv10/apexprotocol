@@ -483,27 +483,34 @@ export default function EngagementPage() {
                       )}
                     </div>
                     <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      {formatRelativeTime(mention.timestamp)}
+                      {formatRelativeTime(mention.timestamp || new Date().toISOString())}
                     </span>
                   </div>
                   <p className="text-white mb-3">{mention.content}</p>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 text-muted-foreground text-sm">
-                      <span className="flex items-center gap-1">
-                        <Heart className="h-4 w-4" />
-                        {mention.engagement.likes}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MessageCircle className="h-4 w-4" />
-                        {mention.engagement.replies}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Share2 className="h-4 w-4" />
-                        {mention.engagement.shares}
-                      </span>
+                      {(() => {
+                        const eng = mention.engagement as Record<string, number> | undefined;
+                        return (
+                          <>
+                            <span className="flex items-center gap-1">
+                              <Heart className="h-4 w-4" />
+                              {eng?.likes || 0}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <MessageCircle className="h-4 w-4" />
+                              {eng?.replies || eng?.comments || 0}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Share2 className="h-4 w-4" />
+                              {eng?.shares || 0}
+                            </span>
+                          </>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center gap-2">
-                      {getSentimentBadge(mention.sentiment)}
+                      {getSentimentBadge(mention.sentiment || "neutral")}
                       {mention.replied ? (
                         <span className="px-2 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-medium flex items-center gap-1">
                           <CheckCircle className="h-3 w-3" />

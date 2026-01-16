@@ -95,7 +95,7 @@ const statusColors = {
   "closed-lost": "bg-red-500/20 text-red-400",
 };
 
-const sourceLabels = {
+const sourceLabels: Record<string, string> = {
   website: "Website",
   email: "Email",
   referral: "Referral",

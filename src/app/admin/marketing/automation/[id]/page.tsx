@@ -136,17 +136,19 @@ export default function SequenceDetailPage({ params }: { params: Promise<{ id: s
   const emails = mockEmailDetails[id as keyof typeof mockEmailDetails] || [];
   const enrolledLeads = mockEnrolledLeads[id as keyof typeof mockEnrolledLeads] || [];
 
-  // Safe field access
-  const subscribers = sequence.stats?.subscribers || 0;
-  const conversions = sequence.stats?.conversions || 0;
-  const conversionRate = sequence.stats?.conversionRate || 0;
-  const sent = sequence.stats?.sent || 0;
-  const opened = sequence.stats?.opened || 0;
-  const clicked = sequence.stats?.clicked || 0;
-  const openRate = sequence.stats?.openRate || 0;
-  const clickRate = sequence.stats?.clickRate || 0;
-  const emailCount = sequence.emails?.length || 0;
-  const isActive = sequence.status === "active";
+  // Safe field access - handle both API format (stats object) and mock format (flat fields)
+  const sequenceAny = sequence as Record<string, unknown>;
+  const statsObj = sequenceAny.stats as Record<string, number> | undefined;
+  const subscribers = statsObj?.subscribers || (sequenceAny.enrollmentCount as number) || 0;
+  const conversions = statsObj?.conversions || (sequenceAny.conversionCount as number) || 0;
+  const conversionRate = statsObj?.conversionRate || (sequenceAny.conversionRate as number) || 0;
+  const sent = statsObj?.sent || 0;
+  const opened = statsObj?.opened || 0;
+  const clicked = statsObj?.clicked || 0;
+  const openRate = statsObj?.openRate || 0;
+  const clickRate = statsObj?.clickRate || 0;
+  const emailCount = (sequenceAny.emails as unknown[])?.length || (sequenceAny.emailIds as string[])?.length || 0;
+  const isActive = sequenceAny.status === "active" || sequenceAny.isActive === true;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -367,16 +369,16 @@ export default function SequenceDetailPage({ params }: { params: Promise<{ id: s
                   <p className="text-sm text-muted-foreground">Trigger Type</p>
                   <span
                     className={`text-sm mt-1 inline-block px-2 py-1 rounded text-white ${getTriggerColor(
-                      sequence.triggerType
+                      sequence.triggerType || "immediate"
                     )}`}
                   >
-                    {getTriggerLabel(sequence.triggerType)}
+                    {getTriggerLabel(sequence.triggerType || "immediate")}
                   </span>
                 </div>
-                {sequence.triggerDelay > 0 && (
+                {(sequence.triggerDelay ?? 0) > 0 && (
                   <div>
                     <p className="text-sm text-muted-foreground">Trigger Delay</p>
-                    <p className="text-white mt-1">{formatDelay(sequence.triggerDelay)}</p>
+                    <p className="text-white mt-1">{formatDelay(sequence.triggerDelay ?? 0)}</p>
                   </div>
                 )}
                 <div>

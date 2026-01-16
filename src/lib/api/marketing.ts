@@ -37,6 +37,12 @@ export interface Campaign {
   endDate?: string;
   createdAt: string;
   updatedAt?: string;
+  metadata?: {
+    subjects?: string[];
+    abTest?: boolean;
+    winner?: "A" | "B";
+    [key: string]: unknown;
+  };
 }
 
 export interface CampaignListResponse {
@@ -63,12 +69,22 @@ export interface EmailList {
   name: string;
   description?: string;
   subscribers: number;
+  subscriberCount?: number;
   activeSubscribers?: number;
+  unsubscribeCount?: number;
+  bounceCount?: number;
   openRate?: number;
   clickRate?: number;
   growthRate?: number;
+  status?: string;
   createdAt: string;
   updatedAt?: string;
+  metadata?: {
+    tags?: string[];
+    automation?: boolean;
+    listmonkId?: string;
+    [key: string]: unknown;
+  };
 }
 
 export interface EmailListResponse {
@@ -317,10 +333,18 @@ export interface Sequence {
   id: string;
   name: string;
   description?: string;
-  status: "active" | "draft" | "paused";
-  trigger: "immediate" | "delayed" | "event" | "behavior";
-  emails: SequenceEmail[];
-  stats: {
+  status?: "active" | "draft" | "paused";
+  trigger?: "immediate" | "delayed" | "event" | "behavior";
+  triggerType?: string;
+  triggerDelay?: number;
+  emails?: SequenceEmail[];
+  emailIds?: string[];
+  isTemplate?: boolean;
+  isActive?: boolean;
+  enrollmentCount?: number;
+  conversionCount?: number;
+  conversionRate?: number;
+  stats?: {
     subscribers: number;
     sent: number;
     opened: number;
@@ -350,9 +374,16 @@ export interface EmailTemplate {
   id: string;
   name: string;
   subject: string;
-  content: string;
+  content?: string;
+  description?: string;
   category: "welcome" | "promotional" | "transactional" | "newsletter" | "custom";
-  stats: {
+  status?: string;
+  useCount?: number;
+  openRate?: number;
+  clickRate?: number;
+  lastUsed?: string;
+  tags?: string[];
+  stats?: {
     sent: number;
     opened: number;
     clicked: number;
@@ -379,11 +410,18 @@ export interface CalendarEvent {
   id: string;
   title: string;
   type: "email" | "social" | "blog" | "webinar" | "event";
-  status: "draft" | "scheduled" | "published" | "cancelled";
-  scheduledDate: string;
+  status: "draft" | "scheduled" | "published" | "cancelled" | "in_review" | "in_progress";
+  scheduledDate?: string;
+  publishDate?: string;
   campaignId?: string;
   assignee?: string;
   description?: string;
+  channel?: string;
+  author?: string;
+  tags?: string[];
+  wordCount?: number;
+  approver?: string | null;
+  approvedAt?: string | null;
 }
 
 export interface ContentCalendarResponse {

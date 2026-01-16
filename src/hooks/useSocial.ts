@@ -30,7 +30,7 @@ export function useSocialAccounts(
 ) {
   const { data, error, isLoading, mutate } = useSWR<SocialAccountsResponse>(
     brandId ? `/api/social/accounts?brandId=${brandId}` : null,
-    () => (brandId ? getSocialAccounts(brandId) : null),
+    brandId ? () => getSocialAccounts(brandId) : null,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
@@ -57,7 +57,7 @@ export function useSocialMentions(
 ) {
   const { data, error, isLoading, mutate } = useSWR<SocialMentionsResponse>(
     brandId ? `/api/social/mentions?brandId=${brandId}` : null,
-    () => (brandId ? getSocialMentions(brandId) : null),
+    brandId ? () => getSocialMentions(brandId) : null,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
@@ -84,7 +84,7 @@ export function useSocialMetrics(
 ) {
   const { data, error, isLoading, mutate } = useSWR<SocialMetricsResponse>(
     brandId ? `/api/social/metrics?brandId=${brandId}` : null,
-    () => (brandId ? getSocialMetrics(brandId) : null),
+    brandId ? () => getSocialMetrics(brandId) : null,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
@@ -111,7 +111,7 @@ export function useSocialSummary(
 ) {
   const { data, error, isLoading, mutate } = useSWR<SocialSummary>(
     brandId ? `/api/social/summary?brandId=${brandId}` : null,
-    () => (brandId ? getSocialSummary(brandId) : null),
+    brandId ? () => getSocialSummary(brandId) : null,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
@@ -137,7 +137,7 @@ export function useSocialPosts(
 ) {
   const { data, error, isLoading, mutate } = useSWR<SocialPostsResponse>(
     brandId ? `/api/social/posts?brandId=${brandId}` : null,
-    () => (brandId ? getSocialPosts(brandId) : null),
+    brandId ? () => getSocialPosts(brandId) : null,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
@@ -164,7 +164,7 @@ export function useCompetitorTracking(
 ) {
   const { data, error, isLoading, mutate } = useSWR<CompetitorTrackingResponse>(
     brandId ? `/api/social/competitors?brandId=${brandId}` : null,
-    () => (brandId ? getCompetitorTracking(brandId) : null),
+    brandId ? () => getCompetitorTracking(brandId) : null,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
@@ -194,7 +194,7 @@ export function useAlgorithmMonitoring(
 ) {
   const { data, error, isLoading, mutate } = useSWR<AlgorithmMonitoringResponse>(
     brandId ? `/api/social/algorithm-monitoring?brandId=${brandId}` : null,
-    () => (brandId ? getAlgorithmMonitoring(brandId) : null),
+    brandId ? () => getAlgorithmMonitoring(brandId) : null,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,

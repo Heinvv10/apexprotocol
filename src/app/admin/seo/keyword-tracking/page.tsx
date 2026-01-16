@@ -281,7 +281,7 @@ export default function KeywordTrackingPage() {
             <Target className="h-5 w-5 text-cyan-400" />
             <p className="text-sm text-gray-400">Tracked Keywords</p>
           </div>
-          <p className="text-3xl font-bold text-white">{keywords.length}</p>
+          <p className="text-3xl font-bold text-white">{keywordsData.length}</p>
           <p className="text-xs text-gray-400 mt-1">{improvingKeywords} improving</p>
         </Card>
 

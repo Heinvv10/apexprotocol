@@ -21,17 +21,19 @@ export interface Lead {
   firstName: string;
   lastName: string;
   email: string;
-  company?: string;
-  phone?: string;
-  status: "new" | "contacted" | "qualified" | "unqualified" | "converted";
+  company: string;
+  phone: string;
+  status: "new" | "mql" | "sql" | "proposal" | "closed-won" | "closed-lost";
   source: string;
   leadScore: number;
-  mqlScore?: number;
-  sqlScore?: number;
+  mqlScore: number;
+  sqlScore: number;
+  emailOpens: number;
+  lastActivity: string;
   assignedTo?: string;
   tags?: string[];
   lastContactDate?: string;
-  createdAt: string;
+  createdAt?: string;
   updatedAt?: string;
 }
 
@@ -47,15 +49,21 @@ export interface LeadListResponse {
 export interface Account {
   id: string;
   name: string;
-  industry?: string;
-  website?: string;
+  industry: string;
+  size: string;
+  location: string;
+  website: string;
+  healthScore: number;
+  totalContacts: number;
+  activeDeals: number;
+  totalRevenue: number;
+  lastActivity: string;
+  createdAt: string;
+  status?: "active" | "inactive" | "at_risk";
+  primaryContact?: string;
   employees?: number;
   revenue?: number;
-  healthScore: number;
-  status: "active" | "inactive" | "at_risk";
-  primaryContact?: string;
   dealValue?: number;
-  createdAt: string;
   updatedAt?: string;
 }
 
@@ -71,13 +79,13 @@ export interface AccountListResponse {
 export interface Deal {
   id: string;
   name: string;
-  accountId?: string;
-  accountName?: string;
+  accountId: string;
+  accountName: string;
   value: number;
-  stage: "lead" | "qualified" | "proposal" | "negotiation" | "won" | "lost";
+  stage: string;
   probability: number;
-  expectedCloseDate?: string;
-  assignedTo?: string;
+  expectedClose: string;
+  owner: string;
   createdAt: string;
   updatedAt?: string;
 }
