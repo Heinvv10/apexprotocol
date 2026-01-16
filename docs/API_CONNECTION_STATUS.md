@@ -1,7 +1,7 @@
 # API Connection Status & Real Data Flows
 
 **Last Updated:** 2026-01-16
-**Status:** MIXED - Some APIs fully connected to database, others return mock/empty data
+**Status:** ✅ MAJORLY COMPLETE - Most critical APIs now connected to real backend services
 
 ---
 
@@ -25,12 +25,12 @@
 
 | Client File | Purpose | Backend Routes Exist? | Real Data Flow? |
 |-------------|---------|----------------------|-----------------|
-| `crm.ts` | CRM (Leads, Accounts, Deals) | ❌ NO `/api/crm/*` routes | ❌ Returns empty arrays |
+| `crm.ts` | CRM (Leads, Accounts, Deals) | ✅ YES `/api/crm/*` routes | ✅ **REAL** (Mautic integration) |
 | `social.ts` | Social Media | ✅ YES `/api/social/route.ts` | ✅ **REAL DATABASE** |
-| `seo.ts` | SEO Monitoring | ⚠️ PARTIAL | ⚠️ Mixed |
-| `analytics.ts` | Analytics Dashboard | ✅ YES `/api/analytics/dashboard` | ✅ **REAL DATABASE** |
-| `marketing.ts` | Marketing Campaigns | ⚠️ PARTIAL `/api/marketing/*` | ⚠️ Mixed |
-| `platform-monitoring.ts` | Platform Monitoring | ⚠️ PARTIAL | ⚠️ Mixed |
+| `seo.ts` | SEO Monitoring | ⚠️ PARTIAL | ⚠️ Routes don't exist yet |
+| `analytics.ts` | Analytics Dashboard | ✅ YES `/api/analytics/*` | ✅ **REAL DATABASE** |
+| `marketing.ts` | Marketing Campaigns | ✅ YES `/api/marketing/*` | ✅ **REAL DATABASE** |
+| `platform-monitoring.ts` | Platform Monitoring | ⚠️ PARTIAL | ⚠️ Routes don't exist yet |
 | `integrations.ts` | External Integrations | ✅ YES `/api/integrations/*` | ⚠️ OAuth placeholders |
 | `admin.ts` | Admin Operations | ✅ YES `/api/admin/*` | ✅ **REAL DATABASE** |
 
@@ -45,6 +45,8 @@
 - `/api/analytics/dashboard` - ✅ **REAL** (293 lines of Drizzle queries)
 - `/api/analytics/geo-score` - ✅ **REAL**
 - `/api/analytics/unified-score` - ✅ **REAL**
+- `/api/analytics/sales` - ✅ **REAL** (NEW - pipeline, revenue, performance metrics)
+- `/api/analytics/marketing` - ✅ **REAL** (NEW - campaigns, email, lead gen)
 
 **Database Tables Used:**
 - `brandMentions` - Platform mentions
@@ -102,7 +104,33 @@ User Request → Check Service Scan → Check OAuth Data → Check Stored Score 
 
 ---
 
-#### 3. **Admin Operations** (`/api/admin/`)
+#### 3. **CRM** (`/api/crm/`)
+**Routes:**
+- `/api/crm/leads` - ✅ **REAL** (NEW - Mautic integration with OAuth)
+- `/api/crm/accounts` - ✅ **REAL** (NEW - Mautic companies API)
+- `/api/crm/pipeline` - ✅ **REAL** (NEW - Sales pipeline from lead scoring)
+
+**External Integration:**
+- **Mautic CRM** - OAuth 2.0 password grant authentication
+- Fetches contacts/companies from Mautic API
+- Transforms Mautic data to match frontend interfaces
+- Calculates MQL/SQL scores, health scores, deal probabilities
+
+**Data Flow:**
+```
+User Request → Mautic OAuth → Fetch Contacts/Companies → Transform Data → Calculate Scores → Response
+```
+
+**Key Features:**
+- Lead scoring (MQL/SQL) based on engagement metrics
+- Account health scores based on activity and revenue
+- Pipeline visualization with 6 stages (New → Qualified → Proposal → Negotiation → Won/Lost)
+- Deal value estimation from lead scores and industry
+- Win probability calculation from engagement patterns
+
+---
+
+#### 4. **Admin Operations** (`/api/admin/`)
 **Routes** (17 implemented):
 - `/api/admin/dashboard/stats` - ✅ **REAL**
 - `/api/admin/dashboard/activity` - ✅ **REAL**
