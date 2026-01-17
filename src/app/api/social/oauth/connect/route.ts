@@ -16,6 +16,7 @@ const SUPPORTED_PLATFORMS = [
   "instagram",
   "facebook",
   "youtube",
+  "tiktok",
 ];
 
 export async function POST(request: NextRequest) {
@@ -28,11 +29,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { platform, brandId } = body;
+    const { platform, brandId, returnUrl } = body;
 
     if (!platform) {
       return NextResponse.json(
         { error: "Platform is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!brandId) {
+      return NextResponse.json(
+        { error: "Brand ID is required" },
         { status: 400 }
       );
     }
@@ -64,13 +72,12 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const authUrl = new URL(`/api/oauth/${platform}/authorize`, baseUrl);
 
-    // Add brand context if provided (optional - can be selected later)
-    if (brandId) {
-      authUrl.searchParams.set("brandId", brandId);
-    } else if (orgId) {
-      // If no brandId, we might want to let the user pick after OAuth
-      // For now, use a placeholder or first brand logic could be added
-      authUrl.searchParams.set("brandId", "default");
+    // Add brand context
+    authUrl.searchParams.set("brandId", brandId);
+
+    // Add return URL for redirecting back after OAuth completion
+    if (returnUrl) {
+      authUrl.searchParams.set("returnUrl", returnUrl);
     }
 
     return NextResponse.json({

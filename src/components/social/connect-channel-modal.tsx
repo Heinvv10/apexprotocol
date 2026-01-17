@@ -90,19 +90,22 @@ const platforms: Platform[] = [
     color: "text-white",
     bgColor: "bg-black/20 hover:bg-black/30",
     description: "Business accounts",
-    available: false,
-    comingSoon: true,
+    available: true,
   },
 ];
 
 interface ConnectChannelModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  brandId: string | null;
+  returnUrl?: string;
 }
 
 export function ConnectChannelModal({
   open,
   onOpenChange,
+  brandId,
+  returnUrl = "/admin/social-media/channels",
 }: ConnectChannelModalProps) {
   const router = useRouter();
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
@@ -112,6 +115,11 @@ export function ConnectChannelModal({
   const handleConnect = async (platformId: string) => {
     const platform = platforms.find((p) => p.id === platformId);
     if (!platform?.available) return;
+
+    if (!brandId) {
+      setError("Please select a brand first");
+      return;
+    }
 
     setSelectedPlatform(platformId);
     setConnecting(true);
@@ -124,7 +132,11 @@ export function ConnectChannelModal({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ platform: platformId }),
+        body: JSON.stringify({
+          platform: platformId,
+          brandId,
+          returnUrl,
+        }),
       });
 
       const data = await response.json();

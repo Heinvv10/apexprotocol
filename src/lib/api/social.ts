@@ -321,3 +321,82 @@ export async function getAlgorithmMonitoring(brandId: string): Promise<Algorithm
     contentTypePerformance: {},
   };
 }
+
+// ============================================================================
+// Connected Accounts Types & Functions
+// ============================================================================
+
+export interface ConnectedAccount {
+  id: string;
+  organizationId: string;
+  brandId: string;
+  platform: string;
+  accountId: string | null;
+  accountName: string | null;
+  accountHandle: string | null;
+  profileUrl: string | null;
+  avatarUrl: string | null;
+  connectionStatus: "active" | "expired" | "revoked" | "error" | "pending" | null;
+  expiresAt: string | null;
+  scopes: string[] | null;
+  lastError: string | null;
+  lastErrorAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  isActive: boolean;
+  platformInfo: {
+    displayName: string;
+    color: string;
+    icon?: string;
+    description: string;
+    oauthSupported: boolean;
+    apiSupported: boolean;
+  } | null;
+}
+
+export interface PlatformStatus {
+  platform: string;
+  displayName: string;
+  description: string;
+  icon: string;
+  color: string;
+  oauthSupported: boolean;
+  apiSupported: boolean;
+  isConnected: boolean;
+  connectedAccount: ConnectedAccount | null;
+}
+
+export interface ConnectedAccountsResponse {
+  connectedAccounts: ConnectedAccount[];
+  platforms: PlatformStatus[];
+}
+
+/**
+ * Fetch connected OAuth accounts for a brand
+ */
+export async function getConnectedAccounts(brandId: string): Promise<ConnectedAccountsResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/social/accounts?brandId=${brandId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  return handleResponse(response);
+}
+
+/**
+ * Disconnect a social account
+ */
+export async function disconnectAccount(brandId: string, platform: string): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/api/social/accounts?brandId=${brandId}&platform=${platform}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  return handleResponse(response);
+}

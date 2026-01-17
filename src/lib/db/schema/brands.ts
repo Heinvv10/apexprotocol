@@ -17,6 +17,25 @@ export interface BrandCompetitor {
   reason: string;
 }
 
+// Business location
+export interface BrandLocation {
+  type: "headquarters" | "office" | "regional";
+  address: string;
+  city: string;
+  state?: string;
+  country: string;
+  postalCode?: string;
+}
+
+// Key personnel (C-suite, directors, executives)
+export interface BrandPersonnel {
+  name: string;
+  title: string;
+  linkedinUrl: string;
+  isActive: boolean; // Still at company
+  joinedDate?: string; // Format: YYYY-MM or YYYY
+}
+
 // AI analysis confidence scores
 export interface BrandConfidence {
   overall: number;
@@ -47,6 +66,12 @@ export const brands = pgTable("brands", {
 
   // Competitors with full details
   competitors: jsonb("competitors").$type<BrandCompetitor[]>().default([]),
+
+  // Business locations
+  locations: jsonb("locations").$type<BrandLocation[]>().default([]),
+
+  // Key personnel (C-suite, directors, executives)
+  personnel: jsonb("personnel").$type<BrandPersonnel[]>().default([]),
 
   // Brand positioning
   valuePropositions: jsonb("value_propositions").$type<string[]>().default([]),

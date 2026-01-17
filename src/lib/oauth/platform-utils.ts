@@ -14,7 +14,7 @@ import { socialPlatformEnum } from "@/lib/db/schema";
 export type AllSocialPlatform = (typeof socialPlatformEnum.enumValues)[number];
 
 // Platforms with OAuth integration implemented
-export type ImplementedOAuthPlatform = "linkedin" | "twitter";
+export type ImplementedOAuthPlatform = "linkedin" | "twitter" | "facebook" | "instagram" | "youtube" | "tiktok";
 
 // Connection status for a platform
 export interface OAuthConnectionStatus {
@@ -70,32 +70,36 @@ export const PLATFORM_INFO: Record<AllSocialPlatform, PlatformInfo> = {
     color: "#E4405F",
     icon: "instagram",
     description: "Visual content and engagement tracking",
-    oauthSupported: false, // Requires Facebook Business integration
+    oauthSupported: true, // Uses Facebook Business integration
     apiSupported: true,
+    scopes: ["instagram_basic", "instagram_content_publish", "instagram_manage_insights"],
   },
   facebook: {
     displayName: "Facebook",
     color: "#1877F2",
     icon: "facebook",
     description: "Page management and audience insights",
-    oauthSupported: false, // Coming soon
+    oauthSupported: true,
     apiSupported: true,
+    scopes: ["pages_manage_posts", "pages_read_engagement", "pages_show_list"],
   },
   youtube: {
     displayName: "YouTube",
     color: "#FF0000",
     icon: "youtube",
     description: "Video content and channel analytics",
-    oauthSupported: false, // Coming soon
+    oauthSupported: true,
     apiSupported: true,
+    scopes: ["youtube.readonly", "youtube.upload"],
   },
   tiktok: {
     displayName: "TikTok",
     color: "#000000",
     icon: "tiktok",
     description: "Short-form video and trending content",
-    oauthSupported: false, // Coming soon
+    oauthSupported: true,
     apiSupported: true,
+    scopes: ["user.info.basic", "video.list", "video.publish"],
   },
   pinterest: {
     displayName: "Pinterest",
@@ -178,7 +182,7 @@ export function getAllSupportedPlatforms(): AllSocialPlatform[] {
  * Get platforms with OAuth integration implemented
  */
 export function getImplementedPlatforms(): ImplementedOAuthPlatform[] {
-  return ["linkedin", "twitter"];
+  return ["linkedin", "twitter", "facebook", "instagram", "youtube", "tiktok"];
 }
 
 /**

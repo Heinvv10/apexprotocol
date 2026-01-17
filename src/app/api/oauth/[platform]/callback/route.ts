@@ -5,14 +5,59 @@
  * Handles the OAuth callback from the platform after user authorization
  * Query params:
  * - code: Authorization code from the platform
- * - state: State token we sent (contains brandId, organizationId, timestamp)
+ * - state: State token we sent (contains brandId, organizationId, timestamp, returnUrl)
  * - error: Error message if authorization failed
  * - error_description: Detailed error description
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { LinkedInProvider, TwitterProvider } from "@/lib/oauth";
+import {
+  LinkedInProvider,
+  TwitterProvider,
+  FacebookProvider,
+  YouTubeProvider,
+  TikTokProvider,
+} from "@/lib/oauth/providers";
 import { isPlatformImplemented } from "@/lib/oauth";
+
+// Default fallback redirect URL
+const DEFAULT_REDIRECT = "/admin/social-media/channels";
+
+interface StateData {
+  organizationId: string;
+  brandId: string;
+  returnUrl?: string;
+  timestamp?: number;
+}
+
+function parseState(state: string): StateData | null {
+  try {
+    return JSON.parse(Buffer.from(state, "base64url").toString("utf-8"));
+  } catch {
+    return null;
+  }
+}
+
+function buildRedirectUrl(
+  baseUrl: string,
+  returnUrl: string | undefined,
+  params: Record<string, string>
+): string {
+  // Use returnUrl if provided, otherwise default
+  const targetPath = returnUrl || DEFAULT_REDIRECT;
+
+  // Build full URL
+  const url = new URL(targetPath, baseUrl);
+
+  // Add query params
+  for (const [key, value] of Object.entries(params)) {
+    if (value) {
+      url.searchParams.set(key, value);
+    }
+  }
+
+  return url.toString();
+}
 
 export async function GET(
   request: NextRequest,
@@ -29,9 +74,18 @@ export async function GET(
   const errorDescription = searchParams.get("error_description");
 
   if (error) {
-    console.error(`[OAuth Callback] ${platform} error:`, error, errorDescription);
+    console.error(
+      `[OAuth Callback] ${platform} error:`,
+      error,
+      errorDescription
+    );
+    // Try to get returnUrl from state even on error
+    const state = searchParams.get("state");
+    const stateData = state ? parseState(state) : null;
     return NextResponse.redirect(
-      `${baseUrl}/dashboard/social?error=${encodeURIComponent(errorDescription || error)}`
+      buildRedirectUrl(baseUrl, stateData?.returnUrl, {
+        error: errorDescription || error,
+      })
     );
   }
 
@@ -41,72 +95,123 @@ export async function GET(
 
   if (!code) {
     return NextResponse.redirect(
-      `${baseUrl}/dashboard/social?error=${encodeURIComponent("Authorization code not received")}`
+      buildRedirectUrl(baseUrl, undefined, {
+        error: "Authorization code not received",
+      })
     );
   }
 
   if (!state) {
     return NextResponse.redirect(
-      `${baseUrl}/dashboard/social?error=${encodeURIComponent("Invalid OAuth state")}`
+      buildRedirectUrl(baseUrl, undefined, {
+        error: "Invalid OAuth state",
+      })
     );
   }
 
   // Validate platform
   if (!isPlatformImplemented(platform)) {
     return NextResponse.redirect(
-      `${baseUrl}/dashboard/social?error=${encodeURIComponent(`Unsupported platform: ${platform}`)}`
+      buildRedirectUrl(baseUrl, undefined, {
+        error: `Unsupported platform: ${platform}`,
+      })
     );
   }
 
+  // Parse state for returnUrl
+  const stateData = parseState(state);
+  const returnUrl = stateData?.returnUrl;
+
   try {
     let accountName = "";
+    let accountHandle = "";
 
     // Complete the OAuth flow using platform-specific provider
-    if (platform === "linkedin") {
-      // LinkedIn: parse state to get org/brand, then complete flow
-      let stateData: { organizationId: string; brandId: string };
-      try {
-        stateData = JSON.parse(Buffer.from(state, "base64url").toString("utf-8"));
-      } catch {
-        return NextResponse.redirect(
-          `${baseUrl}/dashboard/social?error=${encodeURIComponent("Invalid state token")}`
-        );
+    switch (platform) {
+      case "linkedin": {
+        if (!stateData?.organizationId || !stateData?.brandId) {
+          return NextResponse.redirect(
+            buildRedirectUrl(baseUrl, returnUrl, {
+              error: "Missing organization or brand in state",
+            })
+          );
+        }
+
+        const result = await LinkedInProvider.completeOAuthFlow({
+          code,
+          organizationId: stateData.organizationId,
+          brandId: stateData.brandId,
+        });
+        accountName = result.accountInfo?.accountName || "";
+        accountHandle = result.accountInfo?.accountHandle || "";
+        break;
       }
 
-      if (!stateData.organizationId || !stateData.brandId) {
-        return NextResponse.redirect(
-          `${baseUrl}/dashboard/social?error=${encodeURIComponent("Missing organization or brand in state")}`
-        );
+      case "twitter": {
+        const result = await TwitterProvider.completeOAuthFlow({
+          code,
+          state,
+        });
+        accountName = result.accountInfo?.accountName || "";
+        accountHandle = result.accountInfo?.accountHandle || "";
+        break;
       }
 
-      const result = await LinkedInProvider.completeOAuthFlow({
-        code,
-        organizationId: stateData.organizationId,
-        brandId: stateData.brandId,
-      });
-      accountName = result.accountInfo?.accountName || "";
-    } else if (platform === "twitter") {
-      // Twitter: pass state directly, it parses internally
-      const result = await TwitterProvider.completeOAuthFlow({
-        code,
-        state,
-      });
-      accountName = result.accountInfo?.accountName || "";
-    } else {
-      return NextResponse.redirect(
-        `${baseUrl}/dashboard/social?error=${encodeURIComponent(`Unsupported OAuth platform: ${platform}`)}`
-      );
+      case "facebook":
+      case "instagram": {
+        const result = await FacebookProvider.completeOAuthFlow({
+          code,
+          state,
+        });
+        accountName = result.accountInfo?.accountName || "";
+        // For Facebook/Instagram, we may need to show page selection UI
+        // For now, just store the user account
+        break;
+      }
+
+      case "youtube": {
+        const result = await YouTubeProvider.completeOAuthFlow({
+          code,
+          state,
+        });
+        accountName = result.accountInfo?.accountName || "";
+        accountHandle = result.accountInfo?.accountHandle || "";
+        break;
+      }
+
+      case "tiktok": {
+        const result = await TikTokProvider.completeOAuthFlow({
+          code,
+          state,
+        });
+        accountName = result.accountInfo?.accountName || "";
+        accountHandle = result.accountInfo?.accountHandle || "";
+        break;
+      }
+
+      default:
+        return NextResponse.redirect(
+          buildRedirectUrl(baseUrl, returnUrl, {
+            error: `Unsupported OAuth platform: ${platform}`,
+          })
+        );
     }
 
     // Success! Redirect with success message
     return NextResponse.redirect(
-      `${baseUrl}/dashboard/social?success=connected&platform=${platform}&account=${encodeURIComponent(accountName)}`
+      buildRedirectUrl(baseUrl, returnUrl, {
+        success: "connected",
+        platform,
+        account: accountHandle || accountName,
+      })
     );
-  } catch (error) {
-    console.error(`[OAuth Callback] ${platform} error:`, error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+  } catch (err) {
+    console.error(`[OAuth Callback] ${platform} error:`, err);
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.redirect(
-      `${baseUrl}/dashboard/social?error=${encodeURIComponent(errorMessage)}`
+      buildRedirectUrl(baseUrl, returnUrl, {
+        error: errorMessage,
+      })
     );
   }
 }

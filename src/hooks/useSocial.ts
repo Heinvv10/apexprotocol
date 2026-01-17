@@ -12,6 +12,8 @@ import {
   getSocialPosts,
   getCompetitorTracking,
   getAlgorithmMonitoring,
+  getConnectedAccounts,
+  disconnectAccount,
   type SocialAccountsResponse,
   type SocialMentionsResponse,
   type SocialMetricsResponse,
@@ -19,6 +21,9 @@ import {
   type SocialPostsResponse,
   type CompetitorTrackingResponse,
   type AlgorithmMonitoringResponse,
+  type ConnectedAccountsResponse,
+  type ConnectedAccount,
+  type PlatformStatus,
 } from "@/lib/api/social";
 
 /**
@@ -213,3 +218,61 @@ export function useAlgorithmMonitoring(
     mutate,
   };
 }
+
+/**
+ * Hook to fetch connected OAuth accounts for a brand
+ * Returns both connected accounts and platform status information
+ */
+export function useConnectedAccounts(
+  brandId: string | null,
+  config?: SWRConfiguration<ConnectedAccountsResponse>
+) {
+  const { data, error, isLoading, mutate } = useSWR<ConnectedAccountsResponse>(
+    brandId ? `/api/social/accounts?brandId=${brandId}` : null,
+    brandId ? () => getConnectedAccounts(brandId) : null,
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      ...config,
+    }
+  );
+
+  // Helper to check if a platform is connected
+  const isPlatformConnected = (platform: string): boolean => {
+    return data?.platforms?.some(p => p.platform === platform && p.isConnected) ?? false;
+  };
+
+  // Helper to get connected account for a platform
+  const getAccountForPlatform = (platform: string): ConnectedAccount | null => {
+    return data?.connectedAccounts?.find(a => a.platform === platform && a.isActive) ?? null;
+  };
+
+  // Disconnect an account
+  const disconnect = async (platform: string): Promise<boolean> => {
+    if (!brandId) return false;
+    try {
+      await disconnectAccount(brandId, platform);
+      await mutate(); // Refresh the data
+      return true;
+    } catch (err) {
+      console.error("Failed to disconnect account:", err);
+      return false;
+    }
+  };
+
+  return {
+    connectedAccounts: data?.connectedAccounts ?? [],
+    platforms: data?.platforms ?? [],
+    isLoading,
+    isError: !!error,
+    error,
+    mutate,
+    // Helper functions
+    isPlatformConnected,
+    getAccountForPlatform,
+    disconnect,
+  };
+}
+
+// Re-export types for convenience
+export type { ConnectedAccount, PlatformStatus, ConnectedAccountsResponse };

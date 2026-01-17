@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useSocialAccounts } from "@/hooks/useSocial";
+import { useSocialAccounts, useConnectedAccounts, type ConnectedAccount } from "@/hooks/useSocial";
+import { useSelectedBrand } from "@/stores/brand-store";
 import { ConnectChannelModal } from "@/components/social/connect-channel-modal";
+import { ChannelSettingsModal } from "@/components/social/channel-settings-modal";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -210,36 +213,131 @@ const mockRecentActivity = [
 
 export default function SocialMediaChannelsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedBrand = useSelectedBrand();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [platformFilter, setPlatformFilter] = useState("all");
   const [connectModalOpen, setConnectModalOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<ConnectedAccount | null>(null);
 
-  // Fetch social accounts from API (brandId would come from context/URL in real app)
-  const { accounts, isLoading, isError, error } = useSocialAccounts(null);
+  // Fetch social accounts from API
+  const { accounts, isLoading: accountsLoading, isError, error } = useSocialAccounts(selectedBrand?.id ?? null);
+
+  // Fetch connected OAuth accounts
+  const {
+    connectedAccounts,
+    platforms: platformStatuses,
+    isLoading: connectedLoading,
+    isPlatformConnected,
+    getAccountForPlatform,
+    disconnect,
+    mutate: refreshConnectedAccounts
+  } = useConnectedAccounts(selectedBrand?.id ?? null);
+
+  const isLoading = accountsLoading || connectedLoading;
+
+  // Handle OAuth callback success/error messages from URL
+  useEffect(() => {
+    const success = searchParams.get("success");
+    const errorMsg = searchParams.get("error");
+    const platform = searchParams.get("platform");
+    const account = searchParams.get("account");
+
+    if (success === "connected" && platform) {
+      toast.success(`Successfully connected ${platform}${account ? ` as ${account}` : ""}`, {
+        description: "Your account is now ready for posting and analytics.",
+      });
+      // Clear the URL params after showing toast
+      router.replace("/admin/social-media/channels");
+      // Refresh the connected accounts
+      refreshConnectedAccounts();
+    } else if (errorMsg) {
+      toast.error("Connection failed", {
+        description: errorMsg,
+      });
+      router.replace("/admin/social-media/channels");
+    }
+  }, [searchParams, router, refreshConnectedAccounts]);
+
+  // Helper to get connection info for a channel
+  const getConnectionInfo = (platform: string) => {
+    const connectedAccount = getAccountForPlatform(platform);
+    return {
+      isConnected: !!connectedAccount,
+      accountName: connectedAccount?.accountName,
+      accountHandle: connectedAccount?.accountHandle,
+      avatarUrl: connectedAccount?.avatarUrl,
+      connectionStatus: connectedAccount?.connectionStatus,
+      account: connectedAccount,
+    };
+  };
+
+  // Handle opening settings modal for a channel
+  const handleOpenSettings = (platform: string) => {
+    const account = getAccountForPlatform(platform);
+    if (account) {
+      setSelectedAccount(account);
+      setSettingsModalOpen(true);
+    }
+  };
+
+  // Handle disconnecting an account
+  const handleDisconnect = async (platform: string): Promise<boolean> => {
+    const success = await disconnect(platform);
+    if (success) {
+      toast.success(`Disconnected ${platform} account`, {
+        description: "The account has been removed from your connected channels.",
+      });
+    } else {
+      toast.error(`Failed to disconnect ${platform}`, {
+        description: "Please try again or contact support.",
+      });
+    }
+    return success;
+  };
+
+  // Handle reconnecting an account
+  const handleReconnect = (platform: string) => {
+    setSettingsModalOpen(false);
+    setConnectModalOpen(true);
+  };
 
   // Use API data if available, fallback to mock data for development
-  const allChannels = accounts.length > 0 ? accounts.map((acc: any) => ({
-    id: acc.id,
-    platform: acc.platform,
-    accountName: acc.accountName || "",
-    handle: acc.accountHandle || "",
-    status: acc.isActive ? "active" : "inactive",
-    followers: acc.followersCount || 0,
-    followersGrowth: 0,
-    postsThisMonth: acc.postsCount || 0,
-    engagement: acc.engagementRate || 0,
-    engagementGrowth: 0,
-    avgReach: 0,
-    avgLikes: 0,
-    avgComments: 0,
-    avgShares: 0,
-    lastPost: acc.lastSyncedAt || new Date().toISOString(),
-    connectedAt: new Date().toISOString(),
-    health: acc.isActive ? "good" : "inactive",
-    apiQuota: 100,
-    postingFrequency: "N/A",
-  })) : mockChannels;
+  const allChannels = accounts.length > 0 ? accounts.map((acc: any) => {
+    const connectionInfo = getConnectionInfo(acc.platform);
+    return {
+      id: acc.id,
+      platform: acc.platform,
+      accountName: connectionInfo.accountName || acc.accountName || "",
+      handle: connectionInfo.accountHandle || acc.accountHandle || "",
+      status: connectionInfo.isConnected ? (connectionInfo.connectionStatus === "active" ? "active" : "warning") : (acc.isActive ? "active" : "inactive"),
+      followers: acc.followersCount || 0,
+      followersGrowth: 0,
+      postsThisMonth: acc.postsCount || 0,
+      engagement: acc.engagementRate || 0,
+      engagementGrowth: 0,
+      avgReach: 0,
+      avgLikes: 0,
+      avgComments: 0,
+      avgShares: 0,
+      lastPost: acc.lastSyncedAt || new Date().toISOString(),
+      connectedAt: new Date().toISOString(),
+      health: acc.isActive ? "good" : "inactive",
+      apiQuota: 100,
+      postingFrequency: "N/A",
+      isOAuthConnected: connectionInfo.isConnected,
+      oauthAccountHandle: connectionInfo.accountHandle,
+    };
+  }) : mockChannels.map((channel) => {
+    const connectionInfo = getConnectionInfo(channel.platform);
+    return {
+      ...channel,
+      isOAuthConnected: connectionInfo.isConnected,
+      oauthAccountHandle: connectionInfo.accountHandle,
+    };
+  });
 
   // Calculate stats
   const totalChannels = allChannels.length;
@@ -405,6 +503,17 @@ export default function SocialMediaChannelsPage() {
       <ConnectChannelModal
         open={connectModalOpen}
         onOpenChange={setConnectModalOpen}
+        brandId={selectedBrand?.id ?? null}
+        returnUrl="/admin/social-media/channels"
+      />
+
+      {/* Channel Settings Modal */}
+      <ChannelSettingsModal
+        open={settingsModalOpen}
+        onOpenChange={setSettingsModalOpen}
+        account={selectedAccount}
+        onDisconnect={handleDisconnect}
+        onReconnect={handleReconnect}
       />
 
       {/* Error State */}
@@ -557,9 +666,22 @@ export default function SocialMediaChannelsPage() {
                   <div>
                     <h3 className="font-semibold text-white">{channel.accountName}</h3>
                     <p className="text-sm text-muted-foreground">{channel.handle}</p>
+                    {channel.isOAuthConnected && channel.oauthAccountHandle && (
+                      <p className="text-xs text-cyan-400 flex items-center gap-1 mt-0.5">
+                        <CheckCircle className="h-3 w-3" />
+                        Connected as {channel.oauthAccountHandle}
+                      </p>
+                    )}
                   </div>
                 </div>
-                {getStatusBadge(channel.status)}
+                <div className="flex flex-col items-end gap-1">
+                  {getStatusBadge(channel.status)}
+                  {channel.isOAuthConnected && (
+                    <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-medium">
+                      OAuth
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Metrics */}
@@ -624,6 +746,7 @@ export default function SocialMediaChannelsPage() {
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" size="sm" className="h-8" onClick={(e) => {
                     e.stopPropagation();
+                    handleOpenSettings(channel.platform);
                   }}>
                     <Settings className="h-3 w-3 mr-1" />
                     Settings
