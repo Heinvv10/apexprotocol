@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { brands } from "@/lib/db/schema/brands";
 import { eq } from "drizzle-orm";
-import { scrapeBrandFromUrl } from "@/lib/services/brand-scraper";
+import { scrapeMultiPageBrand } from "@/lib/services/brand-scraper-multipage";
 import { populateLocations } from "@/lib/services/brand-post-create";
 import { getOrganizationId } from "@/lib/auth";
 
@@ -117,11 +117,11 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Scrape the brand's website
+      // Scrape the brand's website (multi-page: homepage + about + contact + history)
       try {
-        console.log(`  Scraping https://${brand.domain}...`);
+        console.log(`  Scraping https://${brand.domain} (multi-page)...`);
 
-        const scrapedData = await scrapeBrandFromUrl(
+        const scrapedData = await scrapeMultiPageBrand(
           `https://${brand.domain}`,
           (progress, message) => {
             console.log(`    ${progress}% - ${message}`);

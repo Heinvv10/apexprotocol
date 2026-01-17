@@ -84,6 +84,20 @@ export interface BrandPersonnelInfo {
   linkedinUrl?: string;
 }
 
+// Company history and business knowledge
+export interface CompanyHistory {
+  foundedYear?: number;
+  founderNames?: string[];
+  companySize?: string;
+  revenue?: string;
+  milestones?: Array<{
+    year: number;
+    event: string;
+  }>;
+  awards?: string[];
+  partnerships?: string[];
+}
+
 // Output from brand analysis
 export interface BrandAnalysisResult {
   brandName: string;
@@ -108,6 +122,7 @@ export interface BrandAnalysisResult {
   socialLinks: Record<string, string>;
   locations?: BrandLocationInfo[];
   personnel?: BrandPersonnelInfo[];
+  history?: CompanyHistory;
   confidence: {
     overall: number;
     perField: Record<string, number>;
@@ -160,7 +175,7 @@ Based on this data, you must extract COMPREHENSIVE brand information:
 
 11. **Social Links**: Any social media URLs found (facebook, twitter, linkedin, instagram, youtube, etc.)
 
-12. **Contact Information & Locations**: Extract all business locations found:
+12. **Contact Information & Locations**: Extract ALL business locations found across all pages:
    - **type**: headquarters (main office), office (branch), or regional (regional center)
    - **address**: Full street address if available
    - **city**: City name
@@ -169,16 +184,29 @@ Based on this data, you must extract COMPREHENSIVE brand information:
    - **postalCode**: Zip/postal code
    - **phone**: Contact phone number
    - **email**: Contact email address
+   - Extract from: Contact page, footer, About page, "Visit Us" sections
+   - Look for patterns like: "123 Main St", "Suite 100", postal codes, phone numbers
 
 13. **Key Personnel**: Extract up to 10 key people from About/Team/Leadership pages:
    - **name**: Full name
    - **title**: Job title (CEO, CTO, VP Marketing, etc.)
    - **department**: Department/division if mentioned
-   - **bio**: Brief biography or description
+   - **bio**: Brief biography or description (1-2 sentences)
    - **email**: Direct email if available
    - **linkedinUrl**: LinkedIn profile URL if visible
+   - Look in: Team page, Leadership page, About Us page, founder stories
+   - Prioritize C-suite, founders, executives, department heads
 
-14. **Confidence**: Scores for overall analysis (0-100) and per-field
+14. **Company History & Business Knowledge**: Extract if available from History/About pages:
+   - **foundedYear**: Year the company was founded
+   - **founderNames**: Names of founder(s) if mentioned
+   - **companySize**: Number of employees if mentioned (e.g., "500+ employees")
+   - **revenue**: Annual revenue if publicly stated
+   - **milestones**: Key company milestones (2-4 major events with years)
+   - **awards**: Notable awards or recognitions
+   - **partnerships**: Key partnerships or technology partners mentioned
+
+15. **Confidence**: Scores for overall analysis (0-100) and per-field
 
 IMPORTANT RULES:
 - Respond ONLY with valid JSON, no markdown formatting or backticks
@@ -291,6 +319,17 @@ Respond with a JSON object matching this EXACT structure:
       "linkedinUrl": "string or null"
     }
   ],
+  "history": {
+    "foundedYear": number or null,
+    "founderNames": ["string"] or null,
+    "companySize": "string or null",
+    "revenue": "string or null",
+    "milestones": [
+      { "year": number, "event": "string" }
+    ] or null,
+    "awards": ["string"] or null,
+    "partnerships": ["string"] or null
+  },
   "confidence": {
     "overall": number (0-100),
     "perField": {
