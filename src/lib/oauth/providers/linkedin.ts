@@ -571,13 +571,15 @@ export async function completeOAuthFlow(params: {
     const avatarUrl = await getProfilePicture(tokens.accessToken);
 
     // Build account info
+    // Note: LinkedIn OIDC doesn't return vanityName, so we can't construct a profile URL
+    // The member ID (sub) cannot be used in profile URLs - they require vanity names
     const accountInfo: OAuthAccountInfo = {
       accountId: profile.id,
       accountName: `${profile.localizedFirstName} ${profile.localizedLastName}`,
       accountHandle: profile.vanityName || undefined,
       profileUrl: profile.vanityName
         ? `https://linkedin.com/in/${profile.vanityName}`
-        : `https://linkedin.com/in/${profile.id}`,
+        : undefined, // Don't generate broken URLs with member IDs
       avatarUrl: avatarUrl || undefined,
     };
 
