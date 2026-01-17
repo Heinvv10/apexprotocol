@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { FileText, Edit3, Trash2, Eye, MoreVertical, Clock, Calendar, Check, AlertCircle } from "lucide-react";
+import { FileText, Edit3, Trash2, Eye, MoreVertical, Clock, Calendar, Check, AlertCircle, Share2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +33,7 @@ interface ContentCardProps {
   content: ContentItem;
   onDelete?: (id: string) => void;
   onStatusChange?: (id: string, status: ContentStatus) => void;
+  onShareToSocial?: (content: ContentItem) => void;
   className?: string;
 }
 
@@ -73,6 +74,7 @@ export function ContentCard({
   content,
   onDelete,
   onStatusChange,
+  onShareToSocial,
   className,
 }: ContentCardProps) {
   const StatusIcon = statusConfig[content.status].icon;
@@ -176,6 +178,14 @@ export function ContentCard({
               >
                 <AlertCircle className="h-4 w-4 mr-2" />
                 Archive
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => onShareToSocial?.(content)}
+                className="text-primary focus:text-primary"
+              >
+                <Share2 className="h-4 w-4 mr-2" />
+                Share to Social
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

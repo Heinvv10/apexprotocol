@@ -28,7 +28,13 @@ import {
   Save,
   X,
   AlertCircle,
+  Loader2,
+  CheckCircle,
+  ExternalLink,
 } from "lucide-react";
+import { toast } from "sonner";
+import { useConnectedAccounts } from "@/hooks/useSocial";
+import { useSelectedBrand } from "@/stores/brand-store";
 
 interface PostComposerProps {
   onSave: (draft: any) => void;
@@ -36,12 +42,17 @@ interface PostComposerProps {
 }
 
 export function PostComposer({ onSave, onPublish }: PostComposerProps) {
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["linkedin"]);
+  const selectedBrand = useSelectedBrand();
+  const { connectedAccounts, isPlatformConnected } = useConnectedAccounts(selectedBrand?.id ?? null);
+
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [content, setContent] = useState("");
   const [mediaFiles, setMediaFiles] = useState<string[]>([]);
   const [postType, setPostType] = useState<"immediate" | "scheduled">("immediate");
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishResults, setPublishResults] = useState<Record<string, { success: boolean; postUrl?: string; error?: string }> | null>(null);
   const [hashtagSuggestions] = useState([
     "#GEO", "#AEO", "#AIOptimization", "#ContentMarketing",
     "#DigitalMarketing", "#SEO", "#Innovation", "#TechNews"
@@ -85,34 +96,90 @@ export function PostComposer({ onSave, onPublish }: PostComposerProps) {
     onSave(draft);
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
+    if (!selectedBrand?.id) {
+      toast.error("Please select a brand first");
+      return;
+    }
     if (selectedPlatforms.length === 0) {
-      alert("Please select at least one platform");
+      toast.error("Please select at least one platform");
       return;
     }
     if (!content.trim()) {
-      alert("Please enter post content");
+      toast.error("Please enter post content");
       return;
     }
     if (isOverLimit) {
-      alert("Post content exceeds character limit for selected platforms");
+      toast.error("Post content exceeds character limit for selected platforms");
       return;
     }
     if (postType === "scheduled" && (!scheduledDate || !scheduledTime)) {
-      alert("Please select date and time for scheduled post");
+      toast.error("Please select date and time for scheduled post");
       return;
     }
 
-    const post = {
-      content,
-      platforms: selectedPlatforms,
-      mediaUrls: mediaFiles,
-      status: postType === "scheduled" ? "scheduled" : "published",
-      scheduledDate: postType === "scheduled" ? scheduledDate : undefined,
-      scheduledTime: postType === "scheduled" ? scheduledTime : undefined,
-      publishedAt: postType === "immediate" ? new Date().toISOString() : undefined,
-    };
-    onPublish(post);
+    // Check if selected platforms are connected
+    const unconnectedPlatforms = selectedPlatforms.filter(p => !isPlatformConnected(p));
+    if (unconnectedPlatforms.length > 0) {
+      toast.error(`Please connect these platforms first: ${unconnectedPlatforms.join(", ")}`);
+      return;
+    }
+
+    setIsPublishing(true);
+    setPublishResults(null);
+
+    try {
+      const response = await fetch("/api/social/publish", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          brandId: selectedBrand.id,
+          platforms: selectedPlatforms,
+          content: {
+            text: content,
+          },
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.results) {
+        setPublishResults(data.results);
+
+        // Count successes
+        const successCount = Object.values(data.results as Record<string, { success: boolean }>).filter(
+          (r) => r.success
+        ).length;
+        const failCount = selectedPlatforms.length - successCount;
+
+        if (successCount > 0 && failCount === 0) {
+          toast.success(`Published to ${successCount} platform(s)!`);
+        } else if (successCount > 0) {
+          toast.warning(`Published to ${successCount}, failed on ${failCount}`);
+        } else {
+          toast.error("Publishing failed on all platforms");
+        }
+
+        // Call original onPublish callback
+        const post = {
+          content,
+          platforms: selectedPlatforms,
+          mediaUrls: mediaFiles,
+          status: "published",
+          publishedAt: new Date().toISOString(),
+          results: data.results,
+        };
+        onPublish(post);
+      } else if (data.error) {
+        toast.error(`Publishing failed: ${data.error}`);
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const addHashtag = (tag: string) => {
@@ -137,18 +204,27 @@ export function PostComposer({ onSave, onPublish }: PostComposerProps) {
               {platforms.map((platform) => {
                 const Icon = platform.icon;
                 const isSelected = selectedPlatforms.includes(platform.id);
+                const isConnected = isPlatformConnected(platform.id);
                 return (
                   <button
                     key={platform.id}
-                    onClick={() => togglePlatform(platform.id)}
+                    onClick={() => isConnected && togglePlatform(platform.id)}
+                    disabled={!isConnected}
                     className={`flex items-center gap-2 px-4 py-2 rounded-md border transition-all ${
-                      isSelected
-                        ? platform.color
-                        : "text-gray-400 bg-gray-800 border-gray-700 hover:border-gray-600"
+                      !isConnected
+                        ? "text-gray-500 bg-gray-800/50 border-gray-700/50 cursor-not-allowed opacity-60"
+                        : isSelected
+                          ? platform.color
+                          : "text-gray-400 bg-gray-800 border-gray-700 hover:border-gray-600"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
                     <span className="text-sm font-medium">{platform.name}</span>
+                    {isConnected ? (
+                      <CheckCircle className="h-3 w-3 text-green-400" />
+                    ) : (
+                      <span className="text-xs text-gray-500">Not connected</span>
+                    )}
                   </button>
                 );
               })}
@@ -156,7 +232,9 @@ export function PostComposer({ onSave, onPublish }: PostComposerProps) {
             {selectedPlatforms.length === 0 && (
               <p className="text-xs text-yellow-400 mt-3 flex items-center gap-2">
                 <AlertCircle className="h-3 w-3" />
-                Please select at least one platform
+                {connectedAccounts.length === 0
+                  ? "No platforms connected. Connect platforms in Channels to publish."
+                  : "Please select at least one platform"}
               </p>
             )}
           </div>
@@ -240,14 +318,71 @@ export function PostComposer({ onSave, onPublish }: PostComposerProps) {
             </Tabs>
           </div>
 
+          {/* Publish Results */}
+          {publishResults && (
+            <div className="card-secondary p-6">
+              <h3 className="text-white font-semibold mb-4">Publishing Results</h3>
+              <div className="space-y-3">
+                {Object.entries(publishResults).map(([platformId, result]) => {
+                  const platform = platforms.find(p => p.id === platformId);
+                  const Icon = platform?.icon || Send;
+                  return (
+                    <div
+                      key={platformId}
+                      className={`p-3 rounded-lg border ${
+                        result.success
+                          ? "bg-green-500/10 border-green-500/20"
+                          : "bg-red-500/10 border-red-500/20"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-4 w-4" />
+                          <span className="text-sm font-medium text-white">
+                            {platform?.name || platformId}
+                          </span>
+                        </div>
+                        {result.success ? (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-400" />
+                            {result.postUrl && (
+                              <a
+                                href={result.postUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+                              >
+                                View <ExternalLink className="h-3 w-3" />
+                              </a>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4 text-red-400" />
+                            <span className="text-xs text-red-400">{result.error}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
             <Button
               onClick={handlePublish}
               className="bg-cyan-600 hover:bg-cyan-700 flex-1"
-              disabled={selectedPlatforms.length === 0 || !content.trim() || isOverLimit}
+              disabled={selectedPlatforms.length === 0 || !content.trim() || isOverLimit || isPublishing}
             >
-              {postType === "scheduled" ? (
+              {isPublishing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Publishing...
+                </>
+              ) : postType === "scheduled" ? (
                 <>
                   <Calendar className="h-4 w-4 mr-2" />
                   Schedule Post
@@ -263,6 +398,7 @@ export function PostComposer({ onSave, onPublish }: PostComposerProps) {
               onClick={handleSaveDraft}
               variant="outline"
               className="border-gray-700"
+              disabled={isPublishing}
             >
               <Save className="h-4 w-4 mr-2" />
               Save Draft

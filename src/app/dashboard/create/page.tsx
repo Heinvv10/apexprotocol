@@ -67,6 +67,7 @@ import {
 import { useSelectedBrand } from "@/stores";
 import { useContentByBrand, useDeleteContent, useUpdateContent, Content } from "@/hooks/useContent";
 import { formatDate } from "@/lib/utils/formatters";
+import { PublishToSocialModal } from "@/components/social/publish-to-social-modal";
 
 // Transform API Content to UI ContentItem
 function contentToItem(content: Content): ContentItem {
@@ -338,6 +339,10 @@ export default function CreatePage() {
   const [statusFilter, setStatusFilter] = React.useState<ContentStatus | "all">("all");
   const [typeFilter, setTypeFilter] = React.useState<ContentType | "all">("all");
 
+  // Social publishing state
+  const [publishModalOpen, setPublishModalOpen] = React.useState(false);
+  const [selectedContentForPublish, setSelectedContentForPublish] = React.useState<ContentItem | null>(null);
+
   // Check if there's any content
   const hasContent = content.length > 0;
 
@@ -357,6 +362,12 @@ export default function CreatePage() {
       id,
       data: { status: statusMap[status] as "draft" | "published" | "archived" },
     });
+  };
+
+  // Handler for sharing content to social media
+  const handleShareToSocial = (contentItem: ContentItem) => {
+    setSelectedContentForPublish(contentItem);
+    setPublishModalOpen(true);
   };
 
   // Filter content
@@ -562,6 +573,7 @@ export default function CreatePage() {
               content={item}
               onDelete={handleDelete}
               onStatusChange={handleStatusChange}
+              onShareToSocial={handleShareToSocial}
             />
           ))
         ) : (
@@ -581,6 +593,15 @@ export default function CreatePage() {
           Showing {filteredContent.length} of {content.length} items
         </p>
       )}
+
+      {/* Publish to Social Modal */}
+      <PublishToSocialModal
+        open={publishModalOpen}
+        onOpenChange={setPublishModalOpen}
+        brandId={selectedBrand?.id ?? null}
+        initialContent={selectedContentForPublish?.excerpt || ""}
+        contentTitle={selectedContentForPublish?.title}
+      />
 
       {/* Decorative Star */}
       <DecorativeStar />
