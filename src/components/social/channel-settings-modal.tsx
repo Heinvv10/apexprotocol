@@ -20,6 +20,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Twitter,
   Linkedin,
@@ -35,6 +37,9 @@ import {
   RefreshCw,
   CalendarDays,
   Shield,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 import type { ConnectedAccount } from "@/hooks/useSocial";
 
@@ -44,6 +49,7 @@ interface ChannelSettingsModalProps {
   account: ConnectedAccount | null;
   onDisconnect: (platform: string) => Promise<boolean>;
   onReconnect: (platform: string) => void;
+  onUpdate?: () => void;
 }
 
 const getPlatformIcon = (platform: string) => {
@@ -139,17 +145,92 @@ const formatDate = (dateString: string | null) => {
   });
 };
 
+// Helper to generate profile URL from handle based on platform
+const getProfileUrlFromHandle = (platform: string, handle: string): string => {
+  const cleanHandle = handle.replace(/^@/, ""); // Remove @ if present
+  switch (platform) {
+    case "linkedin":
+      return `https://linkedin.com/in/${cleanHandle}`;
+    case "twitter":
+      return `https://twitter.com/${cleanHandle}`;
+    case "instagram":
+      return `https://instagram.com/${cleanHandle}`;
+    case "youtube":
+      return `https://youtube.com/@${cleanHandle}`;
+    case "facebook":
+      return `https://facebook.com/${cleanHandle}`;
+    case "tiktok":
+      return `https://tiktok.com/@${cleanHandle}`;
+    default:
+      return "";
+  }
+};
+
 export function ChannelSettingsModal({
   open,
   onOpenChange,
   account,
   onDisconnect,
   onReconnect,
+  onUpdate,
 }: ChannelSettingsModalProps) {
   const [disconnecting, setDisconnecting] = useState(false);
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
+  const [isEditingHandle, setIsEditingHandle] = useState(false);
+  const [handleValue, setHandleValue] = useState("");
+  const [savingHandle, setSavingHandle] = useState(false);
+  const [handleError, setHandleError] = useState<string | null>(null);
 
   if (!account) return null;
+
+  // Initialize handle value when starting edit
+  const startEditingHandle = () => {
+    setHandleValue(account.accountHandle || "");
+    setHandleError(null);
+    setIsEditingHandle(true);
+  };
+
+  const cancelEditingHandle = () => {
+    setIsEditingHandle(false);
+    setHandleValue("");
+    setHandleError(null);
+  };
+
+  const saveHandle = async () => {
+    if (!handleValue.trim()) {
+      setHandleError("Handle is required");
+      return;
+    }
+
+    setSavingHandle(true);
+    setHandleError(null);
+
+    try {
+      const profileUrl = getProfileUrlFromHandle(account.platform, handleValue);
+
+      const response = await fetch("/api/social/accounts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tokenId: account.id,
+          accountHandle: handleValue.replace(/^@/, ""), // Store without @
+          profileUrl,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to update handle");
+      }
+
+      setIsEditingHandle(false);
+      onUpdate?.(); // Refresh the data
+    } catch (err) {
+      setHandleError(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setSavingHandle(false);
+    }
+  };
 
   const statusInfo = getStatusInfo(account.connectionStatus);
   const platformName = account.platformInfo?.displayName || account.platform;
@@ -201,14 +282,76 @@ export function ChannelSettingsModal({
             <div className="p-4 rounded-lg bg-background/50 border border-border/50 space-y-3">
               <h4 className="text-sm font-medium text-white">Account Information</h4>
 
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="space-y-3 text-sm">
                 <div>
                   <p className="text-muted-foreground">Account Name</p>
                   <p className="text-white font-medium">{account.accountName || "N/A"}</p>
                 </div>
+
+                {/* Editable Handle Field */}
                 <div>
-                  <p className="text-muted-foreground">Handle</p>
-                  <p className="text-white font-medium">{account.accountHandle || "N/A"}</p>
+                  <Label className="text-muted-foreground text-sm">Handle / Username</Label>
+                  {isEditingHandle ? (
+                    <div className="mt-1 space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          value={handleValue}
+                          onChange={(e) => setHandleValue(e.target.value)}
+                          placeholder="Enter your handle (e.g., johndoe)"
+                          className="flex-1 h-9"
+                          disabled={savingHandle}
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={saveHandle}
+                          disabled={savingHandle}
+                          className="h-9 w-9 p-0 text-green-400 hover:text-green-300 hover:bg-green-500/10"
+                        >
+                          {savingHandle ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Check className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={cancelEditingHandle}
+                          disabled={savingHandle}
+                          className="h-9 w-9 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {handleError && (
+                        <p className="text-xs text-red-400">{handleError}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        This handle will be used to identify your account for posting and interactions.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-white font-medium">
+                        {account.accountHandle ? `@${account.accountHandle}` : "Not set"}
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={startEditingHandle}
+                        className="h-7 px-2 text-muted-foreground hover:text-white"
+                      >
+                        <Pencil className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                    </div>
+                  )}
+                  {!account.accountHandle && !isEditingHandle && (
+                    <p className="text-xs text-yellow-400 mt-1">
+                      Please set your handle to enable posting to this account.
+                    </p>
+                  )}
                 </div>
               </div>
 

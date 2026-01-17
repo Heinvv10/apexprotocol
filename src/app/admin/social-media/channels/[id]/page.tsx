@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useConnectedAccounts, type ConnectedAccount } from "@/hooks/useSocial";
+import { ChannelSettingsModal } from "@/components/social/channel-settings-modal";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft,
   Twitter,
@@ -26,6 +29,7 @@ import {
   RefreshCw,
   ExternalLink,
   Zap,
+  Loader2,
 } from "lucide-react";
 import {
   LineChart,
@@ -296,12 +300,79 @@ export default function SocialMediaChannelDetailPage() {
   const params = useParams();
   const channelId = params.id as string;
   const [activeTab, setActiveTab] = useState<"overview" | "posts" | "audience" | "settings">("overview");
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
-  // Get channel data from mock
-  const channel = mockChannels[channelId];
+  // For admin, use "platform" as the brandId - represents Apex's own social accounts
+  const adminBrandId = "platform";
+
+  // Fetch connected OAuth accounts
+  const {
+    connectedAccounts,
+    isLoading,
+    isError,
+    disconnect,
+    mutate: refreshConnectedAccounts,
+  } = useConnectedAccounts(adminBrandId);
+
+  // Find the specific account by ID
+  const account = connectedAccounts?.find((acc) => acc.id === channelId);
+
+  // Handle disconnect
+  const handleDisconnect = async (platform: string): Promise<boolean> => {
+    const success = await disconnect(platform);
+    if (success) {
+      router.push("/admin/social-media/channels");
+    }
+    return success;
+  };
+
+  // Handle reconnect
+  const handleReconnect = (platform: string) => {
+    window.location.href = `/api/oauth/${platform}/authorize?brandId=${adminBrandId}&returnUrl=/admin/social-media/channels`;
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <div className="grid grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-lg" />
+          ))}
+        </div>
+        <Skeleton className="h-96 rounded-lg" />
+      </div>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <div className="p-6">
+        <div className="card-secondary p-12 text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-white mb-2">Error Loading Channel</h3>
+          <p className="text-muted-foreground mb-4">
+            There was an error loading the channel data. Please try again.
+          </p>
+          <Button onClick={() => router.push("/admin/social-media/channels")}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Channels
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Handle channel not found
-  if (!channel) {
+  if (!account) {
     return (
       <div className="p-6">
         <div className="card-secondary p-12 text-center">
@@ -318,6 +389,39 @@ export default function SocialMediaChannelDetailPage() {
       </div>
     );
   }
+
+  // Map ConnectedAccount to channel-like object for compatibility with existing UI
+  const channel = {
+    id: account.id,
+    platform: account.platform,
+    accountName: account.accountName || "Connected Account",
+    handle: account.accountHandle ? `@${account.accountHandle}` : "N/A",
+    profileUrl: account.profileUrl || "#",
+    status: account.connectionStatus === "active" ? "active" : "inactive",
+    followers: account.followerCount || 0,
+    followersGrowth: 0, // Would need historical data
+    following: account.followingCount || 0,
+    postsThisMonth: 0, // Would need API integration
+    engagement: 0, // Would need API integration
+    engagementGrowth: 0,
+    avgReach: 0,
+    avgLikes: 0,
+    avgComments: 0,
+    avgShares: 0,
+    impressions: 0,
+    profileViews: 0,
+    lastPost: null,
+    connectedAt: account.connectedAt,
+    health: account.connectionStatus === "active" ? "good" : "needs_attention",
+    apiQuota: 100,
+    postingFrequency: "N/A",
+    description: account.platformInfo?.description || "Social media channel",
+    audienceInsights: {
+      topLocations: [],
+      topIndustries: [],
+      ageGroups: {},
+    },
+  };
 
   const getPlatformIcon = (platform: string, size: string = "h-6 w-6") => {
     switch (platform) {
@@ -458,12 +562,22 @@ export default function SocialMediaChannelDetailPage() {
             <RefreshCw className="h-4 w-4 mr-2" />
             Sync
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setSettingsModalOpen(true)}>
             <Settings className="h-4 w-4 mr-2" />
             Settings
           </Button>
         </div>
       </div>
+
+      {/* Channel Settings Modal */}
+      <ChannelSettingsModal
+        open={settingsModalOpen}
+        onOpenChange={setSettingsModalOpen}
+        account={account}
+        onDisconnect={handleDisconnect}
+        onReconnect={handleReconnect}
+        onUpdate={() => refreshConnectedAccounts()}
+      />
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-border/50 pb-2">

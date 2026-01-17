@@ -384,6 +384,7 @@ export default function SocialMediaChannelsPage() {
         account={selectedAccount}
         onDisconnect={handleDisconnect}
         onReconnect={handleReconnect}
+        onUpdate={() => refreshConnectedAccounts()}
       />
 
       {/* Error State */}

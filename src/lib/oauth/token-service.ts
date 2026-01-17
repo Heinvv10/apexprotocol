@@ -355,6 +355,30 @@ export async function updateRefreshedTokens(params: {
 // ============================================================================
 
 /**
+ * Update account info (handle, profile URL) for a token
+ * Used when user manually adds/edits their handle
+ */
+export async function updateAccountInfo(params: {
+  tokenId: string;
+  accountHandle?: string;
+  profileUrl?: string;
+}): Promise<StoredToken> {
+  const { tokenId, accountHandle, profileUrl } = params;
+
+  const [updated] = await db
+    .update(socialOauthTokens)
+    .set({
+      accountHandle: accountHandle ?? undefined,
+      profileUrl: profileUrl ?? undefined,
+      updatedAt: new Date(),
+    })
+    .where(eq(socialOauthTokens.id, tokenId))
+    .returning();
+
+  return updated as StoredToken;
+}
+
+/**
  * Revoke/delete a token connection
  */
 export async function revokeToken(tokenId: string): Promise<void> {
@@ -447,6 +471,9 @@ export const TokenService = {
   updateTokenStatus,
   isTokenExpired,
   updateRefreshedTokens,
+
+  // Account Info
+  updateAccountInfo,
 
   // Deletion
   revokeToken,

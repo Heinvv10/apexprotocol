@@ -234,6 +234,7 @@ export default function CustomerChannelsPage() {
         account={selectedAccount}
         onDisconnect={handleDisconnect}
         onReconnect={handleReconnect}
+        onUpdate={() => refreshConnectedAccounts()}
       />
 
       {/* Error State */}

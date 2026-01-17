@@ -16,7 +16,7 @@ import {
   PLATFORM_INFO,
 } from "@/lib/oauth";
 import { db } from "@/lib/db";
-import { brands } from "@/lib/db/schema";
+import { brands, socialOauthTokens } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
 /**
@@ -92,6 +92,78 @@ export async function GET(request: NextRequest) {
     console.error("[Social Accounts] GET error:", error);
     return NextResponse.json(
       { error: "Failed to fetch connected accounts" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PATCH /api/social/accounts
+ * Update account info (handle, profile URL)
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    const userId = await getUserId();
+    const orgId = await getOrganizationId();
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!orgId) {
+      return NextResponse.json({ error: "Organization required" }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const { tokenId, accountHandle, profileUrl } = body;
+
+    if (!tokenId) {
+      return NextResponse.json({ error: "tokenId is required" }, { status: 400 });
+    }
+
+    // Get the token to verify ownership
+    const tokens = await db.query.socialOauthTokens.findFirst({
+      where: eq(socialOauthTokens.id, tokenId),
+    });
+
+    if (!tokens) {
+      return NextResponse.json({ error: "Token not found" }, { status: 404 });
+    }
+
+    // Verify the token belongs to a brand in this organization
+    // (unless it's the "platform" brand for admin use)
+    if (tokens.brandId !== "platform") {
+      const brand = await db.query.brands.findFirst({
+        where: and(
+          eq(brands.id, tokens.brandId),
+          eq(brands.organizationId, orgId)
+        ),
+      });
+
+      if (!brand) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      }
+    }
+
+    // Update the account info
+    const updated = await TokenService.updateAccountInfo({
+      tokenId,
+      accountHandle,
+      profileUrl,
+    });
+
+    return NextResponse.json({
+      success: true,
+      account: {
+        id: updated.id,
+        accountHandle: updated.accountHandle,
+        profileUrl: updated.profileUrl,
+      },
+    });
+  } catch (error) {
+    console.error("[Social Accounts] PATCH error:", error);
+    return NextResponse.json(
+      { error: "Failed to update account" },
       { status: 500 }
     );
   }
