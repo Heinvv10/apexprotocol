@@ -43,16 +43,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "brandId is required" }, { status: 400 });
     }
 
-    // Verify brand belongs to organization
-    const brand = await db.query.brands.findFirst({
-      where: and(
-        eq(brands.id, brandId),
-        eq(brands.organizationId, orgId)
-      ),
-    });
+    // Special handling for "platform" brandId - this is used by admin to manage
+    // the platform's own social accounts (not customer brands)
+    if (brandId !== "platform") {
+      // Verify brand belongs to organization
+      const brand = await db.query.brands.findFirst({
+        where: and(
+          eq(brands.id, brandId),
+          eq(brands.organizationId, orgId)
+        ),
+      });
 
-    if (!brand) {
-      return NextResponse.json({ error: "Brand not found" }, { status: 404 });
+      if (!brand) {
+        return NextResponse.json({ error: "Brand not found" }, { status: 404 });
+      }
     }
 
     // Get connected accounts
@@ -126,16 +130,20 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: `Invalid platform: ${platform}` }, { status: 400 });
     }
 
-    // Verify brand belongs to organization
-    const brand = await db.query.brands.findFirst({
-      where: and(
-        eq(brands.id, brandId),
-        eq(brands.organizationId, orgId)
-      ),
-    });
+    // Special handling for "platform" brandId - this is used by admin to manage
+    // the platform's own social accounts (not customer brands)
+    if (brandId !== "platform") {
+      // Verify brand belongs to organization
+      const brand = await db.query.brands.findFirst({
+        where: and(
+          eq(brands.id, brandId),
+          eq(brands.organizationId, orgId)
+        ),
+      });
 
-    if (!brand) {
-      return NextResponse.json({ error: "Brand not found" }, { status: 404 });
+      if (!brand) {
+        return NextResponse.json({ error: "Brand not found" }, { status: 404 });
+      }
     }
 
     // Disconnect the account

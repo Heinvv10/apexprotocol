@@ -37,135 +37,7 @@ import {
   Zap,
 } from "lucide-react";
 
-// Mock social media channels data
-const mockChannels = [
-  {
-    id: "channel_001",
-    platform: "linkedin",
-    accountName: "Apex Marketing",
-    handle: "@apex-marketing",
-    status: "active",
-    followers: 12450,
-    followersGrowth: 8.5,
-    postsThisMonth: 18,
-    engagement: 4.2,
-    engagementGrowth: 12.3,
-    avgReach: 3200,
-    avgLikes: 85,
-    avgComments: 12,
-    avgShares: 8,
-    lastPost: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    connectedAt: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
-    health: "excellent",
-    apiQuota: 85,
-    postingFrequency: "3-4 per week",
-  },
-  {
-    id: "channel_002",
-    platform: "twitter",
-    accountName: "Apex (@ApexMarketing)",
-    handle: "@ApexMarketing",
-    status: "active",
-    followers: 8720,
-    followersGrowth: 5.2,
-    postsThisMonth: 42,
-    engagement: 2.8,
-    engagementGrowth: -2.1,
-    avgReach: 1800,
-    avgLikes: 45,
-    avgComments: 8,
-    avgShares: 15,
-    lastPost: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    connectedAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-    health: "good",
-    apiQuota: 92,
-    postingFrequency: "1-2 per day",
-  },
-  {
-    id: "channel_003",
-    platform: "instagram",
-    accountName: "Apex Marketing",
-    handle: "@apex.marketing",
-    status: "active",
-    followers: 15680,
-    followersGrowth: 15.7,
-    postsThisMonth: 12,
-    engagement: 6.8,
-    engagementGrowth: 18.5,
-    avgReach: 4500,
-    avgLikes: 320,
-    avgComments: 25,
-    avgShares: 0,
-    lastPost: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    connectedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-    health: "excellent",
-    apiQuota: 78,
-    postingFrequency: "3-4 per week",
-  },
-  {
-    id: "channel_004",
-    platform: "youtube",
-    accountName: "Apex Marketing Channel",
-    handle: "@ApexMarketing",
-    status: "active",
-    followers: 3240,
-    followersGrowth: 22.4,
-    postsThisMonth: 4,
-    engagement: 8.5,
-    engagementGrowth: 25.8,
-    avgReach: 1200,
-    avgLikes: 95,
-    avgComments: 18,
-    avgShares: 12,
-    lastPost: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    connectedAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-    health: "excellent",
-    apiQuota: 65,
-    postingFrequency: "1 per week",
-  },
-  {
-    id: "channel_005",
-    platform: "facebook",
-    accountName: "Apex Marketing Page",
-    handle: "ApexMarketingOfficial",
-    status: "warning",
-    followers: 6890,
-    followersGrowth: -1.2,
-    postsThisMonth: 8,
-    engagement: 1.5,
-    engagementGrowth: -8.5,
-    avgReach: 980,
-    avgLikes: 28,
-    avgComments: 4,
-    avgShares: 6,
-    lastPost: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    connectedAt: new Date(Date.now() - 200 * 24 * 60 * 60 * 1000).toISOString(),
-    health: "needs-attention",
-    apiQuota: 95,
-    postingFrequency: "2 per week",
-  },
-  {
-    id: "channel_006",
-    platform: "tiktok",
-    accountName: "Apex Tips",
-    handle: "@apex.tips",
-    status: "inactive",
-    followers: 1250,
-    followersGrowth: 0,
-    postsThisMonth: 0,
-    engagement: 0,
-    engagementGrowth: 0,
-    avgReach: 0,
-    avgLikes: 0,
-    avgComments: 0,
-    avgShares: 0,
-    lastPost: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-    connectedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    health: "inactive",
-    apiQuota: 100,
-    postingFrequency: "Not posting",
-  },
-];
+// No mock channels - only show real connected accounts
 
 // Mock recent activity
 const mockRecentActivity = [
@@ -222,8 +94,11 @@ export default function SocialMediaChannelsPage() {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<ConnectedAccount | null>(null);
 
+  // For admin, use "platform" as the brandId - represents Apex's own social accounts
+  const adminBrandId = "platform";
+
   // Fetch social accounts from API
-  const { accounts, isLoading: accountsLoading, isError, error } = useSocialAccounts(selectedBrand?.id ?? null);
+  const { accounts, isLoading: accountsLoading, isError, error } = useSocialAccounts(adminBrandId);
 
   // Fetch connected OAuth accounts
   const {
@@ -234,7 +109,7 @@ export default function SocialMediaChannelsPage() {
     getAccountForPlatform,
     disconnect,
     mutate: refreshConnectedAccounts
-  } = useConnectedAccounts(selectedBrand?.id ?? null);
+  } = useConnectedAccounts(adminBrandId);
 
   const isLoading = accountsLoading || connectedLoading;
 
@@ -304,38 +179,31 @@ export default function SocialMediaChannelsPage() {
     setConnectModalOpen(true);
   };
 
-  // Use API data if available, fallback to mock data for development
-  const allChannels = accounts.length > 0 ? accounts.map((acc: any) => {
-    const connectionInfo = getConnectionInfo(acc.platform);
+  // Build channels from real connected OAuth accounts only
+  const allChannels = connectedAccounts.map((acc) => {
     return {
       id: acc.id,
       platform: acc.platform,
-      accountName: connectionInfo.accountName || acc.accountName || "",
-      handle: connectionInfo.accountHandle || acc.accountHandle || "",
-      status: connectionInfo.isConnected ? (connectionInfo.connectionStatus === "active" ? "active" : "warning") : (acc.isActive ? "active" : "inactive"),
-      followers: acc.followersCount || 0,
+      accountName: acc.accountName || "",
+      handle: acc.accountHandle || "",
+      status: acc.connectionStatus === "active" ? "active" : (acc.connectionStatus === "expired" ? "warning" : "inactive"),
+      followers: 0,
       followersGrowth: 0,
-      postsThisMonth: acc.postsCount || 0,
-      engagement: acc.engagementRate || 0,
+      postsThisMonth: 0,
+      engagement: 0,
       engagementGrowth: 0,
       avgReach: 0,
       avgLikes: 0,
       avgComments: 0,
       avgShares: 0,
-      lastPost: acc.lastSyncedAt || new Date().toISOString(),
-      connectedAt: new Date().toISOString(),
-      health: acc.isActive ? "good" : "inactive",
+      lastPost: new Date().toISOString(),
+      connectedAt: acc.createdAt || new Date().toISOString(),
+      health: acc.connectionStatus === "active" ? "good" : "inactive",
       apiQuota: 100,
       postingFrequency: "N/A",
-      isOAuthConnected: connectionInfo.isConnected,
-      oauthAccountHandle: connectionInfo.accountHandle,
-    };
-  }) : mockChannels.map((channel) => {
-    const connectionInfo = getConnectionInfo(channel.platform);
-    return {
-      ...channel,
-      isOAuthConnected: connectionInfo.isConnected,
-      oauthAccountHandle: connectionInfo.accountHandle,
+      isOAuthConnected: true,
+      oauthAccountHandle: acc.accountHandle,
+      expiresAt: acc.expiresAt,
     };
   });
 
@@ -500,10 +368,12 @@ export default function SocialMediaChannelsPage() {
       </div>
 
       {/* Connect Channel Modal */}
+      {/* For admin, use "platform" as brandId - this represents Apex's own social accounts */}
+      {/* (not customer brands, but the company running this white-label platform) */}
       <ConnectChannelModal
         open={connectModalOpen}
         onOpenChange={setConnectModalOpen}
-        brandId={selectedBrand?.id ?? null}
+        brandId="platform"
         returnUrl="/admin/social-media/channels"
       />
 
