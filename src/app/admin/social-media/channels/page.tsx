@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSocialAccounts } from "@/hooks/useSocial";
+import { ConnectChannelModal } from "@/components/social/connect-channel-modal";
 import {
   Select,
   SelectContent,
@@ -212,6 +213,7 @@ export default function SocialMediaChannelsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [platformFilter, setPlatformFilter] = useState("all");
+  const [connectModalOpen, setConnectModalOpen] = useState(false);
 
   // Fetch social accounts from API (brandId would come from context/URL in real app)
   const { accounts, isLoading, isError, error } = useSocialAccounts(null);
@@ -392,12 +394,18 @@ export default function SocialMediaChannelsPage() {
             <Plus className="h-4 w-4 mr-2" />
             Create Post
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => setConnectModalOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Connect Channel
           </Button>
         </div>
       </div>
+
+      {/* Connect Channel Modal */}
+      <ConnectChannelModal
+        open={connectModalOpen}
+        onOpenChange={setConnectModalOpen}
+      />
 
       {/* Error State */}
       {isError && (
@@ -640,7 +648,7 @@ export default function SocialMediaChannelsPage() {
           <Share2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-white mb-2">No channels found</h3>
           <p className="text-muted-foreground mb-4">Try adjusting your filters or connect a new channel</p>
-          <Button>
+          <Button onClick={() => setConnectModalOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Connect Channel
           </Button>

@@ -209,9 +209,79 @@ class ListMonkClient {
   }
 }
 
+// Mock email lists data for demo/development
+const mockEmailLists = [
+  {
+    id: 'list_001',
+    name: 'Newsletter Subscribers',
+    description: 'Main newsletter list with product updates and tips',
+    subscribers: 12450,
+    openRate: 32.5,
+    clickRate: 8.2,
+    status: 'active',
+    createdAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'list_002',
+    name: 'Product Updates',
+    description: 'Users who opted in for product release announcements',
+    subscribers: 8920,
+    openRate: 45.2,
+    clickRate: 12.8,
+    status: 'active',
+    createdAt: new Date(Date.now() - 280 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'list_003',
+    name: 'Enterprise Leads',
+    description: 'High-value enterprise prospects and decision makers',
+    subscribers: 2340,
+    openRate: 52.1,
+    clickRate: 18.5,
+    status: 'active',
+    createdAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'list_004',
+    name: 'Webinar Attendees',
+    description: 'People who registered for webinars',
+    subscribers: 4680,
+    openRate: 38.7,
+    clickRate: 15.2,
+    status: 'active',
+    createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'list_005',
+    name: 'Trial Users',
+    description: 'Free trial signups for conversion campaigns',
+    subscribers: 6820,
+    openRate: 41.3,
+    clickRate: 14.6,
+    status: 'active',
+    createdAt: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'list_006',
+    name: 'Churned Users',
+    description: 'Former customers for win-back campaigns',
+    subscribers: 1420,
+    openRate: 22.8,
+    clickRate: 5.4,
+    status: 'inactive',
+    createdAt: new Date(Date.now() - 200 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
 /**
  * GET /api/marketing/emails
- * Get all email lists
+ * Get all email lists (with mock data fallback)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -220,28 +290,44 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const listmonk = new ListMonkClient();
-    const result = await listmonk.getLists();
+    // Try ListMonk first, fallback to mock data
+    try {
+      const listmonk = new ListMonkClient();
+      const result = await listmonk.getLists();
 
-    // Transform ListMonk response to Apex format
-    const transformed = result.data
-      ? result.data.map((list: any) => ({
-          id: list.id,
-          name: list.name,
-          description: list.description,
-          subscribers: list.subscriber_count || 0,
-          createdAt: list.created_at,
-          updatedAt: list.updated_at,
-        }))
-      : [];
+      // Transform ListMonk response to Apex format
+      const transformed = result.data
+        ? result.data.map((list: any) => ({
+            id: list.id,
+            name: list.name,
+            description: list.description,
+            subscribers: list.subscriber_count || 0,
+            createdAt: list.created_at,
+            updatedAt: list.updated_at,
+          }))
+        : [];
 
-    return NextResponse.json({
-      data: transformed,
-      meta: {
-        total: transformed.length,
-        success: true,
-      },
-    });
+      return NextResponse.json({
+        data: transformed,
+        meta: {
+          total: transformed.length,
+          success: true,
+          source: 'listmonk',
+        },
+      });
+    } catch (listmonkError) {
+      // ListMonk not available, return mock data
+      console.log('ListMonk unavailable, using mock data:', listmonkError);
+
+      return NextResponse.json({
+        data: mockEmailLists,
+        meta: {
+          total: mockEmailLists.length,
+          success: true,
+          source: 'mock',
+        },
+      });
+    }
   } catch (error) {
     console.error('Error fetching email lists:', error);
     return NextResponse.json(

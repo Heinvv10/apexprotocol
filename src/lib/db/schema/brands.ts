@@ -85,6 +85,11 @@ export const brands = pgTable("brands", {
   // Status
   isActive: boolean("is_active").default(true).notNull(),
 
+  // Benchmark brand fields
+  isBenchmark: boolean("is_benchmark").default(false).notNull(),
+  benchmarkTier: text("benchmark_tier"), // 'gold', 'silver', 'bronze'
+  lastEnrichedAt: timestamp("last_enriched_at", { withTimezone: true }),
+
   // Timestamps
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

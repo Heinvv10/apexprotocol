@@ -4,12 +4,14 @@ import {
   timestamp,
   jsonb,
   integer,
+  boolean,
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
 import { brands } from "./brands";
 import { users } from "./users";
+import { organizations } from "./organizations";
 
 // Content type enum
 export const contentTypeEnum = pgEnum("content_type", [
@@ -37,6 +39,9 @@ export const content = pgTable("content", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => createId()),
+  organizationId: text("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
   brandId: text("brand_id")
     .notNull()
     .references(() => brands.id, { onDelete: "cascade" }),
@@ -44,12 +49,20 @@ export const content = pgTable("content", {
 
   // Content info
   title: text("title").notNull(),
+  url: text("url"), // Page URL for SEO tracking
   type: contentTypeEnum("type").notNull(),
   status: contentStatusEnum("status").default("draft").notNull(),
 
   // Content body
   content: text("content").notNull(),
   excerpt: text("excerpt"),
+
+  // SEO fields
+  metaDescription: text("meta_description"),
+  indexed: boolean("indexed").default(false),
+  indexingErrors: jsonb("indexing_errors").$type<string[]>().default([]),
+  visits: integer("visits").default(0),
+  lastModified: timestamp("last_modified", { withTimezone: true }),
 
   // SEO/AI optimization
   keywords: jsonb("keywords").$type<string[]>().default([]),
@@ -84,6 +97,10 @@ export interface AIMetadata {
 
 // Relations
 export const contentRelations = relations(content, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [content.organizationId],
+    references: [organizations.id],
+  }),
   brand: one(brands, {
     fields: [content.brandId],
     references: [brands.id],

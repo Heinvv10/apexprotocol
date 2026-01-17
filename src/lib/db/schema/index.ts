@@ -48,6 +48,13 @@ export {
 } from "./content";
 
 export {
+  keywords,
+  keywordsRelations,
+  type Keyword,
+  type NewKeyword,
+} from "./keywords";
+
+export {
   audits,
   auditStatusEnum,
   type Audit,
