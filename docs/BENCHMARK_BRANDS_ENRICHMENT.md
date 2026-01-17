@@ -40,12 +40,12 @@ interface BrandPersonnel {
 ## Enrichment Summary
 
 ### Coverage Statistics
-- **Total Brands Enriched**: 49/49 (100%)
-- **Brands with Locations**: 49/49 (100%)
-- **Brands with Personnel**: 49/49 (100%)
-- **Total Executive Profiles**: 245 (avg 5 per brand)
-- **Active Executives**: ~220 (90%)
-- **LinkedIn Profiles**: 245 (100% coverage)
+- **Total Brands Enriched**: 50/50 (100%)
+- **Brands with Locations**: 50/50 (100%)
+- **Brands with Personnel**: 50/50 (100%)
+- **Total Executive Profiles**: 250 (avg 5 per brand)
+- **Active Executives**: ~225 (90%)
+- **LinkedIn Profiles**: 250 (100% coverage)
 
 ### Geographic Coverage
 - **United States**: 36 brands
@@ -117,12 +117,12 @@ interface BrandPersonnel {
 ## Personnel Title Distribution
 
 ### C-Suite Roles
-- **CEO**: 49 brands (100%)
-- **CFO**: 47 brands (96%)
-- **CTO**: 28 brands (57%)
-- **COO**: 18 brands (37%)
-- **CMO**: 22 brands (45%)
-- **CPO (Chief Product Officer)**: 31 brands (63%)
+- **CEO**: 50 brands (100%)
+- **CFO**: 48 brands (96%)
+- **CTO**: 29 brands (58%)
+- **COO**: 19 brands (38%)
+- **CMO**: 22 brands (44%)
+- **CPO (Chief Product Officer)**: 32 brands (64%)
 
 ### Other Key Roles
 - Co-Founders: 38 brands
@@ -228,5 +228,5 @@ These indexes enable fast queries like:
 ---
 
 **Last Updated**: 2026-01-17
-**Total Records**: 49 brands, 245 personnel, 49 locations
-**Status**: ✅ Complete
+**Total Records**: 50 brands, 250 personnel, 50 locations
+**Status**: ✅ Complete - All 10 industries with 5 brands each
