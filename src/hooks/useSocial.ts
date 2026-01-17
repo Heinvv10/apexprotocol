@@ -34,7 +34,7 @@ export function useSocialAccounts(
   config?: SWRConfiguration<SocialAccountsResponse>
 ) {
   const { data, error, isLoading, mutate } = useSWR<SocialAccountsResponse>(
-    brandId ? `/api/social/accounts?brandId=${brandId}` : null,
+    brandId ? `/api/social?brandId=${brandId}&type=accounts` : null,
     brandId ? () => getSocialAccounts(brandId) : null,
     {
       revalidateOnFocus: false,
