@@ -40,7 +40,7 @@ const platforms: Platform[] = [
     icon: <Linkedin className="h-6 w-6" />,
     color: "text-[#0A66C2]",
     bgColor: "bg-[#0A66C2]/10 hover:bg-[#0A66C2]/20",
-    description: "Company pages and personal profiles",
+    description: "Personal profiles and company pages",
     available: true,
   },
   {
@@ -49,7 +49,7 @@ const platforms: Platform[] = [
     icon: <Twitter className="h-6 w-6" />,
     color: "text-[#1DA1F2]",
     bgColor: "bg-[#1DA1F2]/10 hover:bg-[#1DA1F2]/20",
-    description: "Business and personal accounts",
+    description: "Personal and business accounts",
     available: true,
   },
   {
@@ -198,12 +198,12 @@ export function ConnectChannelModal({
                 relative p-4 rounded-lg border border-border/50 transition-all
                 ${platform.bgColor}
                 ${!platform.available ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-                ${selectedPlatform === platform.id ? "ring-2 ring-cyan-500" : ""}
+                ${selectedPlatform === platform.id && connecting ? "ring-2 ring-cyan-500" : ""}
               `}
             >
               <div className="flex flex-col items-center gap-2">
                 <div className={platform.color}>
-                  {connecting && selectedPlatform === platform.id ? (
+                  {selectedPlatform === platform.id && connecting ? (
                     <Loader2 className="h-6 w-6 animate-spin" />
                   ) : (
                     platform.icon

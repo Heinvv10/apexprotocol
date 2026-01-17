@@ -25,9 +25,9 @@ export function AdminShell({ children, title }: AdminShellProps) {
         {/* Header */}
         <AdminHeader title={title} />
 
-        {/* Page Content */}
+        {/* Page Content - IMPROVED DENSITY */}
         <main className="flex-1 overflow-y-auto" style={{ backgroundColor: "#0a0f1a" }}>
-          <div className="container mx-auto p-6 max-w-7xl">
+          <div className="container mx-auto p-4 max-w-[1800px]">
             {children}
           </div>
         </main>

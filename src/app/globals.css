@@ -387,7 +387,7 @@
 
 /* Tier 1: Primary Cards - Hero metrics (AI Visibility Pulse, Trust Score) */
 .card-primary {
-  @apply relative rounded-2xl p-6;
+  @apply relative rounded-2xl p-4;
   background: linear-gradient(135deg,
     rgba(15, 18, 37, 0.9) 0%,
     rgba(10, 13, 26, 0.95) 100%);
@@ -414,7 +414,7 @@
 
 /* Gradient border effect for special emphasis */
 .card-primary-gradient {
-  @apply relative rounded-2xl p-6;
+  @apply relative rounded-2xl p-4;
   background: linear-gradient(135deg,
     rgba(15, 18, 37, 0.95) 0%,
     rgba(10, 13, 26, 0.98) 100%);
@@ -454,9 +454,9 @@
   z-index: -1;
 }
 
-/* Tier 2: Secondary Cards - Charts, recommendations, data sections */
+/* Tier 2: Secondary Cards - Charts, recommendations, data sections - REDUCED PADDING */
 .card-secondary {
-  @apply relative rounded-xl p-5;
+  @apply relative rounded-xl p-4;
   background: rgba(15, 18, 37, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
@@ -468,9 +468,9 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
-/* Tier 3: Tertiary Cards - List items, AI platform cards, compact content */
+/* Tier 3: Tertiary Cards - List items, AI platform cards, compact content - REDUCED PADDING */
 .card-tertiary {
-  @apply relative rounded-xl p-4;
+  @apply relative rounded-xl p-3;
   background: rgba(15, 18, 37, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.05);
   transition: all var(--duration-fast) var(--ease-default);
@@ -1802,41 +1802,41 @@
   color: hsl(var(--primary));
 }
 
-/* Page Layout */
+/* Page Layout - IMPROVED DENSITY */
 .page-container {
-  @apply max-w-[1440px] mx-auto px-8 py-6;
+  @apply max-w-[1600px] mx-auto px-6 py-4;
 }
 
 .page-header {
-  @apply flex items-center justify-between mb-8;
+  @apply flex items-center justify-between mb-4;
 }
 
 .page-title {
   @apply text-2xl font-semibold;
 }
 
-/* Section */
+/* Section - REDUCED SPACING */
 .section {
-  @apply mb-8;
+  @apply mb-4;
 }
 
 .section-title {
-  @apply text-lg font-medium mb-4;
+  @apply text-lg font-medium mb-3;
 }
 
-/* Grid Layouts */
+/* Grid Layouts - REDUCED GAP FOR BETTER DENSITY */
 .grid-dashboard {
-  @apply grid gap-6;
+  @apply grid gap-4;
   grid-template-columns: 1fr 1fr 2fr;
 }
 
 .grid-monitor {
-  @apply grid gap-6;
+  @apply grid gap-4;
   grid-template-columns: 280px 1fr;
 }
 
 .grid-settings {
-  @apply grid gap-6;
+  @apply grid gap-4;
   grid-template-columns: 200px 1fr;
 }
 
