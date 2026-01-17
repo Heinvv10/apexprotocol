@@ -79,6 +79,8 @@ export async function GET(
         authUrl = await LinkedInProvider.getAuthorizationUrl({
           state,
           includeOrganizationScopes: includeExtended,
+          // Use the social channels callback path (registered in LinkedIn app settings)
+          callbackPath: "/api/oauth/linkedin/callback",
         });
         break;
       }

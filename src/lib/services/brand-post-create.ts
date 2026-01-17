@@ -15,6 +15,7 @@ import { brands } from "@/lib/db/schema/brands";
 import { socialAccounts } from "@/lib/db/schema/social";
 import { discoveredCompetitors } from "@/lib/db/schema/competitive";
 import { portfolios, portfolioBrands } from "@/lib/db/schema/portfolios";
+import { brandLocations } from "@/lib/db/schema/locations";
 import { eq, and } from "drizzle-orm";
 import type { Brand } from "@/stores";
 import { runGEOMonitoringForBrand } from "./geo-monitor";
@@ -29,6 +30,7 @@ interface BrandPopulationResult {
   socialProfilesCreated: number;
   competitorsCreated: number;
   peopleDiscovered: number;
+  locationsCreated: number;
   portfolioCreated: boolean;
   portfolioId?: string;
   engineRoomDataCollected: boolean;
@@ -281,7 +283,85 @@ export async function populateCompetitors(
 }
 
 // ============================================================================
-// 3. Default Portfolio Creation
+// 3. Locations Population
+// ============================================================================
+
+/**
+ * Populate brand locations table from brands.locations JSONB field
+ */
+export async function populateLocations(
+  brandId: string,
+  locations: Array<{ type: string; address?: string; city?: string; state?: string; country?: string; postalCode?: string; phone?: string; email?: string }>
+): Promise<number> {
+  let createdCount = 0;
+  const errors: string[] = [];
+
+  for (const location of locations) {
+    if (!location.city && !location.address) continue; // Skip incomplete locations
+
+    try {
+      // Map location type from scraper to schema enum
+      let locationType: "headquarters" | "branch" | "store" | "office" | "warehouse" | "factory" | "distribution_center" = "office";
+      if (location.type === "headquarters") locationType = "headquarters";
+      else if (location.type === "office") locationType = "office";
+      else if (location.type === "regional") locationType = "branch";
+
+      // Check if location already exists (by address or city+country)
+      const existing = await db.query.brandLocations.findFirst({
+        where: and(
+          eq(brandLocations.brandId, brandId),
+          location.address
+            ? eq(brandLocations.address, location.address)
+            : and(
+                eq(brandLocations.city, location.city || ""),
+                eq(brandLocations.country, location.country || "")
+              )
+        ),
+      });
+
+      if (existing) {
+        console.log(`Location in ${location.city || location.address} already exists, skipping`);
+        continue;
+      }
+
+      // Determine if this should be primary (first headquarters location)
+      const isPrimary = location.type === "headquarters" && createdCount === 0;
+
+      // Create brand location record
+      await db.insert(brandLocations).values({
+        brandId,
+        name: location.city || location.address || "Office", // Use city as name if available
+        address: location.address || null,
+        city: location.city || null,
+        state: location.state || null,
+        country: location.country || null,
+        postalCode: location.postalCode || null,
+        phone: location.phone || null,
+        email: location.email || null,
+        locationType,
+        isPrimary,
+        isActive: true,
+        isVerified: false, // Not verified until Google Places sync
+      });
+
+      createdCount++;
+      console.log(`Created location record for ${location.city || location.address}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      errors.push(`Failed to create location ${location.city || location.address}: ${errorMessage}`);
+      console.error(`Error creating location ${location.city || location.address}:`, error);
+    }
+  }
+
+  if (errors.length > 0) {
+    console.warn("Location creation errors:", errors);
+  }
+
+  return createdCount;
+}
+
+// ============================================================================
+// 4. Default Portfolio Creation
 // ============================================================================
 
 /**
@@ -362,6 +442,7 @@ export async function populateBrandData(brandId: string): Promise<BrandPopulatio
     socialProfilesCreated: 0,
     competitorsCreated: 0,
     peopleDiscovered: 0,
+    locationsCreated: 0,
     portfolioCreated: false,
     engineRoomDataCollected: false,
     errors: [],
@@ -404,11 +485,46 @@ export async function populateBrandData(brandId: string): Promise<BrandPopulatio
       console.log("No competitors found, skipping competitor creation");
     }
 
-    // 2.5. Discover management-level people from website
+    // 2.5. Populate locations from brands.locations JSONB field
+    if (brand.locations && Array.isArray(brand.locations) && brand.locations.length > 0) {
+      console.log(`Populating ${brand.locations.length} location(s) from scraped data...`);
+      result.locationsCreated = await populateLocations(
+        brandId,
+        brand.locations as Array<{ type: string; address?: string; city?: string; state?: string; country?: string; postalCode?: string; phone?: string; email?: string }>
+      );
+      console.log(`✅ Created ${result.locationsCreated} location record(s)`);
+    } else {
+      console.log("No locations found in scraped data, skipping location creation");
+    }
+
+    // 2.6. Discover management-level people from website
     if (brand.domain) {
       console.log(`Discovering people from ${brand.domain}...`);
       const discoveryResult = await discoverManagementPeople(brandId, brand.domain);
       result.peopleDiscovered = discoveryResult.saved;
+
+      // 2.7. LinkedIn enrichment if fewer than 5 people found
+      if (result.peopleDiscovered < 5) {
+        console.log(`Only ${result.peopleDiscovered} people found from website, enriching from LinkedIn...`);
+        try {
+          const { extractLinkedInPeople } = await import("./linkedin-scraper");
+          const linkedinResult = await extractLinkedInPeople(brandId);
+
+          if (linkedinResult.success && linkedinResult.peopleExtracted > 0) {
+            result.peopleDiscovered += linkedinResult.peopleExtracted;
+            console.log(`✅ Added ${linkedinResult.peopleExtracted} people from LinkedIn (total: ${result.peopleDiscovered})`);
+          } else if (linkedinResult.errors.length > 0) {
+            result.errors.push(`LinkedIn enrichment failed: ${linkedinResult.errors.join(', ')}`);
+            console.warn(`LinkedIn enrichment failed: ${linkedinResult.errors.join(', ')}`);
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          result.errors.push(`LinkedIn enrichment error: ${errorMessage}`);
+          console.error("LinkedIn enrichment error:", error);
+        }
+      } else {
+        console.log(`Found ${result.peopleDiscovered} people from website, skipping LinkedIn enrichment`);
+      }
     } else {
       console.log("No domain found, skipping people discovery");
     }

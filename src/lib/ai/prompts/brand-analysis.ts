@@ -62,6 +62,28 @@ export interface BrandAnalysisInput {
   schemaTypes: string[];
 }
 
+// Location info extracted from website
+export interface BrandLocationInfo {
+  type: "headquarters" | "office" | "regional";
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postalCode?: string;
+  phone?: string;
+  email?: string;
+}
+
+// Personnel info extracted from website
+export interface BrandPersonnelInfo {
+  name: string;
+  title: string;
+  department?: string;
+  bio?: string;
+  email?: string;
+  linkedinUrl?: string;
+}
+
 // Output from brand analysis
 export interface BrandAnalysisResult {
   brandName: string;
@@ -84,6 +106,8 @@ export interface BrandAnalysisResult {
   targetAudience: string;
   valuePropositions: string[];
   socialLinks: Record<string, string>;
+  locations?: BrandLocationInfo[];
+  personnel?: BrandPersonnelInfo[];
   confidence: {
     overall: number;
     perField: Record<string, number>;
@@ -136,7 +160,25 @@ Based on this data, you must extract COMPREHENSIVE brand information:
 
 11. **Social Links**: Any social media URLs found (facebook, twitter, linkedin, instagram, youtube, etc.)
 
-12. **Confidence**: Scores for overall analysis (0-100) and per-field
+12. **Contact Information & Locations**: Extract all business locations found:
+   - **type**: headquarters (main office), office (branch), or regional (regional center)
+   - **address**: Full street address if available
+   - **city**: City name
+   - **state**: State/province (if applicable)
+   - **country**: Country name
+   - **postalCode**: Zip/postal code
+   - **phone**: Contact phone number
+   - **email**: Contact email address
+
+13. **Key Personnel**: Extract up to 10 key people from About/Team/Leadership pages:
+   - **name**: Full name
+   - **title**: Job title (CEO, CTO, VP Marketing, etc.)
+   - **department**: Department/division if mentioned
+   - **bio**: Brief biography or description
+   - **email**: Direct email if available
+   - **linkedinUrl**: LinkedIn profile URL if visible
+
+14. **Confidence**: Scores for overall analysis (0-100) and per-field
 
 IMPORTANT RULES:
 - Respond ONLY with valid JSON, no markdown formatting or backticks
@@ -227,6 +269,28 @@ Respond with a JSON object matching this EXACT structure:
     "instagram": "url or null",
     "youtube": "url or null"
   },
+  "locations": [
+    {
+      "type": "headquarters | office | regional",
+      "address": "string or null",
+      "city": "string or null",
+      "state": "string or null",
+      "country": "string or null",
+      "postalCode": "string or null",
+      "phone": "string or null",
+      "email": "string or null"
+    }
+  ],
+  "personnel": [
+    {
+      "name": "string",
+      "title": "string",
+      "department": "string or null",
+      "bio": "string or null",
+      "email": "string or null",
+      "linkedinUrl": "string or null"
+    }
+  ],
   "confidence": {
     "overall": number (0-100),
     "perField": {
@@ -237,7 +301,9 @@ Respond with a JSON object matching this EXACT structure:
       "colors": number,
       "keywords": number,
       "competitors": number,
-      "targetAudience": number
+      "targetAudience": number,
+      "locations": number,
+      "personnel": number
     }
   }
 }`;
@@ -395,6 +461,53 @@ function normalizeAnalysisResult(
     }
   }
 
+  // Validate locations
+  let locations = parsed.locations as BrandLocationInfo[];
+  if (!Array.isArray(locations)) {
+    locations = [];
+  }
+  locations = locations
+    .filter(
+      (loc) =>
+        typeof loc === "object" &&
+        loc !== null &&
+        (loc.address || loc.city || loc.country)
+    )
+    .slice(0, 10) // Max 10 locations
+    .map((loc) => ({
+      type: (loc.type as "headquarters" | "office" | "regional") || "office",
+      address: loc.address || undefined,
+      city: loc.city || undefined,
+      state: loc.state || undefined,
+      country: loc.country || undefined,
+      postalCode: loc.postalCode || undefined,
+      phone: loc.phone || undefined,
+      email: loc.email || undefined,
+    }));
+
+  // Validate personnel
+  let personnel = parsed.personnel as BrandPersonnelInfo[];
+  if (!Array.isArray(personnel)) {
+    personnel = [];
+  }
+  personnel = personnel
+    .filter(
+      (person) =>
+        typeof person === "object" &&
+        person !== null &&
+        typeof person.name === "string" &&
+        typeof person.title === "string"
+    )
+    .slice(0, 10) // Max 10 people
+    .map((person) => ({
+      name: person.name,
+      title: person.title,
+      department: person.department || undefined,
+      bio: person.bio || undefined,
+      email: person.email || undefined,
+      linkedinUrl: person.linkedinUrl || undefined,
+    }));
+
   // Validate confidence scores
   const confidence = parsed.confidence as {
     overall: number;
@@ -422,6 +535,8 @@ function normalizeAnalysisResult(
     targetAudience: (parsed.targetAudience as string) || "",
     valuePropositions,
     socialLinks: normalizedSocialLinks,
+    locations,
+    personnel,
     confidence: normalizedConfidence,
   };
 }
@@ -462,6 +577,8 @@ function createFallbackResult(input: BrandAnalysisInput): BrandAnalysisResult {
     targetAudience: "",
     valuePropositions: [],
     socialLinks: {},
+    locations: [],
+    personnel: [],
     confidence: {
       overall: 20,
       perField: {
@@ -473,6 +590,8 @@ function createFallbackResult(input: BrandAnalysisInput): BrandAnalysisResult {
         keywords: 0,
         competitors: 0,
         targetAudience: 0,
+        locations: 0,
+        personnel: 0,
       },
     },
   };

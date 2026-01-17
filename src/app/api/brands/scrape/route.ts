@@ -44,6 +44,25 @@ export interface ScrapedBrandData {
     overall: number;
     perField: Record<string, number>;
   };
+  // New fields from orchestrator
+  locations?: Array<{
+    type: "headquarters" | "office" | "regional";
+    address?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    postalCode?: string;
+    phone?: string;
+    email?: string;
+  }>;
+  personnel?: Array<{
+    name: string;
+    title: string;
+    department?: string;
+    bio?: string;
+    email?: string;
+    linkedinUrl?: string;
+  }>;
   rawData?: {
     title: string;
     metaDescription: string;
@@ -127,8 +146,41 @@ export async function POST(request: NextRequest) {
     // This avoids polling issues with in-memory storage in serverless environments
     if (!hasRedis()) {
       try {
-        const { scrapeBrandFromUrl } = await import("@/lib/services/brand-scraper");
-        const result = await scrapeBrandFromUrl(normalizedUrl);
+        const { scrapeBrandWithFallbacks } = await import("@/lib/services/brand-scraper-orchestrator");
+
+        // Use orchestrator with progress callback
+        let currentProgress = 0;
+        const orchestratorResult = await scrapeBrandWithFallbacks(normalizedUrl, {
+          onProgress: async (progress, message) => {
+            currentProgress = progress;
+            console.log(`[Scrape ${jobId}] ${progress}% - ${message}`);
+          },
+        });
+
+        // Convert orchestrator result to ScrapedBrandData format
+        const result: ScrapedBrandData = {
+          brandName: orchestratorResult.brand.brandName || "",
+          description: orchestratorResult.brand.description || "",
+          tagline: orchestratorResult.brand.tagline || null,
+          industry: orchestratorResult.brand.industry || "",
+          primaryColor: orchestratorResult.brand.primaryColor || "",
+          secondaryColor: orchestratorResult.brand.secondaryColor || null,
+          accentColor: orchestratorResult.brand.accentColor || null,
+          colorPalette: orchestratorResult.brand.colorPalette || [],
+          logoUrl: orchestratorResult.brand.logoUrl || null,
+          keywords: orchestratorResult.brand.keywords || [],
+          scrapedUrl: orchestratorResult.brand.scrapedUrl || normalizedUrl,
+          seoKeywords: orchestratorResult.brand.seoKeywords || [],
+          geoKeywords: orchestratorResult.brand.geoKeywords || [],
+          competitors: orchestratorResult.brand.competitors || [],
+          targetAudience: orchestratorResult.brand.targetAudience || "",
+          valuePropositions: orchestratorResult.brand.valuePropositions || [],
+          socialLinks: orchestratorResult.brand.socialLinks || {},
+          confidence: orchestratorResult.brand.confidence || { overall: 0, perField: {} },
+          // Add locations and personnel from orchestrator
+          locations: orchestratorResult.locations || [],
+          personnel: orchestratorResult.personnel || [],
+        } as ScrapedBrandData & { locations?: any[]; personnel?: any[] };
 
         return NextResponse.json({
           success: true,
@@ -204,15 +256,41 @@ async function processScrapeJob(
 
   try {
     // Update status to processing
-    await updateJobProgress(jobKey, "processing", 10, "Fetching website...");
+    await updateJobProgress(jobKey, "processing", 10, "Starting multi-stage analysis...");
 
-    // Import scraper dynamically to avoid loading at module init
-    const { scrapeBrandFromUrl } = await import("@/lib/services/brand-scraper");
+    // Import orchestrator dynamically to avoid loading at module init
+    const { scrapeBrandWithFallbacks } = await import("@/lib/services/brand-scraper-orchestrator");
 
-    // Run the scraper with progress callbacks
-    const result = await scrapeBrandFromUrl(url, async (progress, message) => {
-      await updateJobProgress(jobKey, "processing", progress, message);
+    // Run the orchestrator with progress callbacks
+    const orchestratorResult = await scrapeBrandWithFallbacks(url, {
+      onProgress: async (progress, message) => {
+        await updateJobProgress(jobKey, "processing", progress, message);
+      },
     });
+
+    // Convert orchestrator result to ScrapedBrandData format
+    const result: ScrapedBrandData = {
+      brandName: orchestratorResult.brand.brandName || "",
+      description: orchestratorResult.brand.description || "",
+      tagline: orchestratorResult.brand.tagline || null,
+      industry: orchestratorResult.brand.industry || "",
+      primaryColor: orchestratorResult.brand.primaryColor || "",
+      secondaryColor: orchestratorResult.brand.secondaryColor || null,
+      accentColor: orchestratorResult.brand.accentColor || null,
+      colorPalette: orchestratorResult.brand.colorPalette || [],
+      logoUrl: orchestratorResult.brand.logoUrl || null,
+      keywords: orchestratorResult.brand.keywords || [],
+      scrapedUrl: orchestratorResult.brand.scrapedUrl || url,
+      seoKeywords: orchestratorResult.brand.seoKeywords || [],
+      geoKeywords: orchestratorResult.brand.geoKeywords || [],
+      competitors: orchestratorResult.brand.competitors || [],
+      targetAudience: orchestratorResult.brand.targetAudience || "",
+      valuePropositions: orchestratorResult.brand.valuePropositions || [],
+      socialLinks: orchestratorResult.brand.socialLinks || {},
+      confidence: orchestratorResult.brand.confidence || { overall: 0, perField: {} },
+      locations: orchestratorResult.locations || [],
+      personnel: orchestratorResult.personnel || [],
+    };
 
     // Update job with results
     const job = await getJob(jobKey);

@@ -71,12 +71,49 @@ function extractCompanyDomain(brand: typeof brands.$inferSelect): string | null 
 /**
  * Search LinkedIn for company page
  *
- * Uses RapidAPI LinkedIn Scraper when RAPIDAPI_KEY is set,
- * otherwise falls back to constructing a probable LinkedIn URL.
+ * Hybrid approach (prioritizes data fidelity):
+ * 1. LinkedIn Official API (if OAuth token exists) - highest fidelity
+ * 2. RapidAPI LinkedIn Scraper (if RAPIDAPI_KEY set) - structured data
+ * 3. URL construction - fallback
  */
-async function findLinkedInCompanyPage(domain: string): Promise<string | null> {
+async function findLinkedInCompanyPage(
+  domain: string,
+  organizationId?: string
+): Promise<string | null> {
   console.log(`[LinkedIn] Searching for company: ${domain}`);
 
+  // 1. Try LinkedIn Official API first (if user has connected OAuth)
+  if (organizationId) {
+    try {
+      const { TokenService } = await import("@/lib/oauth/token-service");
+      const { LinkedInProvider } = await import("@/lib/oauth/providers/linkedin");
+
+      // Check if valid LinkedIn token exists
+      const tokenData = await TokenService.getValidToken("linkedin", organizationId);
+
+      if (tokenData) {
+        console.log("  🔐 Using LinkedIn Official API (OAuth)");
+
+        // Get organizations user administers
+        const orgs = await LinkedInProvider.getAdminOrganizations(tokenData.accessToken);
+
+        // Try to find matching organization by domain
+        for (const org of orgs) {
+          if (org.websiteUrl && org.websiteUrl.includes(domain)) {
+            const companyUrl = `https://www.linkedin.com/company/${org.vanityName || org.id}`;
+            console.log(`  ✅ Found company via Official API: ${companyUrl}`);
+            return companyUrl;
+          }
+        }
+
+        console.log("  ⚠️ No matching organization found in user's admin orgs");
+      }
+    } catch (error) {
+      console.log("  ⚠️ Official API not available, trying fallback methods");
+    }
+  }
+
+  // 2. Try RapidAPI LinkedIn Scraper
   const rapidApiKey = process.env.RAPIDAPI_KEY;
 
   if (rapidApiKey) {
@@ -108,7 +145,7 @@ async function findLinkedInCompanyPage(domain: string): Promise<string | null> {
     }
   }
 
-  // Fallback: Construct probable LinkedIn company URL from domain
+  // 3. Fallback: Construct probable LinkedIn company URL from domain
   // Extract company name from domain (e.g., "takealot.com" -> "takealot")
   const companyName = domain.replace(/\.(com|co\.za|co|org|net|io|ai).*$/, "").toLowerCase();
 
@@ -262,8 +299,8 @@ export async function extractLinkedInPeople(
 
     console.log(`  Domain: ${domain}`);
 
-    // Find LinkedIn company page
-    const companyPageUrl = await findLinkedInCompanyPage(domain);
+    // Find LinkedIn company page (pass organizationId for OAuth hybrid approach)
+    const companyPageUrl = await findLinkedInCompanyPage(domain, brand.organizationId);
     if (!companyPageUrl) {
       result.errors.push("Could not find LinkedIn company page");
       console.log("  ⚠️ No LinkedIn company page found");

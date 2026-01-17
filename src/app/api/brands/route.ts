@@ -15,6 +15,27 @@ const competitorSchema = z.object({
   reason: z.string(),
 });
 
+// Location schema
+const locationSchema = z.object({
+  type: z.enum(["headquarters", "office", "regional"]),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  country: z.string().optional(),
+  postalCode: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().optional(),
+});
+
+// Personnel schema
+const personnelSchema = z.object({
+  name: z.string(),
+  title: z.string(),
+  linkedinUrl: z.string().optional(),
+  isActive: z.boolean().optional().default(true),
+  joinedDate: z.string().optional(),
+});
+
 // Validation schema for creating a brand
 const createBrandSchema = z.object({
   name: z.string().min(1, "Brand name is required"),
@@ -29,6 +50,10 @@ const createBrandSchema = z.object({
   geoKeywords: z.array(z.string()).optional().default([]),
   // Competitors with full details
   competitors: z.array(competitorSchema).optional().default([]),
+  // Business locations
+  locations: z.array(locationSchema).optional().default([]),
+  // Key personnel
+  personnel: z.array(personnelSchema).optional().default([]),
   // Brand positioning
   valuePropositions: z.array(z.string()).optional().default([]),
   socialLinks: z.record(z.string(), z.string()).optional().default({}),
@@ -254,6 +279,8 @@ export async function POST(request: NextRequest) {
         seoKeywords: validatedData.seoKeywords,
         geoKeywords: validatedData.geoKeywords,
         competitors: validatedData.competitors,
+        locations: validatedData.locations,
+        personnel: validatedData.personnel,
         valuePropositions: validatedData.valuePropositions,
         socialLinks: validatedData.socialLinks as Record<string, string>,
         voice: {

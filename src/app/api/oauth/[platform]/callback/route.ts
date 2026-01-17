@@ -141,6 +141,8 @@ export async function GET(
           code,
           organizationId: stateData.organizationId,
           brandId: stateData.brandId,
+          // Use the same callback path that was used for authorization
+          callbackPath: "/api/oauth/linkedin/callback",
         });
         accountName = result.accountInfo?.accountName || "";
         accountHandle = result.accountInfo?.accountHandle || "";

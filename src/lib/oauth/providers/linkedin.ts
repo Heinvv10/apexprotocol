@@ -172,8 +172,16 @@ export async function getAuthorizationUrl(params: {
   state: string; // CSRF token
   scopes?: string[];
   includeOrganizationScopes?: boolean;
+  callbackPath?: string; // Override the callback path (e.g., '/api/oauth/linkedin/callback')
 }): Promise<string> {
-  const { clientId, redirectUri } = await getLinkedInCredentials();
+  const { clientId, redirectUri: defaultRedirectUri } = await getLinkedInCredentials();
+
+  // Allow overriding the redirect URI path for different OAuth contexts
+  let redirectUri = defaultRedirectUri;
+  if (params.callbackPath) {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    redirectUri = `${baseUrl}${params.callbackPath}`;
+  }
 
   let scopes = params.scopes || LINKEDIN_CONFIG.defaultScopes;
 
@@ -194,8 +202,18 @@ export async function getAuthorizationUrl(params: {
 /**
  * Exchange authorization code for tokens
  */
-export async function exchangeCodeForTokens(code: string): Promise<TokenData> {
-  const { clientId, clientSecret, redirectUri } = await getLinkedInCredentials();
+export async function exchangeCodeForTokens(
+  code: string,
+  callbackPath?: string
+): Promise<TokenData> {
+  const { clientId, clientSecret, redirectUri: defaultRedirectUri } = await getLinkedInCredentials();
+
+  // Allow overriding the redirect URI path for different OAuth contexts
+  let redirectUri = defaultRedirectUri;
+  if (callbackPath) {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    redirectUri = `${baseUrl}${callbackPath}`;
+  }
 
   const response = await fetch(LINKEDIN_CONFIG.tokenUrl, {
     method: "POST",
@@ -532,6 +550,7 @@ export async function completeOAuthFlow(params: {
   state?: string;
   organizationId?: string;
   brandId?: string;
+  callbackPath?: string; // Override callback path for token exchange
 }): Promise<{
   success: boolean;
   tokens?: TokenData;
@@ -541,10 +560,10 @@ export async function completeOAuthFlow(params: {
   error?: string;
 }> {
   try {
-    const { code, organizationId, brandId } = params;
+    const { code, organizationId, brandId, callbackPath } = params;
 
-    // Exchange code for tokens
-    const tokens = await exchangeCodeForTokens(code);
+    // Exchange code for tokens (pass callbackPath for redirect_uri consistency)
+    const tokens = await exchangeCodeForTokens(code, callbackPath);
 
     // Fetch profile
     const profile = await getProfile(tokens.accessToken);

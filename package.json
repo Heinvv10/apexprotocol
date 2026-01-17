@@ -72,6 +72,7 @@
     "recharts": "^3.5.1",
     "resend": "^6.6.0",
     "simple-statistics": "^7.8.8",
+    "sonner": "^1.7.4",
     "stripe": "^20.0.0",
     "svix": "^1.82.0",
     "tailwind-merge": "^3.4.0",

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -14,6 +15,8 @@ import {
 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { ScrapeWizard } from "@/components/brands/scrape-wizard";
+import type { ScrapedBrandData } from "@/app/api/brands/scrape/route";
 import {
   Card,
   CardContent,
@@ -103,9 +106,20 @@ async function fetchBrandMeta() {
   return data.data.meta;
 }
 
+// Helper function to extract domain from URL
+function extractDomain(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
 export default function NewBrandClient() {
   const router = useRouter();
   const { toast } = useToast();
+  const [mode, setMode] = useState<"choose" | "wizard" | "manual">("choose");
 
   // Fetch brand limits
   const { data: meta } = useQuery({
@@ -148,11 +162,94 @@ export default function NewBrandClient() {
     createMutation.mutate(values);
   };
 
+  // Handle wizard completion
+  const handleWizardComplete = (data: ScrapedBrandData) => {
+    // Auto-extract domain from scrapedUrl
+    const domain = extractDomain(data.scrapedUrl);
+
+    // Create brand with all scraped data
+    createMutation.mutate({
+      name: data.brandName,
+      domain: domain,
+      description: data.description || "",
+      industry: data.industry || "",
+      logoUrl: data.logoUrl || "",
+      // Note: API route will handle locations, personnel, etc.
+    });
+  };
+
   // Check if user can add more brands
   const canAddBrand = meta?.canAddMore ?? true;
   const currentCount = meta?.total ?? 0;
   const brandLimit = meta?.limit ?? 1;
 
+  // ============================================================================
+  // Render Mode Selection or Wizard
+  // ============================================================================
+
+  // Show choice screen first
+  if (mode === "choose") {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/dashboard/brands")}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Create New Brand</h1>
+              <p className="text-sm text-muted-foreground">
+                Add a new brand to start monitoring its AI visibility
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Brand limit warning */}
+        {!canAddBrand && (
+          <Card className="card-secondary border-amber-500/20 bg-amber-500/5">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                  <Sparkles className="h-5 w-5 text-amber-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">Brand Limit Reached</p>
+                  <p className="text-sm text-muted-foreground">
+                    You've reached the limit of {brandLimit} brand(s) for your {meta?.plan || "current"} plan.
+                    Upgrade to add more brands.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Choice Card */}
+        <Card className="card-secondary border-0">
+          <CardContent className="pt-6">
+            <ScrapeWizard
+              onComplete={handleWizardComplete}
+              onManual={() => setMode("manual")}
+              onCancel={() => router.push("/dashboard/brands")}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Wizard flow (handled by ScrapeWizard component above)
+  // if (mode === "wizard") - integrated into choose mode
+
+  // ============================================================================
+  // Manual Form (existing code)
+  // ============================================================================
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -192,6 +289,18 @@ export default function NewBrandClient() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Back to Choice Button */}
+      {mode === "manual" && (
+        <Button
+          variant="ghost"
+          onClick={() => setMode("choose")}
+          className="mb-4"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Options
+        </Button>
       )}
 
       {/* Form */}
