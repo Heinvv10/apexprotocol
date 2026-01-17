@@ -1,6 +1,11 @@
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 import { db } from '@/lib/db';
 import { brands, organizations } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
+
+// Load .env.local for database connection
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
 const ALL_INDUSTRIES = {
   'Telecommunications': [

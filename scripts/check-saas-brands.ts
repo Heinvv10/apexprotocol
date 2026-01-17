@@ -8,27 +8,23 @@ import { eq, and } from 'drizzle-orm';
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
 async function main() {
-  const benchmarkBrands = await db.query.brands.findMany({
+  const saasBrands = await db.query.brands.findMany({
     where: and(
+      eq(brands.industry, 'SaaS / B2B Software'),
       eq(brands.isBenchmark, true),
       eq(brands.organizationId, 'org_benchmark_brands')
     ),
+    columns: { name: true, domain: true, benchmarkTier: true },
   });
 
-  const byIndustry: Record<string, number> = {};
-  for (const brand of benchmarkBrands) {
-    byIndustry[brand.industry] = (byIndustry[brand.industry] || 0) + 1;
-  }
+  console.log('\n📊 SaaS / B2B Software Brands:\n');
+  console.log(`Total: ${saasBrands.length}/5\n`);
 
-  console.log('\n📊 Benchmark Brands Count\n');
-  console.log(`Total: ${benchmarkBrands.length}\n`);
-  console.log('By Industry:');
-  Object.entries(byIndustry)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([industry, count]) => {
-      console.log(`  ${industry}: ${count}`);
-    });
-  console.log('');
+  saasBrands.forEach(brand => {
+    console.log(`  ${brand.benchmarkTier === 'gold' ? '🥇' : '🥈'} ${brand.name} (${brand.domain})`);
+  });
+
+  console.log('\n');
 }
 
 main()
