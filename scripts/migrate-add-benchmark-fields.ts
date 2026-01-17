@@ -1,0 +1,45 @@
+import { neon } from '@neondatabase/serverless';
+
+const sql = neon(process.env.DATABASE_URL!);
+
+async function migrate() {
+  console.log('🔄 Adding benchmark fields to brands table...\n');
+
+  try {
+    // Add columns
+    await sql`
+      ALTER TABLE brands
+        ADD COLUMN IF NOT EXISTS is_benchmark BOOLEAN NOT NULL DEFAULT false,
+        ADD COLUMN IF NOT EXISTS benchmark_tier TEXT,
+        ADD COLUMN IF NOT EXISTS last_enriched_at TIMESTAMP WITH TIME ZONE
+    `;
+    console.log('✅ Columns added successfully\n');
+
+    // Create indexes
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_brands_is_benchmark
+      ON brands(is_benchmark)
+      WHERE is_benchmark = true
+    `;
+    console.log('✅ Index idx_brands_is_benchmark created\n');
+
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_brands_benchmark_tier
+      ON brands(benchmark_tier)
+      WHERE benchmark_tier IS NOT NULL
+    `;
+    console.log('✅ Index idx_brands_benchmark_tier created\n');
+
+    console.log('✅ Migration complete!\n');
+  } catch (error) {
+    console.error('❌ Migration failed:', error);
+    throw error;
+  }
+}
+
+migrate()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error('Fatal error:', error);
+    process.exit(1);
+  });
