@@ -297,7 +297,8 @@ export async function populateLocations(
   const errors: string[] = [];
 
   for (const location of locations) {
-    if (!location.city && !location.address) continue; // Skip incomplete locations
+    // Allow partial data - require at least one of: city, address, or country
+    if (!location.city && !location.address && !location.country) continue;
 
     try {
       // Map location type from scraper to schema enum
