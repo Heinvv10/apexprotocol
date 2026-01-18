@@ -157,11 +157,22 @@ export {
   // Phase 9.1: Competitor Discovery Tables
   discoveredCompetitors,
   competitorSnapshots,
+  // Enhanced Competitive Intelligence Tables
+  competitorScores,
+  improvementRoadmaps,
+  roadmapMilestones,
+  roadmapProgressSnapshots,
   // Enums
   serpFeatureTypeEnum,
   featureOwnerEnum,
   discoveryMethodEnum,
   discoveryStatusEnum,
+  scoreDataSourceEnum,
+  roadmapStatusEnum,
+  roadmapTargetPositionEnum,
+  scoreCategoryEnum,
+  milestoneStatusEnum,
+  milestoneDifficultyEnum,
   // Types
   type SerpFeature,
   type NewSerpFeature,
@@ -182,6 +193,17 @@ export {
   type CompetitorSnapshot,
   type NewCompetitorSnapshot,
   type PlatformMetrics as CompetitorPlatformMetrics,
+  // Enhanced Competitive Intelligence Types
+  type ScoreBreakdown,
+  type MilestoneActionItem,
+  type CompetitorScoreRecord,
+  type NewCompetitorScoreRecord,
+  type ImprovementRoadmap,
+  type NewImprovementRoadmap,
+  type RoadmapMilestone,
+  type NewRoadmapMilestone,
+  type RoadmapProgressSnapshot,
+  type NewRoadmapProgressSnapshot,
 } from "./competitive";
 
 export {
@@ -193,6 +215,11 @@ export {
   // Phase 9.1: New relations
   discoveredCompetitorsRelations,
   competitorSnapshotsRelations,
+  // Enhanced Competitive Intelligence Relations
+  competitorScoresRelations,
+  improvementRoadmapsRelations,
+  roadmapMilestonesRelations,
+  roadmapProgressSnapshotsRelations,
 } from "./competitive";
 
 // Portfolio & Enterprise Features

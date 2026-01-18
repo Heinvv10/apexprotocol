@@ -173,7 +173,7 @@ const NEW_INDUSTRIES = {
         instagram: 'https://www.instagram.com/policygenius',
       },
       voice: {
-        tone: 'helpful' as const,
+        tone: 'friendly' as const,
         personality: ['educational', 'trustworthy', 'straightforward', 'empowering'],
         targetAudience: 'Consumers researching and comparing insurance options',
         keyMessages: ['Unbiased advice', 'Easy comparison', 'Expert help', 'All in one place'],
@@ -239,7 +239,7 @@ const NEW_INDUSTRIES = {
         instagram: 'https://www.instagram.com/hioscar',
       },
       voice: {
-        tone: 'empowering' as const,
+        tone: 'authoritative' as const,
         personality: ['caring', 'transparent', 'modern', 'accessible'],
         targetAudience: 'Individuals and families seeking better health insurance experience',
         keyMessages: ['Health insurance that helps', 'Simple and transparent', 'Care team support', 'Technology-enabled'],
@@ -909,7 +909,7 @@ const NEW_INDUSTRIES = {
         youtube: 'https://www.youtube.com/c/Norton',
       },
       voice: {
-        tone: 'reassuring' as const,
+        tone: 'friendly' as const,
         personality: ['protective', 'trustworthy', 'established', 'consumer-focused'],
         targetAudience: 'Consumers seeking comprehensive device and identity protection',
         keyMessages: ['Trusted protection', 'Digital life security', 'Peace of mind', 'Proven security'],
@@ -1038,7 +1038,7 @@ const NEW_INDUSTRIES = {
         youtube: 'https://www.youtube.com/c/LegalZoom',
       },
       voice: {
-        tone: 'helpful' as const,
+        tone: 'friendly' as const,
         personality: ['accessible', 'trustworthy', 'supportive', 'empowering'],
         targetAudience: 'Individuals and small businesses seeking affordable legal services',
         keyMessages: ['Legal help is here', 'Affordable legal', 'Easy online', 'Expert support'],
@@ -1223,7 +1223,7 @@ const NEW_INDUSTRIES = {
         instagram: 'https://www.instagram.com/ironcladapp',
       },
       voice: {
-        tone: 'innovative' as const,
+        tone: 'professional' as const,
         personality: ['modern', 'efficient', 'legal-ops-focused', 'enterprise-ready'],
         targetAudience: 'Legal teams and businesses seeking contract automation',
         keyMessages: ['Digital contracting', 'Workflow automation', 'Legal operations', 'Contract intelligence'],
@@ -1352,7 +1352,7 @@ const NEW_INDUSTRIES = {
         youtube: 'https://www.youtube.com/c/BetterHelp',
       },
       voice: {
-        tone: 'empathetic' as const,
+        tone: 'friendly' as const,
         personality: ['supportive', 'accessible', 'non-judgmental', 'caring'],
         targetAudience: 'Individuals seeking convenient, affordable therapy',
         keyMessages: ['Therapy on your schedule', 'Affordable care', 'Licensed professionals', 'You deserve support'],
@@ -1419,7 +1419,7 @@ const NEW_INDUSTRIES = {
         youtube: 'https://www.youtube.com/c/Talkspace',
       },
       voice: {
-        tone: 'supportive' as const,
+        tone: 'friendly' as const,
         personality: ['modern', 'accessible', 'professional', 'caring'],
         targetAudience: 'Individuals seeking flexible mental health care',
         keyMessages: ['Therapy for today', 'Accessible care', 'Professional support', 'Your mental health matters'],
@@ -1486,7 +1486,7 @@ const NEW_INDUSTRIES = {
         youtube: 'https://www.youtube.com/c/calm',
       },
       voice: {
-        tone: 'calming' as const,
+        tone: 'casual' as const,
         personality: ['peaceful', 'soothing', 'mindful', 'supportive'],
         targetAudience: 'Individuals seeking stress relief, better sleep, and mindfulness',
         keyMessages: ['Less stress, more sleep', 'Find your calm', 'Mental wellness', 'Peace of mind'],

@@ -85,3 +85,30 @@ export {
   type GapAnalysisReport,
   type CompetitorCoverage,
 } from "./gap-analyzer";
+
+// Competitor Scoring (Enhanced Competitive Intelligence)
+export {
+  calculateBrandScores,
+  calculateCompetitorScores,
+  saveCompetitorScores,
+  getCompetitorScores,
+  refreshAllCompetitorScores,
+  calculateGapAnalysis,
+  type CompetitorScoreResult,
+  type BrandScoreResult,
+  type GapAnalysis,
+} from "./competitor-scoring";
+
+// Roadmap Generator (Enhanced Competitive Intelligence)
+export {
+  generateRoadmap,
+  getActiveRoadmap,
+  getRoadmapById,
+  updateRoadmapStatus,
+  updateMilestoneStatus,
+  updateActionItemStatus,
+  createProgressSnapshot,
+  getProgressSnapshots,
+  getBrandRoadmaps,
+  type RoadmapGenerationOptions,
+} from "./roadmap-generator";

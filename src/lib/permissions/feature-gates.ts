@@ -13,6 +13,10 @@ export type FeatureId =
   | "competitive_discovery"
   | "competitive_benchmarking"
   | "competitive_tracking"
+  | "competitor_scorecard"
+  | "competitor_deep_dive"
+  | "improvement_roadmap"
+  | "ai_roadmap_generation"
   | "google_places"
   | "location_reviews"
   | "executive_enrichment"
@@ -48,6 +52,12 @@ export const FEATURE_ACCESS: Record<FeatureId, Plan[]> = {
   competitive_discovery: ["professional", "enterprise"],
   competitive_benchmarking: ["professional", "enterprise"],
   competitive_tracking: ["professional", "enterprise"],
+
+  // Competitive Intelligence (Phase 9.2 - Scorecard & Roadmap)
+  competitor_scorecard: ["professional", "enterprise"],
+  competitor_deep_dive: ["professional", "enterprise"],
+  improvement_roadmap: ["professional", "enterprise"],
+  ai_roadmap_generation: ["enterprise"],
 
   // Google Places Integration (Phase 9.2)
   google_places: ["professional", "enterprise"],
@@ -359,6 +369,10 @@ export const FEATURE_NAMES: Record<FeatureId, string> = {
   competitive_discovery: "Competitor Discovery",
   competitive_benchmarking: "Competitive Benchmarking",
   competitive_tracking: "Competitive Tracking",
+  competitor_scorecard: "Competitor Scorecard",
+  competitor_deep_dive: "Competitor Deep Dive",
+  improvement_roadmap: "Improvement Roadmap",
+  ai_roadmap_generation: "AI Roadmap Generation",
   google_places: "Google Places Integration",
   location_reviews: "Location Reviews Analysis",
   executive_enrichment: "Executive Enrichment",

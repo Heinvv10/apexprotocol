@@ -439,3 +439,302 @@ export type NewDiscoveredCompetitor = typeof discoveredCompetitors.$inferInsert;
 
 export type CompetitorSnapshot = typeof competitorSnapshots.$inferSelect;
 export type NewCompetitorSnapshot = typeof competitorSnapshots.$inferInsert;
+
+// ============================================
+// Enhanced Competitive Intelligence Tables
+// ============================================
+
+// Data source enum - how was this score calculated?
+export const scoreDataSourceEnum = pgEnum("score_data_source", [
+  "scraped",
+  "estimated",
+  "manual",
+]);
+
+// Roadmap status enum
+export const roadmapStatusEnum = pgEnum("roadmap_status", [
+  "draft",
+  "active",
+  "paused",
+  "completed",
+]);
+
+// Roadmap target position enum
+export const roadmapTargetPositionEnum = pgEnum("roadmap_target_position", [
+  "leader",
+  "top3",
+  "competitive",
+]);
+
+// Score category enum for milestones
+export const scoreCategoryEnum = pgEnum("score_category", [
+  "geo",
+  "seo",
+  "aeo",
+  "smo",
+  "ppo",
+]);
+
+// Milestone status enum
+export const milestoneStatusEnum = pgEnum("milestone_status", [
+  "pending",
+  "in_progress",
+  "completed",
+  "skipped",
+]);
+
+// Milestone difficulty enum
+export const milestoneDifficultyEnum = pgEnum("milestone_difficulty", [
+  "easy",
+  "medium",
+  "hard",
+]);
+
+// ============================================
+// Competitor Scores Table
+// ============================================
+
+// Score breakdown types
+export interface ScoreBreakdown {
+  total: number;
+  factors: {
+    name: string;
+    score: number;
+    weight: number;
+    description: string;
+  }[];
+  lastUpdated: string;
+}
+
+// Store calculated 5-score breakdown for competitors
+export const competitorScores = pgTable("competitor_scores", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  brandId: text("brand_id")
+    .notNull()
+    .references(() => brands.id, { onDelete: "cascade" }),
+
+  // Competitor identification
+  competitorName: text("competitor_name").notNull(),
+  competitorDomain: text("competitor_domain"),
+
+  // The 5 core scores (0-100 scale)
+  geoScore: integer("geo_score").notNull().default(0),
+  seoScore: integer("seo_score").notNull().default(0),
+  aeoScore: integer("aeo_score").notNull().default(0),
+  smoScore: integer("smo_score").notNull().default(0),
+  ppoScore: integer("ppo_score").notNull().default(0),
+
+  // Unified/aggregate score and grade
+  unifiedScore: integer("unified_score").notNull().default(0),
+  grade: text("grade").notNull().default("D"), // A+, A, B+, B, C+, C, D, F
+
+  // Score breakdowns (detailed factor analysis)
+  geoBreakdown: jsonb("geo_breakdown").$type<ScoreBreakdown>(),
+  seoBreakdown: jsonb("seo_breakdown").$type<ScoreBreakdown>(),
+  aeoBreakdown: jsonb("aeo_breakdown").$type<ScoreBreakdown>(),
+  smoBreakdown: jsonb("smo_breakdown").$type<ScoreBreakdown>(),
+  ppoBreakdown: jsonb("ppo_breakdown").$type<ScoreBreakdown>(),
+
+  // Confidence and source
+  confidence: integer("confidence").notNull().default(50), // 0-100
+  dataSource: scoreDataSourceEnum("data_source").notNull().default("estimated"),
+
+  // Timestamps
+  calculatedAt: timestamp("calculated_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  // Unique constraint for brand+competitor combo
+  brandCompetitorIdx: uniqueIndex("cs_brand_competitor_idx").on(
+    table.brandId,
+    table.competitorName
+  ),
+}));
+
+// ============================================
+// Improvement Roadmaps Table
+// ============================================
+
+// Store generated improvement roadmaps
+export const improvementRoadmaps = pgTable("improvement_roadmaps", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  brandId: text("brand_id")
+    .notNull()
+    .references(() => brands.id, { onDelete: "cascade" }),
+
+  // Roadmap details
+  title: text("title").notNull(),
+  description: text("description"),
+
+  // Target configuration
+  targetCompetitor: text("target_competitor"), // Optional specific competitor to beat
+  targetPosition: roadmapTargetPositionEnum("target_position").notNull().default("competitive"),
+
+  // Score tracking
+  currentUnifiedScore: integer("current_unified_score").notNull().default(0),
+  targetUnifiedScore: integer("target_unified_score").notNull().default(0),
+  currentGrade: text("current_grade").notNull().default("D"),
+  targetGrade: text("target_grade").notNull().default("B"),
+
+  // Timeline
+  estimatedWeeks: integer("estimated_weeks").notNull().default(12),
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+
+  // Status and progress
+  status: roadmapStatusEnum("status").notNull().default("draft"),
+  progressPercentage: integer("progress_percentage").notNull().default(0), // 0-100
+
+  // AI generation metadata
+  generatedByAi: boolean("generated_by_ai").notNull().default(false),
+  aiModel: text("ai_model"),
+  generationPrompt: text("generation_prompt"),
+
+  // Timestamps
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ============================================
+// Roadmap Milestones Table
+// ============================================
+
+// Action item within a milestone
+export interface MilestoneActionItem {
+  id: string;
+  title: string;
+  description?: string;
+  isCompleted: boolean;
+  completedAt?: string;
+  order: number;
+}
+
+// Individual milestones within roadmap
+export const roadmapMilestones = pgTable("roadmap_milestones", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  roadmapId: text("roadmap_id")
+    .notNull()
+    .references(() => improvementRoadmaps.id, { onDelete: "cascade" }),
+
+  // Milestone details
+  title: text("title").notNull(),
+  description: text("description"),
+  category: scoreCategoryEnum("category").notNull(),
+
+  // Phase and ordering (1 = Quick Wins, 2 = Month 1, 3 = Ongoing)
+  phase: integer("phase").notNull().default(1),
+  orderInPhase: integer("order_in_phase").notNull().default(0),
+
+  // Impact estimates
+  expectedScoreImpact: integer("expected_score_impact").notNull().default(0), // Points to gain
+  expectedDaysToComplete: integer("expected_days_to_complete").notNull().default(7),
+  difficulty: milestoneDifficultyEnum("difficulty").notNull().default("medium"),
+
+  // Action items (checklist)
+  actionItems: jsonb("action_items").$type<MilestoneActionItem[]>().default([]),
+
+  // Status and completion
+  status: milestoneStatusEnum("status").notNull().default("pending"),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  actualScoreImpact: integer("actual_score_impact"), // Actual points gained after completion
+
+  // Timestamps
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ============================================
+// Roadmap Progress Snapshots Table
+// ============================================
+
+// Track progress over time
+export const roadmapProgressSnapshots = pgTable("roadmap_progress_snapshots", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  roadmapId: text("roadmap_id")
+    .notNull()
+    .references(() => improvementRoadmaps.id, { onDelete: "cascade" }),
+
+  // Snapshot date
+  snapshotDate: date("snapshot_date").notNull(),
+
+  // All 5 scores at snapshot point
+  geoScore: integer("geo_score").notNull().default(0),
+  seoScore: integer("seo_score").notNull().default(0),
+  aeoScore: integer("aeo_score").notNull().default(0),
+  smoScore: integer("smo_score").notNull().default(0),
+  ppoScore: integer("ppo_score").notNull().default(0),
+  unifiedScore: integer("unified_score").notNull().default(0),
+  grade: text("grade").notNull().default("D"),
+
+  // Progress metrics
+  milestonesCompleted: integer("milestones_completed").notNull().default(0),
+  milestonesTotal: integer("milestones_total").notNull().default(0),
+  rankAmongCompetitors: integer("rank_among_competitors"),
+
+  // Timestamps
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  // Unique constraint for roadmap+date combo
+  roadmapDateIdx: uniqueIndex("rps_roadmap_date_idx").on(
+    table.roadmapId,
+    table.snapshotDate
+  ),
+}));
+
+// ============================================
+// Relations for New Tables
+// ============================================
+
+export const competitorScoresRelations = relations(competitorScores, ({ one }) => ({
+  brand: one(brands, {
+    fields: [competitorScores.brandId],
+    references: [brands.id],
+  }),
+}));
+
+export const improvementRoadmapsRelations = relations(improvementRoadmaps, ({ one, many }) => ({
+  brand: one(brands, {
+    fields: [improvementRoadmaps.brandId],
+    references: [brands.id],
+  }),
+  milestones: many(roadmapMilestones),
+  progressSnapshots: many(roadmapProgressSnapshots),
+}));
+
+export const roadmapMilestonesRelations = relations(roadmapMilestones, ({ one }) => ({
+  roadmap: one(improvementRoadmaps, {
+    fields: [roadmapMilestones.roadmapId],
+    references: [improvementRoadmaps.id],
+  }),
+}));
+
+export const roadmapProgressSnapshotsRelations = relations(roadmapProgressSnapshots, ({ one }) => ({
+  roadmap: one(improvementRoadmaps, {
+    fields: [roadmapProgressSnapshots.roadmapId],
+    references: [improvementRoadmaps.id],
+  }),
+}));
+
+// ============================================
+// Type Exports for New Tables
+// ============================================
+
+export type CompetitorScoreRecord = typeof competitorScores.$inferSelect;
+export type NewCompetitorScoreRecord = typeof competitorScores.$inferInsert;
+
+export type ImprovementRoadmap = typeof improvementRoadmaps.$inferSelect;
+export type NewImprovementRoadmap = typeof improvementRoadmaps.$inferInsert;
+
+export type RoadmapMilestone = typeof roadmapMilestones.$inferSelect;
+export type NewRoadmapMilestone = typeof roadmapMilestones.$inferInsert;
+
+export type RoadmapProgressSnapshot = typeof roadmapProgressSnapshots.$inferSelect;
+export type NewRoadmapProgressSnapshot = typeof roadmapProgressSnapshots.$inferInsert;

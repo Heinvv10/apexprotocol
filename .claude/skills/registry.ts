@@ -135,7 +135,7 @@ export const APEX_SKILLS: Record<string, SkillDefinition> = {
     triggers: ['implement F', 'next feature', 'autonomous mode', 'feature workflow'],
     description: 'Autonomous feature implementation: read feature_list.json → implement → test → commit',
     priority: 'critical',
-    implemented: false,
+    implemented: true,
   },
   'design-enforcement': {
     name: 'design-system-enforcer',
@@ -144,7 +144,7 @@ export const APEX_SKILLS: Record<string, SkillDefinition> = {
     triggers: ['add UI', 'create component', 'style page', 'design system'],
     description: 'Enforces APEX_DESIGN_SYSTEM.md (3-tier cards, colors, glassmorphism)',
     priority: 'high',
-    implemented: false,
+    implemented: true,
   },
   'api-integration': {
     name: 'api-integration-workflow',
@@ -153,7 +153,7 @@ export const APEX_SKILLS: Record<string, SkillDefinition> = {
     triggers: ['connect API', 'add backend route', 'integrate service', 'full-stack API'],
     description: 'Complete API integration: frontend client → backend route → database → test',
     priority: 'medium',
-    implemented: false,
+    implemented: true,
   },
 
   // ============================================================
@@ -166,7 +166,7 @@ export const APEX_SKILLS: Record<string, SkillDefinition> = {
     triggers: ['monitor brand', 'AI platform', 'track visibility', 'check mentions'],
     description: 'AI platform monitoring (7 platforms: ChatGPT, Claude, Gemini, Perplexity, Grok, DeepSeek, Janus)',
     priority: 'critical',
-    implemented: false,
+    implemented: true,
   },
   'competitive': {
     name: 'competitive-specialist',
@@ -175,7 +175,7 @@ export const APEX_SKILLS: Record<string, SkillDefinition> = {
     triggers: ['competitor', 'benchmark', 'competitive analysis', 'track competitors'],
     description: 'Competitor tracking, scoring, roadmap generation, gap analysis',
     priority: 'critical',
-    implemented: false,
+    implemented: true,
   },
   'recommendations': {
     name: 'recommendations-specialist',
@@ -184,7 +184,7 @@ export const APEX_SKILLS: Record<string, SkillDefinition> = {
     triggers: ['recommendations', 'smart recs', 'prioritize actions', 'generate suggestions'],
     description: 'Smart Recommendations Engine - auto-generated, prioritized actionable recommendations',
     priority: 'critical',
-    implemented: false,
+    implemented: true,
   },
   'audit': {
     name: 'audit-specialist',
@@ -193,7 +193,7 @@ export const APEX_SKILLS: Record<string, SkillDefinition> = {
     triggers: ['audit site', 'technical SEO', 'schema validation', 'crawl site'],
     description: 'Technical SEO audit engine (Schema.org, Core Web Vitals, crawling)',
     priority: 'high',
-    implemented: false,
+    implemented: true,
   },
   'content': {
     name: 'content-specialist',
@@ -202,7 +202,7 @@ export const APEX_SKILLS: Record<string, SkillDefinition> = {
     triggers: ['create content', 'generate article', 'optimize copy', 'GEO content'],
     description: 'AI content generation (brand voice, GEO optimization, multi-language)',
     priority: 'high',
-    implemented: false,
+    implemented: true,
   },
   'admin': {
     name: 'admin-specialist',
@@ -211,7 +211,7 @@ export const APEX_SKILLS: Record<string, SkillDefinition> = {
     triggers: ['admin', 'CRM', 'analytics dashboard', 'admin operations'],
     description: 'Admin operations system (49+ pages, Mautic CRM, analytics)',
     priority: 'medium',
-    implemented: false,
+    implemented: true,
   },
   'geo': {
     name: 'geo-specialist',
@@ -220,7 +220,7 @@ export const APEX_SKILLS: Record<string, SkillDefinition> = {
     triggers: ['GEO score', 'calculate score', 'optimize for AI', 'scoring algorithm'],
     description: 'GEO scoring engine (algorithm, weighting, benchmarking)',
     priority: 'medium',
-    implemented: false,
+    implemented: true,
   },
   'integrations': {
     name: 'integration-specialist',
@@ -229,7 +229,7 @@ export const APEX_SKILLS: Record<string, SkillDefinition> = {
     triggers: ['integrate', 'OAuth', 'webhook', 'external service'],
     description: 'External service integrations (OAuth flows, webhooks, API clients)',
     priority: 'medium',
-    implemented: false,
+    implemented: true,
   },
 };
 

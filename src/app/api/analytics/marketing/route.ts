@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrganizationId } from "@/lib/auth/clerk";
 import { db } from "@/lib/db";
-import { campaigns, leads, emailEvents, emailLists, metrics } from "@/lib/db/schema/marketing";
+import { campaigns, leads, emailEvents, emailLists, marketingMetrics } from "@/lib/db/schema/marketing";
 import { eq, and, gte, lte, sql, desc, count, sum, avg } from "drizzle-orm";
 
 /**
@@ -118,8 +118,8 @@ async function getCampaignPerformance(organizationId: string, startDate: Date, e
       // Fetch metrics for this campaign
       const campaignMetrics = await db
         .select()
-        .from(metrics)
-        .where(eq(metrics.campaignId, campaign.id))
+        .from(marketingMetrics)
+        .where(eq(marketingMetrics.campaignId, campaign.id))
         .limit(1);
 
       const metric = campaignMetrics[0];

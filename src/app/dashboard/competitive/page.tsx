@@ -19,6 +19,9 @@ import {
   CheckCircle,
   PieChart,
   Eye,
+  Rocket,
+  Map,
+  Trophy,
 } from "lucide-react";
 import { useSelectedBrand } from "@/stores";
 import { useQuery } from "@tanstack/react-query";
@@ -29,6 +32,12 @@ import {
   CompetitorDiscoveryCard,
   BenchmarkRadarChart,
   CompetitorComparisonCard,
+} from "@/components/competitive";
+
+// Phase 9.2 Components
+import {
+  CompetitorScorecard,
+  RoadmapGenerator,
 } from "@/components/competitive";
 
 // Phase 9.4 - Premium Gating
@@ -357,6 +366,9 @@ export default function CompetitivePage() {
   const brandId = selectedBrand?.id || "";
   const currentPlan = useCurrentPlan();
 
+  // State for roadmap generator modal
+  const [showRoadmapGenerator, setShowRoadmapGenerator] = React.useState(false);
+
   const {
     data: summary,
     isLoading: summaryLoading,
@@ -370,6 +382,11 @@ export default function CompetitivePage() {
   // Handle upgrade navigation
   const handleUpgrade = () => {
     router.push("/dashboard/settings?tab=billing");
+  };
+
+  // Navigate to competitor deep dive
+  const handleCompetitorClick = (competitorName: string) => {
+    router.push(`/dashboard/competitive/${encodeURIComponent(competitorName)}`);
   };
 
   // Handle states
@@ -499,6 +516,54 @@ export default function CompetitivePage() {
         >
           <CompetitorDiscoveryCard brandId={brandId} />
         </FeatureGate>
+
+        {/* Phase 9.2: Competitor Scorecard - Gated to Professional+ */}
+        <FeatureGate
+          feature="competitor_scorecard"
+          plan={currentPlan}
+          mode="blur"
+          onUpgrade={handleUpgrade}
+        >
+          <CompetitorScorecard
+            brandId={brandId}
+            onCompetitorClick={handleCompetitorClick}
+          />
+        </FeatureGate>
+
+        {/* Phase 9.2: Improvement Roadmap CTA */}
+        <div className="card-primary p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 opacity-5">
+            <Rocket className="w-full h-full text-accent-purple" />
+          </div>
+          <div className="relative z-10 flex items-center justify-between gap-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <Map className="w-5 h-5 text-accent-purple" />
+                <h3 className="text-lg font-semibold text-foreground">Improvement Roadmap</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Get a personalized step-by-step plan to improve your scores and beat competitors. Our AI analyzes gaps and creates prioritized milestones.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => setShowRoadmapGenerator(true)}
+                className="gap-2"
+              >
+                <Trophy className="w-4 h-4" />
+                Quick Generate
+              </Button>
+              <Link href="/dashboard/competitive/roadmap">
+                <Button size="lg" className="gap-2">
+                  View Roadmap
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
 
         {/* Competitor Usage Meter for Professional Plan */}
         {currentPlan === "professional" && (
@@ -637,6 +702,15 @@ export default function CompetitivePage() {
           </div>
         )}
       </div>
+
+      {/* Roadmap Generator Modal */}
+      <RoadmapGenerator
+        brandId={brandId}
+        competitors={[]}
+        currentScore={50}
+        open={showRoadmapGenerator}
+        onOpenChange={setShowRoadmapGenerator}
+      />
 
       <DecorativeStar />
     </div>
