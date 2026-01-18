@@ -102,8 +102,29 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("[Content API] GET Error:", error);
+
+    // Handle table doesn't exist gracefully
+    if (error instanceof Error && error.message.includes("Failed query")) {
+      console.warn("[Content API] Table may not exist, returning empty results");
+      return NextResponse.json({
+        content: [],
+        total: 0,
+        page: 1,
+        limit,
+        totalPages: 0,
+      });
+    }
+
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues }, { status: 400 });
+    }
+    // Include error details in development
+    if (process.env.NODE_ENV === "development") {
+      return NextResponse.json({
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      }, { status: 500 });
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
