@@ -17,6 +17,7 @@ import { QuickWinsSection } from "@/components/audit/results/QuickWinsSection";
 import { PerformanceDeepDive } from "@/components/audit/results/PerformanceDeepDive";
 import { AIReadinessDeepDive } from "@/components/audit/results/AIReadinessDeepDive";
 import { SEOContentAnalysisDeepDive } from "@/components/audit/results/SEOContentAnalysisDeepDive";
+import { CompetitorComparisonDeepDive } from "@/components/audit/results/CompetitorComparisonDeepDive";
 
 // Import hook
 import { useAudit, useExportAuditReport } from "@/hooks/useAudit";
@@ -203,6 +204,12 @@ export default function AuditResultsPage() {
         <div>
           <h2 className="text-lg font-semibold mb-4">SEO Content Analysis</h2>
           <SEOContentAnalysisDeepDive audit={audit} />
+        </div>
+
+        {/* Competitor Comparison - Phase 7 */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Competitive Analysis</h2>
+          <CompetitorComparisonDeepDive audit={audit} />
         </div>
 
         {/* Recommendations */}
