@@ -44,6 +44,7 @@ export function CompetitorComparisonDeepDive({ audit }: CompetitorComparisonDeep
         totalCompetitors={competitorData.positioning.totalCompetitors}
         percentilRank={competitorData.positioning.percentilRank}
         competitiveStatus={competitorData.positioning.competitiveStatus}
+        auditId={audit.id}
       />
     </div>
   );

@@ -1,14 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { Award, TrendingUp } from "lucide-react";
+import { Award, TrendingUp, Rocket } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface PositioningProps {
   overallRank: number;
   totalCompetitors: number;
   percentilRank: number;
   competitiveStatus: "leader" | "competitive" | "lagging";
+  auditId?: string;
 }
 
 export function CompetitivePositioningCard({
@@ -16,6 +19,7 @@ export function CompetitivePositioningCard({
   totalCompetitors,
   percentilRank,
   competitiveStatus,
+  auditId,
 }: PositioningProps) {
   const getStatusInfo = (status: string) => {
     switch (status) {
@@ -176,6 +180,16 @@ export function CompetitivePositioningCard({
           </p>
         </div>
       </div>
+
+      {/* Improvement Roadmap CTA */}
+      {auditId && (
+        <Link href={`/dashboard/audit/roadmap?id=${auditId}&mode=leader`}>
+          <Button className="w-full gap-2 bg-gradient-to-r from-primary to-cyan-400 hover:from-primary/90 hover:to-cyan-400/90">
+            <Rocket className="h-4 w-4" />
+            Start Improvement Roadmap
+          </Button>
+        </Link>
+      )}
     </div>
   );
 }
