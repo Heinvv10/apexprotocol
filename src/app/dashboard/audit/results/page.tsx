@@ -15,6 +15,7 @@ import { IssuesTimeline } from "@/components/audit/results/IssuesTimeline";
 import { RecommendationsList } from "@/components/audit/results/RecommendationsList";
 import { QuickWinsSection } from "@/components/audit/results/QuickWinsSection";
 import { PerformanceDeepDive } from "@/components/audit/results/PerformanceDeepDive";
+import { AIReadinessDeepDive } from "@/components/audit/results/AIReadinessDeepDive";
 
 // Import hook
 import { useAudit, useExportAuditReport } from "@/hooks/useAudit";
@@ -189,6 +190,12 @@ export default function AuditResultsPage() {
         <div>
           <h2 className="text-lg font-semibold mb-4">Performance Deep Dive</h2>
           <PerformanceDeepDive audit={audit} />
+        </div>
+
+        {/* AI Readiness Deep Dive - Phase 5 */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">AI Readiness Analysis</h2>
+          <AIReadinessDeepDive audit={audit} />
         </div>
 
         {/* Recommendations */}
