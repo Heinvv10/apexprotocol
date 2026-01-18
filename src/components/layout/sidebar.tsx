@@ -41,7 +41,7 @@ interface NavItem {
 
 const mainNavItems: NavItem[] = [
   {
-    title: "Dashboard",
+    title: "Overview",
     href: "/dashboard",
     icon: LayoutDashboard,
   },
@@ -112,7 +112,10 @@ export function Sidebar({ collapsed = false, onCollapsedChange }: SidebarProps) 
   };
 
   const NavLink = ({ item }: { item: NavItem }) => {
-    const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+    // Use exact match for Overview (/dashboard), prefix match for others
+    const isActive = item.href === "/dashboard"
+      ? pathname === "/dashboard"
+      : pathname === item.href || pathname?.startsWith(`${item.href}/`);
     const Icon = item.icon;
     const badge = getBadge(item);
 
