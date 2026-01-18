@@ -16,6 +16,7 @@ import { RecommendationsList } from "@/components/audit/results/RecommendationsL
 import { QuickWinsSection } from "@/components/audit/results/QuickWinsSection";
 import { PerformanceDeepDive } from "@/components/audit/results/PerformanceDeepDive";
 import { AIReadinessDeepDive } from "@/components/audit/results/AIReadinessDeepDive";
+import { SEOContentAnalysisDeepDive } from "@/components/audit/results/SEOContentAnalysisDeepDive";
 
 // Import hook
 import { useAudit, useExportAuditReport } from "@/hooks/useAudit";
@@ -196,6 +197,12 @@ export default function AuditResultsPage() {
         <div>
           <h2 className="text-lg font-semibold mb-4">AI Readiness Analysis</h2>
           <AIReadinessDeepDive audit={audit} />
+        </div>
+
+        {/* SEO Content Analysis - Phase 6 */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">SEO Content Analysis</h2>
+          <SEOContentAnalysisDeepDive audit={audit} />
         </div>
 
         {/* Recommendations */}
