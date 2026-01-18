@@ -14,6 +14,7 @@ import { CategoryScoresGrid } from "@/components/audit/results/CategoryScoresGri
 import { IssuesTimeline } from "@/components/audit/results/IssuesTimeline";
 import { RecommendationsList } from "@/components/audit/results/RecommendationsList";
 import { QuickWinsSection } from "@/components/audit/results/QuickWinsSection";
+import { PerformanceDeepDive } from "@/components/audit/results/PerformanceDeepDive";
 
 // Import hook
 import { useAudit, useExportAuditReport } from "@/hooks/useAudit";
@@ -182,6 +183,12 @@ export default function AuditResultsPage() {
         <div>
           <h2 className="text-lg font-semibold mb-4">Issues by Severity</h2>
           <IssuesTimeline audit={audit} />
+        </div>
+
+        {/* Performance Deep Dive - Phase 4 */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Performance Deep Dive</h2>
+          <PerformanceDeepDive audit={audit} />
         </div>
 
         {/* Recommendations */}
