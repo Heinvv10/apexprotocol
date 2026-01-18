@@ -1064,11 +1064,13 @@
 /* Skip links container - ensures proper stacking and spacing */
 .skip-links {
   @apply fixed top-4 left-4 z-[9999] flex flex-col gap-2;
+  pointer-events: none; /* Don't block clicks when links are off-screen */
 }
 
 .skip-links .skip-link {
   @apply relative;
   transform: translateX(-200%);
+  pointer-events: auto; /* Allow clicks when focused */
 }
 
 .skip-links .skip-link:focus {
