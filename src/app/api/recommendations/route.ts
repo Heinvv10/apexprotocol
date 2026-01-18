@@ -4,7 +4,7 @@ import { recommendations, brands } from "@/lib/db/schema";
 import { eq, and, desc, asc, inArray, gte, lte } from "drizzle-orm";
 import { z } from "zod";
 import { detectRecommendationsReviewed } from "@/lib/onboarding/auto-detection";
-import { getOrganizationId } from "@/lib/auth";
+import { getOrganizationId } from "@/lib/auth/clerk";
 
 // Validation schema for recommendation query parameters
 const querySchema = z.object({

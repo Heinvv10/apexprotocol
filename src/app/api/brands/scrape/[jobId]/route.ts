@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Brand Scrape Job Status API
  * GET - Poll job status and results

@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Usage History API (F176)
  * GET /api/usage/history - Get usage history over time

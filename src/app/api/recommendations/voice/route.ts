@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Voice Search Readability API (F110)
  * POST /api/recommendations/voice - Analyze content for voice search optimization

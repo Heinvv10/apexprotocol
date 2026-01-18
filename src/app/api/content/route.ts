@@ -1,4 +1,3 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
 /**
  * Content API Route
  * GET /api/content - List content
@@ -7,6 +6,7 @@ import { getUserId, getOrganizationId } from "@/lib/auth";
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 import { db } from "@/lib/db";
 import { content } from "@/lib/db/schema";
 import { eq, and, desc, asc, like, sql, count } from "drizzle-orm";

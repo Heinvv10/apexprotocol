@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getOrganizationId } from "@/lib/auth";
+import { getOrganizationId } from "@/lib/auth/clerk";
 import { analyzeContent, analyzeLargeContent } from "@/lib/ai/content-analyzer";
 
 /**

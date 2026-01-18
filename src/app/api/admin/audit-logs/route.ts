@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Admin Audit Logs API
  * GET /api/admin/audit-logs - List audit logs with filters

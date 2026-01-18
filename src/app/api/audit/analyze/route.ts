@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Audit Analyze API (F104-F105) - Real web analysis
  * POST /api/audit/analyze - Analyze a URL directly

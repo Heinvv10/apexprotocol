@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getOrganizationId } from "@/lib/auth";
+import { getOrganizationId } from "@/lib/auth/clerk";
 import { db } from "@/lib/db";
 import { campaigns, leads, emailEvents, emailLists, metrics } from "@/lib/db/schema/marketing";
 import { eq, and, gte, lte, sql, desc, count, sum, avg } from "drizzle-orm";

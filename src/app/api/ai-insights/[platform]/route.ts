@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * AI Insights Platform-Specific API
  * GET /api/ai-insights/[platform] - Retrieve platform-specific insights

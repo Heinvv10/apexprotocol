@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Outgoing Webhooks API (F127)
  * GET /api/webhooks/outgoing - Get webhooks, deliveries

@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Admin API Configuration Management - Test Connection Endpoint
  * POST /api/admin/api-config/:id/test - Test API connection

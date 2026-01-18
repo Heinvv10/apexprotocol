@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getOrganizationId } from "@/lib/auth";
+import { getOrganizationId } from "@/lib/auth/clerk";
 
 // Mock campaigns data
 const mockCampaigns = [

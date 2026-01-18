@@ -3,7 +3,7 @@
  * Centralized functions for calling marketing-related backend APIs
  */
 
-import { getOrganizationId } from "@/lib/auth";
+import { getOrganizationId } from "@/lib/auth/clerk";
 
 // Base API configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";

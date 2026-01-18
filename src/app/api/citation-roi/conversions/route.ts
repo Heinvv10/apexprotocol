@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 import { db } from "@/lib/db";
 import { citationConversions, brands, brandMentions } from "@/lib/db/schema";
 import { eq, and, gte, lte, desc, asc, sql } from "drizzle-orm";

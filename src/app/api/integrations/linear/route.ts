@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Linear Integration API (F125)
  * GET /api/integrations/linear - Get connection status, teams, projects

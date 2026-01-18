@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Loadshedding Schedule API
  * GET /api/loadshedding/schedule - Get current loadshedding schedule

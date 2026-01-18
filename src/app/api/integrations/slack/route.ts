@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Slack Integration API (F120-F121)
  * GET /api/integrations/slack - Get connection status, channels

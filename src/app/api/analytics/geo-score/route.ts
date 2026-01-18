@@ -9,7 +9,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { brandMentions, audits, brands, geoScoreHistory } from "@/lib/db/schema";
 import { eq, count, sql, desc } from "drizzle-orm";
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 import { onScoreChange } from "@/lib/notifications/triggers";
 
 export async function GET(request: NextRequest) {

@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Asana Integration API (F126)
  * GET /api/integrations/asana - Get connection status, workspaces, projects

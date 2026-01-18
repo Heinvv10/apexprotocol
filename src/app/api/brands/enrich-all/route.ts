@@ -9,7 +9,7 @@ import { brands } from "@/lib/db/schema/brands";
 import { eq } from "drizzle-orm";
 import { scrapeMultiPageBrand } from "@/lib/services/brand-scraper-multipage";
 import { populateLocations } from "@/lib/services/brand-post-create";
-import { getOrganizationId } from "@/lib/auth";
+import { getOrganizationId } from "@/lib/auth/clerk";
 
 interface EnrichmentResult {
   brandName: string;

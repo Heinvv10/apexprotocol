@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Crisis Alert System API (F130.5)
  * GET /api/notifications/crisis - Get crises, settings, dashboard

@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
 import { db } from "@/lib/db";
 import { systemSettings } from "@/lib/db/schema";

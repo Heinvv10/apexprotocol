@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Billing API (F132-F135)
  * GET /api/billing - Get subscription, plans, usage, invoices

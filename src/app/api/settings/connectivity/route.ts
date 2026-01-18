@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Connectivity Settings API
  * GET /api/settings/connectivity - Get user's connectivity preferences

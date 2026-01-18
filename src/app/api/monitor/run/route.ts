@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrganizationId } from "@/lib/auth";
+import { getOrganizationId } from "@/lib/auth/clerk";
 import { runGEOMonitoringForBrand } from "@/lib/services/geo-monitor";
 import { db } from "@/lib/db";
 import { brands } from "@/lib/db/schema/brands";

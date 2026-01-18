@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Admin API Keys Management API
  * GET /api/admin/api-keys - List all external service API keys with filters

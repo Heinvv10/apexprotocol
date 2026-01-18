@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getOrganizationId, getUserId } from "@/lib/auth";
+import { getOrganizationId, getUserId } from "@/lib/auth/clerk";
 import {
   TokenService,
   type SocialPlatform,

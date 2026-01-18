@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Delete Competitor By Domain
  * DELETE /api/competitors/by-domain/:domain - Delete all snapshots for a competitor domain

@@ -15,7 +15,7 @@ import { db } from "@/lib/db";
 import { aiUsage } from "@/lib/db/schema";
 import { sql, gte, and, eq } from "drizzle-orm";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
-import { getUserId } from "@/lib/auth";
+import { getUserId } from "@/lib/auth/clerk";
 
 interface CostBreakdown {
   provider: string;

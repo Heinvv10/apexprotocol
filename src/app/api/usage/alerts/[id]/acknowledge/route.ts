@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Acknowledge Alert API (F176)
  * POST /api/usage/alerts/[id]/acknowledge - Acknowledge an alert

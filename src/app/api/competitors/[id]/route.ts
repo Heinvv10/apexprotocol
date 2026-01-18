@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Individual Competitor Snapshot Management - Dynamic ID Routes
  * GET /api/competitors/:id - Get competitor snapshot details

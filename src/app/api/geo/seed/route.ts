@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getUserId } from "@/lib/auth";
+import { getUserId } from "@/lib/auth/clerk";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
 import {
   seedKnowledgeBase,

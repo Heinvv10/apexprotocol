@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Usage Breakdown API (F176)
  * GET /api/usage/breakdown - Get usage breakdown by brand/user/feature

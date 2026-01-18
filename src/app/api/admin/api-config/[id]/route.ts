@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Admin API Configuration Management - Dynamic ID Routes
  * GET /api/admin/api-config/:id - Get integration details

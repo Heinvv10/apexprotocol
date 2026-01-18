@@ -9,7 +9,7 @@ import { db } from "@/lib/db";
 import { brandMentions, brands } from "@/lib/db/schema";
 import { eq, and, inArray, desc, sql } from "drizzle-orm";
 import { z } from "zod";
-import { getOrganizationId } from "@/lib/auth";
+import { getOrganizationId } from "@/lib/auth/clerk";
 
 // Validation schema for query parameters
 const querySchema = z.object({

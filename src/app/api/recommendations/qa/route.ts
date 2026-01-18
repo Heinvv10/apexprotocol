@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Q&A Format Converter API (F111)
  * POST /api/recommendations/qa - Convert content to Q&A format

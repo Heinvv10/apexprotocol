@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { portfolios, portfolioBrands, brands } from "@/lib/db/schema";
 import { eq, and, sql, max } from "drizzle-orm";
 import { z } from "zod";
-import { getOrganizationId } from "@/lib/auth";
+import { getOrganizationId } from "@/lib/auth/clerk";
 
 // Validation schemas
 const addBrandsSchema = z.object({

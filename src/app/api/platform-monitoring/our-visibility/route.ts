@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getOrganizationId } from "@/lib/auth";
+import { getOrganizationId } from "@/lib/auth/clerk";
 import { db } from "@/lib/db";
 import { brandMentions } from "@/lib/db/schema";
 import { eq, desc, count, sql } from "drizzle-orm";

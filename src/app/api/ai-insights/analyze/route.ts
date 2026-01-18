@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getUserId } from "@/lib/auth";
+import { getUserId } from "@/lib/auth/clerk";
 import { z } from "zod";
 import { AnalysisEngine } from "@/lib/ai/analysis-engine";
 import { analyzeRequestSchema } from "@/lib/ai/validation";

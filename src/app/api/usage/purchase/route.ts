@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Purchase Additional Usage API (F176)
  * POST /api/usage/purchase - Purchase additional usage quota

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getOrganizationId } from "@/lib/auth";
+import { getOrganizationId } from "@/lib/auth/clerk";
 import { db } from "@/lib/db";
 import { portfolios, portfolioBrands, executiveReports } from "@/lib/db/schema";
 import { eq, and, desc, gte, lte, count } from "drizzle-orm";

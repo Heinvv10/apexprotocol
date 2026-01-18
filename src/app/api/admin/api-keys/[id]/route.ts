@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Admin API Keys Management API - Individual Key Operations
  * GET /api/admin/api-keys/[id] - Get single API key details (masked)

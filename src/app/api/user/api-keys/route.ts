@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * User API Keys Management API
  * GET /api/user/api-keys - List user's API keys (masked values)

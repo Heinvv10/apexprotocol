@@ -21,7 +21,7 @@ import {
   getImplementationGuide,
   generateBrandActionPlan,
 } from "@/lib/recommendations/action-plan-generator";
-import { getUserId } from "@/lib/auth";
+import { getUserId } from "@/lib/auth/clerk";
 
 /**
  * GET - Retrieve action plans and implementation guides

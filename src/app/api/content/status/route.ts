@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getOrganizationId, getUserId } from "@/lib/auth";
+import { getOrganizationId, getUserId } from "@/lib/auth/clerk";
 
 // Check if database is configured
 const isDatabaseConfigured = () => {

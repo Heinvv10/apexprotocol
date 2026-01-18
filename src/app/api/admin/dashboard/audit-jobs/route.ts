@@ -19,7 +19,7 @@ import { db } from "@/lib/db";
 import { audits } from "@/lib/db/schema";
 import { eq, inArray, sql } from "drizzle-orm";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
-import { getUserId } from "@/lib/auth";
+import { getUserId } from "@/lib/auth/clerk";
 import { getRedisClient } from "@/lib/redis";
 
 interface AuditJobInfo {

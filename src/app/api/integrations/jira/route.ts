@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Jira Integration API (F117-F119)
  * GET /api/integrations/jira - Get connection status, projects

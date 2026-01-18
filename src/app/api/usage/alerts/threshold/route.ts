@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Alert Threshold API (F176)
  * POST /api/usage/alerts/threshold - Set alert threshold

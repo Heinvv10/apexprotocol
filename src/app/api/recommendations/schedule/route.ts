@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Auto-scheduling Recommendations API (F115)
  * POST /api/recommendations/schedule - Schedule recommendations

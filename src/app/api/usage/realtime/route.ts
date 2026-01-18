@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Realtime Usage API (F176)
  * GET /api/usage/realtime - Get real-time usage stats

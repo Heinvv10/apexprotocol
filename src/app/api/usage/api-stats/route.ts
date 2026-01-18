@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * API Usage Statistics
  * GET /api/usage/api-stats - Get API usage statistics for settings

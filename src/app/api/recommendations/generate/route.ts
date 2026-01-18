@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Recommendations Generate API (F106-F107)
  * POST /api/recommendations/generate - Generate recommendations for a brand

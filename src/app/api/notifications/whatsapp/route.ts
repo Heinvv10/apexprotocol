@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * WhatsApp Notifications API (F131)
  * GET /api/notifications/whatsapp - Get status, recipients, messages

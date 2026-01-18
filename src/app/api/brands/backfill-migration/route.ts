@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { brands } from "@/lib/db/schema/brands";
 import { populateLocations } from "@/lib/services/brand-post-create";
-import { getOrganizationId } from "@/lib/auth";
+import { getOrganizationId } from "@/lib/auth/clerk";
 
 export async function POST(_request: NextRequest) {
   try {

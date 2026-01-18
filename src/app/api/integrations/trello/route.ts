@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * Trello Integration API (F124)
  * GET /api/integrations/trello - Get connection status, boards, lists

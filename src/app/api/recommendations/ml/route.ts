@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth";
+import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * ML Priority Adjustment API (F114)
  * POST /api/recommendations/ml - Train model or adjust priorities
