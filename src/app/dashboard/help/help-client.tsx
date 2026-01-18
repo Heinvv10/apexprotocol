@@ -1,6 +1,6 @@
 "use client";
 
-import { Book, Lightbulb, MessageCircle, Rocket, Search, Settings, Video, FileText, HelpCircle, ExternalLink } from "lucide-react";
+import { Book, Lightbulb, MessageCircle, Rocket, Search, Settings, Video, FileText, HelpCircle, ExternalLink, BarChart3 } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { MetricExplanationCard, METRIC_DEFINITIONS, type MetricKey } from "@/components/competitive/MetricTooltip";
 
 const helpCategories = [
   {
@@ -50,8 +51,8 @@ const helpCategories = [
       },
       {
         title: "Performance Metrics",
-        description: "Understand GEO, SEO, and AEO scores",
-        link: "#metrics"
+        description: "Understand GEO, SEO, AEO, and other scores",
+        link: "#metrics-glossary"
       }
     ]
   },
@@ -306,6 +307,26 @@ export function HelpClient() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Metrics Glossary */}
+      {searchQuery === "" && (
+        <div id="metrics-glossary">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-cyan-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">Metrics Glossary</h2>
+              <p className="text-sm text-gray-400">Understand the key performance metrics in Apex</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {(["GEO", "SEO", "AEO", "SMO", "PPO", "SOV", "UNIFIED", "SENTIMENT", "CONFIDENCE"] as MetricKey[]).map((metric) => (
+              <MetricExplanationCard key={metric} metric={metric} />
+            ))}
           </div>
         </div>
       )}

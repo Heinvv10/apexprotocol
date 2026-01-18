@@ -22,6 +22,7 @@ import {
   Rocket,
   Map,
   Trophy,
+  HelpCircle,
 } from "lucide-react";
 import { useSelectedBrand } from "@/stores";
 import { useQuery } from "@tanstack/react-query";
@@ -39,6 +40,9 @@ import {
   CompetitorScorecard,
   RoadmapGenerator,
 } from "@/components/competitive";
+
+// Metric tooltips for explaining competitive metrics
+import { MetricTooltip, METRIC_DEFINITIONS, type MetricKey } from "@/components/competitive/MetricTooltip";
 
 // Phase 9.4 - Premium Gating
 import { FeatureGate, UsageMeter } from "@/components/premium";
@@ -201,7 +205,9 @@ function SOVGauge({ value, trend }: { value: number; trend: "up" | "down" | "sta
       </div>
       <div className="relative z-10 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-muted-foreground">Share of Voice</h3>
+          <MetricTooltip metric="SOV" size="sm" side="bottom">
+            <h3 className="text-sm font-medium text-muted-foreground">Share of Voice</h3>
+          </MetricTooltip>
           <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${trendBg}`}>
             <TrendIcon className={`w-3 h-3 ${trendColor}`} />
             <span className={`text-xs font-medium ${trendColor}`}>
@@ -233,6 +239,7 @@ function StatCard({
   trend,
   color = "primary",
   href,
+  metricKey,
 }: {
   icon: React.ElementType;
   label: string;
@@ -241,6 +248,7 @@ function StatCard({
   trend?: "up" | "down" | "stable";
   color?: "primary" | "warning" | "error" | "success";
   href?: string;
+  metricKey?: MetricKey;
 }) {
   const colorMap = {
     primary: "bg-primary/10 text-primary border-primary/30",
@@ -248,6 +256,14 @@ function StatCard({
     error: "bg-error/10 text-error border-error/30",
     success: "bg-success/10 text-success border-success/30",
   };
+
+  const labelContent = metricKey ? (
+    <MetricTooltip metric={metricKey} size="sm" side="top">
+      <span className="text-sm text-muted-foreground">{label}</span>
+    </MetricTooltip>
+  ) : (
+    <div className="text-sm text-muted-foreground">{label}</div>
+  );
 
   const content = (
     <>
@@ -265,7 +281,7 @@ function StatCard({
       </div>
       <div className="mt-4 space-y-1">
         <div className="text-2xl font-bold text-foreground">{value}</div>
-        <div className="text-sm text-muted-foreground">{label}</div>
+        {labelContent}
         {description && <div className="text-xs text-muted-foreground/70">{description}</div>}
       </div>
       {href && (
