@@ -435,71 +435,141 @@ export async function queryGemini(
 
 /**
  * Query Perplexity (using OpenAI-compatible API)
+ *
+ * Implements retry logic with exponential backoff to handle:
+ * - 401 Authentication errors (token refresh)
+ * - 429 Rate limit errors (backoff and retry)
+ * - Network timeouts
  */
 export async function queryPerplexity(
   brandName: string,
   keyword: string,
   queryTemplate: QueryTemplate
 ): Promise<AIPlatformMention | null> {
-  try {
-    const apiKey = process.env.PERPLEXITY_API_KEY;
-    if (!apiKey) {
-      console.warn("PERPLEXITY_API_KEY not configured, skipping");
-      return null;
-    }
+  const MAX_RETRIES = 3;
+  const INITIAL_DELAY = 1000; // 1 second
+  const TIMEOUT_MS = 30000; // 30 second timeout
 
-    const client = new OpenAI({
-      apiKey,
-      baseURL: "https://api.perplexity.ai",
-    });
+  async function queryWithRetry(attempt = 0): Promise<AIPlatformMention | null> {
+    try {
+      const apiKey = process.env.PERPLEXITY_API_KEY;
+      if (!apiKey) {
+        console.warn("PERPLEXITY_API_KEY not configured, skipping");
+        return null;
+      }
 
-    const promptIndex = Math.floor(Math.random() * queryTemplate.prompts.length);
-    const query = queryTemplate.prompts[promptIndex]
-      .replace("{brand}", brandName)
-      .replace("{industry}", "e-commerce")
-      .replace("{region}", "South Africa")
-      .replace("{product_category}", "online shopping");
+      const client = new OpenAI({
+        apiKey,
+        baseURL: "https://api.perplexity.ai",
+        timeout: TIMEOUT_MS,
+        maxRetries: 1, // Let our custom retry handle it
+      });
 
-    const completion = await client.chat.completions.create({
-      model: "sonar-pro",
-      messages: [
-        {
-          role: "user",
-          content: query,
+      const promptIndex = Math.floor(Math.random() * queryTemplate.prompts.length);
+      const query = queryTemplate.prompts[promptIndex]
+        .replace("{brand}", brandName)
+        .replace("{industry}", "e-commerce")
+        .replace("{region}", "South Africa")
+        .replace("{product_category}", "online shopping");
+
+      const completion = await client.chat.completions.create({
+        model: "sonar-pro",
+        messages: [
+          {
+            role: "user",
+            content: query,
+          },
+        ],
+        temperature: 0.7,
+      });
+
+      const response = completion.choices[0]?.message?.content || "";
+
+      if (!response || !response.toLowerCase().includes(brandName.toLowerCase())) {
+        return null;
+      }
+
+      // Perplexity often includes citations
+      const citationMatch = response.match(/\[(\d+)\]/);
+      const citationUrl = citationMatch ? `https://www.${brandName.toLowerCase()}.com` : null;
+
+      return {
+        platform: "perplexity",
+        query,
+        response,
+        sentiment: analyzeSentiment(response, brandName),
+        position: extractPosition(response, brandName),
+        citationUrl,
+        competitors: extractCompetitors(response, brandName),
+        promptCategory: queryTemplate.category,
+        topics: ["e-commerce", "online shopping", "south africa"],
+        metadata: {
+          modelVersion: "Perplexity Sonar Pro",
+          responseLength: response.length,
+          confidenceScore: 0.85,
         },
-      ],
-    });
+      };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      const statusCode = (error as any)?.status;
 
-    const response = completion.choices[0]?.message?.content || "";
+      // Log detailed error info
+      if (attempt === 0) {
+        console.debug(`Perplexity query attempt 1/3 - Error: ${errorMsg} (${statusCode})`);
+      }
 
-    if (!response || !response.toLowerCase().includes(brandName.toLowerCase())) {
+      // Handle specific errors with retry logic
+      if (statusCode === 401) {
+        // Authentication error - could be expired token
+        if (attempt < MAX_RETRIES - 1) {
+          const delay = INITIAL_DELAY * Math.pow(2, attempt);
+          console.debug(
+            `Perplexity 401 Auth error - Retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          return queryWithRetry(attempt + 1);
+        } else {
+          console.warn(
+            `Perplexity 401 Auth failed after ${MAX_RETRIES} attempts - Token may be invalid or expired`
+          );
+          return null;
+        }
+      } else if (statusCode === 429) {
+        // Rate limit - backoff and retry
+        if (attempt < MAX_RETRIES - 1) {
+          const delay = INITIAL_DELAY * Math.pow(2, attempt + 1); // Longer delay for rate limit
+          console.debug(
+            `Perplexity 429 Rate limit - Backing off for ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          return queryWithRetry(attempt + 1);
+        } else {
+          console.warn(
+            `Perplexity rate limited after ${MAX_RETRIES} attempts - Skipping this query`
+          );
+          return null;
+        }
+      } else if (statusCode === 500 || statusCode === 503) {
+        // Server error - retry with backoff
+        if (attempt < MAX_RETRIES - 1) {
+          const delay = INITIAL_DELAY * Math.pow(2, attempt);
+          console.debug(
+            `Perplexity ${statusCode} Server error - Retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          return queryWithRetry(attempt + 1);
+        }
+      }
+
+      // For other errors, log and return null
+      if (attempt === 0) {
+        console.warn(`Perplexity query error: ${errorMsg}`);
+      }
       return null;
     }
-
-    // Perplexity often includes citations
-    const citationMatch = response.match(/\[(\d+)\]/);
-    const citationUrl = citationMatch ? `https://www.${brandName.toLowerCase()}.com` : null;
-
-    return {
-      platform: "perplexity",
-      query,
-      response,
-      sentiment: analyzeSentiment(response, brandName),
-      position: extractPosition(response, brandName),
-      citationUrl,
-      competitors: extractCompetitors(response, brandName),
-      promptCategory: queryTemplate.category,
-      topics: ["e-commerce", "online shopping", "south africa"],
-      metadata: {
-        modelVersion: "Perplexity Pro",
-        responseLength: response.length,
-        confidenceScore: 0.85,
-      },
-    };
-  } catch (error) {
-    console.error("Perplexity query error:", error);
-    return null;
   }
+
+  return queryWithRetry();
 }
 
 /**
