@@ -1,0 +1,383 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { RefreshCw, Download, Lock } from "lucide-react";
+import { PlatformOverviewCard } from "@/components/platform-monitoring/platform-overview-card";
+import { PlatformComparisonChart } from "@/components/platform-monitoring/platform-comparison-chart";
+import { VisibilityGauge } from "@/components/platform-monitoring/visibility-gauge";
+import { RegionalCoverageMap } from "@/components/platform-monitoring/regional-coverage-map";
+import { PlatformPerformanceTable } from "@/components/platform-monitoring/platform-performance-table";
+import { useOrganization } from "@clerk/nextjs";
+import { canAccessFeature } from "@/lib/permissions/feature-gates";
+
+// Mock data for demonstration
+const MOCK_TIER_1_PLATFORMS = [
+  {
+    name: "openai_search",
+    displayName: "OpenAI Search",
+    icon: "🔍",
+    metrics: { visibility: 92, position: 2, confidence: 95, trend: "up" as const },
+  },
+  {
+    name: "bing_copilot",
+    displayName: "Bing Copilot",
+    icon: "🦾",
+    metrics: { visibility: 87, position: 3, confidence: 88, trend: "stable" as const },
+  },
+  {
+    name: "notebooklm",
+    displayName: "NotebookLM",
+    icon: "📔",
+    metrics: { visibility: 78, position: 4, confidence: 82, trend: "down" as const },
+  },
+  {
+    name: "cohere",
+    displayName: "Cohere",
+    icon: "🤖",
+    metrics: { visibility: 85, position: 2, confidence: 90, trend: "up" as const },
+  },
+  {
+    name: "janus",
+    displayName: "Janus (Claude API)",
+    icon: "🧠",
+    metrics: { visibility: 95, position: 1, confidence: 98, trend: "up" as const },
+  },
+];
+
+const MOCK_TIER_2_PLATFORMS = [
+  {
+    name: "mistral",
+    displayName: "Mistral",
+    icon: "🌪️",
+    metrics: { visibility: 76, position: 5, confidence: 85, trend: "up" as const },
+  },
+  {
+    name: "llama",
+    displayName: "Llama",
+    icon: "🦙",
+    metrics: { visibility: 71, position: 6, confidence: 80, trend: "stable" as const },
+  },
+  {
+    name: "yandexgpt",
+    displayName: "YandexGPT",
+    icon: "🌍",
+    metrics: { visibility: 65, position: 7, confidence: 75, trend: "down" as const },
+  },
+  {
+    name: "kimi",
+    displayName: "Kimi",
+    icon: "🌙",
+    metrics: { visibility: 72, position: 4, confidence: 83, trend: "up" as const },
+  },
+  {
+    name: "qwen",
+    displayName: "Qwen",
+    icon: "🌟",
+    metrics: { visibility: 68, position: 8, confidence: 78, trend: "down" as const },
+  },
+];
+
+const REGIONAL_DATA = [
+  {
+    region: "Western Markets",
+    icon: "🌎",
+    platforms: ["ChatGPT", "Claude", "Gemini", "Perplexity"],
+    coverage: 95,
+    tier: "tier_1" as const,
+  },
+  {
+    region: "Eastern Europe & Russia",
+    icon: "🌍",
+    platforms: ["YandexGPT", "Claude", "Copilot"],
+    coverage: 85,
+    tier: "tier_2" as const,
+  },
+  {
+    region: "China & Asia-Pacific",
+    icon: "🌏",
+    platforms: ["Kimi", "Qwen", "Llama", "Claude"],
+    coverage: 88,
+    tier: "both" as const,
+  },
+  {
+    region: "Enterprise & Research",
+    icon: "🏢",
+    platforms: ["Mistral", "Llama", "Cohere", "NotebookLM"],
+    coverage: 92,
+    tier: "both" as const,
+  },
+];
+
+const PLATFORM_PERFORMANCE = [
+  {
+    id: "1",
+    platform: "openai_search",
+    displayName: "OpenAI Search",
+    tier: "tier_1" as const,
+    visibility: 92,
+    position: 2,
+    confidence: 95,
+    citations: 324,
+    trend: "up" as const,
+    trendPercent: 8,
+    lastUpdated: new Date(),
+    status: "active" as const,
+  },
+  {
+    id: "2",
+    platform: "janus",
+    displayName: "Janus (Claude API)",
+    tier: "tier_1" as const,
+    visibility: 95,
+    position: 1,
+    confidence: 98,
+    citations: 456,
+    trend: "up" as const,
+    trendPercent: 12,
+    lastUpdated: new Date(),
+    status: "active" as const,
+  },
+  {
+    id: "3",
+    platform: "bing_copilot",
+    displayName: "Bing Copilot",
+    tier: "tier_1" as const,
+    visibility: 87,
+    position: 3,
+    confidence: 88,
+    citations: 298,
+    trend: "stable" as const,
+    trendPercent: 0,
+    lastUpdated: new Date(),
+    status: "active" as const,
+  },
+  {
+    id: "4",
+    platform: "kimi",
+    displayName: "Kimi",
+    tier: "tier_2" as const,
+    visibility: 72,
+    position: 4,
+    confidence: 83,
+    citations: 187,
+    trend: "up" as const,
+    trendPercent: 5,
+    lastUpdated: new Date(),
+    status: "active" as const,
+  },
+  {
+    id: "5",
+    platform: "mistral",
+    displayName: "Mistral",
+    tier: "tier_2" as const,
+    visibility: 76,
+    position: 5,
+    confidence: 85,
+    citations: 156,
+    trend: "up" as const,
+    trendPercent: 3,
+    lastUpdated: new Date(),
+    status: "active" as const,
+  },
+];
+
+export default function MultiPlatformDashboard() {
+  const [selectedTier, setSelectedTier] = useState<"all" | "tier_1" | "tier_2">("all");
+  const [canAccessTier2, setCanAccessTier2] = useState(false);
+  const organization = useOrganization();
+
+  useEffect(() => {
+    const checkAccess = async () => {
+      if (organization.organization) {
+        const planId = organization.organization.publicMetadata?.planId as string || "starter";
+        const hasAccess = await canAccessFeature("platform_expansion_tier_2", planId);
+        setCanAccessTier2(hasAccess);
+      }
+    };
+    checkAccess();
+  }, [organization]);
+
+  const tier1Average = (MOCK_TIER_1_PLATFORMS.reduce((sum, p) => sum + p.metrics.visibility, 0) / 5);
+  const tier2Average = canAccessTier2 ? (MOCK_TIER_2_PLATFORMS.reduce((sum, p) => sum + p.metrics.visibility, 0) / 5) : 0;
+  const allAverage = canAccessTier2 ? ((tier1Average * 5 + tier2Average * 5) / 10) : tier1Average;
+
+  const chartData = [
+    ...MOCK_TIER_1_PLATFORMS.map((p) => ({ platform: p.name, ...p.metrics })),
+    ...(canAccessTier2 ? MOCK_TIER_2_PLATFORMS.map((p) => ({ platform: p.name, ...p.metrics })) : []),
+  ];
+
+  return (
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Multi-Platform Monitoring</h1>
+          <p className="text-gray-400 mt-1">Monitor brand visibility across 17 AI platforms</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="gap-2">
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2">
+            <Download className="w-4 h-4" />
+            Export
+          </Button>
+        </div>
+      </div>
+
+      {/* Tier Filter */}
+      <div className="flex gap-2">
+        <Select
+          value={selectedTier}
+          onValueChange={(val) => {
+            if (val === "tier_2" && !canAccessTier2) return;
+            setSelectedTier(val as any);
+          }}
+        >
+          <SelectTrigger className="w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              {canAccessTier2 ? "All Platforms (17)" : "All Platforms (5)"}
+            </SelectItem>
+            <SelectItem value="tier_1">Tier 1 Only (5)</SelectItem>
+            {canAccessTier2 ? (
+              <SelectItem value="tier_2">Tier 2 Only (5)</SelectItem>
+            ) : (
+              <div className="px-2 py-1.5 text-sm text-gray-400 cursor-not-allowed flex items-center gap-2">
+                <Lock className="w-3 h-3" />
+                Tier 2 Only (Enterprise)
+              </div>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Key Metrics Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <VisibilityGauge
+          visibility={Math.round(allAverage)}
+          label="Overall Visibility"
+          subtitle="Across all platforms"
+        />
+        <VisibilityGauge
+          visibility={Math.round(tier1Average)}
+          label="Tier 1 Average"
+          subtitle="5 major platforms"
+        />
+        <VisibilityGauge
+          visibility={Math.round(tier2Average)}
+          label="Tier 2 Average"
+          subtitle="5 regional platforms"
+        />
+      </div>
+
+      {/* Platform Overview Cards - Tier 1 */}
+      {(selectedTier === "all" || selectedTier === "tier_1") && (
+        <div>
+          <h2 className="text-xl font-semibold text-white mb-4">Tier 1 Platforms (Major)</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {MOCK_TIER_1_PLATFORMS.map((platform) => (
+              <PlatformOverviewCard
+                key={platform.name}
+                name={platform.name}
+                displayName={platform.displayName}
+                tier="tier_1"
+                metrics={platform.metrics}
+                icon={platform.icon}
+                lastUpdated={new Date()}
+                enabled={true}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Platform Overview Cards - Tier 2 */}
+      {(selectedTier === "all" || selectedTier === "tier_2") && (
+        <div>
+          <h2 className="text-xl font-semibold text-white mb-4">
+            Tier 2 Platforms (Regional)
+            {!canAccessTier2 && (
+              <span className="ml-2 text-sm text-gray-400 font-normal flex items-center gap-1 inline-flex">
+                <Lock className="w-4 h-4" /> Enterprise Only
+              </span>
+            )}
+          </h2>
+          {canAccessTier2 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {MOCK_TIER_2_PLATFORMS.map((platform) => (
+                <PlatformOverviewCard
+                  key={platform.name}
+                  name={platform.name}
+                  displayName={platform.displayName}
+                  tier="tier_2"
+                  metrics={platform.metrics}
+                  icon={platform.icon}
+                  lastUpdated={new Date()}
+                  enabled={true}
+                />
+              ))}
+            </div>
+          ) : (
+            <Card className="card-secondary p-8 text-center">
+              <Lock className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400 mb-2">Tier 2 platforms are available on Enterprise plans</p>
+              <p className="text-sm text-gray-500">Upgrade your plan to access regional and emerging market platforms</p>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Comparison Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <PlatformComparisonChart
+          data={chartData}
+          title="Visibility vs Confidence Comparison"
+          type="bar"
+        />
+        <PlatformComparisonChart
+          data={chartData}
+          title="Platform Visibility Trend"
+          type="line"
+        />
+      </div>
+
+      {/* Regional Coverage */}
+      <RegionalCoverageMap regions={REGIONAL_DATA} title="Regional Market Coverage" />
+
+      {/* Performance Table */}
+      <PlatformPerformanceTable
+        platforms={PLATFORM_PERFORMANCE}
+        title="Platform Performance Metrics"
+      />
+
+      {/* Footer Info */}
+      <Card className="card-tertiary p-4">
+        <p className="text-sm text-gray-400">
+          <span className="font-semibold text-white">Last Updated:</span> {new Date().toLocaleString()}
+        </p>
+        <p className="text-sm text-gray-400 mt-2">
+          <span className="font-semibold text-white">Coverage:</span> {canAccessTier2 ? "17 AI platforms across Western markets, Eastern Europe, Russia, China, and Asia-Pacific regions representing 97% of global AI platform visibility." : "5 major AI platforms across Western markets representing 92% of global AI platform visibility."}
+        </p>
+        {!canAccessTier2 && (
+          <p className="text-sm text-cyan-400 mt-2 flex items-center gap-2">
+            <Lock className="w-4 h-4" />
+            <span>Upgrade to Enterprise to access 5 additional regional platforms and expand to 97% coverage</span>
+          </p>
+        )}
+      </Card>
+    </div>
+  );
+}
