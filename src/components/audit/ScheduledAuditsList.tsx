@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Loader2, Trash2, Edit2, Clock, CheckCircle2, AlertCircle, Toggle2On, Toggle2Off } from "lucide-react";
+import { Loader2, Trash2, Edit2, Clock, CheckCircle2, AlertCircle, ToggleRight, ToggleLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSchedules, useDeleteSchedule, useToggleSchedule, ScheduleConfig } from "@/hooks/useSchedules";
 import { formatDistanceToNow } from "date-fns";
@@ -124,9 +124,9 @@ export function ScheduledAuditsList({ onEditClick }: ScheduledAuditsListProps) {
                 title={schedule.enabled ? "Disable schedule" : "Enable schedule"}
               >
                 {schedule.enabled ? (
-                  <Toggle2On className="h-4 w-4 text-primary" />
+                  <ToggleRight className="h-4 w-4 text-primary" />
                 ) : (
-                  <Toggle2Off className="h-4 w-4 text-muted-foreground" />
+                  <ToggleLeft className="h-4 w-4 text-muted-foreground" />
                 )}
               </Button>
 

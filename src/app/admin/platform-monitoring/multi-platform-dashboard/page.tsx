@@ -16,9 +16,12 @@ import { PlatformComparisonChart } from "@/components/platform-monitoring/platfo
 import { VisibilityGauge } from "@/components/platform-monitoring/visibility-gauge";
 import { RegionalCoverageMap } from "@/components/platform-monitoring/regional-coverage-map";
 import { PlatformPerformanceTable } from "@/components/platform-monitoring/platform-performance-table";
+import { PlatformDeepDiveModal } from "@/components/platform-monitoring/platform-deep-dive-modal";
+import { PlatformComparisonModal } from "@/components/platform-monitoring/platform-comparison-modal";
 import { useOrganization } from "@clerk/nextjs";
 import { canAccessFeature } from "@/lib/permissions/feature-gates";
 import { usePlatformDashboard } from "@/hooks/usePlatformDashboard";
+import type { PlatformMetrics } from "@/hooks/usePlatformDashboard";
 
 // Mock data for demonstration (fallback only)
 const MOCK_TIER_1_PLATFORMS = [
@@ -195,6 +198,11 @@ export default function MultiPlatformDashboard() {
   const [selectedTier, setSelectedTier] = useState<"all" | "tier_1" | "tier_2">("all");
   const [canAccessTier2, setCanAccessTier2] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState<PlatformMetrics | null>(null);
+  const [deepDiveOpen, setDeepDiveOpen] = useState(false);
+  const [comparisonOpen, setComparisonOpen] = useState(false);
+  const [comparisonPlatform1, setComparisonPlatform1] = useState<PlatformMetrics | null>(null);
+  const [comparisonPlatform2, setComparisonPlatform2] = useState<PlatformMetrics | null>(null);
   const organization = useOrganization();
 
   // Fetch real dashboard data
@@ -237,6 +245,23 @@ export default function MultiPlatformDashboard() {
     setIsRefreshing(true);
     await mutate();
     setIsRefreshing(false);
+  };
+
+  const handlePlatformClick = (platform: PlatformMetrics) => {
+    setSelectedPlatform(platform);
+    setDeepDiveOpen(true);
+  };
+
+  const handleCompare = (platform: PlatformMetrics) => {
+    if (!comparisonPlatform1) {
+      setComparisonPlatform1(platform);
+    } else if (!comparisonPlatform2 && platform.platform !== comparisonPlatform1.platform) {
+      setComparisonPlatform2(platform);
+      setComparisonOpen(true);
+    } else {
+      setComparisonPlatform1(platform);
+      setComparisonPlatform2(null);
+    }
   };
 
   return (
@@ -342,21 +367,26 @@ export default function MultiPlatformDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {tier1Platforms.length > 0 ? (
               tier1Platforms.map((platform) => (
-                <PlatformOverviewCard
+                <div
                   key={platform.platform}
-                  name={platform.platform}
-                  displayName={platform.displayName}
-                  tier="tier_1"
-                  metrics={{
-                    visibility: platform.visibility,
-                    position: platform.position || 1,
-                    confidence: platform.confidence,
-                    trend: platform.trend,
-                  }}
-                  icon={platform.icon}
-                  lastUpdated={platform.lastUpdated}
-                  enabled={true}
-                />
+                  onClick={() => handlePlatformClick(platform)}
+                  className="cursor-pointer"
+                >
+                  <PlatformOverviewCard
+                    name={platform.platform}
+                    displayName={platform.displayName}
+                    tier="tier_1"
+                    metrics={{
+                      visibility: platform.visibility,
+                      position: platform.position || 1,
+                      confidence: platform.confidence,
+                      trend: platform.trend,
+                    }}
+                    icon={platform.icon}
+                    lastUpdated={platform.lastUpdated}
+                    enabled={true}
+                  />
+                </div>
               ))
             ) : (
               <p className="text-gray-400 col-span-5">No Tier 1 platforms available</p>
@@ -380,21 +410,26 @@ export default function MultiPlatformDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               {tier2Platforms.length > 0 ? (
                 tier2Platforms.map((platform) => (
-                  <PlatformOverviewCard
+                  <div
                     key={platform.platform}
-                    name={platform.platform}
-                    displayName={platform.displayName}
-                    tier="tier_2"
-                    metrics={{
-                      visibility: platform.visibility,
-                      position: platform.position || 1,
-                      confidence: platform.confidence,
-                      trend: platform.trend,
-                    }}
-                    icon={platform.icon}
-                    lastUpdated={platform.lastUpdated}
-                    enabled={true}
-                  />
+                    onClick={() => handlePlatformClick(platform)}
+                    className="cursor-pointer"
+                  >
+                    <PlatformOverviewCard
+                      name={platform.platform}
+                      displayName={platform.displayName}
+                      tier="tier_2"
+                      metrics={{
+                        visibility: platform.visibility,
+                        position: platform.position || 1,
+                        confidence: platform.confidence,
+                        trend: platform.trend,
+                      }}
+                      icon={platform.icon}
+                      lastUpdated={platform.lastUpdated}
+                      enabled={true}
+                    />
+                  </div>
                 ))
               ) : (
                 <p className="text-gray-400 col-span-5">No Tier 2 platforms available</p>
@@ -470,6 +505,23 @@ export default function MultiPlatformDashboard() {
           </p>
         )}
       </Card>
+
+      {/* Deep Dive Modal */}
+      <PlatformDeepDiveModal
+        open={deepDiveOpen}
+        onOpenChange={setDeepDiveOpen}
+        platform={selectedPlatform}
+        allPlatforms={platforms}
+      />
+
+      {/* Comparison Modal */}
+      <PlatformComparisonModal
+        open={comparisonOpen}
+        onOpenChange={setComparisonOpen}
+        platform1={comparisonPlatform1}
+        platform2={comparisonPlatform2}
+        allPlatforms={platforms}
+      />
     </div>
   );
 }

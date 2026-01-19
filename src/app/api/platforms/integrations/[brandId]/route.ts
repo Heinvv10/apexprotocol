@@ -13,10 +13,11 @@ import {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { brandId: string } }
+  { params }: { params: Promise<{ brandId: string }> }
 ) {
   try {
     const { userId } = await auth();
+    const { brandId } = await params;
 
     if (!userId) {
       return NextResponse.json(
@@ -25,7 +26,7 @@ export async function GET(
       );
     }
 
-    const integrations = await getBrandPlatformIntegrations(params.brandId);
+    const integrations = await getBrandPlatformIntegrations(brandId);
 
     return NextResponse.json({
       success: true,
@@ -56,10 +57,11 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { brandId: string } }
+  { params }: { params: Promise<{ brandId: string }> }
 ) {
   try {
     const { userId } = await auth();
+    const { brandId } = await params;
 
     if (!userId) {
       return NextResponse.json(
@@ -80,9 +82,9 @@ export async function POST(
     let result;
 
     if (enabled) {
-      result = await enablePlatformForBrand(params.brandId, platformId);
+      result = await enablePlatformForBrand(brandId, platformId);
     } else {
-      await disablePlatformForBrand(params.brandId, platformId);
+      await disablePlatformForBrand(brandId, platformId);
       result = { status: "disabled" };
     }
 

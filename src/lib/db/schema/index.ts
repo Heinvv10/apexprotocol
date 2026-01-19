@@ -629,9 +629,6 @@ export {
   platformRegistry,
   platformIntegrations,
   platformQueryResults,
-  // Enums
-  platformTierEnum,
-  integrationStatusEnum,
   // Relations
   platformRegistryRelations,
   platformIntegrationsRelations,

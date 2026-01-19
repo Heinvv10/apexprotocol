@@ -18,10 +18,11 @@ interface UpdateScheduleRequest {
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
+    const { id } = await params;
 
     if (!userId) {
       return NextResponse.json(
@@ -33,7 +34,7 @@ export async function GET(
     const schedule = await db
       .select()
       .from(scheduledJobs)
-      .where(eq(scheduledJobs.id, params.id))
+      .where(eq(scheduledJobs.id, id))
       .limit(1);
 
     if (schedule.length === 0) {
@@ -73,10 +74,11 @@ export async function GET(
  */
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
+    const { id } = await params;
 
     if (!userId) {
       return NextResponse.json(
@@ -91,7 +93,7 @@ export async function PATCH(
     const existing = await db
       .select()
       .from(scheduledJobs)
-      .where(eq(scheduledJobs.id, params.id))
+      .where(eq(scheduledJobs.id, id))
       .limit(1);
 
     if (existing.length === 0) {
@@ -147,12 +149,12 @@ export async function PATCH(
     await db
       .update(scheduledJobs)
       .set(updates)
-      .where(eq(scheduledJobs.id, params.id));
+      .where(eq(scheduledJobs.id, id));
 
     const updated = await db
       .select()
       .from(scheduledJobs)
-      .where(eq(scheduledJobs.id, params.id))
+      .where(eq(scheduledJobs.id, id))
       .limit(1);
 
     if (updated.length === 0) {
@@ -192,10 +194,11 @@ export async function PATCH(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
+    const { id } = await params;
 
     if (!userId) {
       return NextResponse.json(
@@ -204,7 +207,7 @@ export async function DELETE(
       );
     }
 
-    await db.delete(scheduledJobs).where(eq(scheduledJobs.id, params.id));
+    await db.delete(scheduledJobs).where(eq(scheduledJobs.id, id));
 
     return NextResponse.json({ success: true });
   } catch (error) {
