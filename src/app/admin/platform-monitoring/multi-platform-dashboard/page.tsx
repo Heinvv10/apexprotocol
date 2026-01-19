@@ -18,8 +18,9 @@ import { RegionalCoverageMap } from "@/components/platform-monitoring/regional-c
 import { PlatformPerformanceTable } from "@/components/platform-monitoring/platform-performance-table";
 import { useOrganization } from "@clerk/nextjs";
 import { canAccessFeature } from "@/lib/permissions/feature-gates";
+import { usePlatformDashboard } from "@/hooks/usePlatformDashboard";
 
-// Mock data for demonstration
+// Mock data for demonstration (fallback only)
 const MOCK_TIER_1_PLATFORMS = [
   {
     name: "openai_search",
@@ -193,7 +194,19 @@ const PLATFORM_PERFORMANCE = [
 export default function MultiPlatformDashboard() {
   const [selectedTier, setSelectedTier] = useState<"all" | "tier_1" | "tier_2">("all");
   const [canAccessTier2, setCanAccessTier2] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const organization = useOrganization();
+
+  // Fetch real dashboard data
+  const {
+    platforms,
+    tier1Average,
+    tier2Average,
+    regionCoverage,
+    isLoading,
+    isError,
+    mutate,
+  } = usePlatformDashboard();
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -206,14 +219,25 @@ export default function MultiPlatformDashboard() {
     checkAccess();
   }, [organization]);
 
-  const tier1Average = (MOCK_TIER_1_PLATFORMS.reduce((sum, p) => sum + p.metrics.visibility, 0) / 5);
-  const tier2Average = canAccessTier2 ? (MOCK_TIER_2_PLATFORMS.reduce((sum, p) => sum + p.metrics.visibility, 0) / 5) : 0;
-  const allAverage = canAccessTier2 ? ((tier1Average * 5 + tier2Average * 5) / 10) : tier1Average;
+  const allAverage = canAccessTier2 && tier2Average > 0
+    ? Math.round((tier1Average + tier2Average) / 2)
+    : tier1Average;
 
+  // Filter platforms by tier
+  const tier1Platforms = platforms.filter((p) => p.tier === "tier_1");
+  const tier2Platforms = platforms.filter((p) => p.tier === "tier_2");
+
+  // Build chart data respecting feature gates
   const chartData = [
-    ...MOCK_TIER_1_PLATFORMS.map((p) => ({ platform: p.name, ...p.metrics })),
-    ...(canAccessTier2 ? MOCK_TIER_2_PLATFORMS.map((p) => ({ platform: p.name, ...p.metrics })) : []),
+    ...tier1Platforms.map((p) => ({ platform: p.platform, ...p })),
+    ...(canAccessTier2 ? tier2Platforms.map((p) => ({ platform: p.platform, ...p })) : []),
   ];
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await mutate();
+    setIsRefreshing(false);
+  };
 
   return (
     <div className="space-y-6 p-6">
@@ -224,9 +248,15 @@ export default function MultiPlatformDashboard() {
           <p className="text-gray-400 mt-1">Monitor brand visibility across 17 AI platforms</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="gap-2">
-            <RefreshCw className="w-4 h-4" />
-            Refresh
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={handleRefresh}
+            disabled={isRefreshing || isLoading}
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            {isRefreshing ? "Refreshing..." : "Refresh"}
           </Button>
           <Button variant="outline" size="sm" className="gap-2">
             <Download className="w-4 h-4" />
@@ -264,8 +294,29 @@ export default function MultiPlatformDashboard() {
         </Select>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <Card className="card-secondary p-8 text-center">
+          <div className="inline-block">
+            <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin mb-4" />
+            <p className="text-gray-400">Loading platform data...</p>
+          </div>
+        </Card>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <Card className="card-secondary p-8 border-red-500/30">
+          <p className="text-red-400 mb-2">Failed to load platform data</p>
+          <Button size="sm" variant="outline" onClick={handleRefresh}>
+            Retry
+          </Button>
+        </Card>
+      )}
+
       {/* Key Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {!isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <VisibilityGauge
           visibility={Math.round(allAverage)}
           label="Overall Visibility"
@@ -281,25 +332,35 @@ export default function MultiPlatformDashboard() {
           label="Tier 2 Average"
           subtitle="5 regional platforms"
         />
-      </div>
+        </div>
+      )}
 
       {/* Platform Overview Cards - Tier 1 */}
       {(selectedTier === "all" || selectedTier === "tier_1") && (
         <div>
           <h2 className="text-xl font-semibold text-white mb-4">Tier 1 Platforms (Major)</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {MOCK_TIER_1_PLATFORMS.map((platform) => (
-              <PlatformOverviewCard
-                key={platform.name}
-                name={platform.name}
-                displayName={platform.displayName}
-                tier="tier_1"
-                metrics={platform.metrics}
-                icon={platform.icon}
-                lastUpdated={new Date()}
-                enabled={true}
-              />
-            ))}
+            {tier1Platforms.length > 0 ? (
+              tier1Platforms.map((platform) => (
+                <PlatformOverviewCard
+                  key={platform.platform}
+                  name={platform.platform}
+                  displayName={platform.displayName}
+                  tier="tier_1"
+                  metrics={{
+                    visibility: platform.visibility,
+                    position: platform.position || 1,
+                    confidence: platform.confidence,
+                    trend: platform.trend,
+                  }}
+                  icon={platform.icon}
+                  lastUpdated={platform.lastUpdated}
+                  enabled={true}
+                />
+              ))
+            ) : (
+              <p className="text-gray-400 col-span-5">No Tier 1 platforms available</p>
+            )}
           </div>
         </div>
       )}
@@ -317,18 +378,27 @@ export default function MultiPlatformDashboard() {
           </h2>
           {canAccessTier2 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              {MOCK_TIER_2_PLATFORMS.map((platform) => (
-                <PlatformOverviewCard
-                  key={platform.name}
-                  name={platform.name}
-                  displayName={platform.displayName}
-                  tier="tier_2"
-                  metrics={platform.metrics}
-                  icon={platform.icon}
-                  lastUpdated={new Date()}
-                  enabled={true}
-                />
-              ))}
+              {tier2Platforms.length > 0 ? (
+                tier2Platforms.map((platform) => (
+                  <PlatformOverviewCard
+                    key={platform.platform}
+                    name={platform.platform}
+                    displayName={platform.displayName}
+                    tier="tier_2"
+                    metrics={{
+                      visibility: platform.visibility,
+                      position: platform.position || 1,
+                      confidence: platform.confidence,
+                      trend: platform.trend,
+                    }}
+                    icon={platform.icon}
+                    lastUpdated={platform.lastUpdated}
+                    enabled={true}
+                  />
+                ))
+              ) : (
+                <p className="text-gray-400 col-span-5">No Tier 2 platforms available</p>
+              )}
             </div>
           ) : (
             <Card className="card-secondary p-8 text-center">
@@ -355,13 +425,32 @@ export default function MultiPlatformDashboard() {
       </div>
 
       {/* Regional Coverage */}
-      <RegionalCoverageMap regions={REGIONAL_DATA} title="Regional Market Coverage" />
+      {regionCoverage.length > 0 ? (
+        <RegionalCoverageMap regions={regionCoverage} title="Regional Market Coverage" />
+      ) : (
+        <RegionalCoverageMap regions={REGIONAL_DATA} title="Regional Market Coverage" />
+      )}
 
       {/* Performance Table */}
-      <PlatformPerformanceTable
-        platforms={PLATFORM_PERFORMANCE}
-        title="Platform Performance Metrics"
-      />
+      {platforms.length > 0 && (
+        <PlatformPerformanceTable
+          platforms={platforms.map((p, idx) => ({
+            id: p.platform,
+            platform: p.platform,
+            displayName: p.displayName,
+            tier: p.tier,
+            visibility: p.visibility,
+            position: p.position,
+            confidence: p.confidence,
+            citations: p.citations,
+            trend: p.trend,
+            trendPercent: p.trendPercent,
+            lastUpdated: p.lastUpdated,
+            status: p.status,
+          }))}
+          title="Platform Performance Metrics"
+        />
+      )}
 
       {/* Footer Info */}
       <Card className="card-tertiary p-4">
@@ -369,7 +458,10 @@ export default function MultiPlatformDashboard() {
           <span className="font-semibold text-white">Last Updated:</span> {new Date().toLocaleString()}
         </p>
         <p className="text-sm text-gray-400 mt-2">
-          <span className="font-semibold text-white">Coverage:</span> {canAccessTier2 ? "17 AI platforms across Western markets, Eastern Europe, Russia, China, and Asia-Pacific regions representing 97% of global AI platform visibility." : "5 major AI platforms across Western markets representing 92% of global AI platform visibility."}
+          <span className="font-semibold text-white">Platforms Monitored:</span> {platforms.length} {canAccessTier2 ? "AI platforms across Western markets, Eastern Europe, Russia, China, and Asia-Pacific regions representing 97% of global AI platform visibility." : "major AI platforms across Western markets representing 92% of global AI platform visibility."}
+        </p>
+        <p className="text-sm text-gray-400 mt-2">
+          <span className="font-semibold text-white">Total Mentions Tracked:</span> {platforms.reduce((sum, p) => sum + p.citations, 0).toLocaleString()}
         </p>
         {!canAccessTier2 && (
           <p className="text-sm text-cyan-400 mt-2 flex items-center gap-2">
