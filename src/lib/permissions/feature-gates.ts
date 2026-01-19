@@ -28,7 +28,14 @@ export type FeatureId =
   | "custom_domain"
   | "advanced_analytics"
   | "bulk_export"
-  | "priority_support";
+  | "priority_support"
+  // Phase 10: Expanded AI Platform Coverage (Tier 1)
+  | "platform_expansion_tier_1"
+  | "openai_search_monitoring"
+  | "bing_copilot_monitoring"
+  | "notebooklm_monitoring"
+  | "cohere_monitoring"
+  | "multi_platform_queries";
 
 // Resource types with limits
 export type ResourceType =
@@ -76,6 +83,14 @@ export const FEATURE_ACCESS: Record<FeatureId, Plan[]> = {
   advanced_analytics: ["professional", "enterprise"],
   bulk_export: ["professional", "enterprise"],
   priority_support: ["enterprise"],
+
+  // Phase 10: Expanded AI Platform Coverage (Tier 1)
+  platform_expansion_tier_1: ["professional", "enterprise"],
+  openai_search_monitoring: ["professional", "enterprise"],
+  bing_copilot_monitoring: ["professional", "enterprise"],
+  notebooklm_monitoring: ["professional", "enterprise"],
+  cohere_monitoring: ["professional", "enterprise"],
+  multi_platform_queries: ["professional", "enterprise"],
 };
 
 // ============================================================================
@@ -166,7 +181,7 @@ export const PLAN_DETAILS: Record<Plan, PlanDetails> = {
     features: [
       "5 brands",
       "10 team members",
-      "Real-time AI platform monitoring (7 platforms)",
+      "Real-time AI platform monitoring (12 platforms with Phase 10 Tier 1)",
       "Advanced daily tracking & alerts",
       "Competitive discovery (5 competitors)",
       "Google Places integration (3 locations)",
@@ -174,6 +189,8 @@ export const PLAN_DETAILS: Record<Plan, PlanDetails> = {
       "Advanced analytics",
       "1,000 AI queries/month",
       "Priority email support",
+      "Multi-platform visibility tracking",
+      "Share of voice across 12 platforms",
     ],
   },
   enterprise: {
@@ -185,7 +202,7 @@ export const PLAN_DETAILS: Record<Plan, PlanDetails> = {
     features: [
       "Unlimited brands",
       "Unlimited team members",
-      "Real-time AI platform monitoring (7 platforms)",
+      "Real-time AI platform monitoring (12+ platforms with Phase 10)",
       "Unlimited monitoring with instant alerts",
       "Unlimited competitive tracking",
       "Unlimited locations",
@@ -195,6 +212,8 @@ export const PLAN_DETAILS: Record<Plan, PlanDetails> = {
       "White-label & custom domain",
       "Unlimited AI queries",
       "Dedicated support",
+      "All Phase 10 platform expansions",
+      "Multi-platform competitive analysis",
     ],
   },
 };

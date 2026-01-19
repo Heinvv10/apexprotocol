@@ -623,3 +623,32 @@ export {
   type AutomationLog,
   type NewAutomationLog,
 } from "./marketing";
+
+// Platform Registry (Phase 10: Expanded AI Platform Coverage)
+export {
+  platformRegistry,
+  platformIntegrations,
+  platformQueryResults,
+  // Enums
+  platformTierEnum,
+  integrationStatusEnum,
+  // Relations
+  platformRegistryRelations,
+  platformIntegrationsRelations,
+  platformQueryResultsRelations,
+  // Types
+  type PlatformRegistry,
+  type NewPlatformRegistry,
+  type PlatformIntegration,
+  type NewPlatformIntegration,
+  type PlatformQueryResult,
+  type NewPlatformQueryResult,
+  type PlatformCredentials,
+  type RateLimitConfig,
+  type QueryConfig,
+  type ResponseConfig,
+  type HealthCheckConfig,
+  type PlatformMetadata,
+  type MonitoringStats,
+  type VisibilityMetrics,
+} from "./platform-registry";

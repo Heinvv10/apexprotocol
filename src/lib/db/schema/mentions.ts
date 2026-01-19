@@ -11,7 +11,10 @@ import { createId } from "@paralleldrive/cuid2";
 import { brands } from "./brands";
 
 // AI Platform enum
+// Phase 0-9: Original 7 platforms
+// Phase 10 Tier 1: 5 new platforms (OpenAI Search, Bing Copilot, NotebookLM, Cohere)
 export const aiPlatformEnum = pgEnum("ai_platform", [
+  // Original platforms
   "chatgpt",
   "claude",
   "gemini",
@@ -19,6 +22,12 @@ export const aiPlatformEnum = pgEnum("ai_platform", [
   "grok",
   "deepseek",
   "copilot",
+  // Phase 10 Tier 1: Quick wins
+  "openai_search",
+  "bing_copilot",
+  "notebooklm",
+  "cohere",
+  "janus",
 ]);
 
 // Sentiment enum
