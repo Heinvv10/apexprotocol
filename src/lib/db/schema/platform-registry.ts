@@ -10,6 +10,7 @@ import {
 import { relations } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
 import { brands } from "./brands";
+import { integrationStatusEnum } from "./api-integrations";
 
 /**
  * Platform tier enumeration for feature gating
@@ -23,17 +24,6 @@ export const platformTierEnum = pgEnum("platform_tier", [
   "tier_2",
   "tier_3",
   "tier_4",
-]);
-
-/**
- * Integration status enumeration
- */
-export const integrationStatusEnum = pgEnum("integration_status", [
-  "not_configured",
-  "configured",
-  "active",
-  "inactive",
-  "error",
 ]);
 
 /**
