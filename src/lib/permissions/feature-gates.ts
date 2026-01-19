@@ -35,7 +35,14 @@ export type FeatureId =
   | "bing_copilot_monitoring"
   | "notebooklm_monitoring"
   | "cohere_monitoring"
-  | "multi_platform_queries";
+  | "multi_platform_queries"
+  // Phase 10: Expanded AI Platform Coverage (Tier 2)
+  | "platform_expansion_tier_2"
+  | "mistral_monitoring"
+  | "llama_monitoring"
+  | "yandexgpt_monitoring"
+  | "kimi_monitoring"
+  | "qwen_monitoring";
 
 // Resource types with limits
 export type ResourceType =
@@ -91,6 +98,14 @@ export const FEATURE_ACCESS: Record<FeatureId, Plan[]> = {
   notebooklm_monitoring: ["professional", "enterprise"],
   cohere_monitoring: ["professional", "enterprise"],
   multi_platform_queries: ["professional", "enterprise"],
+
+  // Phase 10: Expanded AI Platform Coverage (Tier 2)
+  platform_expansion_tier_2: ["enterprise"],
+  mistral_monitoring: ["enterprise"],
+  llama_monitoring: ["enterprise"],
+  yandexgpt_monitoring: ["enterprise"],
+  kimi_monitoring: ["enterprise"],
+  qwen_monitoring: ["enterprise"],
 };
 
 // ============================================================================
@@ -202,7 +217,7 @@ export const PLAN_DETAILS: Record<Plan, PlanDetails> = {
     features: [
       "Unlimited brands",
       "Unlimited team members",
-      "Real-time AI platform monitoring (12+ platforms with Phase 10)",
+      "Real-time AI platform monitoring (17 platforms with Phase 10 Tier 1+2)",
       "Unlimited monitoring with instant alerts",
       "Unlimited competitive tracking",
       "Unlimited locations",
@@ -212,8 +227,9 @@ export const PLAN_DETAILS: Record<Plan, PlanDetails> = {
       "White-label & custom domain",
       "Unlimited AI queries",
       "Dedicated support",
-      "All Phase 10 platform expansions",
+      "All Phase 10 platform expansions (Tier 1 + Tier 2)",
       "Multi-platform competitive analysis",
+      "Regional AI platform coverage (Mistral, Llama, YandexGPT, Kimi, Qwen)",
     ],
   },
 };
@@ -404,6 +420,20 @@ export const FEATURE_NAMES: Record<FeatureId, string> = {
   advanced_analytics: "Advanced Analytics",
   bulk_export: "Bulk Export",
   priority_support: "Priority Support",
+  // Phase 10 Tier 1
+  platform_expansion_tier_1: "AI Platform Monitoring - Tier 1",
+  openai_search_monitoring: "OpenAI Search Monitoring",
+  bing_copilot_monitoring: "Bing Copilot Monitoring",
+  notebooklm_monitoring: "NotebookLM Monitoring",
+  cohere_monitoring: "Cohere Monitoring",
+  multi_platform_queries: "Multi-Platform Queries",
+  // Phase 10 Tier 2
+  platform_expansion_tier_2: "AI Platform Monitoring - Tier 2",
+  mistral_monitoring: "Mistral Monitoring",
+  llama_monitoring: "Llama Monitoring",
+  yandexgpt_monitoring: "YandexGPT Monitoring",
+  kimi_monitoring: "Kimi Monitoring",
+  qwen_monitoring: "Qwen Monitoring",
 };
 
 /**

@@ -12,7 +12,8 @@ import { brands } from "./brands";
 
 // AI Platform enum
 // Phase 0-9: Original 7 platforms
-// Phase 10 Tier 1: 5 new platforms (OpenAI Search, Bing Copilot, NotebookLM, Cohere)
+// Phase 10 Tier 1: 5 new platforms (OpenAI Search, Bing Copilot, NotebookLM, Cohere, Janus)
+// Phase 10 Tier 2: 5 regional/emerging platforms (Mistral, Llama, YandexGPT, Kimi, Qwen)
 export const aiPlatformEnum = pgEnum("ai_platform", [
   // Original platforms
   "chatgpt",
@@ -28,6 +29,12 @@ export const aiPlatformEnum = pgEnum("ai_platform", [
   "notebooklm",
   "cohere",
   "janus",
+  // Phase 10 Tier 2: Regional/emerging platforms
+  "mistral",
+  "llama",
+  "yandexgpt",
+  "kimi",
+  "qwen",
 ]);
 
 // Sentiment enum
