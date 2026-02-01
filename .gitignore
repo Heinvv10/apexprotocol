@@ -41,6 +41,19 @@ NUL
 .mcp.json
 .claude_settings.json
 
+# Claude temp files
+tmpclaude-*-cwd
+
+# Misc temp files
+*.pid
+build_output.txt
+dev_server.log
+server-output.txt
+output.txt
+enrichment-log.txt
+loc-check-output.txt
+test-output.txt
+
 # Documentation (testing artifacts)
 BROWSER_*.md
 CHROME_*.md
