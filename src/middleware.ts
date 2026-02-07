@@ -44,9 +44,7 @@ const publicRoutes = [
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/onboarding(.*)",  // Allow onboarding wizard for testing
-  "/dashboard(.*)",  // Allow dashboard for testing
   "/api/onboarding(.*)",  // Allow all onboarding APIs
-  "/api/generate",  // Allow content generation API for testing
   "/api/webhooks(.*)",
   "/api/health",
   "/api/status",
@@ -180,7 +178,7 @@ async function devMiddleware(request: NextRequest) {
 
   if (isSuperAdminRoute) {
     // In dev mode, require DEV_SUPER_ADMIN=true for admin routes
-    const devSuperAdmin = process.env.DEV_SUPER_ADMIN === "true";
+    const devSuperAdmin = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
 
     if (!devSuperAdmin) {
       const url = new URL("/dashboard", request.url);

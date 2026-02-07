@@ -6,7 +6,7 @@
  * In production, this should be a 32-byte (256-bit) hex-encoded key.
  */
 
-import { createCipheriv, createDecipheriv, randomBytes, createHash } from "crypto";
+import { createCipheriv, createDecipheriv, randomBytes, createHash, timingSafeEqual } from "crypto";
 
 // Constants
 const ALGORITHM = "aes-256-gcm";
@@ -136,7 +136,12 @@ export function hash(value: string): string {
  * @returns true if the value matches the hash
  */
 export function verifyHash(value: string, expectedHash: string): boolean {
-  return hash(value) === expectedHash;
+  const computed = Buffer.from(hash(value), "hex");
+  const expected = Buffer.from(expectedHash, "hex");
+  if (computed.length !== expected.length) {
+    return false;
+  }
+  return timingSafeEqual(computed, expected);
 }
 
 /**

@@ -4,8 +4,9 @@ import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown, Trash2, User, Puzzle, Bell, Users, CreditCard, Key, Loader2, Check, AlertCircle, X, Upload, ExternalLink } from "lucide-react";
+import { ChevronDown, Trash2, User, Puzzle, Bell, Users, CreditCard, Key, Loader2, Check, AlertCircle, X, Upload, ExternalLink, Palette } from "lucide-react";
 import { ApiKeysSection, IntegrationsSection, NotificationsSection } from "@/components/settings/settings-sections";
+import { BrandingSection } from "@/components/settings/branding-section";
 import { useUserSafe } from "@/components/providers/clerk-provider";
 import { formatDate } from "@/lib/utils/formatters";
 
@@ -39,6 +40,7 @@ const TIMEZONES = [
 // Settings navigation items
 const settingsNav = [
   { id: "general", label: "General", icon: User },
+  { id: "branding", label: "Branding & Theme", icon: Palette },
   { id: "api-keys", label: "API Keys", icon: Key },
   { id: "integrations", label: "Integrations", icon: Puzzle },
   { id: "notifications", label: "Notifications", icon: Bell },
@@ -49,12 +51,18 @@ const settingsNav = [
 interface OrganizationSettings {
   name: string;
   branding: {
+    themeId: string;
     primaryColor: string;
     accentColor: string;
     logoUrl: string | null;
+    logoDarkUrl: string | null;
     faviconUrl: string | null;
     appName: string | null;
+    tagline: string | null;
     customDomain: string | null;
+    supportEmail: string | null;
+    showPoweredBy: boolean;
+    customFooterText: string | null;
   };
   settings: {
     timezone: string;
@@ -489,12 +497,36 @@ export default function SettingsClient() {
 
   // Brand modal state
   const [brandModalOpen, setBrandModalOpen] = React.useState(false);
-  const [primaryColor, setPrimaryColor] = React.useState("#4926FA");
-  const [accentColor, setAccentColor] = React.useState("#D82F71");
+  const [primaryColor, setPrimaryColor] = React.useState("#00E5CC");
+  const [accentColor, setAccentColor] = React.useState("#8B5CF6");
   const [appName, setAppName] = React.useState("");
   const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = React.useState(false);
   const logoInputRef = React.useRef<HTMLInputElement>(null);
+  
+  // Organization branding settings (for Branding & Theme section)
+  const [orgSettings, setOrgSettings] = React.useState<OrganizationSettings>({
+    name: "",
+    branding: {
+      themeId: "apexgeo-default",
+      primaryColor: "#00E5CC",
+      accentColor: "#8B5CF6",
+      logoUrl: null,
+      logoDarkUrl: null,
+      faviconUrl: null,
+      appName: null,
+      tagline: null,
+      customDomain: null,
+      supportEmail: null,
+      showPoweredBy: true,
+      customFooterText: null,
+    },
+    settings: {
+      timezone: "UTC",
+      dateFormat: "MM/DD/YYYY",
+      defaultLanguage: "en",
+    },
+  });
 
   // Sync activeSection with URL when tab param changes
   React.useEffect(() => {
@@ -659,6 +691,24 @@ export default function SettingsClient() {
             {activeSection === "api-keys" && <ApiKeysSection />}
             {activeSection === "integrations" && <IntegrationsSection />}
             {activeSection === "notifications" && <NotificationsSection />}
+            
+            {/* Branding & Theme Section */}
+            {activeSection === "branding" && (
+              <>
+                <h1 className="text-2xl font-semibold text-foreground mb-8">Branding & Theme</h1>
+                <BrandingSection
+                  branding={orgSettings.branding as any}
+                  onUpdate={async (updates) => {
+                    // TODO: Save to API
+                    console.log('Saving branding:', updates);
+                    setOrgSettings(prev => ({
+                      ...prev,
+                      branding: { ...prev.branding, ...updates } as any,
+                    }));
+                  }}
+                />
+              </>
+            )}
 
             {/* General Settings (default) */}
             {activeSection === "general" && (
@@ -992,7 +1042,7 @@ export default function SettingsClient() {
 
       {/* Brand Configuration Modal */}
       {brandModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="brand-modal-title">
           <div className="bg-card border border-white/10 rounded-xl w-full max-w-md shadow-2xl">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/10">

@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { brands, predictions, modelMetadata } from "@/lib/db/schema";
-import { eq, and, gte, desc } from "drizzle-orm";
+import { eq, and, gte, desc, type SQL } from "drizzle-orm";
 import { extractHistoricalScores } from "@/lib/ml/data-pipeline";
 import { forecastGeoScore } from "@/lib/ml/forecaster";
 import { generatePredictionExplanation } from "@/lib/ml/explainer";
@@ -138,8 +138,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Step 3: Verify brand exists and user has access
+    const orgId = await getOrganizationId();
     const brand = await db.query.brands.findFirst({
-      where: eq(brands.id, brandId),
+      where: and(eq(brands.id, brandId), orgId ? eq(brands.organizationId, orgId) : undefined),
     });
 
     if (!brand) {
@@ -165,8 +166,9 @@ export async function GET(request: NextRequest) {
     timings.cacheCheckMs = Math.round(performance.now() - cacheCheckStartTime);
 
     // If we have valid cached predictions for this horizon, return them
+    // Must have enough predictions to satisfy the requested horizon
     if (
-      cachedPredictions.length > 0 &&
+      cachedPredictions.length >= horizon &&
       !arePredictionsStale(cachedPredictions[0].predictionDate)
     ) {
       // Get latest model metadata

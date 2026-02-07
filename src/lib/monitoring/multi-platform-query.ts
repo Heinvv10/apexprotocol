@@ -9,11 +9,7 @@ import {
   recordSuccessfulQuery,
   recordFailedQuery,
 } from "./platform-registry";
-import { queryOpenAISearch } from "./integrations/openai-search";
-import { queryBingCopilot } from "./integrations/bing-copilot";
-import { queryNotebookLM } from "./integrations/notebooklm";
-import { queryCohere } from "./integrations/cohere";
-import { queryJanus } from "./integrations/janus";
+import { PLATFORM_CONFIG, type PlatformKey } from "./integrations";
 
 export type QueryStatus = "success" | "partial" | "failed";
 
@@ -154,47 +150,13 @@ async function executeQueryForPlatform(
   const startTime = Date.now();
 
   try {
-    let result: MultiPlatformQueryResult;
-
-    switch (platformName) {
-      case "openai_search":
-        result = await queryOpenAISearch(
-          brandId,
-          platformId,
-          query,
-          brandContext
-        );
-        break;
-
-      case "bing_copilot":
-        result = await queryBingCopilot(
-          brandId,
-          platformId,
-          query,
-          brandContext
-        );
-        break;
-
-      case "notebooklm":
-        result = await queryNotebookLM(
-          brandId,
-          platformId,
-          query,
-          brandContext
-        );
-        break;
-
-      case "cohere":
-        result = await queryCohere(brandId, platformId, query, brandContext);
-        break;
-
-      case "janus":
-        result = await queryJanus(brandId, platformId, query, brandContext);
-        break;
-
-      default:
-        throw new Error(`Unknown platform: ${platformName}`);
+    // Registry-based dispatch: look up query function from PLATFORM_CONFIG
+    const platformConfig = PLATFORM_CONFIG[platformName as PlatformKey];
+    if (!platformConfig?.queryFn) {
+      throw new Error(`Unknown platform: ${platformName}`);
     }
+
+    const result = await platformConfig.queryFn(brandId, platformId, query, brandContext);
 
     // Record result to database
     const responseTimeMs = Date.now() - startTime;

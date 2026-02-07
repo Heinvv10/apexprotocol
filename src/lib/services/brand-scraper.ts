@@ -3,9 +3,12 @@
  * Orchestrates website scraping and AI analysis to extract brand information
  */
 
+import * as cheerio from "cheerio";
 import { crawlUrl } from "@/lib/audit/crawler";
 import { analyzeBrandFromWebsite, type BrandAnalysisInput } from "@/lib/ai/prompts/brand-analysis";
 import { extractBestLogo, type LogoCandidate } from "@/lib/services/logo-extractor";
+import { extractSocialPatterns } from "@/lib/crawling/social-discovery";
+import { assertSafeUrl } from "@/lib/security/ssrf-protection";
 import type { ScrapedBrandData } from "@/app/api/brands/scrape/route";
 
 // Progress callback type
@@ -18,7 +21,8 @@ export async function scrapeBrandFromUrl(
   url: string,
   onProgress?: ProgressCallback
 ): Promise<ScrapedBrandData> {
-  // Step 1: Fetch and crawl the website (10-30%)
+  // Step 1: Validate URL and fetch/crawl the website (10-30%)
+  assertSafeUrl(url);
   await onProgress?.(15, "Fetching website content...");
 
   const crawlResult = await crawlUrl(url, {
@@ -149,9 +153,33 @@ export async function scrapeBrandFromUrl(
     }
   }
 
+  await onProgress?.(80, "Extracting social links...");
+
+  // Step 5: Extract social links directly from HTML (80-85%)
+  let extractedSocialLinks: Record<string, string> = {};
+  if (page.rawHtml) {
+    try {
+      const $ = cheerio.load(page.rawHtml);
+      const socialResult = extractSocialPatterns($);
+      for (const link of socialResult.links) {
+        if (!extractedSocialLinks[link.platform]) {
+          extractedSocialLinks[link.platform] = link.url;
+        }
+      }
+    } catch (e) {
+      console.warn("[BrandScraper] Social link extraction failed:", e);
+    }
+  }
+
+  // Merge AI-detected social links with directly extracted ones (prefer direct extraction)
+  const socialLinks = {
+    ...(aiAnalysis.socialLinks || {}),
+    ...extractedSocialLinks, // Direct extraction takes precedence
+  };
+
   await onProgress?.(85, "Finalizing brand data...");
 
-  // Step 5: Assemble final result (85-95%)
+  // Step 6: Assemble final result (85-95%)
   const result: ScrapedBrandData = {
     scrapedUrl: url, // Store the scraped URL for domain extraction
     brandName: aiAnalysis.brandName || extractFallbackName(page.title, url),
@@ -169,7 +197,7 @@ export async function scrapeBrandFromUrl(
     competitors: aiAnalysis.competitors || [],
     targetAudience: aiAnalysis.targetAudience || "",
     valuePropositions: aiAnalysis.valuePropositions || [],
-    socialLinks: aiAnalysis.socialLinks || {},
+    socialLinks,
     confidence: aiAnalysis.confidence || {
       overall: 50,
       perField: {},

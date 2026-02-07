@@ -1,6 +1,7 @@
 import { MultiPlatformQueryResult } from "../multi-platform-query";
 import { getPlatformByName } from "../platform-registry";
 import { VisibilityMetrics } from "@/lib/db/schema/platform-registry";
+import { analyzeResponseForBrand, createErrorResult } from "./shared-analysis";
 
 /**
  * Mistral Integration

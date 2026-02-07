@@ -153,9 +153,9 @@ export async function GET(_request: NextRequest) {
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[Brands GET] Error:", error);
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: "Failed to fetch brands" },
       { status: 500 }
     );
   }
@@ -337,6 +337,14 @@ export async function POST(request: NextRequest) {
       populateBrandData(newBrand[0].id).catch((err: Error) => {
         console.error("Failed to populate brand data:", err.message);
       });
+
+      // 🔮 AUTO-BACKFILL: Generate initial historical data for predictions
+      // New brands need 90 days of historical data for the ML forecaster
+      // This generates synthetic data based on the brand's initial metrics
+      const { generateInitialHistory } = await import("@/lib/services/brand-history-init");
+      generateInitialHistory(newBrand[0].id).catch((err: Error) => {
+        console.error("Failed to generate initial history:", err.message);
+      });
     }
 
     return NextResponse.json({
@@ -356,9 +364,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[Brands POST] Error:", error);
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: "Failed to create brand" },
       { status: 500 }
     );
   }

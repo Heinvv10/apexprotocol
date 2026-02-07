@@ -8,7 +8,7 @@ export function HeroSection() {
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
       {/* Aurora Background Effects */}
-      <div className="absolute inset-0 bg-[#02030F]" />
+      <div className="absolute inset-0 bg-[#0a0f1a]" />
 
       {/* Aurora gradient orbs */}
       <div className="absolute top-0 left-1/4 w-[800px] h-[600px] bg-gradient-to-br from-primary/30 via-accent-purple/20 to-transparent rounded-full blur-[120px] animate-pulse" />
@@ -47,7 +47,7 @@ export function HeroSection() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Button asChild size="lg" className="gap-2 text-base h-12 px-8 bg-primary hover:bg-primary/90">
                 <Link href="#demo">
-                  See Apex in Action
+                  See ApexGEO in Action
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </Button>

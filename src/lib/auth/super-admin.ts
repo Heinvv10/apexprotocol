@@ -9,7 +9,7 @@ const CLERK_CONFIGURED =
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "pk_test_placeholder";
 
 // Dev mode - super admin is enabled by default for testing
-const DEV_SUPER_ADMIN_ENABLED = process.env.DEV_SUPER_ADMIN === "true";
+const DEV_SUPER_ADMIN_ENABLED = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
 
 /**
  * Check if the current user is a super-admin

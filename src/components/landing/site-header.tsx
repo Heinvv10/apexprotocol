@@ -69,7 +69,7 @@ export function SiteHeader() {
                 </defs>
               </svg>
             </div>
-            <span className="font-semibold text-lg tracking-tight">Apex</span>
+            <span className="font-semibold text-lg tracking-tight">ApexGEO</span>
           </Link>
 
           {/* Desktop Nav */}
@@ -99,6 +99,8 @@ export function SiteHeader() {
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="md:hidden p-2"
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? (
               <X className="w-5 h-5" />
