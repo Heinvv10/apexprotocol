@@ -16,6 +16,8 @@ import {
   Building2,
   Target,
   Brain,
+  Sparkles,
+  FlaskConical,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -67,9 +69,19 @@ const mainNavItems: NavItem[] = [
     icon: Brain,
   },
   {
+    title: "Predictions",
+    href: "/dashboard/predictions",
+    icon: Sparkles,
+  },
+  {
     title: "Create",
     href: "/dashboard/create",
     icon: PenTool,
+  },
+  {
+    title: "Simulate",
+    href: "/dashboard/simulate",
+    icon: FlaskConical,
   },
   {
     title: "Audit",
