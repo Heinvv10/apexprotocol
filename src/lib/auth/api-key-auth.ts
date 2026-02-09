@@ -55,6 +55,8 @@ export const API_KEY_SUPPORTED_ROUTES = [
   "/api/opportunities",
   "/api/people",
   "/api/integrations",
+  "/api/ai-insights",
+  "/api/simulations",
 ] as const;
 
 /**

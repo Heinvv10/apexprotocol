@@ -1,5 +1,6 @@
 import { auth, currentUser, clerkClient } from "@clerk/nextjs/server";
 import type { User as ClerkUser } from "@clerk/nextjs/server";
+import { headers } from "next/headers";
 
 // Re-export Clerk auth function for server-side use
 export { auth, currentUser, clerkClient };
@@ -22,7 +23,28 @@ export interface AuthSession {
 }
 
 // Get current session data
+// Checks API key headers (set by middleware) first, falls back to Clerk session
 export async function getSession(): Promise<AuthSession | null> {
+  // Check for API key auth headers set by middleware first
+  try {
+    const headersList = await headers();
+    const authType = headersList.get("x-apex-auth-type");
+    if (authType === "api-key") {
+      const userId = headersList.get("x-apex-user-id");
+      const orgId = headersList.get("x-apex-org-id");
+      if (userId) {
+        return {
+          userId,
+          orgId: orgId || null,
+          orgRole: null,
+          orgSlug: null,
+        };
+      }
+    }
+  } catch {
+    // headers() may throw outside of request context — fall through to Clerk
+  }
+
   // In development without Clerk, return mock session
   if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
     return {
@@ -345,8 +367,21 @@ export function extractOrgData(data: Record<string, unknown>): ClerkOrgData {
 }
 
 // Get organization ID for API routes
-// Returns the org ID from Clerk session, falls back to user ID for personal workspace
+// Returns the org ID from API key headers (set by middleware) or Clerk session,
+// falls back to user ID for personal workspace
 export async function getOrganizationId(): Promise<string | null> {
+  // Check for API key auth headers set by middleware first
+  try {
+    const headersList = await headers();
+    const authType = headersList.get("x-apex-auth-type");
+    if (authType === "api-key") {
+      const orgId = headersList.get("x-apex-org-id");
+      if (orgId) return orgId;
+    }
+  } catch {
+    // headers() may throw outside of request context — fall through to Clerk
+  }
+
   // In development without Clerk, return demo org ID
   if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
     return DEV_ORG_ID;
@@ -378,7 +413,20 @@ export async function getOrganizationId(): Promise<string | null> {
 }
 
 // Get user ID for API routes
+// Checks API key headers (set by middleware) first, falls back to Clerk session
 export async function getUserId(): Promise<string | null> {
+  // Check for API key auth headers set by middleware first
+  try {
+    const headersList = await headers();
+    const authType = headersList.get("x-apex-auth-type");
+    if (authType === "api-key") {
+      const userId = headersList.get("x-apex-user-id");
+      if (userId) return userId;
+    }
+  } catch {
+    // headers() may throw outside of request context — fall through to Clerk
+  }
+
   // In development without Clerk, return demo user ID
   if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
     return DEV_USER_ID;
@@ -397,7 +445,23 @@ export async function getUserId(): Promise<string | null> {
 }
 
 // Require authentication - throws if not authenticated
+// Checks API key headers (set by middleware) first, falls back to Clerk session
 export async function requireAuth(): Promise<{ userId: string; orgId: string }> {
+  // Check for API key auth headers set by middleware first
+  try {
+    const headersList = await headers();
+    const authType = headersList.get("x-apex-auth-type");
+    if (authType === "api-key") {
+      const userId = headersList.get("x-apex-user-id");
+      const orgId = headersList.get("x-apex-org-id");
+      if (userId && orgId) {
+        return { userId, orgId };
+      }
+    }
+  } catch {
+    // headers() may throw outside of request context — fall through to Clerk
+  }
+
   // In development without Clerk, return dev credentials
   if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
     return { userId: DEV_USER_ID, orgId: DEV_ORG_ID };

@@ -98,12 +98,12 @@ Make Apex the undisputed leader in GEO/AEO by delivering **insights + action**, 
 - [ ] Role-based access control (Admin, Manager, Viewer)
 - [ ] Client-specific branding per organization
 
-### 4.3 API Access
-- [ ] RESTful API with full coverage
-- [ ] GraphQL endpoint for flexible queries
-- [ ] API key management with rate limits by plan
-- [ ] Webhooks for integrations
-- [ ] SDKs (JavaScript, Python)
+### 4.3 API Access ✅ DONE
+- [x] RESTful API with full coverage (15+ route prefixes, Swagger UI docs at /api/docs)
+- [x] GraphQL endpoint for flexible queries (/api/graphql)
+- [x] API key management with rate limits by plan (generate, revoke, rotate via Settings > Developer)
+- [x] Webhooks for integrations (Clerk, PayFast, Listmonk, Mautic, Postiz)
+- [ ] SDKs (JavaScript, Python) — planned for future
 
 ### 4.4 Advanced Reporting
 - [ ] Scheduled report delivery (daily, weekly, monthly)
@@ -175,7 +175,7 @@ Make Apex the undisputed leader in GEO/AEO by delivering **insights + action**, 
 
 ### Following Sprint
 9. [x] Test before publish simulator ✅ DONE
-10. [ ] API access
+10. [x] API access ✅ DONE
 11. [ ] White-label domains
 
 ---

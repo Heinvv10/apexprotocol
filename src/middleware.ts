@@ -79,6 +79,7 @@ const apiKeyAuthRoutes = [
   "/api/people(.*)",
   "/api/integrations(.*)",
   "/api/ai-insights(.*)",  // AI Insights analysis routes
+  "/api/simulations(.*)",  // Test Before Publish simulator
 ];
 
 /**
@@ -114,64 +115,109 @@ function createUnauthorizedResponse(message: string, reason: string): NextRespon
   );
 }
 
-// Development mode middleware (when Clerk is not configured)
-async function devMiddleware(request: NextRequest) {
+/**
+ * Handle API key authentication and rate limiting.
+ * Shared between dev and production middleware.
+ *
+ * Returns a NextResponse if the request was handled (auth success, failure, or rate limited).
+ * Returns null if the request is not an API key request and should fall through.
+ */
+async function handleApiKeyAuth(request: NextRequest): Promise<NextResponse | null> {
   const { pathname } = request.nextUrl;
 
-  // Check if this route supports API key authentication
   const isApiKeyRoute = matchesPattern(pathname, apiKeyAuthRoutes);
   const authHeader = request.headers.get("authorization");
   const token = extractBearerToken(authHeader);
 
-  // If this is an API route with an Apex API key, validate it
-  if (isApiKeyRoute && isApexApiKey(token)) {
-    // Dynamically import API key auth to avoid issues in Edge runtime
-    try {
-      const { validateApiKey } = await import("@/lib/auth/api-key-auth");
-      const result = await validateApiKey(token!);
-
-      if (!result.valid) {
-        return createUnauthorizedResponse(result.message, result.reason);
-      }
-
-      // API key is valid - add auth context headers to request
-      // Note: We clone the request with modified headers to pass context to API routes
-      const requestHeaders = new Headers(request.headers);
-      requestHeaders.set(API_KEY_AUTH_HEADERS.AUTH_TYPE, "api-key");
-      requestHeaders.set(API_KEY_AUTH_HEADERS.KEY_ID, result.keyId);
-      requestHeaders.set(API_KEY_AUTH_HEADERS.USER_ID, result.userId);
-      requestHeaders.set(API_KEY_AUTH_HEADERS.ORG_ID, result.organizationId);
-
-      if (result.userEmail) {
-        requestHeaders.set(API_KEY_AUTH_HEADERS.USER_EMAIL, result.userEmail);
-      }
-      if (result.userName) {
-        requestHeaders.set(API_KEY_AUTH_HEADERS.USER_NAME, result.userName);
-      }
-      if (result.organizationName) {
-        requestHeaders.set(API_KEY_AUTH_HEADERS.ORG_NAME, result.organizationName);
-      }
-
-      // Continue to the route with API key auth context in request headers
-      return NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        },
-      });
-    } catch (_error) {
-      // If API key validation fails due to system error, return 500
-      if (process.env.NODE_ENV === "development") {
-        console.error("[Middleware] API key validation error:", _error);
-      }
-      return NextResponse.json(
-        {
-          error: "Internal Server Error",
-          message: "Failed to validate API key",
-        },
-        { status: 500 }
-      );
-    }
+  if (!isApiKeyRoute || !isApexApiKey(token)) {
+    return null; // Not an API key request — fall through
   }
+
+  try {
+    const { validateApiKey } = await import("@/lib/auth/api-key-auth");
+    const result = await validateApiKey(token!);
+
+    if (!result.valid) {
+      return createUnauthorizedResponse(result.message, result.reason);
+    }
+
+    // Check rate limits for API key requests
+    let rateLimitHeaders: Record<string, string> = {};
+    try {
+      const { checkApiRateLimit, getRateLimitHeaders } = await import(
+        "@/lib/api/api-rate-limiter"
+      );
+      const rlResult = await checkApiRateLimit(result.organizationId);
+      rateLimitHeaders = getRateLimitHeaders(rlResult);
+
+      if (!rlResult.allowed) {
+        const response = NextResponse.json(
+          {
+            error: "Too Many Requests",
+            message: "Rate limit exceeded. Please retry after the reset time.",
+            retryAfter: new Date(rlResult.resetMs).toISOString(),
+          },
+          { status: 429 }
+        );
+        for (const [key, value] of Object.entries(rateLimitHeaders)) {
+          response.headers.set(key, value);
+        }
+        response.headers.set(
+          "Retry-After",
+          String(Math.ceil((rlResult.resetMs - Date.now()) / 1000))
+        );
+        return response;
+      }
+    } catch {
+      // Rate limiting unavailable — allow request (fail open)
+    }
+
+    // API key is valid — set auth context headers on the request
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set(API_KEY_AUTH_HEADERS.AUTH_TYPE, "api-key");
+    requestHeaders.set(API_KEY_AUTH_HEADERS.KEY_ID, result.keyId);
+    requestHeaders.set(API_KEY_AUTH_HEADERS.USER_ID, result.userId);
+    requestHeaders.set(API_KEY_AUTH_HEADERS.ORG_ID, result.organizationId);
+
+    if (result.userEmail) {
+      requestHeaders.set(API_KEY_AUTH_HEADERS.USER_EMAIL, result.userEmail);
+    }
+    if (result.userName) {
+      requestHeaders.set(API_KEY_AUTH_HEADERS.USER_NAME, result.userName);
+    }
+    if (result.organizationName) {
+      requestHeaders.set(API_KEY_AUTH_HEADERS.ORG_NAME, result.organizationName);
+    }
+
+    // Continue to route with auth context headers + rate limit response headers
+    const response = NextResponse.next({
+      request: { headers: requestHeaders },
+    });
+    for (const [key, value] of Object.entries(rateLimitHeaders)) {
+      response.headers.set(key, value);
+    }
+    return response;
+  } catch (_error) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[Middleware] API key validation error:", _error);
+    }
+    return NextResponse.json(
+      {
+        error: "Internal Server Error",
+        message: "Failed to validate API key",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// Development mode middleware (when Clerk is not configured)
+async function devMiddleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Check for API key authentication
+  const apiKeyResponse = await handleApiKeyAuth(request);
+  if (apiKeyResponse) return apiKeyResponse;
 
   // Check if this is a super-admin route
   const isSuperAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
@@ -194,61 +240,9 @@ async function devMiddleware(request: NextRequest) {
 
 // Production middleware with Clerk authentication
 async function productionMiddleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Check if this route supports API key authentication
-  const isApiKeyRoute = matchesPattern(pathname, apiKeyAuthRoutes);
-  const authHeader = request.headers.get("authorization");
-  const token = extractBearerToken(authHeader);
-
-  // If this is an API route with an Apex API key, validate it and bypass Clerk
-  if (isApiKeyRoute && isApexApiKey(token)) {
-    try {
-      const { validateApiKey } = await import("@/lib/auth/api-key-auth");
-      const result = await validateApiKey(token!);
-
-      if (!result.valid) {
-        return createUnauthorizedResponse(result.message, result.reason);
-      }
-
-      // API key is valid - add auth context headers and continue
-      // Note: We clone the request with modified headers to pass context
-      const requestHeaders = new Headers(request.headers);
-      requestHeaders.set(API_KEY_AUTH_HEADERS.AUTH_TYPE, "api-key");
-      requestHeaders.set(API_KEY_AUTH_HEADERS.KEY_ID, result.keyId);
-      requestHeaders.set(API_KEY_AUTH_HEADERS.USER_ID, result.userId);
-      requestHeaders.set(API_KEY_AUTH_HEADERS.ORG_ID, result.organizationId);
-
-      if (result.userEmail) {
-        requestHeaders.set(API_KEY_AUTH_HEADERS.USER_EMAIL, result.userEmail);
-      }
-      if (result.userName) {
-        requestHeaders.set(API_KEY_AUTH_HEADERS.USER_NAME, result.userName);
-      }
-      if (result.organizationName) {
-        requestHeaders.set(API_KEY_AUTH_HEADERS.ORG_NAME, result.organizationName);
-      }
-
-      // Continue to the route with API key auth context in headers
-      return NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        },
-      });
-    } catch (_error) {
-      // If API key validation fails due to system error, return 500
-      if (process.env.NODE_ENV === "development") {
-        console.error("[Middleware] API key validation error:", _error);
-      }
-      return NextResponse.json(
-        {
-          error: "Internal Server Error",
-          message: "Failed to validate API key",
-        },
-        { status: 500 }
-      );
-    }
-  }
+  // Check for API key authentication first (bypasses Clerk)
+  const apiKeyResponse = await handleApiKeyAuth(request);
+  if (apiKeyResponse) return apiKeyResponse;
 
   // For non-API key requests, use Clerk authentication
   // Dynamically import Clerk middleware only when configured
