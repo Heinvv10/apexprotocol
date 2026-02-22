@@ -13,6 +13,15 @@ import { createId } from "@paralleldrive/cuid2";
 // Plan enum
 export const planEnum = pgEnum("plan", ["starter", "professional", "enterprise"]);
 
+// Subscription status enum
+export const subscriptionStatusEnum = pgEnum("subscription_status", [
+  "active",
+  "cancelled",
+  "past_due",
+  "trialing",
+  "none",
+]);
+
 // Organizations table
 export const organizations = pgTable("organizations", {
   id: text("id")
@@ -22,19 +31,33 @@ export const organizations = pgTable("organizations", {
   slug: text("slug").notNull().unique(),
   clerkOrgId: text("clerk_org_id").unique(),
 
-  // Subscription
+  // Subscription Plan
   plan: planEnum("plan").default("starter").notNull(),
   brandLimit: integer("brand_limit").default(1).notNull(),
   userLimit: integer("user_limit").default(3).notNull(),
 
+  // PayFast Subscription
+  subscriptionStatus: subscriptionStatusEnum("subscription_status").default("none").notNull(),
+  payfastToken: text("payfast_token"),
+  payfastPaymentId: text("payfast_payment_id"),
+  subscriptionStartedAt: timestamp("subscription_started_at", { withTimezone: true }),
+  subscriptionEndsAt: timestamp("subscription_ends_at", { withTimezone: true }),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
+
   // White-label branding settings
   branding: jsonb("branding").$type<BrandingSettings>().default({
-    primaryColor: "#4926FA",
-    accentColor: "#D82F71",
+    themeId: "apexgeo-default",
+    primaryColor: "#00E5CC",
+    accentColor: "#8B5CF6",
     logoUrl: null,
+    logoDarkUrl: null,
     faviconUrl: null,
     appName: null,
+    tagline: null,
     customDomain: null,
+    supportEmail: null,
+    showPoweredBy: true,
+    customFooterText: null,
   }),
 
   // Feature flags
@@ -67,12 +90,27 @@ export const organizations = pgTable("organizations", {
 
 // Types for JSONB columns
 export interface BrandingSettings {
+  // Theme preset ID (apexgeo-default, apexgeo-copper, apexgeo-midnight, custom)
+  themeId: string;
+  
+  // Custom color overrides (used when themeId is 'custom' or to override preset)
   primaryColor: string;
   accentColor: string;
+  
+  // Logo and favicon
   logoUrl: string | null;
+  logoDarkUrl: string | null;  // Logo for dark backgrounds
   faviconUrl: string | null;
-  appName: string | null;
-  customDomain: string | null;
+  
+  // White-label branding
+  appName: string | null;       // Override "ApexGEO" name
+  tagline: string | null;       // Custom tagline
+  customDomain: string | null;  // e.g., "geo.clientdomain.com"
+  supportEmail: string | null;  // White-label support email
+  
+  // Footer customization
+  showPoweredBy: boolean;       // Show "Powered by ApexGEO"
+  customFooterText: string | null;
 }
 
 export interface OrganizationSettings {

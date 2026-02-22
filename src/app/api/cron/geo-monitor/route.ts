@@ -10,12 +10,105 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
-import { monitoringJobs, brands } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { monitoringJobs, brands, geoScoreHistory, brandMentions, audits } from "@/lib/db/schema";
+import { eq, count, sql, desc } from "drizzle-orm";
 import { runGEOMonitoringForBrand } from "@/lib/services/geo-monitor";
 import { calculateSOV, storeDailySOV } from "@/lib/competitive/share-of-voice";
 import { generateCompetitiveAlerts } from "@/lib/competitive/alert-generator";
 import { createId } from "@paralleldrive/cuid2";
+
+/**
+ * Calculate and record GEO score for a brand
+ * This ensures we have daily historical data for predictions
+ */
+async function recordGeoScore(brandId: string): Promise<{ score: number; recorded: boolean }> {
+  try {
+    // Get mention stats
+    const mentionsData = await db
+      .select({
+        total: count(),
+        positive: sql<number>`COUNT(CASE WHEN ${brandMentions.sentiment} = 'positive' THEN 1 END)`,
+        withCitation: sql<number>`COUNT(CASE WHEN ${brandMentions.citationUrl} IS NOT NULL THEN 1 END)`,
+      })
+      .from(brandMentions)
+      .where(eq(brandMentions.brandId, brandId));
+
+    const mentions = mentionsData[0] || { total: 0, positive: 0, withCitation: 0 };
+
+    // Get platform coverage
+    const platformCount = await db
+      .select({
+        count: sql<number>`COUNT(DISTINCT ${brandMentions.platform})`,
+      })
+      .from(brandMentions)
+      .where(eq(brandMentions.brandId, brandId));
+
+    const platforms = platformCount[0]?.count || 0;
+
+    // Get last audit for technical score
+    const lastAudit = await db.query.audits.findFirst({
+      where: eq(audits.brandId, brandId),
+      orderBy: [desc(audits.createdAt)],
+    });
+
+    // Calculate component scores
+    const totalMentions = Number(mentions.total) || 0;
+    const positiveMentions = Number(mentions.positive) || 0;
+    const citedMentions = Number(mentions.withCitation) || 0;
+
+    const technicalScore = lastAudit?.overallScore || 65;
+    const contentScore = totalMentions > 0
+      ? Math.min(Math.round((positiveMentions / totalMentions) * 100), 100)
+      : 50;
+    const authorityScore = totalMentions > 0
+      ? Math.min(Math.round((citedMentions / totalMentions) * 100) + 20, 100)
+      : 40;
+    const aiReadinessScore = Math.min(Math.round((Number(platforms) / 7) * 100), 100);
+
+    const overall = Math.round(
+      technicalScore * 0.25 +
+      contentScore * 0.25 +
+      authorityScore * 0.25 +
+      aiReadinessScore * 0.25
+    );
+
+    // Get previous score
+    const lastScore = await db.query.geoScoreHistory.findFirst({
+      where: eq(geoScoreHistory.brandId, brandId),
+      orderBy: [desc(geoScoreHistory.calculatedAt)],
+    });
+
+    const previousScore = lastScore?.overallScore ?? overall;
+    const scoreChange = overall - previousScore;
+    const trend = scoreChange > 0 ? "up" : scoreChange < 0 ? "down" : "stable";
+
+    // Always record daily score (not just on change)
+    await db.insert(geoScoreHistory).values({
+      brandId,
+      overallScore: overall,
+      visibilityScore: aiReadinessScore,
+      sentimentScore: contentScore,
+      recommendationScore: authorityScore,
+      competitorGapScore: null,
+      previousScore,
+      scoreChange,
+      trend,
+      mentionCount: totalMentions,
+      positiveMentions,
+      negativeMentions: 0,
+      neutralMentions: totalMentions - positiveMentions,
+      recommendationCount: null,
+      completedRecommendations: null,
+      calculationNotes: `Daily cron collection - ${trend}`,
+      dataQuality: totalMentions > 10 ? 90 : totalMentions > 5 ? 75 : 60,
+    });
+
+    return { score: overall, recorded: true };
+  } catch (error) {
+    console.error(`[GEO Cron] Failed to record score for brand ${brandId}:`, error);
+    return { score: 0, recorded: false };
+  }
+}
 
 // Verify cron secret to ensure request is from Vercel
 async function verifyCronSecret(request: Request): Promise<boolean> {
@@ -50,6 +143,7 @@ export async function GET(request: Request) {
     success: true,
     brandsProcessed: 0,
     mentionsCollected: 0,
+    scoresRecorded: 0,
     sovUpdated: 0,
     alertsGenerated: 0,
     errors: [] as string[],
@@ -86,6 +180,13 @@ export async function GET(request: Request) {
 
         if (monitorResult.errors.length > 0) {
           results.errors.push(...monitorResult.errors.map(e => `${brand.name}: ${e}`));
+        }
+
+        // Record daily GEO score for predictions
+        const scoreResult = await recordGeoScore(brand.id);
+        if (scoreResult.recorded) {
+          results.scoresRecorded++;
+          console.log(`[GEO Cron] Recorded score ${scoreResult.score} for ${brand.name}`);
         }
 
         // Calculate and store Share of Voice

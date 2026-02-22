@@ -8,7 +8,7 @@
  * 1. Website (highest fidelity) → 2. LinkedIn (structured data) → 3. Logo (non-critical) → 4. Social (last resort)
  */
 
-import { scrapeBrandFromUrl } from "@/lib/services/brand-scraper";
+import { scrapeMultiPageBrand } from "@/lib/services/brand-scraper-multipage";
 import { extractBestLogo } from "@/lib/services/logo-extractor";
 import { extractLinkedInPeople } from "@/lib/services/linkedin-scraper";
 import { retry, isNetworkError, isRateLimitError, RetryError } from "@/lib/utils/retry";
@@ -264,7 +264,7 @@ export async function scrapeBrandWithFallbacks(
   try {
     const scraped = await retry(
       async () => {
-        const data = await scrapeBrandFromUrl(url, async (p, m) => {
+        const data = await scrapeMultiPageBrand(url, async (p, m) => {
           // Map internal progress (0-100) to stage progress (0-40)
           const stageProgress = Math.round((p / 100) * 40);
           await onProgress(stageProgress, m);

@@ -165,6 +165,7 @@ export class SiteCrawler {
         fullyLoaded: Date.now() - pageStartTime,
       },
       content: parsed.content,
+      rawHtml: html, // Include raw HTML for social link extraction
     };
   }
 

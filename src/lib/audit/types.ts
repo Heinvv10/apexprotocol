@@ -39,6 +39,7 @@ export interface CrawledPage {
   content: ContentData;
   appleTouchIcon?: string;
   favicon?: string;
+  rawHtml?: string; // Raw HTML for social link extraction
 }
 
 export interface PageLink {

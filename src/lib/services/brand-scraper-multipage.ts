@@ -3,9 +3,11 @@
  * Crawls multiple pages (homepage, about, contact, history) to build comprehensive brand knowledge
  */
 
+import * as cheerio from "cheerio";
 import { crawlUrl } from "@/lib/audit/crawler";
 import { analyzeBrandFromWebsite, type BrandAnalysisInput } from "@/lib/ai/prompts/brand-analysis";
-import { extractBestLogo } from "@/lib/services/logo-extractor";
+import { extractBestLogo, type LogoCandidate } from "@/lib/services/logo-extractor";
+import { extractSocialPatterns, type SocialLink } from "@/lib/crawling/social-discovery";
 import type { ScrapedBrandData } from "@/app/api/brands/scrape/route";
 
 // Progress callback type
@@ -19,6 +21,8 @@ interface PageData {
   h2Tags: string[];
   links: Array<{ href: string; text: string }>;
   images: Array<{ src: string; alt: string }>;
+  rawHtml?: string;
+  socialLinks?: SocialLink[];
 }
 
 /**
@@ -100,7 +104,7 @@ async function findRelevantPages(baseUrl: string, homepageLinks: Array<{ href: s
 }
 
 /**
- * Crawl a single page and extract structured data
+ * Crawl a single page and extract structured data including social links
  */
 async function crawlSinglePage(url: string, timeout = 15000): Promise<PageData | null> {
   try {
@@ -123,6 +127,18 @@ async function crawlSinglePage(url: string, timeout = 15000): Promise<PageData |
     }
 
     const page = crawlResult.pages[0];
+    
+    // Extract social links from raw HTML if available
+    let socialLinks: SocialLink[] = [];
+    if (page.rawHtml) {
+      try {
+        const $ = cheerio.load(page.rawHtml);
+        const socialResult = extractSocialPatterns($);
+        socialLinks = socialResult.links;
+      } catch (e) {
+        console.warn(`Failed to extract social links from ${url}:`, e);
+      }
+    }
 
     return {
       url,
@@ -132,6 +148,8 @@ async function crawlSinglePage(url: string, timeout = 15000): Promise<PageData |
       h2Tags: page.h2Tags || [],
       links: page.links?.map(l => ({ href: l.href, text: l.text || "" })) || [],
       images: page.images?.map(i => ({ src: i.src, alt: i.alt || "" })) || [],
+      rawHtml: page.rawHtml,
+      socialLinks,
     };
   } catch (error) {
     console.error(`Failed to crawl ${url}:`, error);
@@ -253,38 +271,110 @@ export async function scrapeMultiPageBrand(
   onProgress?.(85, "Extracting logo...");
 
   // Step 5: Extract logo from homepage images (85-95%)
-  const logoUrl = await extractBestLogo(homepage.images, baseUrl);
+  // Convert images to LogoCandidate format with proper priority scoring
+  const logoCandidates: LogoCandidate[] = [];
+  
+  for (const img of homepage.images) {
+    const srcLower = img.src.toLowerCase();
+    const altLower = (img.alt || "").toLowerCase();
+    
+    // Highest priority: explicit logo files
+    if (srcLower.includes("logo")) {
+      // SVG logos are best
+      if (srcLower.endsWith(".svg")) {
+        logoCandidates.push({ src: img.src, type: "logo-named", priority: 0 });
+      } else {
+        logoCandidates.push({ src: img.src, type: "logo-named", priority: 1 });
+      }
+    }
+    // Second: alt text contains "logo"  
+    else if (altLower.includes("logo")) {
+      logoCandidates.push({ src: img.src, type: "logo-named", priority: 2 });
+    }
+    // Third: brand/header images (often contain logos)
+    else if (srcLower.includes("brand") || srcLower.includes("header") || srcLower.includes("nav")) {
+      logoCandidates.push({ src: img.src, type: "logo-named", priority: 3 });
+    }
+    // Fourth: images in header area with company name as alt (like "Aberdeens")
+    // These are often the main logo without "logo" in the name
+    else if (altLower && !altLower.includes(" ") && altLower.length < 30 && 
+             (srcLower.includes("images") || srcLower.includes("assets"))) {
+      logoCandidates.push({ src: img.src, type: "logo-named", priority: 4 });
+    }
+  }
+  
+  // Also add AI-suggested logo if present
+  if (aiAnalysis.logoUrl) {
+    logoCandidates.push({ src: aiAnalysis.logoUrl, type: "ai-suggested", priority: 1 });
+  }
+  
+  const logoUrl = logoCandidates.length > 0 
+    ? await extractBestLogo(logoCandidates, baseUrl) 
+    : null;
+
+  onProgress?.(90, "Extracting social links...");
+
+  // Step 6: Merge social links from all pages (90-95%)
+  const allSocialLinks: SocialLink[] = [
+    ...(homepage.socialLinks || []),
+    ...(aboutPage?.socialLinks || []),
+    ...(contactPage?.socialLinks || []),
+    ...(historyPage?.socialLinks || []),
+  ];
+
+  // Deduplicate social links by platform (keep highest confidence)
+  const socialLinksMap = new Map<string, SocialLink>();
+  for (const link of allSocialLinks) {
+    const existing = socialLinksMap.get(link.platform);
+    if (!existing || link.confidence > existing.confidence) {
+      socialLinksMap.set(link.platform, link);
+    }
+  }
+
+  // Convert to Record<string, string> for API compatibility
+  const socialLinks: Record<string, string> = {};
+  for (const [platform, link] of socialLinksMap) {
+    socialLinks[platform] = link.url;
+  }
 
   onProgress?.(95, "Finalizing brand data...");
 
-  // Step 6: Return comprehensive brand data (95-100%)
+  // Step 7: Return comprehensive brand data (95-100%)
+  // Ensure output matches ScrapedBrandData interface
   const result: ScrapedBrandData = {
     scrapedUrl: baseUrl,
     brandName: aiAnalysis.brandName || new URL(baseUrl).hostname,
-    domain: new URL(baseUrl).hostname.replace(/^www\./, ''),
     description: aiAnalysis.description || "",
-    industry: aiAnalysis.industry || "",
-    logoUrl: logoUrl || null,
     tagline: aiAnalysis.tagline || null,
-    foundedYear: aiAnalysis.foundedYear || null,
-    headquarters: aiAnalysis.headquarters || null,
-    brandColors: aiAnalysis.brandColors || [],
+    industry: aiAnalysis.industry || "Other",
+    
+    // Colors - map from AI analysis
+    primaryColor: aiAnalysis.primaryColor || "#4926FA",
+    secondaryColor: aiAnalysis.secondaryColor || null,
+    accentColor: aiAnalysis.accentColor || null,
+    colorPalette: aiAnalysis.colorPalette || [],
+    
+    logoUrl: logoUrl || null,
+    
+    // Keywords
     keywords: aiAnalysis.keywords || [],
+    seoKeywords: aiAnalysis.seoKeywords || [],
     geoKeywords: aiAnalysis.geoKeywords || [],
+    
+    // Business info
+    competitors: aiAnalysis.competitors || [],
+    targetAudience: aiAnalysis.targetAudience || "",
     valuePropositions: aiAnalysis.valuePropositions || [],
-    targetAudience: aiAnalysis.targetAudience || null,
+    
+    // Social links from all pages
+    socialLinks,
+    
+    // Confidence scores
+    confidence: aiAnalysis.confidence || { overall: 50, perField: {} },
 
     // Enhanced multi-page data
     locations: aiAnalysis.locations || [],
     personnel: aiAnalysis.personnel || [],
-
-    // Additional context
-    pagesScraped: {
-      homepage: true,
-      about: !!aboutPage,
-      contact: !!contactPage,
-      history: !!historyPage,
-    },
   };
 
   onProgress?.(100, "Complete!");

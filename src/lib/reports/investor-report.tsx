@@ -641,7 +641,7 @@ export const InvestorReportDocument: React.FC<InvestorReportProps> = ({
                 : styles.trendStable,
             ]}
           >
-            Trend Direction: {content.geoTrends.trendDirection === "up" ? "â†‘ Upward" : content.geoTrends.trendDirection === "down" ? "â†“ Downward" : "â†’ Stable"}
+            Trend Direction: {content.geoTrends.trendDirection === "up" ? "Upward" : content.geoTrends.trendDirection === "down" ? "Downward" : "Stable"}
           </Text>
         </View>
 

@@ -7,6 +7,14 @@ import { Button } from "@/components/ui/button";
 import { PredictiveChart, PredictiveDataPoint } from "@/components/analytics/PredictiveChart";
 import { ConfidenceIndicator } from "@/components/analytics/ConfidenceIndicator";
 import { EmergingOpportunities } from "@/components/analytics/EmergingOpportunities";
+import {
+  PlatformHeatmap,
+  generateDemoHeatmapData,
+  ShareOfVoiceWidget,
+  generateDemoSOVData,
+  SentimentTrendChart,
+  generateDemoSentimentData,
+} from "@/components/analytics";
 
 // Sample data for testing the PredictiveChart component
 const sampleData: PredictiveDataPoint[] = [
@@ -115,6 +123,24 @@ export default function AnalyticsPage() {
         showLegend={showLegend}
         height={450}
       />
+
+      {/* NEW: Share of Voice and Sentiment Section */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ShareOfVoiceWidget
+          data={generateDemoSOVData("Your Brand")}
+          yourBrandName="Your Brand"
+          previousSOV={22.5}
+        />
+        <SentimentTrendChart data={generateDemoSentimentData(14)} />
+      </div>
+
+      {/* NEW: Platform Coverage Heatmap */}
+      <div className="card-secondary p-6">
+        <PlatformHeatmap
+          data={generateDemoHeatmapData()}
+          brandName="Your Brand"
+        />
+      </div>
 
       {/* Additional examples */}
       <div className="grid gap-6 lg:grid-cols-2">

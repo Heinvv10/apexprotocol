@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Search, Filter, FileText, ChevronDown, Sparkles, PenTool, Wand2, LayoutTemplate, Bot, ArrowRight, AlertCircle, RefreshCw, MessageSquare, Users, FileCheck } from "lucide-react";
+import { Plus, Search, Filter, FileText, ChevronDown, Sparkles, PenTool, Wand2, LayoutTemplate, Bot, ArrowRight, AlertCircle, RefreshCw, MessageSquare, Users, FileCheck, FlaskConical } from "lucide-react";
 
 // Page Header Component
 function PageHeader() {
@@ -444,6 +444,12 @@ export default function CreatePage() {
 
       {/* Action Buttons */}
       <div className="flex items-center justify-end gap-2">
+        <Link href="/dashboard/simulate">
+          <Button variant="outline">
+            <FlaskConical className="mr-2 h-4 w-4" />
+            Test Before Publish
+          </Button>
+        </Link>
         <Link href="/dashboard/create/brief">
           <Button variant="outline">
             <FileCheck className="mr-2 h-4 w-4" />

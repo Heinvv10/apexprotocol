@@ -65,7 +65,7 @@ export function SiteFooter() {
                   </defs>
                 </svg>
               </div>
-              <span className="font-semibold text-lg tracking-tight">Apex</span>
+              <span className="font-semibold text-lg tracking-tight">ApexGEO</span>
             </Link>
             <p className="text-sm text-muted-foreground mb-4">
               AI Visibility Platform for modern brands.
@@ -146,7 +146,7 @@ export function SiteFooter() {
         {/* Bottom */}
         <div className="mt-12 pt-8 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Apex. All rights reserved.
+            © {new Date().getFullYear()} ApexGEO. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span>🇿🇦 Built for Africa</span>

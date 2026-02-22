@@ -66,6 +66,11 @@ const systemNavItems: NavItem[] = [
     href: "/admin/audit-logs",
     icon: FileText,
   },
+  {
+    title: "Settings",
+    href: "/admin/settings",
+    icon: Settings,
+  },
 ];
 
 // Operations Management Section (Phase 0+)

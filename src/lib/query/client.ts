@@ -221,6 +221,16 @@ export const queryKeys = {
     report: (brandId: string, startDate?: string, endDate?: string) =>
       [...queryKeys.citationRoi.all, "report", brandId, startDate, endDate] as const,
   },
+
+  // Simulations
+  simulations: {
+    all: ["simulations"] as const,
+    lists: () => [...queryKeys.simulations.all, "list"] as const,
+    list: (brandId: string) => [...queryKeys.simulations.lists(), brandId] as const,
+    details: () => [...queryKeys.simulations.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.simulations.details(), id] as const,
+    status: (id: string) => [...queryKeys.simulations.all, "status", id] as const,
+  },
 } as const;
 
 /**
@@ -244,6 +254,8 @@ export const invalidateQueries = {
     client.invalidateQueries({ queryKey: queryKeys.usage.all }),
   citationRoi: (client: QueryClient) =>
     client.invalidateQueries({ queryKey: queryKeys.citationRoi.all }),
+  simulations: (client: QueryClient) =>
+    client.invalidateQueries({ queryKey: queryKeys.simulations.all }),
   all: (client: QueryClient) => client.invalidateQueries(),
 };
 

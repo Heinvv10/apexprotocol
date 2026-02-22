@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -12,6 +13,9 @@ import {
   Save,
   Trash2,
   AlertCircle,
+  ImageIcon,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -68,7 +72,7 @@ const brandFormSchema = z.object({
   logoUrl: z
     .string()
     .optional()
-    .refine((val) => !val || val.startsWith("http"), "Must be a valid URL"),
+    .refine((val) => !val || val.startsWith("http") || val.startsWith("/uploads/"), "Must be a valid URL or uploaded file"),
 });
 
 type BrandFormValues = z.infer<typeof brandFormSchema>;
@@ -138,6 +142,16 @@ async function deleteBrand(id: string) {
   return res.json();
 }
 
+// Fetch logo from domain using cascading fallbacks
+async function fetchLogoFromDomain(domain: string): Promise<{ success: boolean; logoUrl?: string; source?: string; error?: string }> {
+  const res = await fetch("/api/brands/logo", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ domain }),
+  });
+  return res.json();
+}
+
 export default function EditBrandPage() {
   const params = useParams();
   const router = useRouter();
@@ -166,8 +180,13 @@ export default function EditBrandPage() {
     },
   });
 
+  // Logo fetching state
+  const [logoFetchState, setLogoFetchState] = useState<"idle" | "fetching" | "success" | "error">("idle");
+  const [logoSource, setLogoSource] = useState<string | null>(null);
+  const [initialDomain, setInitialDomain] = useState<string | null>(null);
+
   // Update form when brand data loads
-  React.useEffect(() => {
+  useEffect(() => {
     if (brand) {
       form.reset({
         name: brand.name,
@@ -176,8 +195,54 @@ export default function EditBrandPage() {
         industry: brand.industry || "",
         logoUrl: brand.logoUrl || "",
       });
+      setInitialDomain(brand.domain || null);
     }
   }, [brand, form]);
+
+  // Watch domain field for auto logo fetch
+  const watchedDomain = form.watch("domain");
+  const currentLogoUrl = form.watch("logoUrl");
+
+  // Auto-fetch logo when domain changes (only if different from initial and logo is empty)
+  useEffect(() => {
+    // Don't fetch if domain hasn't changed from initial
+    if (watchedDomain === initialDomain) {
+      return;
+    }
+
+    // Don't fetch if domain is empty or invalid
+    if (!watchedDomain || !/^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,}$/i.test(watchedDomain)) {
+      setLogoFetchState("idle");
+      setLogoSource(null);
+      return;
+    }
+
+    // Debounce the fetch
+    const timeoutId = setTimeout(async () => {
+      setLogoFetchState("fetching");
+      setLogoSource(null);
+
+      try {
+        const result = await fetchLogoFromDomain(watchedDomain);
+        
+        if (result.success && result.logoUrl) {
+          form.setValue("logoUrl", result.logoUrl);
+          setLogoFetchState("success");
+          setLogoSource(result.source || "auto");
+          toast({
+            title: "Logo Found",
+            description: `Auto-fetched logo from ${result.source || "website"}`,
+          });
+        } else {
+          setLogoFetchState("error");
+        }
+      } catch (err) {
+        setLogoFetchState("error");
+      }
+    }, 800);
+
+    return () => clearTimeout(timeoutId);
+  }, [watchedDomain, initialDomain]);
 
   // Update brand mutation
   const updateMutation = useMutation({
@@ -334,7 +399,7 @@ export default function EditBrandPage() {
                       />
                     </FormControl>
                     <FormDescription>
-                      Your brand's primary website domain (without https://)
+                      Your brand's website domain (without https://) — logo will be auto-fetched on change
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -401,17 +466,56 @@ export default function EditBrandPage() {
                 name="logoUrl"
                 render={({ field }: { field: any }) => (
                   <FormItem>
-                    <FormLabel>Logo URL</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="https://example.com/logo.png"
-                        {...field}
-                        className="bg-background"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Direct URL to your brand's logo image
-                    </FormDescription>
+                    <FormLabel className="flex items-center gap-2">
+                      Logo
+                      {logoFetchState === "fetching" && (
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Auto-fetching...
+                        </span>
+                      )}
+                      {logoFetchState === "success" && logoSource && (
+                        <span className="text-xs text-green-500 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Found via {logoSource}
+                        </span>
+                      )}
+                      {logoFetchState === "error" && (
+                        <span className="text-xs text-amber-500 flex items-center gap-1">
+                          <XCircle className="h-3 w-3" />
+                          Not found
+                        </span>
+                      )}
+                    </FormLabel>
+                    <div className="flex gap-3 items-start">
+                      {/* Logo Preview */}
+                      <div className="h-16 w-16 rounded-lg border border-border bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {field.value ? (
+                          <img 
+                            src={field.value} 
+                            alt="Logo preview" 
+                            className="h-full w-full object-contain p-1"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <FormControl>
+                          <Input
+                            placeholder="https://example.com/logo.png"
+                            {...field}
+                            className="bg-background"
+                          />
+                        </FormControl>
+                        <FormDescription className="mt-1">
+                          Auto-fetched when domain changes, or enter URL manually
+                        </FormDescription>
+                      </div>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
