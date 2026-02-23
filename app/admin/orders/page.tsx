@@ -28,6 +28,8 @@ export default function AdminOrdersPage() {
   const [editOrder, setEditOrder] = useState<any>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState<number | null>(null);
+  const [emailResult, setEmailResult] = useState<{id: number, msg: string} | null>(null);
 
   const load = async () => {
     const res = await fetch('/api/admin/orders');
@@ -76,6 +78,19 @@ export default function AdminOrdersPage() {
 
   const upd = (field: string, value: string) => setEditForm((p: any) => ({ ...p, [field]: value }));
 
+  const resendEmail = async (orderId: number) => {
+    setSendingEmail(orderId);
+    setEmailResult(null);
+    const res = await fetch('/api/admin/orders/resend-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId }),
+    });
+    const data = await res.json();
+    setEmailResult({ id: orderId, msg: data.ok ? `✅ Sent to ${data.sentTo}` : `❌ ${data.error}` });
+    setSendingEmail(null);
+  };
+
   const filtered = statusFilter === 'All' ? orders : orders.filter(o => o.status === statusFilter);
 
   if (loading) return <div className="animate-pulse text-gray-400">Loading orders...</div>;
@@ -93,6 +108,14 @@ export default function AdminOrdersPage() {
           </button>
         ))}
       </div>
+
+      {/* Email result toast */}
+      {emailResult && (
+        <div className={`card p-3 border-l-4 flex items-center justify-between ${emailResult.msg.startsWith('✅') ? 'border-green-500' : 'border-red-500'}`}>
+          <span className="text-sm">{emailResult.msg}</span>
+          <button onClick={() => setEmailResult(null)} className="text-gray-400 hover:text-white ml-4">✕</button>
+        </div>
+      )}
 
       {/* Orders list */}
       {filtered.map((o: any) => (
@@ -126,6 +149,13 @@ export default function AdminOrdersPage() {
                 className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium rounded-lg transition-all">
                 ✏️ Edit Details
               </button>
+              {o.guest_email && (
+                <button onClick={() => resendEmail(o.id)} disabled={sendingEmail === o.id}
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-all disabled:opacity-50">
+                  {sendingEmail === o.id ? '⏳ Sending...' : '📧 Resend Email'}
+                </button>
+              )}
+              <p className="text-xs text-gray-500">{o.guest_email || 'No email'}</p>
             </div>
           </div>
         </div>
