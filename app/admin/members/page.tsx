@@ -132,7 +132,7 @@ export default function MembersPage() {
                       </div>
                     </td>
                     <td className="p-4 text-sm text-white">
-                      R{member.total_spent ? member.total_spent.toFixed(2) : '0.00'}
+                      R{member.total_spent ? Number(member.total_spent).toFixed(2) : '0.00'}
                     </td>
                     <td className="p-4">
                       {member.approved === 1 ? (
