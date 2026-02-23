@@ -1,0 +1,10 @@
+{
+  "env": {
+    "DATABASE_URL": "postgresql://neondb_owner:npg_ohf0WcXYymk2@ep-cold-firefly-ajeq5xuy-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require"
+  },
+  "build": {
+    "env": {
+      "DATABASE_URL": "postgresql://neondb_owner:npg_ohf0WcXYymk2@ep-cold-firefly-ajeq5xuy-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require"
+    }
+  }
+}
