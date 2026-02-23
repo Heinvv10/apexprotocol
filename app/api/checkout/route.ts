@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { sendOrderConfirmation } from '@/lib/email';
-// Sequential ref generation (AP-0001, AP-0002, ...)
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -17,9 +16,10 @@ export async function POST(req: NextRequest) {
   }
 
   const db = getDb();
-  const user = getSession();
+  const user = await getSession();
+
   // Get next sequential order number
-  const lastOrder = db.prepare('SELECT ref FROM orders ORDER BY id DESC LIMIT 1').get() as { ref: string } | undefined;
+  const lastOrder = await db.prepare('SELECT ref FROM orders ORDER BY id DESC LIMIT 1').get() as { ref: string } | undefined;
   let nextNum = 1;
   if (lastOrder?.ref) {
     const match = lastOrder.ref.match(/AP-(\d+)/);
@@ -27,15 +27,12 @@ export async function POST(req: NextRequest) {
   }
   const orderRef = `AP-${String(nextNum).padStart(4, '0')}`;
 
-  const insertOrder = db.prepare(`
-    INSERT INTO orders (ref, user_id, guest_email, guest_name, guest_phone, address_line1, address_line2, city, province, postal_code, shipping_method, shipping_cost, subtotal, total, special_instructions, quote_action, agreed_terms)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  const insertItem = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
-
-  const tx = db.transaction(() => {
-    const result = insertOrder.run(
+  try {
+    // Insert order
+    const result = await db.prepare(`
+      INSERT INTO orders (ref, user_id, guest_email, guest_name, guest_phone, address_line1, address_line2, city, province, postal_code, shipping_method, shipping_cost, subtotal, total, special_instructions, quote_action, agreed_terms)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
       orderRef,
       user?.id || null,
       customer.email || null,
@@ -54,13 +51,19 @@ export async function POST(req: NextRequest) {
       quoteAction || 'create_new',
       agreedTerms ? 1 : 0
     );
-    const orderId = result.lastInsertRowid;
-    for (const item of items) {
-      insertItem.run(orderId, item.id, item.quantity, item.price);
-    }
-  });
 
-  tx();
+    const orderId = result.lastInsertRowid;
+
+    // Insert order items
+    for (const item of items) {
+      await db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)').run(
+        orderId, item.id, item.quantity, item.price
+      );
+    }
+  } catch (err: any) {
+    console.error('Checkout error:', err);
+    return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
+  }
 
   // Send confirmation email (async, don't block response)
   if (customer.email) {

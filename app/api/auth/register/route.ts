@@ -23,13 +23,13 @@ export async function POST(req: NextRequest) {
   }
 
   const db = getDb();
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
   if (existing) {
     return NextResponse.json({ error: 'Email already registered' }, { status: 400 });
   }
 
   const hash = bcrypt.hashSync(password, 10);
-  db.prepare('INSERT INTO users (email, password_hash, name, phone, referral, approved) VALUES (?, ?, ?, ?, ?, 0)')
+  await db.prepare('INSERT INTO users (email, password_hash, name, phone, referral, approved) VALUES (?, ?, ?, ?, ?, 0)')
     .run(email, hash, name, phone || null, referral.trim());
 
   // Send notification to admin

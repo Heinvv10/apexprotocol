@@ -6,7 +6,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = getSession();
+  const session = await getSession();
   if (!session?.is_admin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -19,7 +19,7 @@ export async function GET(
   const db = getDb();
 
   // Get member details
-  const member = db.prepare(`
+  const member = await db.prepare(`
     SELECT id, name, email, phone, referral, approved, created_at
     FROM users
     WHERE id = ? AND is_admin = 0
@@ -30,7 +30,7 @@ export async function GET(
   }
 
   // Get member's orders
-  const orders = db.prepare(`
+  const orders = await db.prepare(`
     SELECT 
       o.id,
       o.ref,
@@ -46,8 +46,8 @@ export async function GET(
   `).all(memberId) as any[];
 
   // Get order items for each order
-  const ordersWithItems = orders.map(order => {
-    const items = db.prepare(`
+  const ordersWithItems = await Promise.all(orders.map(async (order) => {
+    const items = await db.prepare(`
       SELECT 
         p.name as product_name,
         oi.quantity,
@@ -61,7 +61,7 @@ export async function GET(
       ...order,
       items,
     };
-  });
+  }));
 
   return NextResponse.json({
     member: {
