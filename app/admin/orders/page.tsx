@@ -2,27 +2,32 @@
 
 import { useEffect, useState } from 'react';
 
-const STATUSES = ['Awaiting Payment', 'Paid', 'Processing', 'Shipped', 'Completed'];
+const STATUSES = ['Awaiting Payment', 'Paid', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
 const STATUS_COLORS: Record<string, string> = {
   'Awaiting Payment': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
   'Paid': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   'Processing': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
   'Shipped': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
   'Completed': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  'Cancelled': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
 };
 
-const SYNC_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  synced: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  failed: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+const SHIPPING_METHODS: Record<string, string> = {
+  courier_door: 'The Courier Guy (Door-to-Door)',
+  courier_kiosk: 'The Courier Guy (Kiosk)',
+  postnet: 'PostNet (Counter)',
+  fastway: 'Fastway (Door-to-Door)',
 };
+
+const PROVINCES = ['Gauteng','Western Cape','KwaZulu-Natal','Eastern Cape','Free State','Limpopo','Mpumalanga','North West','Northern Cape'];
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [syncingId, setSyncingId] = useState<number | null>(null);
-  const [syncResult, setSyncResult] = useState<any>(null);
   const [statusFilter, setStatusFilter] = useState('All');
+  const [editOrder, setEditOrder] = useState<any>(null);
+  const [editForm, setEditForm] = useState<any>({});
+  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     const res = await fetch('/api/admin/orders');
@@ -42,28 +47,34 @@ export default function AdminOrdersPage() {
     load();
   };
 
-  const syncToSupplier = async (orderId: number) => {
-    setSyncingId(orderId);
-    setSyncResult(null);
-    const res = await fetch('/api/admin/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId, action: 'sync' }),
+  const openEdit = (o: any) => {
+    setEditOrder(o);
+    setEditForm({
+      name: o.guest_name || '',
+      phone: o.guest_phone || '',
+      street: o.address_line1 || '',
+      suburb: o.address_line2 || '',
+      city: o.city || '',
+      province: o.province || '',
+      postalCode: o.postal_code || '',
+      shippingMethod: o.shipping_method || 'courier_door',
+      notes: o.notes || '',
     });
-    const data = await res.json();
-    setSyncResult({ orderId, ...data });
-    setSyncingId(null);
+  };
+
+  const saveEdit = async () => {
+    setSaving(true);
+    await fetch('/api/admin/orders', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId: editOrder.id, address: editForm }),
+    });
+    setSaving(false);
+    setEditOrder(null);
     load();
   };
 
-  const markSync = async (orderId: number, action: string) => {
-    await fetch('/api/admin/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId, action }),
-    });
-    load();
-  };
+  const upd = (field: string, value: string) => setEditForm((p: any) => ({ ...p, [field]: value }));
 
   const filtered = statusFilter === 'All' ? orders : orders.filter(o => o.status === statusFilter);
 
@@ -74,38 +85,14 @@ export default function AdminOrdersPage() {
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
         {['All', ...STATUSES].map(s => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
+          <button key={s} onClick={() => setStatusFilter(s)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
               statusFilter === s ? 'bg-brand-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-            }`}
-          >
-            {s} {s === 'All' ? `(${orders.length})` : `(${orders.filter(o => o.status === s).length})`}
+            }`}>
+            {s} ({s === 'All' ? orders.length : orders.filter(o => o.status === s).length})
           </button>
         ))}
       </div>
-
-      {/* Sync result popup */}
-      {syncResult && (
-        <div className={`card p-4 border-l-4 ${syncResult.error ? 'border-red-500' : 'border-green-500'}`}>
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="font-semibold text-sm">{syncResult.error ? '❌ Sync Failed' : '✓ Sync Result'}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{syncResult.message || syncResult.error}</p>
-              {syncResult.payload && (
-                <details className="mt-2">
-                  <summary className="text-xs text-brand-600 cursor-pointer">View supplier cart payload</summary>
-                  <pre className="mt-1 text-xs bg-gray-50 dark:bg-gray-800 p-2 rounded overflow-x-auto">
-                    {JSON.stringify(syncResult.payload, null, 2)}
-                  </pre>
-                </details>
-              )}
-            </div>
-            <button onClick={() => setSyncResult(null)} className="text-gray-400 hover:text-gray-600">✕</button>
-          </div>
-        </div>
-      )}
 
       {/* Orders list */}
       {filtered.map((o: any) => (
@@ -114,71 +101,128 @@ export default function AdminOrdersPage() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <span className="font-bold text-brand-700 dark:text-brand-400">{o.ref}</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${STATUS_COLORS[o.status] || 'bg-gray-100'}`}>
-                  {o.status}
-                </span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${SYNC_COLORS[o.supplier_sync_status] || 'bg-gray-100'}`}>
-                  🔄 {o.supplier_sync_status || 'pending'}
-                </span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${STATUS_COLORS[o.status] || 'bg-gray-100'}`}>{o.status}</span>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {o.guest_name}{o.guest_phone ? ` · ${o.guest_phone}` : ''}
               </p>
               <p className="text-xs text-gray-500">
-                {[o.address_street, o.address_suburb, o.address_city, o.address_province].filter(Boolean).join(', ')}
+                {[o.address_line1, o.address_line2, o.city, o.province, o.postal_code].filter(Boolean).join(', ')}
               </p>
               <p className="text-xs text-gray-400 mt-1">{o.items_summary}</p>
-              {o.special_instructions && (
-                <p className="text-xs text-orange-500 mt-1">📝 {o.special_instructions}</p>
-              )}
+              {o.special_instructions && <p className="text-xs text-orange-500 mt-1">📝 {o.special_instructions}</p>}
               <p className="text-xs text-gray-400 mt-1">
-                {new Date(o.created_at).toLocaleString()} · {o.shipping_method} · Shipping R{o.shipping_cost}
+                {new Date(o.created_at).toLocaleString()} · {SHIPPING_METHODS[o.shipping_method] || o.shipping_method} · Shipping R{Number(o.shipping_cost).toFixed(0)}
               </p>
             </div>
 
             <div className="flex flex-col items-end gap-2 flex-shrink-0">
               <p className="font-bold text-lg">R{Number(o.total).toFixed(0)}</p>
-
-              {/* Status selector */}
-              <select
-                value={o.status}
-                onChange={e => updateStatus(o.id, e.target.value)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-0 cursor-pointer ${STATUS_COLORS[o.status] || 'bg-gray-100'}`}
-              >
+              <select value={o.status} onChange={e => updateStatus(o.id, e.target.value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-0 cursor-pointer ${STATUS_COLORS[o.status] || 'bg-gray-100'}`}>
                 {STATUSES.map(s => <option key={s}>{s}</option>)}
               </select>
-
-              {/* Sync to Supplier */}
-              <div className="flex gap-1">
-                <button
-                  onClick={() => syncToSupplier(o.id)}
-                  disabled={syncingId === o.id}
-                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all disabled:opacity-50"
-                >
-                  {syncingId === o.id ? '⏳ Syncing...' : '🔄 Sync to Supplier'}
-                </button>
-                {o.supplier_sync_status !== 'synced' && (
-                  <button
-                    onClick={() => markSync(o.id, 'mark_synced')}
-                    className="px-2 py-1.5 bg-green-100 text-green-700 text-xs rounded-lg hover:bg-green-200"
-                    title="Manually mark as synced"
-                  >✓</button>
-                )}
-                {o.supplier_sync_status === 'synced' && (
-                  <button
-                    onClick={() => markSync(o.id, 'reset')}
-                    className="px-2 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg hover:bg-gray-200"
-                    title="Reset sync status"
-                  >↺</button>
-                )}
-              </div>
+              <button onClick={() => openEdit(o)}
+                className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium rounded-lg transition-all">
+                ✏️ Edit Details
+              </button>
             </div>
           </div>
         </div>
       ))}
 
-      {filtered.length === 0 && (
-        <p className="text-gray-400 text-center py-8">No orders found</p>
+      {filtered.length === 0 && <p className="text-gray-400 text-center py-8">No orders found</p>}
+
+      {/* Edit Modal */}
+      {editOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#111827] border border-gray-700 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b border-gray-700">
+              <h2 className="text-lg font-bold text-white">Edit Order — {editOrder.ref}</h2>
+              <button onClick={() => setEditOrder(null)} className="text-gray-400 hover:text-white text-xl">✕</button>
+            </div>
+            <div className="p-5 space-y-4">
+              {/* Customer */}
+              <div>
+                <p className="text-xs text-gray-400 uppercase mb-2 font-medium">Customer</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-400">Full Name</label>
+                    <input value={editForm.name} onChange={e => upd('name', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff]" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400">Phone</label>
+                    <input value={editForm.phone} onChange={e => upd('phone', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff]" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Address */}
+              <div>
+                <p className="text-xs text-gray-400 uppercase mb-2 font-medium">Delivery Address</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-gray-400">Street Address</label>
+                    <input value={editForm.street} onChange={e => upd('street', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff]" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400">Suburb</label>
+                    <input value={editForm.suburb} onChange={e => upd('suburb', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff]" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-400">City</label>
+                      <input value={editForm.city} onChange={e => upd('city', e.target.value)}
+                        className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff]" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400">Postal Code</label>
+                      <input value={editForm.postalCode} onChange={e => upd('postalCode', e.target.value)}
+                        className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff]" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400">Province</label>
+                    <select value={editForm.province} onChange={e => upd('province', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff]">
+                      {PROVINCES.map(p => <option key={p}>{p}</option>)}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Shipping */}
+              <div>
+                <p className="text-xs text-gray-400 uppercase mb-2 font-medium">Shipping Method</p>
+                <select value={editForm.shippingMethod} onChange={e => upd('shippingMethod', e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff]">
+                  {Object.entries(SHIPPING_METHODS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-xs text-gray-400">Internal Notes</label>
+                <textarea value={editForm.notes} onChange={e => upd('notes', e.target.value)} rows={2}
+                  className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff] resize-none" />
+              </div>
+            </div>
+            <div className="flex gap-3 p-5 border-t border-gray-700">
+              <button onClick={() => setEditOrder(null)}
+                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-all">
+                Cancel
+              </button>
+              <button onClick={saveEdit} disabled={saving}
+                className="flex-1 px-4 py-2 bg-[#00d4ff] hover:bg-[#00a8cc] text-black text-sm font-bold rounded-lg transition-all disabled:opacity-50">
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
