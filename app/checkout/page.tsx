@@ -90,7 +90,7 @@ export default function CheckoutPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: items.map(i => ({ id: i.id, quantity: i.quantity, price: i.price })),
+          items: items.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.price })),
           shipping: { method: shipping, cost: shippingCost },
           customer: { name: form.name, email: form.email, phone: form.phone, instructions: form.instructions },
           address: addr, subtotal, total, quoteAction, agreedTerms: true,

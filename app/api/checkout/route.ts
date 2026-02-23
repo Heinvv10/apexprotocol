@@ -67,15 +67,17 @@ export async function POST(req: NextRequest) {
 
   // Send confirmation email (async, don't block response)
   if (customer.email) {
+    // Look up product names from DB (don't trust client-side names)
+    const emailItems = await Promise.all(items.map(async (item: any) => {
+      const product = await db.prepare('SELECT name FROM products WHERE id = ?').get(item.id) as any;
+      return { name: product?.name || item.name || 'Product', quantity: item.quantity, price: item.price };
+    }));
+
     sendOrderConfirmation({
       ref: orderRef,
       customerName: customer.name,
       customerEmail: customer.email,
-      items: items.map((item: any) => ({
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-      })),
+      items: emailItems,
       subtotal,
       shippingCost: shipping.cost,
       total,
