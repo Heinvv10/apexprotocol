@@ -18,6 +18,6 @@ export async function getSession() {
   }
 }
 
-export function createSessionToken(userId: number, email: string): string {
-  return Buffer.from(`${userId}:${email}`).toString('base64');
+export function createSessionToken(userId: number, email: string, isAdmin: number = 0): string {
+  return Buffer.from(`${userId}:${email}:${isAdmin}`).toString('base64');
 }

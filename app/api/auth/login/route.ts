@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Your account is pending approval. You\'ll receive an email once approved.' }, { status: 403 });
   }
 
-  const token = createSessionToken(user.id, user.email);
+  const token = createSessionToken(user.id, user.email, user.is_admin);
   const response = NextResponse.json({ user: { id: user.id, name: user.name, email: user.email, is_admin: user.is_admin } });
   response.cookies.set('session_token', token, { httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30, path: '/' });
   return response;
