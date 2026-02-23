@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   const { email, password } = await req.json();
   const db = getDb();
 
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
+  const user = await await db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
   }

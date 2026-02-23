@@ -9,7 +9,7 @@ export async function GET() {
 
   const db = getDb();
   const globalMarkup = getGlobalMarkup();
-  const products = db.prepare(`
+  const products = await await db.prepare(`
     SELECT id, name, category, base_price, sell_price, price_override, markup_override, sold_out, supplier_product_id
     FROM products ORDER BY category, name
   `).all();
@@ -49,7 +49,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const db = getDb();
-    const product = db.prepare('SELECT id, name, base_price, sell_price, price_override, markup_override FROM products WHERE id = ?').get(productId);
+    const product = await await db.prepare('SELECT id, name, base_price, sell_price, price_override, markup_override FROM products WHERE id = ?').get(productId);
     return NextResponse.json({ ok: true, product });
   }
 

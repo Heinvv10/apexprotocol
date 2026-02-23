@@ -7,7 +7,7 @@ export async function GET() {
   if (!user?.is_admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const db = getDb();
-  const notifications = db.prepare('SELECT * FROM notifications ORDER BY created_at DESC').all();
+  const notifications = await await db.prepare('SELECT * FROM notifications ORDER BY created_at DESC').all();
   return NextResponse.json({ notifications });
 }
 
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   if (!title || !message) return NextResponse.json({ error: 'Title and message required' }, { status: 400 });
 
   const db = getDb();
-  db.prepare('INSERT INTO notifications (title, message) VALUES (?, ?)').run(title, message);
+  await db.prepare('INSERT INTO notifications (title, message) VALUES (?, ?)').run(title, message);
   return NextResponse.json({ ok: true });
 }
 
@@ -29,6 +29,6 @@ export async function DELETE(req: NextRequest) {
 
   const { id } = await req.json();
   const db = getDb();
-  db.prepare('UPDATE notifications SET active = 0 WHERE id = ?').run(id);
+  await db.prepare('UPDATE notifications SET active = 0 WHERE id = ?').run(id);
   return NextResponse.json({ ok: true });
 }

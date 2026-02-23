@@ -7,6 +7,6 @@ export async function GET() {
   if (!user) return NextResponse.json({ notifications: [] });
 
   const db = getDb();
-  const notifications = db.prepare('SELECT * FROM notifications WHERE active = 1 ORDER BY created_at DESC LIMIT 10').all();
+  const notifications = await await db.prepare('SELECT * FROM notifications WHERE active = 1 ORDER BY created_at DESC LIMIT 10').all();
   return NextResponse.json({ notifications });
 }

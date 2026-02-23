@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   const db = getDb();
   const user = getSession();
   // Get next sequential order number
-  const lastOrder = db.prepare('SELECT ref FROM orders ORDER BY id DESC LIMIT 1').get() as { ref: string } | undefined;
+  const lastOrder = await await db.prepare('SELECT ref FROM orders ORDER BY id DESC LIMIT 1').get() as { ref: string } | undefined;
   let nextNum = 1;
   if (lastOrder?.ref) {
     const match = lastOrder.ref.match(/AP-(\d+)/);
@@ -27,12 +27,12 @@ export async function POST(req: NextRequest) {
   }
   const orderRef = `AP-${String(nextNum).padStart(4, '0')}`;
 
-  const insertOrder = db.prepare(`
+  const insertOrder = await await db.prepare(`
     INSERT INTO orders (ref, user_id, guest_email, guest_name, guest_phone, address_line1, address_line2, city, province, postal_code, shipping_method, shipping_cost, subtotal, total, special_instructions, quote_action, agreed_terms)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  const insertItem = db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
+  const insertItem = await await db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
 
   const tx = db.transaction(() => {
     const result = insertOrder.run(

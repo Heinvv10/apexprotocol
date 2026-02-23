@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
   const db = getDb();
   // Ensure contact_requests table exists with referral column
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS contact_requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       first_name TEXT NOT NULL,
@@ -27,10 +27,10 @@ export async function POST(req: NextRequest) {
 
   // Add referral column if it doesn't exist (migration)
   try {
-    db.exec(`ALTER TABLE contact_requests ADD COLUMN referral TEXT`);
+    await db.exec(`ALTER TABLE contact_requests ADD COLUMN referral TEXT`);
   } catch {}
 
-  db.prepare('INSERT INTO contact_requests (first_name, last_name, email, referral, message) VALUES (?, ?, ?, ?, ?)')
+  await db.prepare('INSERT INTO contact_requests (first_name, last_name, email, referral, message) VALUES (?, ?, ?, ?, ?)')
     .run(firstName, lastName, email, referral, message || null);
 
   // Send email notification to admin

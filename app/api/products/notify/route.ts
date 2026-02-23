@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   }
 
   const db = getDb();
-  db.prepare('INSERT INTO stock_notify (product_id, email) VALUES (?, ?)').run(Number(productId), String(email));
+  await db.prepare('INSERT INTO stock_notify (product_id, email) VALUES (?, ?)').run(Number(productId), String(email));
 
   return NextResponse.json({ ok: true });
 }

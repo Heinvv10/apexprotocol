@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   const db = getDb();
 
   // Get the contact request
-  const request = db.prepare('SELECT * FROM contact_requests WHERE id = ?').get(requestId) as any;
+  const request = await await db.prepare('SELECT * FROM contact_requests WHERE id = ?').get(requestId) as any;
   if (!request) {
     return NextResponse.json({ error: 'Request not found' }, { status: 404 });
   }
@@ -35,23 +35,23 @@ export async function POST(req: NextRequest) {
   const tempPassword = randomBytes(4).toString('hex') + '!A1'; // e.g. "a3f2b1c0!A1"
 
   // Check if user already exists
-  const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(request.email) as any;
+  const existingUser = await await db.prepare('SELECT id FROM users WHERE email = ?').get(request.email) as any;
   
   if (existingUser) {
     // Update password
     const bcrypt = require('bcryptjs');
     const hash = bcrypt.hashSync(tempPassword, 10);
-    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, existingUser.id);
+    await db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, existingUser.id);
   } else {
     // Create user account
     const bcrypt = require('bcryptjs');
     const hash = bcrypt.hashSync(tempPassword, 10);
-    db.prepare('INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)')
+    await db.prepare('INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)')
       .run(`${request.first_name} ${request.last_name}`, request.email, hash);
   }
 
   // Update request status
-  db.prepare("UPDATE contact_requests SET status = 'approved' WHERE id = ?").run(requestId);
+  await db.prepare("UPDATE contact_requests SET status = 'approved' WHERE id = ?").run(requestId);
 
   // Send approval email with credentials
   const approvalHtml = `
