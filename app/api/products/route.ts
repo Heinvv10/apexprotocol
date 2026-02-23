@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     params.push(category);
   }
   if (search) {
-    query += ' AND (name LIKE ? OR description LIKE ? OR category LIKE ?)';
+    query += ' AND (name ILIKE ? OR description ILIKE ? OR category ILIKE ?)';
     const s = `%${search}%`;
     params.push(s, s, s);
   }
