@@ -1,4 +1,10 @@
-import { Pool } from 'pg';
+import { Pool, types } from 'pg';
+
+// Parse PostgreSQL NUMERIC and FLOAT8 types as JS numbers instead of strings
+// OID 1700 = numeric/decimal, OID 701 = float8, OID 700 = float4
+types.setTypeParser(1700, (val: string) => parseFloat(val));
+types.setTypeParser(701, (val: string) => parseFloat(val));
+types.setTypeParser(700, (val: string) => parseFloat(val));
 
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_ohf0WcXYymk2@ep-cold-firefly-ajeq5xuy-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require';
 
