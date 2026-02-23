@@ -19,7 +19,7 @@ export async function GET(
   const db = getDb();
 
   // Get member details
-  const member = db.prepare(`
+  const member = await await db.prepare(`
     SELECT id, name, email, phone, referral, approved, created_at
     FROM users
     WHERE id = ? AND is_admin = 0
@@ -30,7 +30,7 @@ export async function GET(
   }
 
   // Get member's orders
-  const orders = db.prepare(`
+  const orders = await await db.prepare(`
     SELECT 
       o.id,
       o.ref,
@@ -47,7 +47,7 @@ export async function GET(
 
   // Get order items for each order
   const ordersWithItems = orders.map(order => {
-    const items = db.prepare(`
+    const items = await await db.prepare(`
       SELECT 
         p.name as product_name,
         oi.quantity,

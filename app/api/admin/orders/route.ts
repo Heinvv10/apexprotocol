@@ -7,7 +7,7 @@ export async function GET() {
   if (!user || !user.is_admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const db = getDb();
-  const orders = db.prepare(`
+  const orders = await await db.prepare(`
     SELECT o.*, GROUP_CONCAT(p.name || ' x' || oi.quantity, ', ') as items_summary
     FROM orders o
     LEFT JOIN order_items oi ON oi.order_id = o.id
@@ -30,6 +30,6 @@ export async function PATCH(req: NextRequest) {
   }
 
   const db = getDb();
-  db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, orderId);
+  await db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, orderId);
   return NextResponse.json({ ok: true });
 }

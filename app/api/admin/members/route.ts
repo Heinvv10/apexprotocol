@@ -18,7 +18,7 @@ export async function GET() {
   const db = getDb();
   
   // Get members with order statistics
-  const members = db.prepare(`
+  const members = await await db.prepare(`
     SELECT 
       u.id,
       u.name,
@@ -53,11 +53,11 @@ export async function PATCH(req: NextRequest) {
   }
 
   const db = getDb();
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as any;
+  const user = await await db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as any;
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
   if (action === 'approve') {
-    db.prepare('UPDATE users SET approved = 1 WHERE id = ?').run(userId);
+    await db.prepare('UPDATE users SET approved = 1 WHERE id = ?').run(userId);
 
     // Send approval email
     const html = `
@@ -120,7 +120,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (action === 'reject') {
-    db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+    await db.prepare('DELETE FROM users WHERE id = ?').run(userId);
     return NextResponse.json({ ok: true, message: 'User rejected and removed' });
   }
 }

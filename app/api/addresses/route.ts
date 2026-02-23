@@ -7,7 +7,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ addresses: [] });
 
   const db = getDb();
-  const addresses = db.prepare('SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC').all(user.id);
+  const addresses = await await db.prepare('SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC').all(user.id);
   return NextResponse.json({ addresses });
 }
 
@@ -23,10 +23,10 @@ export async function POST(req: NextRequest) {
   const db = getDb();
 
   if (is_default) {
-    db.prepare('UPDATE addresses SET is_default = 0 WHERE user_id = ?').run(user.id);
+    await db.prepare('UPDATE addresses SET is_default = 0 WHERE user_id = ?').run(user.id);
   }
 
-  const result = db.prepare(
+  const result = await await db.prepare(
     'INSERT INTO addresses (user_id, label, street, suburb, city, postal_code, province, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
   ).run(user.id, label || 'Home', street, suburb || null, city, postal_code, province, is_default ? 1 : 0);
 
@@ -39,6 +39,6 @@ export async function DELETE(req: NextRequest) {
 
   const { id } = await req.json();
   const db = getDb();
-  db.prepare('DELETE FROM addresses WHERE id = ? AND user_id = ?').run(id, user.id);
+  await db.prepare('DELETE FROM addresses WHERE id = ? AND user_id = ?').run(id, user.id);
   return NextResponse.json({ ok: true });
 }

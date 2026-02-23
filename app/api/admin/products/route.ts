@@ -8,6 +8,6 @@ export async function PATCH(req: NextRequest) {
 
   const { productId, sold_out } = await req.json();
   const db = getDb();
-  db.prepare('UPDATE products SET sold_out = ? WHERE id = ?').run(sold_out ? 1 : 0, productId);
+  await db.prepare('UPDATE products SET sold_out = ? WHERE id = ?').run(sold_out ? 1 : 0, productId);
   return NextResponse.json({ ok: true });
 }

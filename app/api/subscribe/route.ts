@@ -8,6 +8,6 @@ export async function POST(req: NextRequest) {
 
   const { subscribed } = await req.json();
   const db = getDb();
-  db.prepare('UPDATE users SET subscribed = ? WHERE id = ?').run(subscribed ? 1 : 0, user.id);
+  await db.prepare('UPDATE users SET subscribed = ? WHERE id = ?').run(subscribed ? 1 : 0, user.id);
   return NextResponse.json({ ok: true });
 }
