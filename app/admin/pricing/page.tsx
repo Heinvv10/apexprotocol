@@ -142,7 +142,7 @@ export default function PricingPage() {
             </thead>
             <tbody>
               {filteredProducts.map((p: any) => {
-                const margin = p.base_price > 0 ? ((p.sell_price - p.base_price) / p.base_price * 100).toFixed(0) : '-';
+                const margin = Number(p.base_price) > 0 ? ((Number(p.sell_price) - Number(p.base_price)) / p.base_price * 100).toFixed(0) : '-';
                 const hasOverride = p.price_override !== null || p.markup_override !== null;
                 return (
                   <tr key={p.id} className={`border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/30 ${hasOverride ? 'bg-brand-50/50 dark:bg-brand-950/10' : ''}`}>
