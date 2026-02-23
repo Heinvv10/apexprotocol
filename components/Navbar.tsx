@@ -64,7 +64,7 @@ export default function Navbar() {
                 <>
                   <Link href="/catalog" className={`${navLinkClass('/catalog')} ${activeIndicator('/catalog')}`}>Products</Link>
                   <Link href="/orders" className={`${navLinkClass('/orders')} ${activeIndicator('/orders')}`}>Orders</Link>
-                  {user.is_admin && (
+                  {user.is_admin === 1 && (
                     <Link href="/admin" className={`${navLinkClass('/admin')}`}>Admin</Link>
                   )}
                 </>
@@ -129,7 +129,7 @@ export default function Navbar() {
                     <Link href="/catalog" className="text-sm font-medium text-gray-400 hover:text-[#00d4ff] tracking-wider uppercase py-1" onClick={() => setMenuOpen(false)}>Products</Link>
                     <Link href="/orders" className="text-sm font-medium text-gray-400 hover:text-[#00d4ff] tracking-wider uppercase py-1" onClick={() => setMenuOpen(false)}>Orders</Link>
                     <Link href="/terms" className="text-sm font-medium text-gray-400 hover:text-[#00d4ff] tracking-wider uppercase py-1" onClick={() => setMenuOpen(false)}>T&Cs</Link>
-                    {user.is_admin && <Link href="/admin" className="text-sm font-medium text-gray-400 hover:text-[#00d4ff] tracking-wider uppercase py-1" onClick={() => setMenuOpen(false)}>Admin</Link>}
+                    {user.is_admin === 1 && <Link href="/admin" className="text-sm font-medium text-gray-400 hover:text-[#00d4ff] tracking-wider uppercase py-1" onClick={() => setMenuOpen(false)}>Admin</Link>}
                     <button onClick={handleLogout} className="text-left text-sm font-medium text-red-400/70 hover:text-red-400 tracking-wider uppercase py-1">Sign Out</button>
                   </>
                 ) : (
