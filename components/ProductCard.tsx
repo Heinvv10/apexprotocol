@@ -27,7 +27,7 @@ export default function ProductCard({ product }: { product: Product }) {
       id: product.id,
       slug: product.slug,
       name: product.name,
-      price: product.sell_price,
+      price: Number(product.sell_price),
       image: product.image,
     }, qty);
     setAdded(true);
@@ -66,7 +66,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {/* Price */}
         <div className="text-2xl font-bold text-[#00d4ff] font-display mb-4">
-          R{product.sell_price.toFixed(0)}
+          R{Number(product.sell_price).toFixed(0)}
         </div>
 
         {/* Action */}

@@ -44,7 +44,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
           <p className="text-gray-400 text-sm mb-8 leading-relaxed whitespace-pre-line">{product.description}</p>
 
           <div className="text-4xl font-bold text-[#00d4ff] font-display mb-8">
-            R{product.sell_price.toFixed(0)}
+            R{Number(product.sell_price).toFixed(0)}
           </div>
 
           {product.sold_out ? (

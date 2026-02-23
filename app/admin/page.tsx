@@ -181,8 +181,8 @@ export default function AdminPage() {
                       {o.special_instructions && <p className="text-sm italic text-gray-500 mt-1">📝 {o.special_instructions}</p>}
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-[#00d4ff] font-display">R{o.total?.toFixed(0)}</p>
-                      <p className="text-xs text-gray-500">Shipping: R{o.shipping_cost?.toFixed(0)}</p>
+                      <p className="text-2xl font-bold text-[#00d4ff] font-display">R{Number(o.total).toFixed(0)}</p>
+                      <p className="text-xs text-gray-500">Shipping: R{Number(o.shipping_cost).toFixed(0)}</p>
                       <select value={o.status} onChange={e => updateStatus(o.id, e.target.value)} className="admin-input mt-2 !w-auto !py-1.5">
                         {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
@@ -240,8 +240,8 @@ export default function AdminPage() {
                           <tr key={p.id} className="border-b border-[#1f2937]/50 hover:bg-[#1f2937]/30">
                             <td className="py-2.5 pr-4 font-medium text-white">{p.name} {p.sold_out ? '🔴' : ''}</td>
                             <td className="py-2.5 pr-4 text-gray-500 text-xs">{p.category}</td>
-                            <td className="py-2.5 pr-4 text-right font-mono text-gray-400">R{p.base_price?.toFixed(0)}</td>
-                            <td className="py-2.5 pr-4 text-right font-mono font-bold text-[#00d4ff]">R{p.sell_price?.toFixed(0)}</td>
+                            <td className="py-2.5 pr-4 text-right font-mono text-gray-400">R{Number(p.base_price).toFixed(0)}</td>
+                            <td className="py-2.5 pr-4 text-right font-mono font-bold text-[#00d4ff]">R{Number(p.sell_price).toFixed(0)}</td>
                             <td className="py-2.5 pr-4 text-right font-mono text-green-400">{margin}%</td>
                             <td className="py-2.5 pr-4 text-center">
                               <input type="number" placeholder="—" defaultValue={p.price_override || ''} onBlur={e => updateProductPrice(p.id, 'priceOverride', e.target.value)} className="admin-input !w-24 text-center" />
@@ -277,7 +277,7 @@ export default function AdminPage() {
                             <span className="font-mono font-bold text-lg text-white">{o.ref}</span>
                             <span className={`ml-2 px-2.5 py-0.5 rounded-full text-xs ${STATUS_COLORS[o.status]}`}>{o.status}</span>
                           </div>
-                          <span className="text-lg font-bold text-[#00d4ff] font-display">R{o.total?.toFixed(0)}</span>
+                          <span className="text-lg font-bold text-[#00d4ff] font-display">R{Number(o.total).toFixed(0)}</span>
                         </div>
                         <div className="text-sm mb-3 text-gray-400">
                           <p><strong className="text-gray-300">Ship to:</strong> {o.address_street}, {o.address_city}, {o.address_province} {o.address_postal_code}</p>
@@ -288,7 +288,7 @@ export default function AdminPage() {
                           {o.items?.map((item: any, i: number) => (
                             <div key={i} className="flex justify-between text-sm py-1 text-gray-400">
                               <span>{item.product_name} × {item.quantity}</span>
-                              <span className="font-mono">R{(item.base_price * item.quantity).toFixed(0)}</span>
+                              <span className="font-mono">R{(Number(item.base_price) * item.quantity).toFixed(0)}</span>
                             </div>
                           ))}
                           <div className="border-t border-[#1f2937] mt-2 pt-2 flex justify-between font-bold text-white">
@@ -344,7 +344,7 @@ export default function AdminPage() {
                       <tr key={p.id} className="border-b border-[#1f2937]/50 hover:bg-[#1f2937]/30">
                         <td className="py-2.5 pr-4 font-medium text-white">{p.name}</td>
                         <td className="py-2.5 pr-4 text-gray-500 text-xs">{p.category}</td>
-                        <td className="py-2.5 pr-4 text-right font-mono text-[#00d4ff]">R{p.sell_price?.toFixed(0)}</td>
+                        <td className="py-2.5 pr-4 text-right font-mono text-[#00d4ff]">R{Number(p.sell_price).toFixed(0)}</td>
                         <td className="py-2.5 text-center">
                           <button onClick={() => toggleStock(p.id, p.sold_out)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                             p.sold_out ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' : 'bg-green-900/30 text-green-400 hover:bg-green-900/50'

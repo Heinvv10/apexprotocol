@@ -137,7 +137,7 @@ export default function AdminOrdersPage() {
             </div>
 
             <div className="flex flex-col items-end gap-2 flex-shrink-0">
-              <p className="font-bold text-lg">R{o.total?.toFixed(0)}</p>
+              <p className="font-bold text-lg">R{Number(o.total).toFixed(0)}</p>
 
               {/* Status selector */}
               <select

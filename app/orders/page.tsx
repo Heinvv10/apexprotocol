@@ -73,11 +73,11 @@ export default function OrdersPage() {
               {order.items.map((item: any) => (
                 <div key={item.id} className="flex justify-between text-sm py-1">
                   <span>{item.name} × {item.quantity}</span>
-                  <span>R{(item.price * item.quantity).toFixed(0)}</span>
+                  <span>R{(Number(item.price) * item.quantity).toFixed(0)}</span>
                 </div>
               ))}
               <div className="flex justify-between font-bold mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <span>Total</span><span>R{order.total.toFixed(0)}</span>
+                <span>Total</span><span>R{Number(order.total).toFixed(0)}</span>
               </div>
             </div>
           )}
@@ -90,7 +90,7 @@ export default function OrdersPage() {
             <div key={o.id} className="card p-4 flex items-center justify-between">
               <div>
                 <p className="font-semibold">{o.ref}</p>
-                <p className="text-sm text-gray-500">{new Date(o.created_at).toLocaleDateString()} · R{o.total.toFixed(0)}</p>
+                <p className="text-sm text-gray-500">{new Date(o.created_at).toLocaleDateString()} · R{Number(o.total).toFixed(0)}</p>
               </div>
               <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[o.status] || 'bg-gray-100'}`}>
                 {o.status}
