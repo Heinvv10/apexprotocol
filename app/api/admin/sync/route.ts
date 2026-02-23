@@ -3,11 +3,11 @@ import { getDb } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 export async function GET() {
-  const user = getSession();
+  const user = await getSession();
   if (!user?.is_admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const db = getDb();
-  const orders = db.prepare(`
+  const orders = await db.prepare(`
     SELECT o.*, 
       json_group_array(json_object(
         'id', oi.id, 'product_id', oi.product_id, 'quantity', oi.quantity, 'price', oi.price,
@@ -34,8 +34,8 @@ export async function GET() {
 
 async function loginToSupplier(): Promise<string | null> {
   const db = getDb();
-  const email = (db.prepare("SELECT value FROM settings WHERE key = 'supplier_email'").get() as any)?.value;
-  const password = (db.prepare("SELECT value FROM settings WHERE key = 'supplier_password'").get() as any)?.value;
+  const email = (await db.prepare("SELECT value FROM settings WHERE key = 'supplier_email'").get() as any)?.value;
+  const password = (await db.prepare("SELECT value FROM settings WHERE key = 'supplier_password'").get() as any)?.value;
 
   if (!email || !password) return null;
 
@@ -53,17 +53,17 @@ async function loginToSupplier(): Promise<string | null> {
 }
 
 export async function POST(req: NextRequest) {
-  const user = getSession();
+  const user = await getSession();
   if (!user?.is_admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { orderId, action } = await req.json();
   const db = getDb();
 
   if (action === 'sync_to_supplier') {
-    const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId) as any;
+    const order = await db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId) as any;
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
 
-    const items = db.prepare(`
+    const items = await db.prepare(`
       SELECT oi.*, p.supplier_product_id, p.name, p.base_price
       FROM order_items oi
       JOIN products p ON p.id = oi.product_id
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     }
 
     const allOk = results.every(r => r.ok);
-    db.prepare('UPDATE orders SET supplier_sync_status = ? WHERE id = ?').run(allOk ? 'synced' : 'partial', orderId);
+    await db.prepare('UPDATE orders SET supplier_sync_status = ? WHERE id = ?').run(allOk ? 'synced' : 'partial', orderId);
 
     return NextResponse.json({
       ok: allOk,
@@ -123,17 +123,17 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'mark_synced') {
-    db.prepare('UPDATE orders SET supplier_sync_status = ? WHERE id = ?').run('synced', orderId);
+    await db.prepare('UPDATE orders SET supplier_sync_status = ? WHERE id = ?').run('synced', orderId);
     return NextResponse.json({ ok: true });
   }
 
   if (action === 'mark_failed') {
-    db.prepare('UPDATE orders SET supplier_sync_status = ? WHERE id = ?').run('failed', orderId);
+    await db.prepare('UPDATE orders SET supplier_sync_status = ? WHERE id = ?').run('failed', orderId);
     return NextResponse.json({ ok: true });
   }
 
   if (action === 'reset') {
-    db.prepare('UPDATE orders SET supplier_sync_status = ? WHERE id = ?').run('pending', orderId);
+    await db.prepare('UPDATE orders SET supplier_sync_status = ? WHERE id = ?').run('pending', orderId);
     return NextResponse.json({ ok: true });
   }
 

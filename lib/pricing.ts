@@ -1,14 +1,14 @@
 import { getDb } from './db';
 
-export function getGlobalMarkup(): number {
+export async function getGlobalMarkup(): Promise<number> {
   const db = getDb();
-  const row = db.prepare("SELECT value FROM settings WHERE key = 'global_markup_percentage'").get() as any;
+  const row = await db.prepare("SELECT value FROM settings WHERE key = 'global_markup_percentage'").get() as any;
   return row ? parseFloat(row.value) : 25;
 }
 
-export function setGlobalMarkup(percentage: number): void {
+export async function setGlobalMarkup(percentage: number): Promise<void> {
   const db = getDb();
-  db.prepare("INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES ('global_markup_percentage', ?, datetime('now'))").run(String(percentage));
+  await db.prepare("INSERT INTO settings (key, value, updated_at) VALUES ('global_markup_percentage', ?, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()").run(String(percentage));
 }
 
 /**
@@ -23,16 +23,12 @@ export function calcSellPrice(basePrice: number, priceOverride: number | null, m
 
 /**
  * Recalculate ALL product sell_prices based on current pricing rules.
- * Called when global markup changes or on demand.
  */
-export function recalcAllPrices(): { updated: number } {
+export async function recalcAllPrices(): Promise<{ updated: number }> {
   const db = getDb();
-  const globalMarkup = getGlobalMarkup();
+  const globalMarkup = await getGlobalMarkup();
 
-  // Products with price_override keep that exact price
-  // Products with markup_override use that markup
-  // All others use global markup
-  const stmt = db.prepare(`
+  const result = await db.prepare(`
     UPDATE products SET sell_price = 
       CASE
         WHEN price_override IS NOT NULL AND price_override > 0 THEN price_override
@@ -40,47 +36,45 @@ export function recalcAllPrices(): { updated: number } {
         ELSE ROUND(base_price * (1 + ? / 100.0))
       END
     WHERE base_price IS NOT NULL AND base_price > 0
-  `);
-  const result = stmt.run(globalMarkup);
+  `).run(globalMarkup);
   return { updated: result.changes };
 }
 
 /**
  * Set a price override for a specific product.
  */
-export function setProductPriceOverride(productId: number, priceOverride: number | null): void {
+export async function setProductPriceOverride(productId: number, priceOverride: number | null): Promise<void> {
   const db = getDb();
-  db.prepare('UPDATE products SET price_override = ? WHERE id = ?').run(priceOverride, productId);
-  // Recalc just this product
-  const globalMarkup = getGlobalMarkup();
-  const p = db.prepare('SELECT base_price, markup_override FROM products WHERE id = ?').get(productId) as any;
+  await db.prepare('UPDATE products SET price_override = ? WHERE id = ?').run(priceOverride, productId);
+  const globalMarkup = await getGlobalMarkup();
+  const p = await db.prepare('SELECT base_price, markup_override FROM products WHERE id = ?').get(productId) as any;
   if (p) {
     const newPrice = calcSellPrice(p.base_price, priceOverride, p.markup_override, globalMarkup);
-    db.prepare('UPDATE products SET sell_price = ? WHERE id = ?').run(newPrice, productId);
+    await db.prepare('UPDATE products SET sell_price = ? WHERE id = ?').run(newPrice, productId);
   }
 }
 
 /**
  * Set a markup override for a specific product.
  */
-export function setProductMarkupOverride(productId: number, markupOverride: number | null): void {
+export async function setProductMarkupOverride(productId: number, markupOverride: number | null): Promise<void> {
   const db = getDb();
-  db.prepare('UPDATE products SET markup_override = ? WHERE id = ?').run(markupOverride, productId);
-  const globalMarkup = getGlobalMarkup();
-  const p = db.prepare('SELECT base_price, price_override FROM products WHERE id = ?').get(productId) as any;
+  await db.prepare('UPDATE products SET markup_override = ? WHERE id = ?').run(markupOverride, productId);
+  const globalMarkup = await getGlobalMarkup();
+  const p = await db.prepare('SELECT base_price, price_override FROM products WHERE id = ?').get(productId) as any;
   if (p) {
     const newPrice = calcSellPrice(p.base_price, p.price_override, markupOverride, globalMarkup);
-    db.prepare('UPDATE products SET sell_price = ? WHERE id = ?').run(newPrice, productId);
+    await db.prepare('UPDATE products SET sell_price = ? WHERE id = ?').run(newPrice, productId);
   }
 }
 
-export function getSetting(key: string): string {
+export async function getSetting(key: string): Promise<string> {
   const db = getDb();
-  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key) as any;
+  const row = await db.prepare('SELECT value FROM settings WHERE key = ?').get(key) as any;
   return row?.value ?? '';
 }
 
-export function setSetting(key: string, value: string): void {
+export async function setSetting(key: string, value: string): Promise<void> {
   const db = getDb();
-  db.prepare("INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))").run(key, value);
+  await db.prepare("INSERT INTO settings (key, value, updated_at) VALUES (?, ?, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()").run(key, value);
 }

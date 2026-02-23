@@ -8,12 +8,12 @@ import ProductTabs from './ProductTabs';
 
 export const dynamic = 'force-dynamic';
 
-export default function ProductPage({ params }: { params: { slug: string } }) {
+export default async function ProductPage({ params }: { params: { slug: string } }) {
   const db = getDb();
-  const product = db.prepare('SELECT * FROM products WHERE slug = ?').get(params.slug) as any;
+  const product = await db.prepare('SELECT * FROM products WHERE slug = ?').get(params.slug) as any;
   if (!product) notFound();
 
-  const related = db.prepare('SELECT * FROM products WHERE category = ? AND id != ? ORDER BY RANDOM() LIMIT 4')
+  const related = await db.prepare('SELECT * FROM products WHERE category = ? AND id != ? ORDER BY RANDOM() LIMIT 4')
     .all(product.category, product.id) as any[];
 
   return (

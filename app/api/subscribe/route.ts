@@ -3,11 +3,11 @@ import { getDb } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
-  const user = getSession();
+  const user = await getSession();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { subscribed } = await req.json();
   const db = getDb();
-  db.prepare('UPDATE users SET subscribed = ? WHERE id = ?').run(subscribed ? 1 : 0, user.id);
+  await db.prepare('UPDATE users SET subscribed = ? WHERE id = ?').run(subscribed ? 1 : 0, user.id);
   return NextResponse.json({ ok: true });
 }

@@ -8,12 +8,12 @@ export async function GET(req: NextRequest) {
   const email = searchParams.get('email');
 
   const db = getDb();
-  const user = getSession();
+  const user = await getSession();
 
   if (ref) {
-    const order = db.prepare('SELECT * FROM orders WHERE ref = ?').get(ref) as any;
+    const order = await db.prepare('SELECT * FROM orders WHERE ref = ?').get(ref) as any;
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    const items = db.prepare(`
+    const items = await db.prepare(`
       SELECT oi.*, p.name, p.image, p.slug FROM order_items oi
       JOIN products p ON p.id = oi.product_id WHERE oi.order_id = ?
     `).all(order.id);
@@ -21,12 +21,12 @@ export async function GET(req: NextRequest) {
   }
 
   if (user) {
-    const orders = db.prepare('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC').all(user.id);
+    const orders = await db.prepare('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC').all(user.id);
     return NextResponse.json({ orders });
   }
 
   if (email) {
-    const orders = db.prepare('SELECT * FROM orders WHERE guest_email = ? ORDER BY created_at DESC').all(email);
+    const orders = await db.prepare('SELECT * FROM orders WHERE guest_email = ? ORDER BY created_at DESC').all(email);
     return NextResponse.json({ orders });
   }
 

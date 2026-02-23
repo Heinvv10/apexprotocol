@@ -15,27 +15,57 @@ export function getDb() {
     });
   }
 
+  // Convert SQLite ? placeholders to PostgreSQL $1, $2, ...
+  const toPostgres = (sql: string) => {
+    let i = 0;
+    return sql.replace(/\?/g, () => `$${++i}`);
+  };
+
   return {
-    // Synchronous-style API for compatibility with existing code
-    prepare: (sql: string) => ({
-      get: async (...params: any[]) => {
-        const result = await pool!.query(sql, params);
-        return result.rows[0] || null;
-      },
-      all: async (...params: any[]) => {
-        const result = await pool!.query(sql, params);
-        return result.rows;
-      },
-      run: async (...params: any[]) => {
-        const result = await pool!.query(sql, params);
-        return {
-          changes: result.rowCount || 0,
-          lastInsertRowid: result.rows[0]?.id || null,
-        };
-      },
-    }),
+    prepare: (sql: string) => {
+      const pgSql = toPostgres(sql);
+      return {
+        get: async (...params: any[]) => {
+          const result = await pool!.query(pgSql, params.flat());
+          return result.rows[0] || null;
+        },
+        all: async (...params: any[]) => {
+          const result = await pool!.query(pgSql, params.flat());
+          return result.rows;
+        },
+        run: async (...params: any[]) => {
+          // Add RETURNING id for INSERT statements to capture lastInsertRowid
+          const returningSql = /^\s*INSERT/i.test(pgSql) && !/RETURNING/i.test(pgSql)
+            ? pgSql + ' RETURNING id'
+            : pgSql;
+          const result = await pool!.query(returningSql, params.flat());
+          return {
+            changes: result.rowCount || 0,
+            lastInsertRowid: result.rows[0]?.id || null,
+          };
+        },
+      };
+    },
     exec: async (sql: string) => {
       await pool!.query(sql);
+    },
+    // PostgreSQL transaction support
+    transaction: (fn: () => void) => {
+      // Return a wrapper that executes the function (legacy sync API — use transactionAsync for new code)
+      return async () => { await fn(); };
+    },
+    transactionAsync: async (fn: () => Promise<void>) => {
+      const client = await pool!.connect();
+      try {
+        await client.query('BEGIN');
+        await fn();
+        await client.query('COMMIT');
+      } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+      } finally {
+        client.release();
+      }
     },
   };
 }
