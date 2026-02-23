@@ -1,0 +1,310 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: #0a0a0a;
+    color: #f0f0f0;
+    font-family: var(--font-inter), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  ::selection {
+    background-color: rgba(0,212,255,0.2);
+    color: #00d4ff;
+  }
+  * {
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+    transition-duration: 0s;
+    transition-timing-function: ease;
+  }
+  a, button, input, select, textarea, .card, .btn-primary, .btn-secondary {
+    transition-duration: 0.2s;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    background-color: #00d4ff;
+    color: #0a0a0a;
+    font-weight: 700;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.875rem;
+    display: inline-block;
+    text-align: center;
+  }
+  .btn-primary:hover {
+    background-color: #00a8cc;
+    transform: scale(1.02);
+    box-shadow: 0 0 20px rgba(0,212,255,0.3);
+  }
+  .btn-primary:active { transform: scale(0.95); }
+  .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-primary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0,212,255,0.4);
+  }
+  
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid #1e1e2e;
+    color: #f0f0f0;
+    font-weight: 600;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.875rem;
+    text-align: center;
+  }
+  .btn-secondary:hover {
+    border-color: rgba(0,212,255,0.5);
+    color: #00d4ff;
+  }
+  .btn-secondary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0,212,255,0.4);
+  }
+  
+  .card {
+    background-color: #111827;
+    border-radius: 0.5rem;
+    border: 1px solid #1f2937;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  .card-hover:hover {
+    border-color: rgba(0,212,255,0.3);
+    box-shadow: 0 0 30px rgba(0,212,255,0.08);
+    transform: translateY(-4px);
+  }
+  
+  .input-field {
+    @apply w-full px-4 py-3 rounded-lg text-sm;
+    background-color: #111827;
+    border: 1px solid #1f2937;
+    color: #f0f0f0;
+    transition: all 0.2s ease;
+    outline: none;
+  }
+  .input-field::placeholder { color: rgba(136,146,176,0.5); }
+  .input-field:focus {
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 2px rgba(0,212,255,0.2);
+  }
+  
+  .input-floating {
+    @apply w-full px-4 pt-6 pb-2 rounded-lg text-sm;
+    background-color: #111827;
+    border: 1px solid #1f2937;
+    color: #f0f0f0;
+    transition: all 0.2s ease;
+    outline: none;
+  }
+  .input-floating:focus {
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 2px rgba(0,212,255,0.2);
+  }
+  
+  .input-floating-label {
+    @apply absolute left-4 top-1/2 -translate-y-1/2 text-sm transition-all duration-200 pointer-events-none;
+    color: rgba(136,146,176,0.6);
+  }
+  .peer:focus ~ .input-floating-label {
+    top: 0.75rem;
+    font-size: 0.75rem;
+    color: #00d4ff;
+    transform: translateY(0);
+  }
+  .peer:not(:placeholder-shown) ~ .input-floating-label {
+    top: 0.75rem;
+    font-size: 0.75rem;
+    transform: translateY(0);
+  }
+  
+  .glass {
+    background-color: rgba(17,24,39,0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+}
+
+/* Focus visible for all interactive elements */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0,212,255,0.4);
+  border-radius: 0.25rem;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0a0a0a; }
+::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #374151; }
+
+/* Age gate backdrop */
+.age-gate-backdrop {
+  backdrop-filter: blur(20px);
+}
+
+/* Sold out overlay */
+.sold-out-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sold-out-badge {
+  background: #ef4444;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 8px 24px;
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 12px rgba(239,68,68,0.5);
+}
+
+/* Fade in on scroll - staggered */
+.fade-in-card {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: cardFadeIn 0.5s ease-out forwards;
+}
+
+@keyframes cardFadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Molecular pattern */
+.molecular-bg {
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(0,212,255,0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0,212,255,0.02) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(0,212,255,0.015) 0%, transparent 50%);
+}
+
+/* Geometric grid */
+.geo-grid {
+  background-image: 
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* Animated gradient for hero */
+.hero-gradient {
+  background: linear-gradient(135deg, #0a0a0a 0%, #0a0f1e 25%, #0a0a0a 50%, #0f0a1e 75%, #0a0a0a 100%);
+  background-size: 400% 400%;
+  animation: gradient-shift 12s ease infinite;
+}
+
+/* Particle dots background */
+.particle-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, rgba(0,212,255,0.15), transparent),
+    radial-gradient(1px 1px at 30% 70%, rgba(0,212,255,0.1), transparent),
+    radial-gradient(1px 1px at 50% 40%, rgba(0,212,255,0.12), transparent),
+    radial-gradient(1px 1px at 70% 80%, rgba(0,212,255,0.08), transparent),
+    radial-gradient(1px 1px at 90% 30%, rgba(0,212,255,0.15), transparent),
+    radial-gradient(1.5px 1.5px at 15% 60%, rgba(0,212,255,0.1), transparent),
+    radial-gradient(1.5px 1.5px at 45% 10%, rgba(0,212,255,0.08), transparent),
+    radial-gradient(1.5px 1.5px at 75% 50%, rgba(0,212,255,0.12), transparent),
+    radial-gradient(1px 1px at 85% 90%, rgba(0,212,255,0.1), transparent),
+    radial-gradient(1px 1px at 25% 85%, rgba(0,212,255,0.08), transparent);
+  animation: particleFloat 20s ease-in-out infinite;
+}
+
+@keyframes particleFloat {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(5px, -10px); }
+  50% { transform: translate(-5px, 5px); }
+  75% { transform: translate(10px, -5px); }
+}
+
+/* Text glow */
+.text-glow {
+  text-shadow: 0 0 40px rgba(0,212,255,0.15), 0 0 80px rgba(0,212,255,0.05);
+}
+
+.text-glow-accent {
+  text-shadow: 0 0 30px rgba(0,212,255,0.3), 0 0 60px rgba(0,212,255,0.1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Free shipping progress bar */
+.shipping-progress-bar {
+  height: 4px;
+  background: #1f2937;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.shipping-progress-bar .fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00d4ff, #00a8cc);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+/* Scrollbar hide for category pills */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Bottom mobile nav */
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: rgba(10,10,10,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid #1f2937;
+    padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  }
+  main {
+    padding-bottom: 72px;
+  }
+}
+
+/* Admin dark theme overrides */
+.admin-input {
+  @apply w-full px-3 py-2 rounded-lg text-sm;
+  background-color: #111827;
+  border: 1px solid #1f2937;
+  color: #f0f0f0;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+.admin-input:focus {
+  border-color: #00d4ff;
+}
