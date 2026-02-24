@@ -49,6 +49,7 @@ export async function PATCH(req: NextRequest) {
     await db.prepare(`
       UPDATE orders SET
         guest_name = ?,
+        guest_email = ?,
         guest_phone = ?,
         address_line1 = ?,
         address_line2 = ?,
@@ -60,6 +61,7 @@ export async function PATCH(req: NextRequest) {
       WHERE id = ?
     `).run(
       address.name,
+      address.email || null,
       address.phone || null,
       address.street,
       address.suburb || null,
