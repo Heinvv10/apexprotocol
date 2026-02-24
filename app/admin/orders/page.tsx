@@ -27,6 +27,7 @@ export default function AdminOrdersPage() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [editOrder, setEditOrder] = useState<any>(null);
   const [editForm, setEditForm] = useState<any>({});
+  const [editItems, setEditItems] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [sendingEmail, setSendingEmail] = useState<number | null>(null);
   const [emailResult, setEmailResult] = useState<{id: number, msg: string} | null>(null);
@@ -61,7 +62,9 @@ export default function AdminOrdersPage() {
       postalCode: o.postal_code || '',
       shippingMethod: o.shipping_method || 'courier_door',
       notes: o.notes || '',
+      shippingCost: o.shipping_cost || 0,
     });
+    setEditItems(Array.isArray(o.items) ? o.items : []);
   };
 
   const saveEdit = async () => {
@@ -69,10 +72,16 @@ export default function AdminOrdersPage() {
     await fetch('/api/admin/orders', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId: editOrder.id, address: editForm }),
+      body: JSON.stringify({
+        orderId: editOrder.id,
+        address: editForm,
+        items: editItems,
+        shippingCost: Number(editForm.shippingCost || editOrder?.shipping_cost || 0),
+      }),
     });
     setSaving(false);
     setEditOrder(null);
+    setEditItems([]);
     load();
   };
 
@@ -172,6 +181,40 @@ export default function AdminOrdersPage() {
               <button onClick={() => setEditOrder(null)} className="text-gray-400 hover:text-white text-xl">✕</button>
             </div>
             <div className="p-5 space-y-4">
+              {/* Order Items */}
+              <div>
+                <p className="text-xs text-gray-400 uppercase mb-2 font-medium">Order Items</p>
+                <div className="space-y-2">
+                  {editItems.map((item, idx) => (
+                    <div key={item.item_id} className="flex items-center gap-2 bg-gray-800/50 rounded-lg p-2">
+                      <span className="flex-1 text-sm text-white truncate">{item.name}</span>
+                      <div className="flex items-center gap-1">
+                        <label className="text-xs text-gray-400">Qty</label>
+                        <input
+                          type="number" min="1" value={item.quantity}
+                          onChange={e => setEditItems(prev => prev.map((it, i) => i === idx ? {...it, quantity: Number(e.target.value)} : it))}
+                          className="w-14 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-white text-center focus:outline-none focus:border-[#00d4ff]"
+                        />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <label className="text-xs text-gray-400">R</label>
+                        <input
+                          type="number" min="0" step="0.01" value={item.price}
+                          onChange={e => setEditItems(prev => prev.map((it, i) => i === idx ? {...it, price: Number(e.target.value)} : it))}
+                          className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-white text-center focus:outline-none focus:border-[#00d4ff]"
+                        />
+                      </div>
+                      <span className="text-xs text-gray-400 w-16 text-right">= R{(item.quantity * item.price).toFixed(0)}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Live total preview */}
+                <div className="mt-2 flex justify-between text-sm font-bold text-[#00d4ff] bg-gray-800/30 rounded px-3 py-2">
+                  <span>Total (items + shipping)</span>
+                  <span>R{(editItems.reduce((s, i) => s + i.quantity * i.price, 0) + Number(editForm.shippingCost || editOrder?.shipping_cost || 0)).toFixed(0)}</span>
+                </div>
+              </div>
+
               {/* Customer */}
               <div>
                 <p className="text-xs text-gray-400 uppercase mb-2 font-medium">Customer</p>
@@ -232,6 +275,14 @@ export default function AdminOrdersPage() {
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff]">
                   {Object.entries(SHIPPING_METHODS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
+                <div className="mt-3">
+                  <label className="text-xs text-gray-400">Shipping Cost (R)</label>
+                  <input
+                    type="number" min="0" step="0.01" value={editForm.shippingCost || 0}
+                    onChange={e => upd('shippingCost', e.target.value)}
+                    className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff]"
+                  />
+                </div>
               </div>
 
               {/* Notes */}
