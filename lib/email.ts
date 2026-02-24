@@ -233,6 +233,7 @@ orders@apexprotocol.co.za
   await transporter.sendMail({
     from: '"Apex Protocol" <orders@apexprotocol.co.za>',
     to: data.customerEmail,
+    cc: 'admin@apexprotocol.co.za',
     subject: `Order Confirmation — ${data.ref}`,
     text: plainText,
     html,
