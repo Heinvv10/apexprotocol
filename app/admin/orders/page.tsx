@@ -54,6 +54,7 @@ export default function AdminOrdersPage() {
     setEditOrder(o);
     setEditForm({
       name: o.guest_name || '',
+      email: o.guest_email || '',
       phone: o.guest_phone || '',
       street: o.address_line1 || '',
       suburb: o.address_line2 || '',
@@ -229,6 +230,12 @@ export default function AdminOrdersPage() {
                     <input value={editForm.phone} onChange={e => upd('phone', e.target.value)}
                       className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff]" />
                   </div>
+                </div>
+                <div className="mt-3">
+                  <label className="text-xs text-gray-400">Email Address</label>
+                  <input type="email" value={editForm.email} onChange={e => upd('email', e.target.value)}
+                    placeholder="customer@example.com"
+                    className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff]" />
                 </div>
               </div>
 
