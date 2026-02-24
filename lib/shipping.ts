@@ -7,7 +7,7 @@ export const SHIPPING_METHODS: Record<ShippingMethod, { label: string; cost: num
   fastway: { label: 'Fastway (Main Cities)', cost: 130, description: 'Main cities only' },
 };
 
-export const FREE_SHIPPING_THRESHOLD = 4600; // R4000 * 1.15 markup
+export const FREE_SHIPPING_THRESHOLD = 5000;
 
 export function calcShipping(subtotal: number, method: ShippingMethod): number {
   if (subtotal >= FREE_SHIPPING_THRESHOLD) return 0;
