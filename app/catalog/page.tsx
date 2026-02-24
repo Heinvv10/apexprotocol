@@ -4,18 +4,6 @@ import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ProductCard from '@/components/ProductCard';
 
-const CATEGORIES = [
-  'All',
-  'Oral Anabolic Steroids',
-  'Injectable Anabolic Steroids',
-  'Peptides & Other Hormones',
-  'Anti-Estrogens & Ancillaries',
-  'Fat Loss Agents',
-  'Supplements & Vitamins',
-  'Mental Health',
-  'Research Chemicals',
-];
-
 function CatalogPageContent() {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get('category') || 'All';
@@ -23,6 +11,7 @@ function CatalogPageContent() {
 
   const [products, setProducts] = useState<any[]>([]);
   const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<{category: string, count: number}[]>([]);
   const [category, setCategory] = useState(initialCategory);
   const [search, setSearch] = useState(initialSearch);
   const [loading, setLoading] = useState(true);
@@ -40,9 +29,12 @@ function CatalogPageContent() {
     setLoading(false);
   }, [category, search]);
 
-  // Fetch all products for category counts
+  // Fetch all products and categories
   useEffect(() => {
-    fetch('/api/products').then(r => r.json()).then(d => setAllProducts(d.products || [])).catch(() => {});
+    fetch('/api/products').then(r => r.json()).then(d => {
+      setAllProducts(d.products || []);
+      setCategories(d.categories || []);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
@@ -58,11 +50,11 @@ function CatalogPageContent() {
     return () => clearTimeout(t);
   }, [searchDebounce]);
 
-  // Category counts
-  const categoryCounts: Record<string, number> = { 'All': allProducts.length };
-  allProducts.forEach(p => {
-    categoryCounts[p.category] = (categoryCounts[p.category] || 0) + 1;
-  });
+  // Build category pill options with counts
+  const categoryPills = [
+    { category: 'All', count: allProducts.length },
+    ...categories,
+  ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-8">
@@ -108,22 +100,22 @@ function CatalogPageContent() {
 
         {/* Category pills - horizontally scrollable */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {CATEGORIES.map(cat => (
+          {categoryPills.map(cat => (
             <button
-              key={cat}
-              onClick={() => setCategory(cat)}
+              key={cat.category}
+              onClick={() => setCategory(cat.category)}
               className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap tracking-wider uppercase flex items-center gap-2 shrink-0 ${
-                category === cat
+                category === cat.category
                   ? 'bg-[#00d4ff] text-[#0a0a0a] shadow-[0_0_15px_rgba(0,212,255,0.3)]'
                   : 'bg-[#111827] border border-[#1f2937] text-gray-400 hover:border-[#00d4ff]/30 hover:text-white'
               }`}
             >
-              {cat}
-              {categoryCounts[cat] ? (
+              {cat.category}
+              {cat.count ? (
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                  category === cat ? 'bg-[#0a0a0a]/20 text-[#0a0a0a]' : 'bg-[#1f2937] text-gray-500'
+                  category === cat.category ? 'bg-[#0a0a0a]/20 text-[#0a0a0a]' : 'bg-[#1f2937] text-gray-500'
                 }`}>
-                  {categoryCounts[cat]}
+                  {cat.count}
                 </span>
               ) : null}
             </button>
