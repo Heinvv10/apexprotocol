@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useCart } from './CartProvider';
+import AdminNav from './AdminNav';
 
 export default function Navbar() {
   const { totalItems } = useCart();
@@ -12,7 +13,6 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
   const isLanding = pathname === '/';
-  const isAdmin = pathname.startsWith('/admin');
 
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.json()).then(d => setUser(d.user)).catch(() => {});
@@ -30,7 +30,10 @@ export default function Navbar() {
     window.location.href = '/';
   };
 
-  if (isAdmin) return null;
+  // If user is admin, show admin navbar instead
+  if (user?.is_admin) {
+    return <AdminNav />;
+  }
 
   const navLinkClass = (path: string) =>
     `text-xs font-medium tracking-[0.15em] uppercase transition-all relative py-1 ${
@@ -64,9 +67,6 @@ export default function Navbar() {
                 <>
                   <Link href="/catalog" className={`${navLinkClass('/catalog')} ${activeIndicator('/catalog')}`}>Products</Link>
                   <Link href="/orders" className={`${navLinkClass('/orders')} ${activeIndicator('/orders')}`}>Orders</Link>
-                  {user.is_admin === 1 && (
-                    <Link href="/admin" className={`${navLinkClass('/admin')}`}>Admin</Link>
-                  )}
                 </>
               )}
               {user ? (
@@ -129,7 +129,6 @@ export default function Navbar() {
                     <Link href="/catalog" className="text-sm font-medium text-gray-400 hover:text-[#00d4ff] tracking-wider uppercase py-1" onClick={() => setMenuOpen(false)}>Products</Link>
                     <Link href="/orders" className="text-sm font-medium text-gray-400 hover:text-[#00d4ff] tracking-wider uppercase py-1" onClick={() => setMenuOpen(false)}>Orders</Link>
                     <Link href="/terms" className="text-sm font-medium text-gray-400 hover:text-[#00d4ff] tracking-wider uppercase py-1" onClick={() => setMenuOpen(false)}>T&Cs</Link>
-                    {user.is_admin === 1 && <Link href="/admin" className="text-sm font-medium text-gray-400 hover:text-[#00d4ff] tracking-wider uppercase py-1" onClick={() => setMenuOpen(false)}>Admin</Link>}
                     <button onClick={handleLogout} className="text-left text-sm font-medium text-red-400/70 hover:text-red-400 tracking-wider uppercase py-1">Sign Out</button>
                   </>
                 ) : (
