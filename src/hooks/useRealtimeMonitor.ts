@@ -67,8 +67,9 @@ export function useRealtimeMonitor(
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttempts = useRef(0);
-  const maxReconnectAttempts = 5;
+  // Exponential backoff config: 1s -> 2s -> 4s -> 8s -> 16s -> 30s (max)
   const baseReconnectDelay = 1000;
+  const maxReconnectDelay = 30000; // Max 30 seconds
 
   // Clear mentions
   const clearMentions = useCallback(() => {
@@ -156,19 +157,16 @@ export function useRealtimeMonitor(
         setIsConnected(false);
         onDisconnect?.();
 
-        // Attempt reconnect with exponential backoff
-        if (reconnectAttempts.current < maxReconnectAttempts) {
-          const delay = baseReconnectDelay * Math.pow(2, reconnectAttempts.current);
-          reconnectAttempts.current++;
+        // Attempt reconnect with exponential backoff, capped at maxReconnectDelay (30s)
+        const delay = Math.min(
+          baseReconnectDelay * Math.pow(2, reconnectAttempts.current),
+          maxReconnectDelay
+        );
+        reconnectAttempts.current++;
 
-          reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
-          }, delay);
-        } else {
-          const reconnectError = new Error("Max reconnection attempts reached");
-          setError(reconnectError);
-          onError?.(reconnectError);
-        }
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connect();
+        }, delay);
       };
     } catch (connectError) {
       const err = connectError instanceof Error ? connectError : new Error(String(connectError));

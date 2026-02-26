@@ -55,7 +55,7 @@ export function LiveIndicator({
         "inline-flex items-center rounded-full transition-all duration-300",
         sizes.container,
         isConnected
-          ? "bg-emerald-500/10 border border-emerald-500/30"
+          ? "bg-[#00E5CC]/10 border border-[#00E5CC]/30"
           : "bg-slate-500/10 border border-slate-500/30",
         className
       )}
@@ -65,34 +65,34 @@ export function LiveIndicator({
     >
       {/* Pulsing dot container */}
       <div className="relative flex items-center justify-center">
-        {/* Outer pulse ring (only when connected) */}
+        {/* Outer pulse ring (only when connected) - apex-cyan #00E5CC */}
         {isConnected && (
           <span
             className={cn(
-              "absolute rounded-full bg-emerald-500/30 animate-ping",
+              "absolute rounded-full bg-[#00E5CC]/30 animate-ping",
               sizes.ring
             )}
             style={{ animationDuration: "1.5s" }}
           />
         )}
 
-        {/* Inner dot */}
+        {/* Inner dot - apex-cyan #00E5CC when connected */}
         <span
           className={cn(
             "relative rounded-full transition-colors duration-300",
             sizes.dot,
-            isConnected ? "bg-emerald-500" : "bg-slate-500"
+            isConnected ? "bg-[#00E5CC]" : "bg-slate-500"
           )}
         />
       </div>
 
-      {/* Label */}
+      {/* Label - apex-cyan #00E5CC when connected */}
       {showLabel && (
         <span
           className={cn(
             "font-semibold uppercase tracking-wider transition-colors duration-300",
             sizes.text,
-            isConnected ? "text-emerald-400" : "text-slate-400"
+            isConnected ? "text-[#00E5CC]" : "text-slate-400"
           )}
         >
           {isConnected ? "LIVE" : "OFFLINE"}
@@ -118,16 +118,17 @@ export function LiveDot({
       role="status"
       aria-label={isConnected ? "Connected" : "Disconnected"}
     >
+      {/* Apex-cyan #00E5CC for connected state */}
       {isConnected && (
         <span
-          className="absolute w-full h-full rounded-full bg-emerald-500/40 animate-ping"
+          className="absolute w-full h-full rounded-full bg-[#00E5CC]/40 animate-ping"
           style={{ animationDuration: "1.5s" }}
         />
       )}
       <span
         className={cn(
           "relative w-2 h-2 rounded-full transition-colors duration-300",
-          isConnected ? "bg-emerald-500" : "bg-slate-500"
+          isConnected ? "bg-[#00E5CC]" : "bg-slate-500"
         )}
       />
     </span>
