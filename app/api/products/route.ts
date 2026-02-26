@@ -1,38 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { query as pgQuery } from '@/lib/db-pg';
+
+const CATEGORY_ORDER = [
+  'Oral Anabolic Steroids',
+  'Injectable Anabolic Steroids',
+  'Research Chemicals',
+  'Peptides & Other Hormones',
+  'Fat Loss Agents',
+  'Anti-Estrogens & Ancillaries',
+  'Mental Health',
+  'Supplements & Vitamins',
+];
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const category = searchParams.get('category');
   const search = searchParams.get('search');
-  const meta = searchParams.get('meta');
 
-  const db = getDb();
-  let query = 'SELECT * FROM products WHERE 1=1';
+  let sql = 'SELECT * FROM products WHERE 1=1';
   const params: any[] = [];
+  let idx = 1;
 
   if (category) {
-    query += ' AND category = ?';
+    sql += ` AND category = $${idx++}`;
     params.push(category);
   }
   if (search) {
-    query += ' AND (name ILIKE ? OR description ILIKE ? OR category ILIKE ?)';
+    sql += ` AND (name ILIKE $${idx} OR description ILIKE $${idx + 1} OR category ILIKE $${idx + 2})`;
     const s = `%${search}%`;
     params.push(s, s, s);
+    idx += 3;
   }
 
-  query += ' ORDER BY category, name';
-  const products = await db.prepare(query).all(...params);
+  sql += ' ORDER BY name';
+  const products = await pgQuery(sql, params);
 
-  // Fetch distinct categories with counts
-  const categoriesResult = await db.prepare(
-    'SELECT category, COUNT(*) as count FROM products GROUP BY category ORDER BY category'
-  ).all();
-  
-  const categories = categoriesResult.map((row: any) => ({
-    category: row.category,
-    count: parseInt(row.count),
-  }));
+  // Categories in Muscles SA order with counts
+  const catRows = await pgQuery(
+    'SELECT category, COUNT(*) as count FROM products GROUP BY category'
+  );
+  const catMap = Object.fromEntries(catRows.map((r: any) => [r.category, parseInt(r.count)]));
+  const categories = CATEGORY_ORDER
+    .filter(c => catMap[c])
+    .map(c => ({ category: c, count: catMap[c] }));
 
   return NextResponse.json({ products, categories });
 }
