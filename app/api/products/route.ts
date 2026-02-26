@@ -33,12 +33,12 @@ export async function GET(req: NextRequest) {
   }
 
   sql += ' ORDER BY name';
-  const products = await pgQuery(sql, params);
+  const products = (await pgQuery(sql, params)).rows;
 
   // Categories in Muscles SA order with counts
-  const catRows = await pgQuery(
+  const catRows = (await pgQuery(
     'SELECT category, COUNT(*) as count FROM products GROUP BY category'
-  );
+  )).rows;
   const catMap = Object.fromEntries(catRows.map((r: any) => [r.category, parseInt(r.count)]));
   const categories = CATEGORY_ORDER
     .filter(c => catMap[c])
