@@ -11,6 +11,8 @@ import { eq } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
 import { onMentionCreated } from "../../notifications/triggers";
 import { getOrganizationMembers } from "../../auth";
+import { getRedisClient } from "../../redis";
+import { logger } from "../../logger";
 
 // Worker configuration
 const WORKER_CONFIG = {
@@ -125,6 +127,41 @@ export async function processMonitorJob(job: Job): Promise<MonitorJobResult> {
               metadata: mention.metadata as Record<string, unknown>,
             }).returning();
             result.mentionsFound++;
+
+            // Publish to Redis stream for real-time updates
+            if (orgId) {
+              try {
+                const redis = getRedisClient();
+                const streamKey = `mention_stream:${orgId}`;
+                const streamMention = {
+                  id: newMention.id,
+                  brandId: newMention.brandId,
+                  platform: newMention.platform,
+                  query: newMention.query,
+                  response: newMention.response,
+                  sentiment: newMention.sentiment,
+                  position: newMention.position,
+                  citationUrl: newMention.citationUrl,
+                  createdAt: newMention.createdAt.toISOString(),
+                };
+                // Push to Redis list for SSE consumers
+                await redis.rpush(streamKey, JSON.stringify(streamMention));
+                // Set TTL of 1 hour on the stream key to auto-cleanup old messages
+                await redis.expire(streamKey, 3600);
+                logger.debug("[MonitorWorker] Published mention to stream", {
+                  mentionId: newMention.id,
+                  orgId,
+                  platform
+                });
+              } catch (streamError) {
+                // Log but don't fail the job if streaming fails
+                logger.error("[MonitorWorker] Failed to publish to stream", {
+                  error: streamError,
+                  mentionId: newMention.id,
+                  orgId
+                });
+              }
+            }
 
             // Trigger notifications for all organization members
             if (orgId && orgMembers.length > 0) {

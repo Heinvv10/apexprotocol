@@ -4,9 +4,36 @@ import * as React from "react";
 import Link from "next/link";
 import { Radar, ArrowRight, Bot, Sparkles, AlertCircle, Loader2, RefreshCw, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FilterSidebar, SmartTable, QueryRow } from "@/components/monitor";
+import { FilterSidebar, SmartTable, QueryRow, LiveIndicator } from "@/components/monitor";
 import { useSelectedBrand } from "@/stores";
 import { useMentionsByBrand, Mention } from "@/hooks/useMonitor";
+import { useRealtimeMonitor, StreamMention } from "@/hooks/useRealtimeMonitor";
+
+// Transform stream mention to SmartTable QueryRow format
+function streamMentionToQueryRow(mention: StreamMention): QueryRow {
+  const platformMap: Record<string, QueryRow["platform"]> = {
+    chatgpt: "chatgpt",
+    claude: "claude",
+    gemini: "gemini",
+    perplexity: "perplexity",
+    grok: "grok",
+    deepseek: "grok",
+    copilot: "chatgpt",
+  };
+
+  return {
+    id: mention.id,
+    query: mention.query,
+    platform: platformMap[mention.platform] || "chatgpt",
+    sentiment: mention.sentiment,
+    citationStatus: mention.citationUrl ? "cited" : "mentioned",
+    timestamp: mention.createdAt,
+    response: mention.response,
+    url: mention.citationUrl,
+    confidence: undefined,
+    competitors: [],
+  };
+}
 
 // Transform API mention to SmartTable QueryRow format
 function mentionToQueryRow(mention: Mention): QueryRow {
@@ -233,6 +260,16 @@ export default function MonitorPage() {
   // Get selected brand from global state
   const selectedBrand = useSelectedBrand();
 
+  // Real-time monitoring connection
+  const {
+    mentions: realtimeMentions,
+    isConnected,
+    error: realtimeError,
+  } = useRealtimeMonitor({
+    enabled: !!selectedBrand,
+    maxMentions: 50,
+  });
+
   // Fetch mentions for selected brand
   const {
     data: mentionsResponse,
@@ -246,10 +283,19 @@ export default function MonitorPage() {
   });
 
   // Transform mentions to QueryRow format for SmartTable
+  // Merge realtime mentions with API data, prioritizing realtime
   const queries: QueryRow[] = React.useMemo(() => {
-    if (!mentionsResponse?.mentions) return [];
-    return mentionsResponse.mentions.map(mentionToQueryRow);
-  }, [mentionsResponse]);
+    const apiQueries = mentionsResponse?.mentions?.map(mentionToQueryRow) || [];
+    const realtimeQueries = realtimeMentions
+      .filter((rm) => !selectedBrand || rm.brandId === selectedBrand.id)
+      .map(streamMentionToQueryRow);
+
+    // Merge: realtime first, then API (excluding duplicates)
+    const realtimeIds = new Set(realtimeQueries.map((q) => q.id));
+    const uniqueApiQueries = apiQueries.filter((q) => !realtimeIds.has(q.id));
+
+    return [...realtimeQueries, ...uniqueApiQueries];
+  }, [mentionsResponse, realtimeMentions, selectedBrand]);
 
   // Build dynamic filter groups from mention data
   const filterGroups = React.useMemo(() => {
@@ -352,11 +398,14 @@ export default function MonitorPage() {
           <span className="text-xl font-light text-foreground ml-1">Monitor</span>
         </div>
 
-        {/* AI Status */}
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs text-muted-foreground">AI Status:</span>
-          <span className="text-xs text-primary font-medium">Active</span>
+        {/* Live Status Indicator */}
+        <div className="flex items-center gap-4">
+          <LiveIndicator isConnected={isConnected} size="md" />
+          {realtimeError && (
+            <span className="text-xs text-error">
+              {realtimeError.message}
+            </span>
+          )}
         </div>
       </div>
 
