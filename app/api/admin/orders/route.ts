@@ -37,7 +37,7 @@ export async function PATCH(req: NextRequest) {
 
   // Update status
   if (status !== undefined) {
-    const validStatuses = ['Awaiting Payment', 'Quote Sent', 'Paid', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
+    const validStatuses = ['Awaiting Payment', 'Quote Sent', 'Payment Received', 'Payment Sent', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
     if (!validStatuses.includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
