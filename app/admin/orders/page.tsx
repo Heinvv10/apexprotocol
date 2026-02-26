@@ -1,27 +1,85 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 const STATUSES = ['Awaiting Payment', 'Quote Sent', 'Payment Received', 'Payment Sent', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
-const STATUS_COLORS: Record<string, string> = {
-  'Awaiting Payment': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  'Quote Sent': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-  'Payment Received': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  'Payment Sent': 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
-  'Processing': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  'Shipped': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-  'Completed': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  'Cancelled': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+
+const STATUS_CONFIG: Record<string, { bg: string; text: string; dot: string }> = {
+  'Awaiting Payment': { bg: 'bg-yellow-500/15', text: 'text-yellow-400', dot: 'bg-yellow-400' },
+  'Quote Sent':       { bg: 'bg-orange-500/15', text: 'text-orange-400', dot: 'bg-orange-400' },
+  'Payment Received': { bg: 'bg-blue-500/15',   text: 'text-blue-400',   dot: 'bg-blue-400' },
+  'Payment Sent':     { bg: 'bg-cyan-500/15',   text: 'text-cyan-400',   dot: 'bg-cyan-400' },
+  'Processing':       { bg: 'bg-purple-500/15', text: 'text-purple-400', dot: 'bg-purple-400' },
+  'Shipped':          { bg: 'bg-indigo-500/15', text: 'text-indigo-400', dot: 'bg-indigo-400' },
+  'Completed':        { bg: 'bg-green-500/15',  text: 'text-green-400',  dot: 'bg-green-400' },
+  'Cancelled':        { bg: 'bg-red-500/15',    text: 'text-red-400',    dot: 'bg-red-400' },
 };
 
 const SHIPPING_METHODS: Record<string, string> = {
-  courier_door: 'The Courier Guy (Door-to-Door)',
-  courier_kiosk: 'The Courier Guy (Kiosk)',
-  postnet: 'PostNet (Counter)',
-  fastway: 'Fastway (Door-to-Door)',
+  courier_door:   'The Courier Guy (Door-to-Door)',
+  courier_kiosk:  'The Courier Guy (Kiosk)',
+  postnet:        'PostNet (Counter)',
+  fastway:        'Fastway (Door-to-Door)',
 };
 
 const PROVINCES = ['Gauteng','Western Cape','KwaZulu-Natal','Eastern Cape','Free State','Limpopo','Mpumalanga','North West','Northern Cape'];
+
+function StatusBadge({ status }: { status: string }) {
+  const cfg = STATUS_CONFIG[status] || { bg: 'bg-gray-500/15', text: 'text-gray-400', dot: 'bg-gray-400' };
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${cfg.bg} ${cfg.text}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+      {status}
+    </span>
+  );
+}
+
+function StatusDropdown({ value, onChange }: { value: string; onChange: (s: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const cfg = STATUS_CONFIG[value] || { bg: 'bg-gray-500/15', text: 'text-gray-400', dot: 'bg-gray-400' };
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border border-white/10 cursor-pointer transition-all hover:border-white/20 ${cfg.bg} ${cfg.text}`}
+      >
+        <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+        {value}
+        <svg className={`w-3 h-3 ml-1 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-1 w-44 bg-[#1a2235] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
+          {STATUSES.map(s => {
+            const c = STATUS_CONFIG[s] || { bg: '', text: 'text-gray-400', dot: 'bg-gray-400' };
+            return (
+              <button
+                key={s}
+                onClick={() => { onChange(s); setOpen(false); }}
+                className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-all hover:bg-white/5 ${s === value ? 'bg-white/5' : ''} ${c.text}`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${c.dot}`} />
+                {s}
+                {s === value && <svg className="w-3 h-3 ml-auto" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -111,14 +169,22 @@ export default function AdminOrdersPage() {
     <div className="space-y-4">
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
-        {['All', ...STATUSES].map(s => (
-          <button key={s} onClick={() => setStatusFilter(s)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-              statusFilter === s ? 'bg-brand-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-            }`}>
-            {s} ({s === 'All' ? orders.length : orders.filter(o => o.status === s).length})
-          </button>
-        ))}
+        {['All', ...STATUSES].map(s => {
+          const cfg = STATUS_CONFIG[s];
+          const isActive = statusFilter === s;
+          const count = s === 'All' ? orders.length : orders.filter(o => o.status === s).length;
+          return (
+            <button key={s} onClick={() => setStatusFilter(s)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                isActive
+                  ? cfg ? `${cfg.bg} ${cfg.text} border-current/30` : 'bg-brand-600 text-white border-brand-500'
+                  : 'bg-gray-800/50 text-gray-500 border-transparent hover:text-gray-300'
+              }`}>
+              {cfg && <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />}
+              {s} <span className={`${isActive ? 'opacity-70' : 'opacity-50'}`}>({count})</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Email result toast */}
@@ -136,7 +202,7 @@ export default function AdminOrdersPage() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <span className="font-bold text-brand-700 dark:text-brand-400">{o.ref}</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${STATUS_COLORS[o.status] || 'bg-gray-100'}`}>{o.status}</span>
+                <StatusBadge status={o.status} />
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {o.guest_name}{o.guest_phone ? ` · ${o.guest_phone}` : ''}
@@ -153,10 +219,7 @@ export default function AdminOrdersPage() {
 
             <div className="flex flex-col items-end gap-2 flex-shrink-0">
               <p className="font-bold text-lg">R{Number(o.total).toFixed(0)}</p>
-              <select value={o.status} onChange={e => updateStatus(o.id, e.target.value)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-0 cursor-pointer ${STATUS_COLORS[o.status] || 'bg-gray-100'}`}>
-                {STATUSES.map(s => <option key={s}>{s}</option>)}
-              </select>
+              <StatusDropdown value={o.status} onChange={s => updateStatus(o.id, s)} />
               <button onClick={() => openEdit(o)}
                 className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium rounded-lg transition-all">
                 ✏️ Edit Details
@@ -211,7 +274,6 @@ export default function AdminOrdersPage() {
                     </div>
                   ))}
                 </div>
-                {/* Live total preview */}
                 <div className="mt-2 flex justify-between text-sm font-bold text-[#00d4ff] bg-gray-800/30 rounded px-3 py-2">
                   <span>Total (items + shipping)</span>
                   <span>R{(editItems.reduce((s, i) => s + i.quantity * i.price, 0) + Number(editForm.shippingCost || editOrder?.shipping_cost || 0)).toFixed(0)}</span>
