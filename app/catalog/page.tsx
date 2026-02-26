@@ -98,8 +98,9 @@ function CatalogPageContent() {
           </div>
         </div>
 
-        {/* Category pills - horizontally scrollable */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {/* Category pills - horizontally scrollable with fade hint */}
+        <div className="relative">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide flex-wrap">
           {categoryPills.map(cat => (
             <button
               key={cat.category}
@@ -120,6 +121,7 @@ function CatalogPageContent() {
               ) : null}
             </button>
           ))}
+          </div>
         </div>
       </div>
 
