@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://neondb_owner:***REDACTED***@ep-cold-firefly-ajeq5xuy.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require';
+const DATABASE_URL = process.env.DATABASE_URL!;
+if (!DATABASE_URL) throw new Error('DATABASE_URL environment variable is not set');
 
 // Use Neon serverless HTTP driver — works over port 443, no TCP/5432 needed
 const sql = neon(DATABASE_URL);
