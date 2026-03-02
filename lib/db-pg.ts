@@ -12,8 +12,6 @@ export function getPool(): Pool {
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
-      // Force IPv4 — velo does not have IPv6 routing
-      family: 4,
     });
   }
   return pool;
