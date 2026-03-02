@@ -6,4 +6,4 @@ pages_build_output_dir = ".vercel/output/static"
 vars = { NODE_ENV = "production" }
 
 [[env.production.vars]]
-DATABASE_URL = "postgresql://neondb_owner:***REDACTED***@ep-cold-firefly-ajeq5xuy-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require"
+DATABASE_URL = "postgresql://neondb_owner:npg_qS7mURFtxv5e@ep-cold-firefly-ajeq5xuy-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require"

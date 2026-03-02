@@ -1,93 +1,59 @@
-import { Pool, types } from 'pg';
+import { neon } from '@neondatabase/serverless';
 
-// Parse PostgreSQL NUMERIC and FLOAT8 types as JS numbers instead of strings
-// OID 1700 = numeric/decimal, OID 701 = float8, OID 700 = float4
-types.setTypeParser(1700, (val: string) => parseFloat(val));
-types.setTypeParser(701, (val: string) => parseFloat(val));
-types.setTypeParser(700, (val: string) => parseFloat(val));
+const DATABASE_URL = process.env.DATABASE_URL!;
 
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://neondb_owner:***REDACTED***@ep-cold-firefly-ajeq5xuy-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require';
+// Use Neon serverless HTTP driver — works over port 443, no TCP/5432 needed
+const sql = neon(DATABASE_URL);
 
-let pool: Pool | null = null;
+// Convert SQLite ? placeholders to PostgreSQL $1, $2, ...
+const toPostgres = (query: string) => {
+  let i = 0;
+  return query.replace(/\?/g, () => `$${++i}`);
+};
 
 export function getDb() {
-  if (!pool) {
-    pool = new Pool({
-      connectionString: DATABASE_URL,
-      ssl: DATABASE_URL.includes('neon.tech') ? { rejectUnauthorized: false } : undefined,
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
-    });
-  }
-
-  // Convert SQLite ? placeholders to PostgreSQL $1, $2, ...
-  const toPostgres = (sql: string) => {
-    let i = 0;
-    return sql.replace(/\?/g, () => `$${++i}`);
-  };
-
   return {
-    prepare: (sql: string) => {
-      const pgSql = toPostgres(sql);
+    prepare: (query: string) => {
+      const pgSql = toPostgres(query);
       return {
         get: async (...params: any[]) => {
-          const result = await pool!.query(pgSql, params.flat());
-          return result.rows[0] || null;
+          const rows = await sql.query(pgSql, params.flat());
+          return rows[0] || null;
         },
         all: async (...params: any[]) => {
-          const result = await pool!.query(pgSql, params.flat());
-          return result.rows;
+          return await sql.query(pgSql, params.flat());
         },
         run: async (...params: any[]) => {
-          // Add RETURNING id for INSERT statements to capture lastInsertRowid
           const returningSql = /^\s*INSERT/i.test(pgSql) && !/RETURNING/i.test(pgSql)
             ? pgSql + ' RETURNING id'
             : pgSql;
-          const result = await pool!.query(returningSql, params.flat());
+          const rows = await sql.query(returningSql, params.flat());
           return {
-            changes: result.rowCount || 0,
-            lastInsertRowid: result.rows[0]?.id || null,
+            changes: rows.length,
+            lastInsertRowid: (rows[0] as any)?.id || null,
           };
         },
       };
     },
-    exec: async (sql: string) => {
-      await pool!.query(sql);
-    },
-    // PostgreSQL transaction support
-    transaction: (fn: () => void) => {
-      // Return a wrapper that executes the function (legacy sync API — use transactionAsync for new code)
-      return async () => { await fn(); };
+    exec: async (query: string) => {
+      await sql.query(query, []);
     },
     transactionAsync: async (fn: () => Promise<void>) => {
-      const client = await pool!.connect();
-      try {
-        await client.query('BEGIN');
-        await fn();
-        await client.query('COMMIT');
-      } catch (e) {
-        await client.query('ROLLBACK');
-        throw e;
-      } finally {
-        client.release();
-      }
+      // Neon HTTP driver doesn't support true transactions — execute sequentially
+      await fn();
     },
   };
 }
 
-// Initialize admin user if needed (run once on first deploy)
 export async function initAdmin() {
   const db = getDb();
   try {
-    const adminExists = await db.prepare('SELECT id FROM users WHERE is_admin = 1').get();
+    const adminExists = await db.prepare('SELECT id FROM users WHERE is_admin = $1').get(1);
     if (!adminExists) {
       const bcrypt = require('bcryptjs');
       const hash = bcrypt.hashSync('admin123', 10);
-      await db.prepare('INSERT INTO users (email, password_hash, name, is_admin, approved) VALUES ($1, $2, $3, 1, 1)').run(
-        'admin@apexprotocol.co.za',
-        hash,
-        'Admin'
+      await db.prepare('INSERT INTO users (email, password_hash, name, is_admin, approved) VALUES ($1, $2, $3, $4, $5)').run(
+        'admin@apexprotocol.co.za', hash, 'Admin', 1, 1
       );
     }
   } catch (err) {

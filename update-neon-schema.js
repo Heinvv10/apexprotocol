@@ -5,7 +5,7 @@
 
 const { Client } = require('pg');
 
-const NEON_URL = 'postgresql://neondb_owner:***REDACTED***@ep-cold-firefly-ajeq5xuy-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require';
+const NEON_URL = 'postgresql://neondb_owner:npg_qS7mURFtxv5e@ep-cold-firefly-ajeq5xuy-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require';
 
 async function main() {
   const client = new Client({ connectionString: NEON_URL });

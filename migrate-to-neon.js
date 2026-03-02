@@ -7,7 +7,7 @@ const { Client } = require('pg');
 const Database = require('better-sqlite3');
 const fs = require('fs');
 
-const NEON_URL = 'postgresql://neondb_owner:***REDACTED***@ep-cold-firefly-ajeq5xuy-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require';
+const NEON_URL = 'postgresql://neondb_owner:npg_qS7mURFtxv5e@ep-cold-firefly-ajeq5xuy-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require';
 const SQLITE_PATH = './data/apexprotocol.db';
 
 async function main() {

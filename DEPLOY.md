@@ -23,7 +23,7 @@ ssh hein@velo "systemctl --user restart apex-protocol"
 ## Environment Variables
 Set in `.env.local` on velo:
 ```
-DATABASE_URL=postgresql://neondb_owner:***REDACTED***@ep-cold-firefly-ajeq5xuy-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require
+DATABASE_URL=postgresql://neondb_owner:npg_qS7mURFtxv5e@ep-cold-firefly-ajeq5xuy-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require
 NEXT_PUBLIC_SITE_URL=https://apexprotocol.co.za
 NODE_ENV=production
 ```
