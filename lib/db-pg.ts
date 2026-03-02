@@ -11,7 +11,9 @@ export function getPool(): Pool {
       ssl: DATABASE_URL.includes('neon.tech') ? { rejectUnauthorized: false } : undefined,
       max: 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 10000,
+      // Force IPv4 — velo does not have IPv6 routing
+      family: 4,
     });
   }
   return pool;
