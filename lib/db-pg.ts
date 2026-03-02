@@ -1,4 +1,8 @@
 import { Pool } from 'pg';
+import dns from 'dns';
+
+// Force IPv4 DNS resolution — velo server has no IPv6 routing to AWS
+dns.setDefaultResultOrder('ipv4first');
 
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://neondb_owner:***REDACTED***@ep-cold-firefly-ajeq5xuy-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require';
 
