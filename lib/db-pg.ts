@@ -1,58 +1,17 @@
-import { Pool } from 'pg';
-import dns from 'dns';
+import { neon } from '@neondatabase/serverless';
 
-// Force IPv4 DNS resolution — velo server has no IPv6 routing to AWS
-dns.setDefaultResultOrder('ipv4first');
+const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://neondb_owner:***REDACTED***@ep-cold-firefly-ajeq5xuy.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require';
 
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://neondb_owner:***REDACTED***@ep-cold-firefly-ajeq5xuy-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require';
-
-let pool: Pool;
-
-export function getPool(): Pool {
-  if (!pool) {
-    pool = new Pool({
-      connectionString: DATABASE_URL,
-      ssl: DATABASE_URL.includes('neon.tech') ? { rejectUnauthorized: false } : undefined,
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
-    });
-  }
-  return pool;
-}
+// Use Neon serverless HTTP driver — works over port 443, no TCP/5432 needed
+const sql = neon(DATABASE_URL);
 
 export async function query(text: string, params?: any[]) {
-  const pool = getPool();
-  return pool.query(text, params);
-}
-
-// Helper functions matching SQLite API for compatibility
-export function prepare(sql: string) {
-  const pool = getPool();
-  return {
-    async get(...params: any[]) {
-      const result = await pool.query(sql, params);
-      return result.rows[0] || null;
-    },
-    async all(...params: any[]) {
-      const result = await pool.query(sql, params);
-      return result.rows;
-    },
-    async run(...params: any[]) {
-      const result = await pool.query(sql, params);
-      return {
-        changes: result.rowCount || 0,
-        lastInsertRowid: result.rows[0]?.id || null,
-      };
-    },
-  };
+  const rows = await sql.query(text, params || []);
+  return { rows };
 }
 
 export function getDb() {
-  // Return pool for compatibility
-  const pool = getPool();
-  return {
-    prepare: (sql: string) => prepare(sql),
-    query: (text: string, params?: any[]) => query(text, params),
-  };
+  return { query };
 }
+
+export default { query, getDb };
