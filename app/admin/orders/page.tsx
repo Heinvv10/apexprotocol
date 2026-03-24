@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 const STATUSES = ['Awaiting Payment', 'Quote Sent', 'Payment Received', 'Payment Sent', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
 
@@ -102,10 +102,9 @@ export default function AdminOrdersPage() {
   // Create Order state
   const [showCreate, setShowCreate] = useState(false);
   const [newForm, setNewForm] = useState<any>(EMPTY_NEW_ORDER);
-  const [newItems, setNewItems] = useState<any[]>([{ product_id: '', name: '', quantity: 1, price: '' }]);
+  const [newItems, setNewItems] = useState<any[]>([{ product_id: '', name: '', searchText: '', quantity: 1, price: '' }]);
   const [creating, setCreating] = useState(false);
   const [createResult, setCreateResult] = useState<string | null>(null);
-  const [productSearch, setProductSearch] = useState<string[]>(['']);
 
   const load = async () => {
     const [ordersRes, productsRes] = await Promise.all([
@@ -185,25 +184,22 @@ export default function AdminOrdersPage() {
 
   const updNew = (field: string, value: string) => setNewForm((p: any) => ({ ...p, [field]: value }));
 
-  const setNewItem = (idx: number, field: string, value: any) => {
-    setNewItems(prev => prev.map((it, i) => i === idx ? { ...it, [field]: value } : it));
+  const setNewItem = (idx: number, patch: Record<string, any>) => {
+    setNewItems(prev => prev.map((it, i) => i === idx ? { ...it, ...patch } : it));
   };
 
   const addNewItem = () => {
-    setNewItems(prev => [...prev, { product_id: '', name: '', quantity: 1, price: '' }]);
-    setProductSearch(prev => [...prev, '']);
+    setNewItems(prev => [...prev, { product_id: '', name: '', searchText: '', quantity: 1, price: '' }]);
   };
 
   const removeNewItem = (idx: number) => {
     setNewItems(prev => prev.filter((_, i) => i !== idx));
-    setProductSearch(prev => prev.filter((_, i) => i !== idx));
   };
 
   const selectProduct = (idx: number, product: any) => {
     setNewItems(prev => prev.map((it, i) => i === idx
-      ? { ...it, product_id: product.id, name: product.name, price: String(product.price) }
+      ? { ...it, product_id: product.id, name: product.name, searchText: product.name, price: String(product.price) }
       : it));
-    setProductSearch(prev => prev.map((s, i) => i === idx ? product.name : s));
   };
 
   const createOrder = async () => {
@@ -232,8 +228,7 @@ export default function AdminOrdersPage() {
     if (data.ok) {
       setCreateResult(`✅ Order ${data.ref} created!`);
       setNewForm(EMPTY_NEW_ORDER);
-      setNewItems([{ product_id: '', name: '', quantity: 1, price: '' }]);
-      setProductSearch(['']);
+      setNewItems([{ product_id: '', name: '', searchText: '', quantity: 1, price: '' }]);
       load();
       setTimeout(() => { setShowCreate(false); setCreateResult(null); }, 1800);
     } else {
@@ -375,57 +370,63 @@ export default function AdminOrdersPage() {
                 <p className="text-xs text-gray-400 uppercase tracking-wide mb-2 font-semibold">Order Items *</p>
                 <div className="space-y-2">
                   {newItems.map((item, idx) => {
-                    const filtered_products = products.filter((p: any) =>
-                      !productSearch[idx] || p.name.toLowerCase().includes(productSearch[idx].toLowerCase())
-                    ).slice(0, 8);
+                    const matchedProducts = item.searchText && !item.product_id
+                      ? products.filter((p: any) =>
+                          p.name.toLowerCase().includes(item.searchText.toLowerCase())
+                        ).slice(0, 10)
+                      : [];
                     return (
                       <div key={idx} className="bg-gray-800/60 rounded-xl p-3 space-y-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-start gap-2">
                           <div className="flex-1 relative">
                             <label className="text-xs text-gray-400">Product</label>
                             <input
-                              value={productSearch[idx] || item.name}
-                              onChange={e => {
-                                setProductSearch(prev => prev.map((s, i) => i === idx ? e.target.value : s));
-                                setNewItem(idx, 'name', e.target.value);
-                                setNewItem(idx, 'product_id', '');
-                              }}
+                              value={item.searchText}
+                              onChange={e => setNewItem(idx, { searchText: e.target.value, name: e.target.value, product_id: '', price: '' })}
+                              onFocus={e => { if (item.product_id) setNewItem(idx, { product_id: '', price: '' }); }}
                               placeholder="Search or type product name..."
+                              autoComplete="off"
                               className="w-full mt-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff] placeholder-gray-600"
                             />
-                            {productSearch[idx] && !item.product_id && filtered_products.length > 0 && (
-                              <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a2235] border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden max-h-48 overflow-y-auto">
-                                {filtered_products.map((p: any) => (
-                                  <button key={p.id} onClick={() => selectProduct(idx, p)}
-                                    className="w-full flex items-center justify-between px-3 py-2 text-xs hover:bg-white/5 text-left">
+                            {matchedProducts.length > 0 && (
+                              <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a2235] border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden max-h-52 overflow-y-auto">
+                                {matchedProducts.map((p: any) => (
+                                  <button
+                                    key={p.id}
+                                    type="button"
+                                    onMouseDown={e => { e.preventDefault(); selectProduct(idx, p); }}
+                                    className="w-full flex items-center justify-between px-3 py-2.5 text-xs hover:bg-white/5 text-left gap-2">
                                     <span className="text-white truncate">{p.name}</span>
-                                    <span className="text-[#00d4ff] font-bold ml-2 flex-shrink-0">R{Number(p.price).toFixed(0)}</span>
+                                    <span className="text-[#00d4ff] font-bold flex-shrink-0">R{Number(p.price).toFixed(0)}</span>
                                   </button>
                                 ))}
                               </div>
                             )}
+                            {item.product_id && (
+                              <p className="text-[10px] text-green-400 mt-1">✓ Product selected</p>
+                            )}
                           </div>
                           {newItems.length > 1 && (
                             <button onClick={() => removeNewItem(idx)}
-                              className="mt-5 text-red-400 hover:text-red-300 text-lg leading-none flex-shrink-0">✕</button>
+                              className="mt-6 text-red-400 hover:text-red-300 text-lg leading-none flex-shrink-0">✕</button>
                           )}
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <label className="text-xs text-gray-400">Qty</label>
                             <input type="number" min="1" value={item.quantity}
-                              onChange={e => setNewItem(idx, 'quantity', Number(e.target.value))}
+                              onChange={e => setNewItem(idx, { quantity: Number(e.target.value) })}
                               className="w-full mt-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white text-center focus:outline-none focus:border-[#00d4ff]" />
                           </div>
                           <div>
                             <label className="text-xs text-gray-400">Unit Price (R)</label>
                             <input type="number" min="0" step="0.01" value={item.price}
-                              onChange={e => setNewItem(idx, 'price', e.target.value)}
+                              onChange={e => setNewItem(idx, { price: e.target.value })}
                               placeholder="0.00"
                               className="w-full mt-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white text-center focus:outline-none focus:border-[#00d4ff] placeholder-gray-600" />
                           </div>
                         </div>
-                        {item.name && item.price && (
+                        {item.name && Number(item.price) > 0 && (
                           <p className="text-xs text-right text-gray-400">
                             Line total: <span className="text-[#00d4ff] font-bold">R{((Number(item.quantity) || 0) * (Number(item.price) || 0)).toFixed(0)}</span>
                           </p>
