@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 
 const STATUSES = ['Awaiting Payment', 'Quote Sent', 'Payment Received', 'Payment Sent', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
 
@@ -81,8 +81,15 @@ function StatusDropdown({ value, onChange }: { value: string; onChange: (s: stri
   );
 }
 
+const EMPTY_NEW_ORDER = {
+  name: '', email: '', phone: '', notes: '',
+  street: '', suburb: '', city: '', province: 'Gauteng', postalCode: '',
+  shippingMethod: 'courier_door', shippingCost: '180',
+};
+
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('All');
   const [editOrder, setEditOrder] = useState<any>(null);
@@ -92,10 +99,25 @@ export default function AdminOrdersPage() {
   const [sendingEmail, setSendingEmail] = useState<number | null>(null);
   const [emailResult, setEmailResult] = useState<{id: number, msg: string} | null>(null);
 
+  // Create Order state
+  const [showCreate, setShowCreate] = useState(false);
+  const [newForm, setNewForm] = useState<any>(EMPTY_NEW_ORDER);
+  const [newItems, setNewItems] = useState<any[]>([{ product_id: '', name: '', quantity: 1, price: '' }]);
+  const [creating, setCreating] = useState(false);
+  const [createResult, setCreateResult] = useState<string | null>(null);
+  const [productSearch, setProductSearch] = useState<string[]>(['']);
+
   const load = async () => {
-    const res = await fetch('/api/admin/orders');
-    const data = await res.json();
-    setOrders(data.orders || []);
+    const [ordersRes, productsRes] = await Promise.all([
+      fetch('/api/admin/orders'),
+      fetch('/api/admin/products'),
+    ]);
+    const ordersData = await ordersRes.json();
+    setOrders(ordersData.orders || []);
+    try {
+      const productsData = await productsRes.json();
+      setProducts(productsData.products || productsData || []);
+    } catch {}
     setLoading(false);
   };
 
@@ -161,12 +183,87 @@ export default function AdminOrdersPage() {
     setSendingEmail(null);
   };
 
+  const updNew = (field: string, value: string) => setNewForm((p: any) => ({ ...p, [field]: value }));
+
+  const setNewItem = (idx: number, field: string, value: any) => {
+    setNewItems(prev => prev.map((it, i) => i === idx ? { ...it, [field]: value } : it));
+  };
+
+  const addNewItem = () => {
+    setNewItems(prev => [...prev, { product_id: '', name: '', quantity: 1, price: '' }]);
+    setProductSearch(prev => [...prev, '']);
+  };
+
+  const removeNewItem = (idx: number) => {
+    setNewItems(prev => prev.filter((_, i) => i !== idx));
+    setProductSearch(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const selectProduct = (idx: number, product: any) => {
+    setNewItems(prev => prev.map((it, i) => i === idx
+      ? { ...it, product_id: product.id, name: product.name, price: String(product.price) }
+      : it));
+    setProductSearch(prev => prev.map((s, i) => i === idx ? product.name : s));
+  };
+
+  const createOrder = async () => {
+    setCreating(true);
+    setCreateResult(null);
+    const validItems = newItems.filter(i => i.name && Number(i.quantity) > 0 && Number(i.price) > 0);
+    if (!newForm.name || !validItems.length) {
+      setCreateResult('❌ Customer name and at least one item with price are required.');
+      setCreating(false);
+      return;
+    }
+    const res = await fetch('/api/admin/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customer: { name: newForm.name, email: newForm.email, phone: newForm.phone, notes: newForm.notes },
+        shipping: {
+          street: newForm.street, suburb: newForm.suburb, city: newForm.city,
+          province: newForm.province, postalCode: newForm.postalCode,
+          shippingMethod: newForm.shippingMethod, shippingCost: Number(newForm.shippingCost || 0),
+        },
+        items: validItems,
+      }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      setCreateResult(`✅ Order ${data.ref} created!`);
+      setNewForm(EMPTY_NEW_ORDER);
+      setNewItems([{ product_id: '', name: '', quantity: 1, price: '' }]);
+      setProductSearch(['']);
+      load();
+      setTimeout(() => { setShowCreate(false); setCreateResult(null); }, 1800);
+    } else {
+      setCreateResult(`❌ ${data.error || 'Failed to create order'}`);
+    }
+    setCreating(false);
+  };
+
+  const newSubtotal = newItems.reduce((s, i) => s + (Number(i.quantity) || 0) * (Number(i.price) || 0), 0);
+  const newTotal = newSubtotal + Number(newForm.shippingCost || 0);
+
   const filtered = statusFilter === 'All' ? orders : orders.filter(o => o.status === statusFilter);
 
   if (loading) return <div className="animate-pulse text-gray-400">Loading orders...</div>;
 
   return (
     <div className="space-y-4">
+      {/* Header row */}
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl font-bold text-white">Orders</h1>
+        <button
+          onClick={() => { setShowCreate(true); setCreateResult(null); }}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#00d4ff] hover:bg-[#00b8d9] text-black text-sm font-bold rounded-xl transition-all shadow-lg shadow-[#00d4ff]/20">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Create Order
+        </button>
+      </div>
+
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
         {['All', ...STATUSES].map(s => {
@@ -237,6 +334,208 @@ export default function AdminOrdersPage() {
       ))}
 
       {filtered.length === 0 && <p className="text-gray-400 text-center py-8">No orders found</p>}
+
+      {/* Create Order Modal */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#111827] border border-gray-700 rounded-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl">
+            <div className="flex items-center justify-between p-5 border-b border-gray-700">
+              <div>
+                <h2 className="text-lg font-bold text-white">Create New Order</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Place a manual order for a phone customer</p>
+              </div>
+              <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
+            </div>
+            <div className="p-5 space-y-5">
+
+              {/* Customer Details */}
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-2 font-semibold">Customer Details</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <label className="text-xs text-gray-400">Full Name *</label>
+                    <input value={newForm.name} onChange={e => updNew('name', e.target.value)} placeholder="e.g. John Smith"
+                      className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff] placeholder-gray-600" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400">Phone</label>
+                    <input value={newForm.phone} onChange={e => updNew('phone', e.target.value)} placeholder="0821234567"
+                      className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff] placeholder-gray-600" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400">Email (optional)</label>
+                    <input type="email" value={newForm.email} onChange={e => updNew('email', e.target.value)} placeholder="john@email.com"
+                      className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff] placeholder-gray-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Items */}
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-2 font-semibold">Order Items *</p>
+                <div className="space-y-2">
+                  {newItems.map((item, idx) => {
+                    const filtered_products = products.filter((p: any) =>
+                      !productSearch[idx] || p.name.toLowerCase().includes(productSearch[idx].toLowerCase())
+                    ).slice(0, 8);
+                    return (
+                      <div key={idx} className="bg-gray-800/60 rounded-xl p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 relative">
+                            <label className="text-xs text-gray-400">Product</label>
+                            <input
+                              value={productSearch[idx] || item.name}
+                              onChange={e => {
+                                setProductSearch(prev => prev.map((s, i) => i === idx ? e.target.value : s));
+                                setNewItem(idx, 'name', e.target.value);
+                                setNewItem(idx, 'product_id', '');
+                              }}
+                              placeholder="Search or type product name..."
+                              className="w-full mt-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff] placeholder-gray-600"
+                            />
+                            {productSearch[idx] && !item.product_id && filtered_products.length > 0 && (
+                              <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a2235] border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden max-h-48 overflow-y-auto">
+                                {filtered_products.map((p: any) => (
+                                  <button key={p.id} onClick={() => selectProduct(idx, p)}
+                                    className="w-full flex items-center justify-between px-3 py-2 text-xs hover:bg-white/5 text-left">
+                                    <span className="text-white truncate">{p.name}</span>
+                                    <span className="text-[#00d4ff] font-bold ml-2 flex-shrink-0">R{Number(p.price).toFixed(0)}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {newItems.length > 1 && (
+                            <button onClick={() => removeNewItem(idx)}
+                              className="mt-5 text-red-400 hover:text-red-300 text-lg leading-none flex-shrink-0">✕</button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-xs text-gray-400">Qty</label>
+                            <input type="number" min="1" value={item.quantity}
+                              onChange={e => setNewItem(idx, 'quantity', Number(e.target.value))}
+                              className="w-full mt-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white text-center focus:outline-none focus:border-[#00d4ff]" />
+                          </div>
+                          <div>
+                            <label className="text-xs text-gray-400">Unit Price (R)</label>
+                            <input type="number" min="0" step="0.01" value={item.price}
+                              onChange={e => setNewItem(idx, 'price', e.target.value)}
+                              placeholder="0.00"
+                              className="w-full mt-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white text-center focus:outline-none focus:border-[#00d4ff] placeholder-gray-600" />
+                          </div>
+                        </div>
+                        {item.name && item.price && (
+                          <p className="text-xs text-right text-gray-400">
+                            Line total: <span className="text-[#00d4ff] font-bold">R{((Number(item.quantity) || 0) * (Number(item.price) || 0)).toFixed(0)}</span>
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <button onClick={addNewItem}
+                  className="mt-2 w-full py-2 border border-dashed border-gray-600 hover:border-[#00d4ff] text-gray-400 hover:text-[#00d4ff] text-xs font-medium rounded-xl transition-all">
+                  + Add Another Item
+                </button>
+              </div>
+
+              {/* Delivery Address */}
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-2 font-semibold">Delivery Address</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-gray-400">Street Address</label>
+                    <input value={newForm.street} onChange={e => updNew('street', e.target.value)} placeholder="123 Main Street"
+                      className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff] placeholder-gray-600" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-400">Suburb</label>
+                      <input value={newForm.suburb} onChange={e => updNew('suburb', e.target.value)} placeholder="Suburb"
+                        className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff] placeholder-gray-600" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400">City</label>
+                      <input value={newForm.city} onChange={e => updNew('city', e.target.value)} placeholder="City"
+                        className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff] placeholder-gray-600" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-400">Province</label>
+                      <select value={newForm.province} onChange={e => updNew('province', e.target.value)}
+                        className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff]">
+                        {PROVINCES.map(p => <option key={p}>{p}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400">Postal Code</label>
+                      <input value={newForm.postalCode} onChange={e => updNew('postalCode', e.target.value)} placeholder="0000"
+                        className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff] placeholder-gray-600" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Shipping */}
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-2 font-semibold">Shipping</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-400">Method</label>
+                    <select value={newForm.shippingMethod} onChange={e => updNew('shippingMethod', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff]">
+                      {Object.entries(SHIPPING_METHODS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400">Shipping Cost (R)</label>
+                    <input type="number" min="0" value={newForm.shippingCost} onChange={e => updNew('shippingCost', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white text-center focus:outline-none focus:border-[#00d4ff]" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-xs text-gray-400">Internal Notes (optional)</label>
+                <textarea value={newForm.notes} onChange={e => updNew('notes', e.target.value)} rows={2} placeholder="Phone order, special instructions..."
+                  className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-[#00d4ff] resize-none placeholder-gray-600" />
+              </div>
+
+              {/* Order total */}
+              <div className="bg-gray-800/40 rounded-xl px-4 py-3 flex items-center justify-between">
+                <div className="text-sm text-gray-400">
+                  <span>Subtotal: <span className="text-white font-medium">R{newSubtotal.toFixed(0)}</span></span>
+                  <span className="mx-2">·</span>
+                  <span>Shipping: <span className="text-white font-medium">R{Number(newForm.shippingCost || 0).toFixed(0)}</span></span>
+                </div>
+                <div className="text-[#00d4ff] font-bold text-lg">R{newTotal.toFixed(0)}</div>
+              </div>
+
+              {createResult && (
+                <div className={`p-3 rounded-xl text-sm font-medium ${createResult.startsWith('✅') ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                  {createResult}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 p-5 border-t border-gray-700">
+              <button onClick={() => setShowCreate(false)}
+                className="flex-1 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-xl transition-all">
+                Cancel
+              </button>
+              <button onClick={createOrder} disabled={creating}
+                className="flex-1 px-4 py-2.5 bg-[#00d4ff] hover:bg-[#00b8d9] text-black text-sm font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                {creating ? (
+                  <><span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />Creating...</>
+                ) : '+ Create Order'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editOrder && (
