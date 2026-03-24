@@ -8,7 +8,7 @@ export async function GET() {
 
   const db = getDb();
   const products = await db.prepare(
-    'SELECT id, name, price, sold_out FROM products WHERE sold_out = 0 OR sold_out IS NULL ORDER BY name'
+    'SELECT id, name, sell_price AS price, sold_out FROM products ORDER BY name'
   ).all();
   return NextResponse.json({ products });
 }
