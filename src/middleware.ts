@@ -55,6 +55,7 @@ const publicRoutes = [
   "/logo.svg",
   "/robots.txt",
   "/sitemap.xml",
+  "/manifest.json",
 ];
 
 /**
