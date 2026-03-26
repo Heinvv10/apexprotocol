@@ -325,7 +325,13 @@ async function productionMiddleware(request: NextRequest) {
     }
   });
 
-  return handler(request, {} as never);
+  // Create a minimal NextFetchEvent-like object.
+  // Passing {} as never can break Clerk's cookie-setting logic in dev mode.
+  const event = {
+    sourcePage: request.nextUrl.pathname,
+    waitUntil: (promise: Promise<unknown>) => { void promise; },
+  };
+  return handler(request, event as never);
 }
 
 // Export middleware based on Clerk configuration
@@ -340,7 +346,7 @@ export const config = {
   // Match all paths except static files
   matcher: [
     // Skip Next.js internals and all static files
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|json|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     // Always run for API routes
     "/(api|trpc)(.*)",
   ],

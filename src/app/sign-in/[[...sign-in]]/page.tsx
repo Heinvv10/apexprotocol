@@ -64,6 +64,7 @@ export default function SignInPage() {
       {/* Sign In Form */}
       <div className="card-secondary overflow-hidden">
         <SignIn
+          forceRedirectUrl="/dashboard"
           appearance={{
             elements: {
               rootBox: "w-full",

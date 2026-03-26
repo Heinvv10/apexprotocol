@@ -64,6 +64,7 @@ export default function SignUpPage() {
       {/* Sign Up Form */}
       <div className="card-secondary overflow-hidden">
         <SignUp
+          forceRedirectUrl="/onboarding"
           appearance={{
             elements: {
               rootBox: "w-full",

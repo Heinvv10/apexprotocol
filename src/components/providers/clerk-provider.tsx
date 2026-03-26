@@ -47,6 +47,10 @@ export function ClerkProvider({ children }: ClerkProviderProps) {
   return (
     <BaseClerkProvider
       publishableKey={CLERK_PUBLISHABLE_KEY}
+      signInForceRedirectUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL || "/dashboard"}
+      signUpForceRedirectUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL || "/onboarding"}
+      signInUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || "/sign-in"}
+      signUpUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL || "/sign-up"}
       appearance={{
         baseTheme: dark,
         variables: {
