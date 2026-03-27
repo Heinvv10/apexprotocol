@@ -1,6 +1,4 @@
 import { MultiPlatformQueryResult } from "../multi-platform-query";
-import { getPlatformByName } from "../platform-registry";
-import { VisibilityMetrics } from "@/lib/db/schema/platform-registry";
 import { analyzeResponseForBrand, createErrorResult } from "./shared-analysis";
 
 /**
@@ -9,74 +7,61 @@ import { analyzeResponseForBrand, createErrorResult } from "./shared-analysis";
  * Uses Cohere's language models for context extraction and sentiment analysis.
  */
 
-interface CohereResponse {
-  generations: Array<{
-    text: string;
-    likelihood?: number;
-  }>;
-  sentimentScore?: number;
-  relevance?: number;
-}
-
 export async function queryCohere(
   brandId: string,
   integrationId: string,
   query: string,
   brandContext?: string
 ): Promise<MultiPlatformQueryResult> {
-  const platform = await getPlatformByName("cohere");
-  if (!platform) {
-    throw new Error("Cohere platform not configured");
+  const apiKey = process.env.COHERE_API_KEY;
+  if (!apiKey) {
+    return createErrorResult("cohere", integrationId, "COHERE_API_KEY not configured");
   }
 
-  const response = await executeCohereQuery(query, brandContext, platform);
-  const metrics = parseCohereResponse(response, brandId, query);
-
-  return {
-    platformName: "cohere",
-    platformId: integrationId,
-    status: "success",
-    response: JSON.stringify(response),
-    metrics,
-    responseTimeMs: 0,
-  };
-}
-
-async function executeCohereQuery(
-  query: string,
-  brandContext: string | undefined,
-  platform: any
-): Promise<CohereResponse> {
-  const mockResponse: CohereResponse = {
-    generations: [
-      {
-        text: `Generated context for "${query}"`,
-        likelihood: 0.91,
+  try {
+    const response = await fetch("https://api.cohere.com/v2/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
       },
-    ],
-    sentimentScore: 0.75,
-    relevance: 0.83,
-  };
+      body: JSON.stringify({
+        model: "command-r-plus",
+        messages: [
+          {
+            role: "user",
+            content: query,
+          },
+        ],
+      }),
+    });
 
-  return mockResponse;
-}
+    if (!response.ok) {
+      const errorText = await response.text();
+      return createErrorResult(
+        "cohere",
+        integrationId,
+        `Cohere API error: ${response.status} - ${errorText}`
+      );
+    }
 
-function parseCohereResponse(
-  response: CohereResponse,
-  brandId: string,
-  query: string
-): VisibilityMetrics {
-  const sentimentScore = response.sentimentScore || 0.5;
-  const relevance = response.relevance || 0.5;
+    const data = await response.json();
+    const content = data.message?.content?.[0]?.text || "";
+    const metrics = analyzeResponseForBrand(content, brandContext);
 
-  const visibilityScore = Math.round(relevance * 100);
-  const sentiment =
-    sentimentScore > 0.6 ? "positive" : sentimentScore > 0.4 ? "neutral" : "negative";
-
-  return {
-    visibility: visibilityScore,
-    position: null,
-    confidence: Math.round(sentimentScore * 100),
-    sentiment,
-  };
+    return {
+      platformName: "cohere",
+      platformId: integrationId,
+      status: "success",
+      response: content,
+      metrics,
+      responseTimeMs: 0,
+    };
+  } catch (error) {
+    return createErrorResult(
+      "cohere",
+      integrationId,
+      error instanceof Error ? error.message : "Unknown error"
+    );
+  }
 }

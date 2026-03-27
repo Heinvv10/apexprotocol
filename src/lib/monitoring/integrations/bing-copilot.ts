@@ -1,23 +1,11 @@
 import { MultiPlatformQueryResult } from "../multi-platform-query";
-import { getPlatformByName } from "../platform-registry";
-import { VisibilityMetrics } from "@/lib/db/schema/platform-registry";
 import { analyzeResponseForBrand, createErrorResult } from "./shared-analysis";
 
 /**
  * Bing Copilot Integration
+ *
+ * Uses Bing Search API to analyze brand visibility in search results.
  */
-
-interface BingCopilotResponse {
-  answer: string;
-  citations: Array<{
-    title: string;
-    url: string;
-    snippet: string;
-    position?: number;
-  }>;
-  confidence?: number;
-  responseTime?: number;
-}
 
 export async function queryBingCopilot(
   brandId: string,
@@ -25,71 +13,55 @@ export async function queryBingCopilot(
   query: string,
   brandContext?: string
 ): Promise<MultiPlatformQueryResult> {
-  const platform = await getPlatformByName("bing_copilot");
-  if (!platform) {
-    throw new Error("Bing Copilot platform not configured");
+  const apiKey = process.env.BING_SEARCH_API_KEY;
+  if (!apiKey) {
+    return createErrorResult("bing_copilot", integrationId, "BING_SEARCH_API_KEY not configured");
   }
 
-  const response = await executeBingCopilotQuery(query, brandContext, platform);
-  const metrics = parseBingCopilotResponse(response, brandId, query);
+  try {
+    const params = new URLSearchParams({
+      q: query,
+      count: "10",
+      responseFilter: "Webpages",
+    });
 
-  return {
-    platformName: "bing_copilot",
-    platformId: integrationId,
-    status: "success",
-    response: JSON.stringify(response),
-    metrics,
-    responseTimeMs: 0,
-  };
-}
-
-async function executeBingCopilotQuery(
-  query: string,
-  brandContext: string | undefined,
-  platform: any
-): Promise<BingCopilotResponse> {
-  const mockResponse: BingCopilotResponse = {
-    answer: `Copilot answer to "${query}"`,
-    citations: [
+    const response = await fetch(
+      `https://api.bing.microsoft.com/v7.0/search?${params.toString()}`,
       {
-        title: "Result 1",
-        url: "https://example1.com",
-        snippet: "Relevant snippet from source 1",
-        position: 1,
-      },
-      {
-        title: "Result 2",
-        url: "https://example2.com",
-        snippet: "Relevant snippet from source 2",
-        position: 2,
-      },
-    ],
-    confidence: 0.92,
-    responseTime: 1200,
-  };
+        method: "GET",
+        headers: {
+          "Ocp-Apim-Subscription-Key": apiKey,
+        },
+      }
+    );
 
-  return mockResponse;
-}
+    if (!response.ok) {
+      const errorText = await response.text();
+      return createErrorResult(
+        "bing_copilot",
+        integrationId,
+        `Bing API error: ${response.status} - ${errorText}`
+      );
+    }
 
-function parseBingCopilotResponse(
-  response: BingCopilotResponse,
-  brandId: string,
-  query: string
-): VisibilityMetrics {
-  if (!response.citations || response.citations.length === 0) {
+    const data = await response.json();
+    const snippets = data.webPages?.value?.map((page: { snippet: string }) => page.snippet) || [];
+    const content = snippets.join(" ");
+    const metrics = analyzeResponseForBrand(content, brandContext);
+
     return {
-      visibility: 0,
-      position: null,
-      confidence: 0,
+      platformName: "bing_copilot",
+      platformId: integrationId,
+      status: "success",
+      response: content,
+      metrics,
+      responseTimeMs: 0,
     };
+  } catch (error) {
+    return createErrorResult(
+      "bing_copilot",
+      integrationId,
+      error instanceof Error ? error.message : "Unknown error"
+    );
   }
-
-  const visibilityScore = Math.round((response.confidence || 0.5) * 100);
-
-  return {
-    visibility: visibilityScore,
-    position: response.citations[0]?.position || 1,
-    confidence: visibilityScore,
-    citationCount: response.citations.length,
-  };
 }

@@ -1,6 +1,4 @@
 import { MultiPlatformQueryResult } from "../multi-platform-query";
-import { getPlatformByName } from "../platform-registry";
-import { VisibilityMetrics } from "@/lib/db/schema/platform-registry";
 import { analyzeResponseForBrand, createErrorResult } from "./shared-analysis";
 
 /**
@@ -10,19 +8,8 @@ import { analyzeResponseForBrand, createErrorResult } from "./shared-analysis";
  * Popular in China with fast-growing market share.
  */
 
-interface KimiResponse {
-  answer: string;
-  references: Array<{
-    title: string;
-    url?: string;
-    relevance_score: number;
-  }>;
-  answer_quality?: number;
-  response_time_ms?: number;
-}
-
 /**
- * Query Kimi platform
+ * Query Kimi platform via Moonshot API
  */
 export async function queryKimi(
   brandId: string,
@@ -30,123 +17,55 @@ export async function queryKimi(
   query: string,
   brandContext?: string
 ): Promise<MultiPlatformQueryResult> {
-  const platform = await getPlatformByName("kimi");
-  if (!platform) {
-    throw new Error("Kimi platform not configured");
+  const apiKey = process.env.MOONSHOT_API_KEY;
+  if (!apiKey) {
+    return createErrorResult("kimi", integrationId, "MOONSHOT_API_KEY not configured");
   }
 
-  const response = await executeKimiQuery(query, brandContext, platform);
-  const metrics = parseKimiResponse(response, brandId, query);
-
-  return {
-    platformName: "kimi",
-    platformId: integrationId,
-    status: "success",
-    response: JSON.stringify(response),
-    metrics,
-    responseTimeMs: response.response_time_ms || 0,
-  };
-}
-
-/**
- * Execute the actual Kimi query
- */
-async function executeKimiQuery(
-  query: string,
-  brandContext: string | undefined,
-  platform: any
-): Promise<KimiResponse> {
-  // In MVP, return mock response structure
-  // In production, call: platform.apiEndpoint with platform.credentials
-  const mockResponse: KimiResponse = {
-    answer: `Kimi's comprehensive answer to: "${query}"`,
-    references: [
-      {
-        title: "Reference 1 - Highly relevant",
-        url: "https://kimi-ref1.com",
-        relevance_score: 0.91,
+  try {
+    const response = await fetch("https://api.moonshot.cn/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
       },
-      {
-        title: "Reference 2 - Moderately relevant",
-        url: "https://kimi-ref2.com",
-        relevance_score: 0.78,
-      },
-      {
-        title: "Reference 3 - Supplementary",
-        url: "https://kimi-ref3.com",
-        relevance_score: 0.65,
-      },
-    ],
-    answer_quality: 0.85,
-    response_time_ms: 580,
-  };
+      body: JSON.stringify({
+        model: "moonshot-v1-8k",
+        messages: [
+          {
+            role: "user",
+            content: query,
+          },
+        ],
+      }),
+    });
 
-  return mockResponse;
-}
+    if (!response.ok) {
+      const errorText = await response.text();
+      return createErrorResult(
+        "kimi",
+        integrationId,
+        `Moonshot API error: ${response.status} - ${errorText}`
+      );
+    }
 
-/**
- * Parse Kimi response to extract visibility metrics
- */
-function parseKimiResponse(
-  response: KimiResponse,
-  brandId: string,
-  query: string
-): VisibilityMetrics {
-  if (!response.references || response.references.length === 0) {
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || "";
+    const metrics = analyzeResponseForBrand(content, brandContext);
+
     return {
-      visibility: 0,
-      position: null,
-      confidence: 0,
+      platformName: "kimi",
+      platformId: integrationId,
+      status: "success",
+      response: content,
+      metrics,
+      responseTimeMs: 0,
     };
+  } catch (error) {
+    return createErrorResult(
+      "kimi",
+      integrationId,
+      error instanceof Error ? error.message : "Unknown error"
+    );
   }
-
-  const topReference = response.references[0];
-  const visibilityScore = Math.round(topReference.relevance_score * 100);
-
-  return {
-    visibility: visibilityScore,
-    position: 1,
-    confidence: Math.round((response.answer_quality || 0.8) * 100),
-    citationCount: response.references.length,
-  };
-}
-
-/**
- * Extract references from Kimi response
- */
-export function extractKimiReferences(
-  response: KimiResponse
-): Array<{ title: string; url?: string; score: number }> {
-  return response.references.map((ref) => ({
-    title: ref.title,
-    url: ref.url,
-    score: ref.relevance_score,
-  }));
-}
-
-/**
- * Calculate Share of Voice from Kimi queries
- */
-export function calculateKimiSOV(
-  brandMetrics: VisibilityMetrics[],
-  competitorMetrics: VisibilityMetrics[]
-): number {
-  const totalBrandVisibility = brandMetrics.reduce(
-    (sum, m) => sum + m.visibility,
-    0
-  );
-  const totalCompetitorVisibility = competitorMetrics.reduce(
-    (sum, m) => sum + m.visibility,
-    0
-  );
-
-  if (totalBrandVisibility + totalCompetitorVisibility === 0) {
-    return 0;
-  }
-
-  return Math.round(
-    (totalBrandVisibility /
-      (totalBrandVisibility + totalCompetitorVisibility)) *
-      100
-  );
 }

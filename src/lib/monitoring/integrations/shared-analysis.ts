@@ -35,23 +35,46 @@ export function analyzeResponseForBrand(
 ): VisibilityMetrics {
   const { confidence = 85, citationBonus = 0 } = options;
 
-  const lowerResponse = response.toLowerCase();
-  const brandName = brandContext?.toLowerCase() || "";
+  const brandName = brandContext || "";
 
-  // Check if brand is mentioned
-  const isMentioned = brandName && lowerResponse.includes(brandName);
+  // Escape special regex characters in brand name
+  const escapedBrandName = brandName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-  // Calculate position (where in response brand appears)
+  // Use word-boundary regex for accurate brand detection
+  const brandRegex = escapedBrandName
+    ? new RegExp(`\\b${escapedBrandName}\\b`, "gi")
+    : null;
+
+  // Check if brand is mentioned using word boundary
+  const isMentioned = brandRegex ? brandRegex.test(response) : false;
+
+  // Calculate position based on which quarter of response first mention falls in
   let position: number | null = null;
-  if (isMentioned && brandName) {
-    const firstMentionIndex = lowerResponse.indexOf(brandName);
-    const responseLength = response.length;
-    position = Math.ceil((firstMentionIndex / responseLength) * 10) || 1;
+  if (isMentioned && brandRegex) {
+    // Reset regex lastIndex for fresh search
+    brandRegex.lastIndex = 0;
+    const match = brandRegex.exec(response);
+    if (match) {
+      const firstMentionIndex = match.index;
+      const responseLength = response.length;
+      const percentPosition = firstMentionIndex / responseLength;
+
+      // Position: 0-25% = 1, 25-50% = 3, 50-75% = 6, 75-100% = 9
+      if (percentPosition < 0.25) {
+        position = 1;
+      } else if (percentPosition < 0.5) {
+        position = 3;
+      } else if (percentPosition < 0.75) {
+        position = 6;
+      } else {
+        position = 9;
+      }
+    }
   }
 
-  // Count mentions
-  const mentionCount = brandName
-    ? (lowerResponse.match(new RegExp(brandName, "gi")) || []).length
+  // Count mentions using word-boundary regex
+  const mentionCount = escapedBrandName
+    ? (response.match(new RegExp(`\\b${escapedBrandName}\\b`, "gi")) || []).length
     : 0;
 
   // Calculate visibility score (0-100)

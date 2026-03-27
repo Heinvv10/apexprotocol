@@ -1,6 +1,4 @@
 import { MultiPlatformQueryResult } from "../multi-platform-query";
-import { getPlatformByName } from "../platform-registry";
-import { VisibilityMetrics } from "@/lib/db/schema/platform-registry";
 import { analyzeResponseForBrand, createErrorResult } from "./shared-analysis";
 
 /**
@@ -9,17 +7,6 @@ import { analyzeResponseForBrand, createErrorResult } from "./shared-analysis";
  * Handles queries to Mistral AI platform for brand visibility monitoring.
  * Mistral is a leading French LLM provider with strong European market presence.
  */
-
-interface MistralResponse {
-  results: Array<{
-    content: string;
-    source?: string;
-    relevance?: number;
-    rank?: number;
-  }>;
-  total_found?: number;
-  quality_score?: number;
-}
 
 /**
  * Query Mistral platform
@@ -30,125 +17,55 @@ export async function queryMistral(
   query: string,
   brandContext?: string
 ): Promise<MultiPlatformQueryResult> {
-  const platform = await getPlatformByName("mistral");
-  if (!platform) {
-    throw new Error("Mistral platform not configured");
+  const apiKey = process.env.MISTRAL_API_KEY;
+  if (!apiKey) {
+    return createErrorResult("mistral", integrationId, "MISTRAL_API_KEY not configured");
   }
 
-  const response = await executeMistralQuery(query, brandContext, platform);
-  const metrics = parseMistralResponse(response, brandId, query);
-
-  return {
-    platformName: "mistral",
-    platformId: integrationId,
-    status: "success",
-    response: JSON.stringify(response),
-    metrics,
-    responseTimeMs: 0,
-  };
-}
-
-/**
- * Execute the actual Mistral query
- */
-async function executeMistralQuery(
-  query: string,
-  brandContext: string | undefined,
-  platform: any
-): Promise<MistralResponse> {
-  // In MVP, return mock response structure
-  // In production, call: platform.apiEndpoint with platform.credentials
-  const mockResponse: MistralResponse = {
-    results: [
-      {
-        content: `Mistral result 1 for "${query}"`,
-        source: "https://mistral-source1.com",
-        relevance: 0.92,
-        rank: 1,
+  try {
+    const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
       },
-      {
-        content: `Mistral result 2 for "${query}"`,
-        source: "https://mistral-source2.com",
-        relevance: 0.84,
-        rank: 2,
-      },
-      {
-        content: `Mistral result 3 for "${query}"`,
-        source: "https://mistral-source3.com",
-        relevance: 0.68,
-        rank: 3,
-      },
-    ],
-    total_found: 3,
-    quality_score: 0.81,
-  };
+      body: JSON.stringify({
+        model: "mistral-large-latest",
+        messages: [
+          {
+            role: "user",
+            content: query,
+          },
+        ],
+      }),
+    });
 
-  return mockResponse;
-}
+    if (!response.ok) {
+      const errorText = await response.text();
+      return createErrorResult(
+        "mistral",
+        integrationId,
+        `Mistral API error: ${response.status} - ${errorText}`
+      );
+    }
 
-/**
- * Parse Mistral response to extract visibility metrics
- */
-function parseMistralResponse(
-  response: MistralResponse,
-  brandId: string,
-  query: string
-): VisibilityMetrics {
-  if (!response.results || response.results.length === 0) {
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || "";
+    const metrics = analyzeResponseForBrand(content, brandContext);
+
     return {
-      visibility: 0,
-      position: null,
-      confidence: 0,
+      platformName: "mistral",
+      platformId: integrationId,
+      status: "success",
+      response: content,
+      metrics,
+      responseTimeMs: 0,
     };
+  } catch (error) {
+    return createErrorResult(
+      "mistral",
+      integrationId,
+      error instanceof Error ? error.message : "Unknown error"
+    );
   }
-
-  const topResult = response.results[0];
-  const visibilityScore = Math.round((topResult.relevance || 0.5) * 100);
-
-  return {
-    visibility: visibilityScore,
-    position: topResult.rank || 1,
-    confidence: Math.round((response.quality_score || 0.75) * 100),
-    citationCount: response.total_found || 0,
-  };
-}
-
-/**
- * Extract citations from Mistral response
- */
-export function extractMistralCitations(
-  response: MistralResponse
-): Array<{ text: string; source?: string; rank: number }> {
-  return response.results.map((result, index) => ({
-    text: result.content,
-    source: result.source,
-    rank: result.rank || index + 1,
-  }));
-}
-
-/**
- * Calculate Share of Voice from Mistral queries
- */
-export function calculateMistralSOV(
-  brandMetrics: VisibilityMetrics[],
-  competitorMetrics: VisibilityMetrics[]
-): number {
-  const totalBrandVisibility = brandMetrics.reduce(
-    (sum, m) => sum + m.visibility,
-    0
-  );
-  const totalCompetitorVisibility = competitorMetrics.reduce(
-    (sum, m) => sum + m.visibility,
-    0
-  );
-
-  if (totalBrandVisibility + totalCompetitorVisibility === 0) {
-    return 0;
-  }
-
-  return Math.round(
-    (totalBrandVisibility /
-      (totalBrandVisibility + totalCompetitorVisibility)) *
-      100
-  );
 }
