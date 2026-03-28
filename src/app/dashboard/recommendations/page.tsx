@@ -423,6 +423,32 @@ const priorityTabs = [
   { id: "low", label: "Low" },
 ];
 
+// Platform filter options
+const platformFilters = [
+  { id: "all", label: "All" },
+  { id: "chatgpt", label: "ChatGPT" },
+  { id: "claude", label: "Claude" },
+  { id: "gemini", label: "Gemini" },
+  { id: "perplexity", label: "Perplexity" },
+];
+
+// Category filter options
+const categoryFilters = [
+  { id: "all", label: "All Types" },
+  { id: "technical", label: "TECH" },
+  { id: "content", label: "CONTENT" },
+  { id: "entity", label: "ENTITY" },
+  { id: "pr", label: "PR" },
+];
+
+// Effort filter options
+const effortFilters = [
+  { id: "all", label: "All Effort" },
+  { id: "quick_win", label: "Quick Win" },
+  { id: "moderate", label: "Medium" },
+  { id: "major", label: "Project" },
+];
+
 // Transform API recommendation to UI Recommendation format
 function apiToUIRecommendation(rec: APIRecommendation & {
   baselineScore?: number | null;
@@ -643,6 +669,9 @@ export default function RecommendationsPage() {
 
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [priorityFilter, setPriorityFilter] = React.useState("all");
+  const [platformFilter, setPlatformFilter] = React.useState("all");
+  const [categoryFilter, setCategoryFilter] = React.useState("all");
+  const [effortFilter, setEffortFilter] = React.useState("all");
   const [searchQuery, setSearchQuery] = React.useState("");
 
   // Handle status change using mutation
@@ -658,7 +687,30 @@ export default function RecommendationsPage() {
       searchQuery === "" ||
       rec.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       rec.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesPriority && matchesSearch;
+
+    // Platform filter - check platformTags from API recommendation
+    const apiRec = recommendationsResponse?.recommendations?.find((r: APIRecommendation) => r.id === rec.id) as APIRecommendation & { platformTags?: string[] } | undefined;
+    const platformTags = apiRec?.platformTags || [];
+    const matchesPlatform = platformFilter === "all" || platformTags.includes(platformFilter);
+
+    // Category filter - map to recommendation type
+    const categoryMap: Record<string, string> = {
+      technical: "technical",
+      content: "content",
+      entity: "schema",
+      pr: "ai-visibility",
+    };
+    const matchesCategory = categoryFilter === "all" || rec.type === categoryMap[categoryFilter];
+
+    // Effort filter - map effort number to filter
+    const effortMap: Record<string, number[]> = {
+      quick_win: [1, 2, 3],
+      moderate: [4, 5, 6],
+      major: [7, 8, 9, 10],
+    };
+    const matchesEffort = effortFilter === "all" || (effortMap[effortFilter]?.includes(rec.effort) ?? false);
+
+    return matchesStatus && matchesPriority && matchesSearch && matchesPlatform && matchesCategory && matchesEffort;
   });
 
   // Stats
@@ -777,6 +829,80 @@ export default function RecommendationsPage() {
           </div>
         </div>
       )}
+
+      {/* Platform + Category + Effort Filter Bar */}
+      <div className="card-secondary p-4">
+        <div className="flex flex-wrap gap-4 items-center">
+          {/* Platform Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground uppercase tracking-wider">Platform:</span>
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-background border border-border">
+              {platformFilters.map((filter) => (
+                <button
+                  key={filter.id}
+                  onClick={() => setPlatformFilter(filter.id)}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150",
+                    platformFilter === filter.id
+                      ? "bg-primary/20 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Separator */}
+          <div className="h-6 w-px bg-border" />
+
+          {/* Category Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground uppercase tracking-wider">Type:</span>
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-background border border-border">
+              {categoryFilters.map((filter) => (
+                <button
+                  key={filter.id}
+                  onClick={() => setCategoryFilter(filter.id)}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150",
+                    categoryFilter === filter.id
+                      ? "bg-accent-purple/20 text-accent-purple"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Separator */}
+          <div className="h-6 w-px bg-border" />
+
+          {/* Effort Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground uppercase tracking-wider">Effort:</span>
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-background border border-border">
+              {effortFilters.map((filter) => (
+                <button
+                  key={filter.id}
+                  onClick={() => setEffortFilter(filter.id)}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150",
+                    effortFilter === filter.id
+                      ? "bg-success/20 text-success"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">

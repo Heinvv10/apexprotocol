@@ -2,12 +2,14 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Radar, ArrowRight, Bot, Sparkles, AlertCircle, Loader2, RefreshCw, Settings } from "lucide-react";
+import { Radar, ArrowRight, Bot, Sparkles, AlertCircle, Loader2, RefreshCw, Settings, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { FilterSidebar, SmartTable, QueryRow, LiveIndicator } from "@/components/monitor";
 import { useSelectedBrand } from "@/stores";
 import { useMentionsByBrand, Mention } from "@/hooks/useMonitor";
 import { useRealtimeMonitor, StreamMention } from "@/hooks/useRealtimeMonitor";
+import type { PlatformVisibilityScore } from "@/lib/db/schema/audits";
 
 // Transform stream mention to SmartTable QueryRow format
 function streamMentionToQueryRow(mention: StreamMention): QueryRow {
@@ -256,6 +258,64 @@ function MonitorEmptyState() {
   );
 }
 
+// Platform score card configuration
+const platformConfig = [
+  { key: "chatgpt" as const, emoji: "🤖", name: "ChatGPT", color: "#10A37F" },
+  { key: "claude" as const, emoji: "🧠", name: "Claude", color: "#D97757" },
+  { key: "gemini" as const, emoji: "💎", name: "Gemini", color: "#4285F4" },
+  { key: "perplexity" as const, emoji: "🔍", name: "Perplexity", color: "#20B8CD" },
+  { key: "grok" as const, emoji: "⚡", name: "Grok", color: "#FFFFFF" },
+  { key: "deepseek" as const, emoji: "🌊", name: "DeepSeek", color: "#6366F1" },
+  { key: "copilot" as const, emoji: "✈️", name: "Copilot", color: "#0078D4" },
+];
+
+function TrendIcon({ trend }: { trend: "up" | "stable" | "down" | undefined }) {
+  if (trend === "up") return <TrendingUp className="w-3.5 h-3.5 text-success" />;
+  if (trend === "down") return <TrendingDown className="w-3.5 h-3.5 text-error" />;
+  return <Minus className="w-3.5 h-3.5 text-muted-foreground" />;
+}
+
+function PlatformScoreCards({ platformScores }: { platformScores: PlatformVisibilityScore[] }) {
+  // Create a map for quick lookup
+  const scoresMap = React.useMemo(() => {
+    const map = new Map<string, PlatformVisibilityScore>();
+    platformScores.forEach((score) => map.set(score.platform, score));
+    return map;
+  }, [platformScores]);
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+      {platformConfig.map((platform) => {
+        const score = scoresMap.get(platform.key);
+        const hasData = score !== undefined;
+
+        return (
+          <Card
+            key={platform.key}
+            className="card-tertiary p-3 hover:border-primary/30 transition-colors"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">{platform.emoji}</span>
+              <span className="text-xs font-medium text-muted-foreground truncate">
+                {platform.name}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span
+                className="text-xl font-bold"
+                style={{ color: hasData ? platform.color : undefined }}
+              >
+                {hasData ? score.score : "--"}
+              </span>
+              <TrendIcon trend={hasData ? score.trend : undefined} />
+            </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function MonitorPage() {
   // Get selected brand from global state
   const selectedBrand = useSelectedBrand();
@@ -408,6 +468,11 @@ export default function MonitorPage() {
           )}
         </div>
       </div>
+
+      {/* Platform Score Cards */}
+      {selectedBrand && !isLoading && (
+        <PlatformScoreCards platformScores={[]} />
+      )}
 
       {/* Main Content */}
       {noBrandSelected ? (
