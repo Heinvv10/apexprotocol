@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import {
   Building2,
@@ -21,6 +22,7 @@ import {
   PenTool,
   AlertCircle,
   RefreshCw,
+  FileBarChart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBrandStore, useBrands, useSelectedBrand } from "@/stores";
@@ -409,6 +411,49 @@ function EmptyStateDashboard() {
   );
 }
 
+
+// Generate Report Button Component
+function GenerateReportButton({ brandId, brandName }: { brandId: string; brandName: string }) {
+  const [loading, setLoading] = React.useState(false);
+
+  const handleGenerate = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/reports/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brandId }),
+      });
+      if (!res.ok) throw new Error("Failed to generate report");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const period = new Date().toISOString().slice(0, 7);
+      a.href = url;
+      a.download = `apexgeo-report-${brandName.toLowerCase().replace(/\s+/g, "-")}-${period}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Failed to generate report. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [brandId, brandName]);
+
+  return (
+    <Button variant="outline" onClick={handleGenerate} disabled={loading}>
+      {loading ? (
+        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+      ) : (
+        <FileBarChart className="w-4 h-4 mr-2" />
+      )}
+      {loading ? "Generating..." : "Generate Report"}
+    </Button>
+  );
+}
+
 // Main Dashboard Component
 export default function DashboardPage() {
   const brands = useBrands();
@@ -438,10 +483,13 @@ export default function DashboardPage() {
             Monitor your brand&apos;s performance across AI platforms
           </p>
         </div>
-        <Button>
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Refresh Data
-        </Button>
+        <div className="flex gap-2">
+          <GenerateReportButton brandId={selectedBrand.id} brandName={selectedBrand.name ?? "brand"} />
+          <Button>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh Data
+          </Button>
+        </div>
       </div>
 
       {/* Key Metrics Section */}
