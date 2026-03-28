@@ -5,9 +5,15 @@
 
 import { auditQueue, type Job } from "../index";
 import { db } from "../../db";
-import { audits } from "../../db/schema";
+import { audits, brands } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { createCrawler, analyzeAuditResults } from "../../audit";
+import {
+  checkAiCrawlers,
+  checkEntityAuthority,
+  checkContentChunking,
+} from "../../audit/checks";
+import type { AuditIssue, AuditMetadata } from "../../db/schema/audits";
 
 // Worker configuration
 const WORKER_CONFIG = {
@@ -85,8 +91,37 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
 
     // Analyze results
     const analysis = analyzeAuditResults(crawlResult);
+
+    // Run additional GEO/AEO checks in parallel
+    // Get brand name for entity authority check
+    const brand = await db.query.brands.findFirst({
+      where: eq(brands.id, brandId),
+    });
+
+    const [aiCrawlerIssues, entityIssues, chunkingResult] = await Promise.all([
+      checkAiCrawlers(url),
+      brand ? checkEntityAuthority(brand.name, brand.domain || undefined) : Promise.resolve([]),
+      checkContentChunking(url),
+    ]);
+
+    // Merge all issues
+    const allIssues: AuditIssue[] = [
+      ...analysis.issues.map((issue) => ({
+        id: issue.id,
+        category: issue.category,
+        severity: issue.severity,
+        title: issue.title,
+        description: issue.description,
+        recommendation: issue.recommendation,
+        impact: issue.impact.description,
+      })),
+      ...aiCrawlerIssues,
+      ...entityIssues,
+      ...chunkingResult.issues,
+    ];
+
     result.overallScore = analysis.readability.overall;
-    result.issuesFound = analysis.issues.length;
+    result.issuesFound = allIssues.length;
 
     // Update audit in database
     if (existingAudit) {
@@ -134,21 +169,12 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
               ).length,
             },
           ],
-          issues: analysis.issues.map((issue) => ({
-            id: issue.id,
-            category: issue.category,
-            severity: issue.severity,
-            title: issue.title,
-            description: issue.description,
-            affectedPages: issue.affectedPages,
-            recommendation: issue.recommendation,
-            impact: issue.impact.description,
-          })),
-          issueCount: analysis.issues.length,
-          criticalCount: analysis.summary.criticalCount,
-          highCount: analysis.summary.highCount,
-          mediumCount: analysis.summary.mediumCount,
-          lowCount: analysis.summary.lowCount,
+          issues: allIssues,
+          issueCount: allIssues.length,
+          criticalCount: allIssues.filter((i) => i.severity === "critical").length,
+          highCount: allIssues.filter((i) => i.severity === "high").length,
+          mediumCount: allIssues.filter((i) => i.severity === "medium").length,
+          lowCount: allIssues.filter((i) => i.severity === "low").length,
           recommendations: analysis.recommendations,
           metadata: {
             timing: {
@@ -158,7 +184,9 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
             },
             pagesAnalyzed: crawlResult.pages.length,
             grade: analysis.readability.grade,
-          },
+            contentChunkingScore: chunkingResult.score,
+            contentChunkingBreakdown: chunkingResult.breakdown,
+          } as AuditMetadata,
           errorMessage:
             result.errors.length > 0 ? result.errors.join("; ") : null,
         })

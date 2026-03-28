@@ -2,10 +2,10 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Radar, ArrowRight, Bot, Sparkles, AlertCircle, Loader2, RefreshCw, Settings, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Radar, ArrowRight, Bot, Sparkles, AlertCircle, Loader2, RefreshCw, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { FilterSidebar, SmartTable, QueryRow, LiveIndicator } from "@/components/monitor";
+import { FilterSidebar, SmartTable, QueryRow, LiveIndicator, CitationVelocityCard } from "@/components/monitor";
+import type { VelocityTrend } from "@/components/monitor";
 import { useSelectedBrand } from "@/stores";
 import { useMentionsByBrand, Mention } from "@/hooks/useMonitor";
 import { useRealtimeMonitor, StreamMention } from "@/hooks/useRealtimeMonitor";
@@ -269,12 +269,6 @@ const platformConfig = [
   { key: "copilot" as const, emoji: "✈️", name: "Copilot", color: "#0078D4" },
 ];
 
-function TrendIcon({ trend }: { trend: "up" | "stable" | "down" | undefined }) {
-  if (trend === "up") return <TrendingUp className="w-3.5 h-3.5 text-success" />;
-  if (trend === "down") return <TrendingDown className="w-3.5 h-3.5 text-error" />;
-  return <Minus className="w-3.5 h-3.5 text-muted-foreground" />;
-}
-
 function PlatformScoreCards({ platformScores }: { platformScores: PlatformVisibilityScore[] }) {
   // Create a map for quick lookup
   const scoresMap = React.useMemo(() => {
@@ -289,27 +283,24 @@ function PlatformScoreCards({ platformScores }: { platformScores: PlatformVisibi
         const score = scoresMap.get(platform.key);
         const hasData = score !== undefined;
 
+        // Generate mock recent scores for sparkline (latest 3 data points)
+        // In production, this would come from historical data
+        const recentScores = hasData
+          ? [
+              Math.max(0, score.score - 5),
+              Math.max(0, score.score - 2),
+              score.score,
+            ]
+          : [];
+
         return (
-          <Card
+          <CitationVelocityCard
             key={platform.key}
-            className="card-tertiary p-3 hover:border-primary/30 transition-colors"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">{platform.emoji}</span>
-              <span className="text-xs font-medium text-muted-foreground truncate">
-                {platform.name}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span
-                className="text-xl font-bold"
-                style={{ color: hasData ? platform.color : undefined }}
-              >
-                {hasData ? score.score : "--"}
-              </span>
-              <TrendIcon trend={hasData ? score.trend : undefined} />
-            </div>
-          </Card>
+            platform={platform.name}
+            emoji={platform.emoji}
+            scores={recentScores}
+            trend={hasData ? score.trend : "stable"}
+          />
         );
       })}
     </div>

@@ -96,6 +96,15 @@ export interface PlatformVisibilityScore {
   lastUpdated: string;
 }
 
+// Content chunking breakdown
+export interface ContentChunkingBreakdown {
+  faqSchema: number;
+  headingStructure: number;
+  paragraphLength: number;
+  listUsage: number;
+  contentDepth: number;
+}
+
 // Audit metadata type
 export interface AuditMetadata {
   userAgent?: string;
@@ -118,6 +127,9 @@ export interface AuditMetadata {
   // Analysis results
   pagesAnalyzed?: number;
   grade?: string;
+  // Content chunking score (0-100)
+  contentChunkingScore?: number;
+  contentChunkingBreakdown?: ContentChunkingBreakdown;
 }
 
 // Relations

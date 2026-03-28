@@ -21,3 +21,5 @@ export {
   LastUpdatedTimestamp,
 } from "./data-refresh-indicator";
 export { LiveIndicator, LiveDot } from "./live-indicator";
+export { CitationVelocityCard } from "./CitationVelocityCard";
+export type { CitationVelocityCardProps, VelocityTrend } from "./CitationVelocityCard";
