@@ -78,7 +78,7 @@ const platformConfig: Record<string, {
 // All supported platforms
 const supportedPlatforms = ["linkedin", "twitter", "instagram", "facebook", "youtube", "tiktok"];
 
-export default function CustomerChannelsPage() {
+function CustomerChannelsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedBrand = useSelectedBrand();
@@ -448,5 +448,14 @@ export default function CustomerChannelsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+import { Suspense } from 'react';
+export default function CustomerChannelsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>}>
+      <CustomerChannelsPageInner />
+    </Suspense>
   );
 }

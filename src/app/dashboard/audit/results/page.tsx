@@ -22,7 +22,7 @@ import { CompetitorComparisonDeepDive } from "@/components/audit/results/Competi
 // Import hook
 import { useAudit, useExportAuditReport } from "@/hooks/useAudit";
 
-export default function AuditResultsPage() {
+function AuditResultsPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const auditId = searchParams.get("id");
@@ -216,5 +216,14 @@ export default function AuditResultsPage() {
         <RecommendationsList audit={audit} />
       </div>
     </div>
+  );
+}
+
+import { Suspense } from "react";
+export default function AuditResultsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="w-8 h-8 animate-spin" /></div>}>
+      <AuditResultsPageInner />
+    </Suspense>
   );
 }

@@ -121,6 +121,14 @@ export const recommendations = pgTable("recommendations", {
   userRating: integer("user_rating"),
   userFeedback: text("user_feedback"),
   feedbackAt: timestamp("feedback_at", { withTimezone: true }),
+
+  // Platform targeting
+  platformTags: jsonb("platform_tags").$type<string[]>().default([]),
+
+  // Estimated impact range
+  estimatedImpactLow: integer("estimated_impact_low"),
+  estimatedImpactHigh: integer("estimated_impact_high"),
+  impactSource: text("impact_source"),
 });
 
 // Relations

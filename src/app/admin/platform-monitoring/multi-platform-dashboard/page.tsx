@@ -220,7 +220,7 @@ export default function MultiPlatformDashboard() {
     const checkAccess = async () => {
       if (organization.organization) {
         const planId = organization.organization.publicMetadata?.planId as string || "starter";
-        const hasAccess = await canAccessFeature("platform_expansion_tier_2", planId);
+        const hasAccess = await canAccessFeature("platform_expansion_tier_2", planId as import("@/lib/permissions/feature-gates").Plan);
         setCanAccessTier2(hasAccess);
       }
     };
@@ -237,8 +237,8 @@ export default function MultiPlatformDashboard() {
 
   // Build chart data respecting feature gates
   const chartData = [
-    ...tier1Platforms.map((p) => ({ platform: p.platform, ...p })),
-    ...(canAccessTier2 ? tier2Platforms.map((p) => ({ platform: p.platform, ...p })) : []),
+    ...tier1Platforms.map((p) => ({ ...p })),
+    ...(canAccessTier2 ? tier2Platforms.map((p) => ({ ...p })) : []),
   ];
 
   const handleRefresh = async () => {

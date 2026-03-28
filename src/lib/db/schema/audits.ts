@@ -50,6 +50,9 @@ export const audits = pgTable("audits", {
   // Recommendations generated from audit
   recommendations: jsonb("recommendations").$type<string[]>().default([]),
 
+  // Per-platform visibility scores
+  platformScores: jsonb("platform_scores").$type<PlatformVisibilityScore[]>().default([]),
+
   // Audit metadata
   metadata: jsonb("metadata").$type<AuditMetadata>().default({}),
 
@@ -80,6 +83,17 @@ export interface AuditIssue {
   element?: string;
   recommendation: string;
   impact: string;
+}
+
+// Platform visibility score type
+export interface PlatformVisibilityScore {
+  platform: "chatgpt" | "claude" | "gemini" | "perplexity" | "grok" | "deepseek" | "copilot";
+  score: number;
+  citationRate: number;
+  mentionRate: number;
+  shareOfVoice: number;
+  trend: "up" | "stable" | "down";
+  lastUpdated: string;
 }
 
 // Audit metadata type

@@ -39,7 +39,7 @@ function SelectBrandPrompt() {
 }
 
 export default function ScheduledAuditsPage() {
-  const { selectedBrand } = useSelectedBrand();
+  const selectedBrand = useSelectedBrand();
   const { data: audits, isLoading } = useAuditsByBrand(selectedBrand?.id || "");
 
   const [isModalOpen, setIsModalOpen] = React.useState(false);

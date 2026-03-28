@@ -76,7 +76,7 @@ function SelectBrandPrompt() {
   );
 }
 
-export default function SimulatePage() {
+function SimulatePageInner() {
   const selectedBrand = useSelectedBrand();
   const searchParams = useSearchParams();
   const contentId = searchParams.get("contentId");
@@ -155,5 +155,14 @@ export default function SimulatePage() {
         />
       )}
     </div>
+  );
+}
+
+import { Suspense } from 'react';
+export default function SimulatePage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>}>
+      <SimulatePageInner />
+    </Suspense>
   );
 }

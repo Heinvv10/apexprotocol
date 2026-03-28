@@ -290,7 +290,7 @@ function OAuthStatusToast() {
 }
 
 // Main Page
-export default function SocialSettingsPage() {
+function SocialSettingsPageInner() {
   const selectedBrand = useSelectedBrand();
   const brandId = selectedBrand?.id || "";
 
@@ -479,5 +479,14 @@ export default function SocialSettingsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+import { Suspense } from 'react';
+export default function SocialSettingsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>}>
+      <SocialSettingsPageInner />
+    </Suspense>
   );
 }

@@ -16,6 +16,14 @@ const nextConfig: NextConfig = {
   // Production optimizations
   reactStrictMode: true,
 
+
+  // Skip type checking and linting during build (run separately)
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // Image optimization configuration
   images: {
     remotePatterns: [

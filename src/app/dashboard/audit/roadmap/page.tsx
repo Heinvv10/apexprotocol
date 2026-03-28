@@ -20,7 +20,7 @@ import { useAudit } from "@/hooks/useAudit";
 import { RoadmapPhaseCard } from "@/components/audit/roadmap/RoadmapPhaseCard";
 import { ProgressTimeline } from "@/components/audit/roadmap/ProgressTimeline";
 
-export default function RoadmapPage() {
+function RoadmapPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const auditId = searchParams.get("id");
@@ -255,5 +255,14 @@ export default function RoadmapPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+import { Suspense } from 'react';
+export default function RoadmapPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>}>
+      <RoadmapPageInner />
+    </Suspense>
   );
 }
