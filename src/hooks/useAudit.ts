@@ -10,7 +10,8 @@ import { queryKeys, invalidateQueries } from "@/lib/query/client";
 // Types
 // =============================================================================
 
-export type AuditStatus = "pending" | "crawling" | "analyzing" | "completed" | "failed";
+// Status values match DB enum: pending, in_progress, completed, failed
+export type AuditStatus = "pending" | "in_progress" | "completed" | "failed";
 
 export interface Audit {
   id: string;
@@ -162,10 +163,10 @@ export function useAudits(
     queryFn: () => fetchAudits(filters),
     staleTime: 1000 * 30, // 30 seconds (audits change frequently)
     refetchInterval: (query) => {
-      // Refetch more frequently if there are pending audits
+      // Refetch more frequently if there are pending/in-progress audits
       const data = query.state.data;
       const hasPending = data?.audits?.some(
-        (a) => a.status === "pending" || a.status === "crawling" || a.status === "analyzing"
+        (a) => a.status === "pending" || a.status === "in_progress"
       );
       return hasPending ? 5000 : 60000; // 5s if pending, 1min otherwise
     },
@@ -194,7 +195,7 @@ export function useAudit(
     refetchInterval: (query) => {
       const status = query.state.data?.status;
       // Refetch frequently while audit is in progress
-      if (status === "crawling" || status === "analyzing" || status === "pending") {
+      if (status === "in_progress" || status === "pending") {
         return 3000; // 3 seconds
       }
       return false;
