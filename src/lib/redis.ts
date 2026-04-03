@@ -275,14 +275,14 @@ export function getRedisClient(): Redis {
         );
         usingInMemory = true;
       }
-      // Return in-memory client cast as Redis
-      return new InMemoryRedis() as unknown as Redis;
+      // Return in-memory client cast as Redis (cached as singleton)
+      redisClient = new InMemoryRedis() as unknown as Redis;
+    } else {
+      redisClient = new Redis({
+        url,
+        token,
+      });
     }
-
-    redisClient = new Redis({
-      url,
-      token,
-    });
   }
 
   return redisClient;
