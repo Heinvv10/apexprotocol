@@ -8,7 +8,7 @@ import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { audits, brands } from "@/lib/db/schema";
+import { audits, brands, users } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
 import { auditRequestSchema } from "@/lib/validations/audit";
@@ -67,13 +67,25 @@ export async function POST(request: NextRequest) {
       normalizedUrl = `https://${normalizedUrl}`;
     }
 
+    // Resolve internal user ID from Clerk user ID
+    let internalUserId: string | null = null;
+    try {
+      const dbUser = await db.query.users.findFirst({
+        where: eq(users.clerkUserId, userId),
+        columns: { id: true },
+      });
+      internalUserId = dbUser?.id ?? null;
+    } catch {
+      // User not in DB yet — audit will proceed without triggeredById
+    }
+
     // Create audit record
     const auditId = createId();
     const now = new Date();
     await db.insert(audits).values({
       id: auditId,
       brandId,
-      triggeredById: userId,
+      triggeredById: internalUserId,
       url: normalizedUrl,
       status: "pending",
       startedAt: now,
