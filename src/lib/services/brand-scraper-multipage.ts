@@ -104,9 +104,61 @@ async function findRelevantPages(baseUrl: string, homepageLinks: Array<{ href: s
 }
 
 /**
- * Crawl a single page and extract structured data including social links
+ * Crawl a single page using Playwright for JS-rendered content.
+ * Falls back to static HTML crawl if Playwright fails.
  */
-async function crawlSinglePage(url: string, timeout = 15000): Promise<PageData | null> {
+async function crawlSinglePagePlaywright(url: string, timeout = 15000): Promise<PageData | null> {
+  let browser;
+  try {
+    // Dynamic import so a missing browser binary doesn't crash at module load
+    const { chromium } = await import("playwright");
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout });
+
+    const html = await page.content();
+    const text = await page.evaluate(() => (document.body as HTMLBodyElement).innerText);
+    const title = await page.title();
+    const h1Tags = await page.$$eval("h1", (els) =>
+      els.map((el) => el.textContent?.trim() || "").filter(Boolean)
+    );
+    const h2Tags = await page.$$eval("h2", (els) =>
+      els.map((el) => el.textContent?.trim() || "").filter(Boolean)
+    );
+    const links = await page.$$eval("a[href]", (els) =>
+      els.map((el) => ({ href: el.getAttribute("href") || "", text: el.textContent?.trim() || "" }))
+    );
+    const images = await page.$$eval("img", (els) =>
+      els.map((el) => ({ src: el.getAttribute("src") || "", alt: el.getAttribute("alt") || "" }))
+    );
+
+    // Extract social links from rendered HTML
+    const $ = cheerio.load(html);
+    const socialResult = extractSocialPatterns($);
+
+    return {
+      url,
+      title,
+      content: text,
+      h1Tags,
+      h2Tags,
+      links,
+      images,
+      rawHtml: html,
+      socialLinks: socialResult.links,
+    };
+  } catch (e) {
+    console.warn(`Playwright crawl failed for ${url}:`, e);
+    return null;
+  } finally {
+    await browser?.close();
+  }
+}
+
+/**
+ * Static HTML fallback crawler using the existing crawlUrl utility.
+ */
+async function crawlSinglePageStatic(url: string, timeout = 15000): Promise<PageData | null> {
   try {
     const crawlResult = await crawlUrl(url, {
       depth: "single",
@@ -127,7 +179,7 @@ async function crawlSinglePage(url: string, timeout = 15000): Promise<PageData |
     }
 
     const page = crawlResult.pages[0];
-    
+
     // Extract social links from raw HTML if available
     let socialLinks: SocialLink[] = [];
     if (page.rawHtml) {
@@ -146,15 +198,28 @@ async function crawlSinglePage(url: string, timeout = 15000): Promise<PageData |
       content: page.content?.text || "",
       h1Tags: page.h1Tags || [],
       h2Tags: page.h2Tags || [],
-      links: page.links?.map(l => ({ href: l.href, text: l.text || "" })) || [],
-      images: page.images?.map(i => ({ src: i.src, alt: i.alt || "" })) || [],
+      links: page.links?.map((l) => ({ href: l.href, text: l.text || "" })) || [],
+      images: page.images?.map((i) => ({ src: i.src, alt: i.alt || "" })) || [],
       rawHtml: page.rawHtml,
       socialLinks,
     };
   } catch (error) {
-    console.error(`Failed to crawl ${url}:`, error);
+    console.error(`Failed to crawl ${url} (static):`, error);
     return null;
   }
+}
+
+/**
+ * Crawl a single page and extract structured data including social links.
+ * Attempts JS-rendered crawl via Playwright first; falls back to static HTML.
+ */
+async function crawlSinglePage(url: string, timeout = 15000): Promise<PageData | null> {
+  const playwrightResult = await crawlSinglePagePlaywright(url, timeout);
+  if (playwrightResult) {
+    return playwrightResult;
+  }
+  console.info(`Falling back to static HTML crawl for ${url}`);
+  return crawlSinglePageStatic(url, timeout);
 }
 
 /**
