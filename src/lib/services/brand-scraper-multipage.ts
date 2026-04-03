@@ -5,7 +5,7 @@
 
 import * as cheerio from "cheerio";
 import { crawlUrl } from "@/lib/audit/crawler";
-import { analyzeBrandFromWebsite, type BrandAnalysisInput } from "@/lib/ai/prompts/brand-analysis";
+import { analyzeBrandFromWebsite, type BrandAnalysisInput, type BrandLocationInfo } from "@/lib/ai/prompts/brand-analysis";
 import { extractBestLogo, type LogoCandidate } from "@/lib/services/logo-extractor";
 import { extractSocialPatterns, type SocialLink } from "@/lib/crawling/social-discovery";
 import type { ScrapedBrandData } from "@/app/api/brands/scrape/route";
@@ -226,6 +226,67 @@ async function crawlSinglePage(url: string, timeout = 15000): Promise<PageData |
  * Enhanced multi-page brand scraper
  * Crawls homepage, about, contact, and history pages
  */
+
+// Known cities mapped to their country
+const KNOWN_CITIES: Record<string, { country: string; countryCode?: string }> = {
+  // South Africa
+  "cape town": { country: "South Africa" },
+  "johannesburg": { country: "South Africa" },
+  "joburg": { country: "South Africa" },
+  "jozi": { country: "South Africa" },
+  "pretoria": { country: "South Africa" },
+  "tshwane": { country: "South Africa" },
+  "durban": { country: "South Africa" },
+  "port elizabeth": { country: "South Africa" },
+  "gqeberha": { country: "South Africa" },
+  "bloemfontein": { country: "South Africa" },
+  "east london": { country: "South Africa" },
+  "centurion": { country: "South Africa" },
+  "sandton": { country: "South Africa" },
+  "stellenbosch": { country: "South Africa" },
+  // Common global cities
+  "london": { country: "United Kingdom" },
+  "new york": { country: "United States" },
+  "san francisco": { country: "United States" },
+  "los angeles": { country: "United States" },
+  "chicago": { country: "United States" },
+  "toronto": { country: "Canada" },
+  "sydney": { country: "Australia" },
+  "melbourne": { country: "Australia" },
+  "amsterdam": { country: "Netherlands" },
+  "berlin": { country: "Germany" },
+  "paris": { country: "France" },
+  "dubai": { country: "United Arab Emirates" },
+  "singapore": { country: "Singapore" },
+  "mumbai": { country: "India" },
+  "bangalore": { country: "India" },
+  "nairobi": { country: "Kenya" },
+  "lagos": { country: "Nigeria" },
+};
+
+function extractLocationsFromText(bodyText: string): BrandLocationInfo[] {
+  const lower = bodyText.toLowerCase();
+  const found: BrandLocationInfo[] = [];
+  const seen = new Set<string>();
+
+  for (const [city, meta] of Object.entries(KNOWN_CITIES)) {
+    // Match city as a word boundary (not part of another word)
+    const regex = new RegExp(`\b${city.replace(/\s+/g, '\\s+')}\b`, 'i');
+    if (regex.test(lower) && !seen.has(city)) {
+      seen.add(city);
+      // Capitalise city name properly
+      const cityName = city.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+      found.push({
+        type: 'headquarters',
+        city: cityName,
+        country: meta.country,
+      });
+    }
+  }
+
+  return found.slice(0, 3); // Max 3 auto-detected locations
+}
+
 export async function scrapeMultiPageBrand(
   url: string,
   onProgress?: ProgressCallback
@@ -332,6 +393,15 @@ export async function scrapeMultiPageBrand(
 
   // Step 4: AI Analysis with enhanced multi-page context (70-85%)
   const aiAnalysis = await analyzeBrandFromWebsite(mergedData);
+
+  // Fallback: if AI didn't extract locations, try text-based extraction
+  if (!aiAnalysis.locations || aiAnalysis.locations.length === 0) {
+    const textLocations = extractLocationsFromText(mergedData.bodyText || '');
+    if (textLocations.length > 0) {
+      console.log();
+      aiAnalysis.locations = textLocations;
+    }
+  }
 
   onProgress?.(85, "Extracting logo...");
 
