@@ -247,13 +247,38 @@ export function streamToSSE(
 
   return new ReadableStream({
     async start(controller) {
+      let isClosed = false;
+
+      // Safe enqueue that checks if controller is still open
+      const safeEnqueue = (data: Uint8Array) => {
+        if (isClosed) return false;
+        try {
+          controller.enqueue(data);
+          return true;
+        } catch {
+          isClosed = true;
+          return false;
+        }
+      };
+
+      // Safe close that only closes once
+      const safeClose = () => {
+        if (isClosed) return;
+        isClosed = true;
+        try {
+          controller.close();
+        } catch {
+          // Already closed
+        }
+      };
+
       try {
         for await (const event of stream) {
           const data = `data: ${JSON.stringify(event)}\n\n`;
-          controller.enqueue(encoder.encode(data));
+          if (!safeEnqueue(encoder.encode(data))) break;
         }
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-        controller.close();
+        safeEnqueue(encoder.encode("data: [DONE]\n\n"));
+        safeClose();
       } catch (error) {
         const errorEvent: StreamEvent = {
           type: "error",
@@ -263,10 +288,10 @@ export function streamToSSE(
           },
           timestamp: Date.now(),
         };
-        controller.enqueue(
+        safeEnqueue(
           encoder.encode(`data: ${JSON.stringify(errorEvent)}\n\n`)
         );
-        controller.close();
+        safeClose();
       }
     },
   });

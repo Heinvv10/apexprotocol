@@ -71,98 +71,53 @@ function extractCompanyDomain(brand: typeof brands.$inferSelect): string | null 
 /**
  * Search LinkedIn for company page
  *
- * Hybrid approach (prioritizes data fidelity):
- * 1. LinkedIn Official API (if OAuth token exists) - highest fidelity
- * 2. RapidAPI LinkedIn Scraper (if RAPIDAPI_KEY set) - structured data
- * 3. URL construction - fallback
+ * Priority order:
+ * 1. Check if brand already has LinkedIn URL in socialLinks (from website scraping)
+ * 2. Construct probable URL from domain
  */
 async function findLinkedInCompanyPage(
-  domain: string,
-  organizationId?: string
+  brand: typeof brands.$inferSelect
 ): Promise<string | null> {
-  console.log(`[LinkedIn] Searching for company: ${domain}`);
+  console.log(`[LinkedIn] Finding company page for: ${brand.name}`);
 
-  // 1. Try LinkedIn Official API first (if user has connected OAuth)
-  if (organizationId) {
-    try {
-      const { TokenService } = await import("@/lib/oauth/token-service");
-      const { LinkedInProvider } = await import("@/lib/oauth/providers/linkedin");
-
-      // Check if valid LinkedIn token exists
-      const tokenData = await TokenService.getValidToken("linkedin", organizationId);
-
-      if (tokenData) {
-        console.log("  🔐 Using LinkedIn Official API (OAuth)");
-
-        // Get organizations user administers
-        const orgs = await LinkedInProvider.getAdminOrganizations(tokenData.accessToken);
-
-        // Try to find matching organization by domain
-        for (const org of orgs) {
-          if (org.websiteUrl && org.websiteUrl.includes(domain)) {
-            const companyUrl = `https://www.linkedin.com/company/${org.vanityName || org.id}`;
-            console.log(`  ✅ Found company via Official API: ${companyUrl}`);
-            return companyUrl;
-          }
-        }
-
-        console.log("  ⚠️ No matching organization found in user's admin orgs");
+  // 1. First check if brand already has LinkedIn URL from website scraping
+  if (brand.socialLinks && typeof brand.socialLinks === "object") {
+    const linkedinUrl = (brand.socialLinks as Record<string, unknown>).linkedin;
+    if (linkedinUrl && typeof linkedinUrl === "string") {
+      console.log(`  ✅ Found LinkedIn URL from brand data: ${linkedinUrl}`);
+      // Ensure it points to /people page for employee extraction
+      if (!linkedinUrl.includes("/people")) {
+        const baseUrl = linkedinUrl.replace(/\/$/, "");
+        return `${baseUrl}/people`;
       }
-    } catch (error) {
-      console.log("  ⚠️ Official API not available, trying fallback methods");
+      return linkedinUrl;
     }
   }
 
-  // 2. Try RapidAPI LinkedIn Scraper
-  const rapidApiKey = process.env.RAPIDAPI_KEY;
-
-  if (rapidApiKey) {
-    try {
-      // Use RapidAPI LinkedIn Scraper to find company
-      const response = await fetch(
-        `https://linkedin-data-scraper.p.rapidapi.com/search_companies?query=${encodeURIComponent(domain)}`,
-        {
-          method: "GET",
-          headers: {
-            "X-RapidAPI-Key": rapidApiKey,
-            "X-RapidAPI-Host": "linkedin-data-scraper.p.rapidapi.com",
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.results && data.results.length > 0) {
-          const companyUrl = data.results[0].linkedin_url;
-          if (companyUrl) {
-            console.log(`  ✅ Found company via RapidAPI: ${companyUrl}`);
-            return companyUrl;
-          }
-        }
-      }
-    } catch (error) {
-      console.error("  RapidAPI LinkedIn search error:", error);
-    }
+  // 2. Construct probable LinkedIn company URL from domain
+  if (!brand.domain) {
+    console.log("  ⚠️ No domain found for brand");
+    return null;
   }
 
-  // 3. Fallback: Construct probable LinkedIn company URL from domain
   // Extract company name from domain (e.g., "takealot.com" -> "takealot")
-  const companyName = domain.replace(/\.(com|co\.za|co|org|net|io|ai).*$/, "").toLowerCase();
+  const companyName = brand.domain.replace(/\.(com|co\.za|co|org|net|io|ai).*$/, "").toLowerCase();
 
   if (companyName) {
-    const probableUrl = `https://www.linkedin.com/company/${companyName}`;
+    const probableUrl = `https://www.linkedin.com/company/${companyName}/people`;
     console.log(`  📌 Using constructed URL: ${probableUrl}`);
     return probableUrl;
   }
 
+  console.log("  ⚠️ Could not construct LinkedIn URL from domain");
   return null;
 }
 
 /**
- * Scrape employees from LinkedIn company page
+ * Scrape employees from LinkedIn company page using Playwright
  *
- * Uses RapidAPI LinkedIn Scraper when RAPIDAPI_KEY is set,
- * otherwise returns empty array (API required for employee data).
+ * Scrapes only publicly visible data (no login required).
+ * Extracts visible people cards: name, title, LinkedIn profile URL
  */
 async function scrapeLinkedInCompanyEmployees(
   companyPageUrl: string,
@@ -171,77 +126,215 @@ async function scrapeLinkedInCompanyEmployees(
   console.log(`[LinkedIn] Scraping employees from: ${companyPageUrl}`);
   console.log(`  Limit: ${limit} people`);
 
-  const rapidApiKey = process.env.RAPIDAPI_KEY;
-
-  if (!rapidApiKey) {
-    console.log("  ⚠️ RAPIDAPI_KEY not set - cannot scrape LinkedIn employees");
-    return [];
-  }
+  let browser: any = null;
 
   try {
-    // Extract company identifier from URL
-    const companyMatch = companyPageUrl.match(/linkedin\.com\/company\/([^\/\?]+)/);
-    if (!companyMatch) {
-      console.log("  ⚠️ Could not extract company ID from URL");
-      return [];
-    }
+    const { chromium } = await import("playwright");
 
-    const companyId = companyMatch[1];
+    // Launch headless browser with realistic settings
+    browser = await chromium.launch({
+      headless: true,
+      args: [
+        '--disable-blink-features=AutomationControlled',
+        '--disable-dev-shm-usage',
+        '--no-sandbox',
+      ],
+    });
 
-    // Use RapidAPI LinkedIn Scraper to get employees
-    const response = await fetch(
-      `https://linkedin-data-scraper.p.rapidapi.com/company_employees?company_url=${encodeURIComponent(companyPageUrl)}&count=${limit}`,
-      {
-        method: "GET",
-        headers: {
-          "X-RapidAPI-Key": rapidApiKey,
-          "X-RapidAPI-Host": "linkedin-data-scraper.p.rapidapi.com",
-        },
+    const context = await browser.newContext({
+      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      viewport: { width: 1920, height: 1080 },
+      locale: 'en-US',
+      timezoneId: 'America/New_York',
+    });
+
+    const page = await context.newPage();
+
+    try {
+      // Navigate to company people page with longer timeout
+      console.log(`  Navigating to ${companyPageUrl}...`);
+      const response = await page.goto(companyPageUrl, {
+        waitUntil: "domcontentloaded",
+        timeout: 30000
+      });
+
+      if (!response || !response.ok()) {
+        console.log(`  ⚠️ Page returned status: ${response?.status() || 'unknown'}`);
+        await browser.close();
+        return [];
       }
-    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`  RapidAPI error: ${response.status} - ${errorText}`);
+      // Random delay to appear human (1-3s)
+      const delay = 1000 + Math.random() * 2000;
+      console.log(`  Waiting ${Math.round(delay)}ms before extraction...`);
+      await page.waitForTimeout(delay);
+
+      // Check if we hit a login wall or CAPTCHA
+      const bodyText = await page.textContent('body').catch(() => '');
+      if (bodyText.toLowerCase().includes('sign in') && bodyText.toLowerCase().includes('join now')) {
+        console.log(`  ⚠️ Hit LinkedIn login wall - cannot access public people data`);
+        await browser.close();
+        return [];
+      }
+
+      // Extract people cards from the page
+      console.log(`  Extracting employee data...`);
+      const employees = await page.evaluate(() => {
+        const people: Array<{
+          fullName: string;
+          title: string;
+          linkedinUrl: string;
+          profileImageUrl?: string;
+        }> = [];
+
+        // Find all person card elements
+        // LinkedIn uses various selectors for people cards
+        const cardSelectors = [
+          '.org-people-profile-card',
+          '.org-people__profile-card',
+          '[data-control-name="people_profile_card"]',
+          '.artdeco-entity-lockup',
+          '.scaffold-finite-scroll__content > li',
+          '.org-people-profiles-module__profile-item',
+          '.org-people__profile-card-spacing',
+        ];
+
+        let cards: Element[] = [];
+        for (const selector of cardSelectors) {
+          const found = Array.from(document.querySelectorAll(selector));
+          if (found.length > 0) {
+            cards = found;
+            break;
+          }
+        }
+
+        if (cards.length === 0) {
+          // Fallback: try to find any list items that might contain people
+          const fallbackCards = Array.from(document.querySelectorAll('[data-test-app-aware-link]'));
+          if (fallbackCards.length > 0) {
+            cards = fallbackCards;
+          }
+        }
+
+        for (const card of cards) {
+          try {
+            // Extract name
+            let name = "";
+            const nameSelectors = [
+              'h3 a',
+              '.org-people-profile-card__profile-title',
+              '[data-anonymize="person-name"]',
+              '.artdeco-entity-lockup__title a',
+              'a[data-control-name*="people"]',
+              '.org-people__profile-card-name',
+              'span[aria-hidden="true"]',
+            ];
+
+            for (const sel of nameSelectors) {
+              const nameEl = card.querySelector(sel);
+              if (nameEl && nameEl.textContent) {
+                const text = nameEl.textContent.trim();
+                // Validate it looks like a name (not empty, not too long)
+                if (text && text.length > 1 && text.length < 100 && !text.toLowerCase().includes('view profile')) {
+                  name = text;
+                  break;
+                }
+              }
+            }
+
+            if (!name) continue;
+
+            // Extract title/position
+            let title = "";
+            const titleSelectors = [
+              '.artdeco-entity-lockup__subtitle',
+              '.org-people-profile-card__profile-info .lt-line-clamp',
+              '[data-anonymize="job-title"]',
+              '.artdeco-entity-lockup__caption',
+              '.org-people__profile-card-subtitle',
+              '.t-14',
+            ];
+
+            for (const sel of titleSelectors) {
+              const titleEl = card.querySelector(sel);
+              if (titleEl && titleEl.textContent) {
+                const text = titleEl.textContent.trim();
+                if (text && text !== name && text.length > 1 && text.length < 200) {
+                  title = text;
+                  break;
+                }
+              }
+            }
+
+            // Extract LinkedIn profile URL
+            let linkedinUrl = "";
+            const linkEl = card.querySelector('a[href*="/in/"]');
+            if (linkEl instanceof HTMLAnchorElement && linkEl.href) {
+              linkedinUrl = linkEl.href.split("?")[0]; // Remove query params
+            }
+
+            // If no direct link, try to construct from name
+            if (!linkedinUrl) {
+              const allLinks = card.querySelectorAll('a[href*="linkedin.com"]');
+              for (let i = 0; i < allLinks.length; i++) {
+                const link = allLinks[i] as HTMLAnchorElement;
+                if (link.href.includes('/in/')) {
+                  linkedinUrl = link.href.split("?")[0];
+                  break;
+                }
+              }
+            }
+
+            // Extract profile image
+            let profileImageUrl: string | undefined;
+            const imgEl = card.querySelector('img[data-ghost-classes*="person"]') ||
+                         card.querySelector('img.presence-entity__image') ||
+                         card.querySelector('img.artdeco-entity-image') ||
+                         card.querySelector('img[alt*="Photo"]');
+            if (imgEl instanceof HTMLImageElement && imgEl.src && !imgEl.src.includes('data:image')) {
+              profileImageUrl = imgEl.src;
+            }
+
+            if (name && linkedinUrl) {
+              people.push({
+                fullName: name,
+                title: title || "Unknown Position",
+                linkedinUrl,
+                profileImageUrl,
+              });
+            }
+          } catch (err) {
+            // Skip this card if extraction fails
+            continue;
+          }
+        }
+
+        return people;
+      });
+
+      console.log(`  ✅ Found ${employees.length} employee(s) via Playwright scraping`);
+
+      // Close browser
+      await browser.close();
+
+      // Return limited results
+      return employees.slice(0, limit).map((emp: typeof employees[number]): LinkedInPerson => ({
+        ...emp,
+        bio: undefined,
+        location: undefined,
+        skills: undefined,
+        connections: undefined,
+      }));
+
+    } catch (error) {
+      console.error("  ❌ Error during page scraping:", error);
+      if (browser) await browser.close();
       return [];
     }
 
-    const data = await response.json();
-
-    if (!data.employees || !Array.isArray(data.employees)) {
-      console.log("  ⚠️ No employees found in API response");
-      return [];
-    }
-
-    // Map API response to our LinkedInPerson type
-    const employees: LinkedInPerson[] = data.employees.map((emp: {
-      full_name?: string;
-      name?: string;
-      title?: string;
-      headline?: string;
-      linkedin_url?: string;
-      profile_url?: string;
-      profile_image_url?: string;
-      photo_url?: string;
-      summary?: string;
-      location?: string;
-      skills?: string[];
-      connection_count?: number;
-    }) => ({
-      fullName: emp.full_name || emp.name || "Unknown",
-      title: emp.title || emp.headline || "Unknown Position",
-      linkedinUrl: emp.linkedin_url || emp.profile_url || "",
-      profileImageUrl: emp.profile_image_url || emp.photo_url,
-      bio: emp.summary,
-      location: emp.location,
-      skills: emp.skills,
-      connections: emp.connection_count,
-    }));
-
-    console.log(`  ✅ Found ${employees.length} employee(s) via RapidAPI`);
-    return employees.slice(0, limit);
   } catch (error) {
-    console.error("  RapidAPI LinkedIn scraping error:", error);
+    console.error("  ❌ Playwright LinkedIn scraping error:", error);
+    if (browser) await browser.close();
     return [];
   }
 }
@@ -299,8 +392,8 @@ export async function extractLinkedInPeople(
 
     console.log(`  Domain: ${domain}`);
 
-    // Find LinkedIn company page (pass organizationId for OAuth hybrid approach)
-    const companyPageUrl = await findLinkedInCompanyPage(domain, brand.organizationId);
+    // Find LinkedIn company page
+    const companyPageUrl = await findLinkedInCompanyPage(brand);
     if (!companyPageUrl) {
       result.errors.push("Could not find LinkedIn company page");
       console.log("  ⚠️ No LinkedIn company page found");

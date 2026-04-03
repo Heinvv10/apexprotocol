@@ -73,24 +73,49 @@ function createMockSSEResponse(): Response {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     start(controller) {
+      let isClosed = false;
+
+      // Safe enqueue that checks if controller is still open
+      const safeEnqueue = (data: Uint8Array) => {
+        if (isClosed) return false;
+        try {
+          controller.enqueue(data);
+          return true;
+        } catch {
+          isClosed = true;
+          return false;
+        }
+      };
+
+      // Safe close that only closes once
+      const safeClose = () => {
+        if (isClosed) return;
+        isClosed = true;
+        try {
+          controller.close();
+        } catch {
+          // Already closed
+        }
+      };
+
       // Send a heartbeat message
       const message = `data: ${JSON.stringify({ type: 'heartbeat', timestamp: Date.now() })}\n\n`;
-      controller.enqueue(encoder.encode(message));
+      safeEnqueue(encoder.encode(message));
 
       // Keep connection open with periodic heartbeats
       const interval = setInterval(() => {
-        try {
-          const heartbeat = `data: ${JSON.stringify({ type: 'heartbeat', timestamp: Date.now() })}\n\n`;
-          controller.enqueue(encoder.encode(heartbeat));
-        } catch {
+        if (isClosed) {
           clearInterval(interval);
+          return;
         }
+        const heartbeat = `data: ${JSON.stringify({ type: 'heartbeat', timestamp: Date.now() })}\n\n`;
+        safeEnqueue(encoder.encode(heartbeat));
       }, 30000);
 
       // Auto-close after 80 seconds (matching original behavior)
       setTimeout(() => {
         clearInterval(interval);
-        controller.close();
+        safeClose();
       }, 80000);
     },
   });

@@ -66,8 +66,34 @@ export async function GET(request: NextRequest): Promise<Response> {
       const channelName = `mentions:${orgId}`;
 
       let isActive = true;
+      let isClosed = false;
       let pingInterval: ReturnType<typeof setInterval> | null = null;
       let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+      // Safe enqueue that checks if controller is still open
+      const safeEnqueue = (data: Uint8Array) => {
+        if (!isActive || isClosed) return false;
+        try {
+          controller.enqueue(data);
+          return true;
+        } catch {
+          isActive = false;
+          isClosed = true;
+          return false;
+        }
+      };
+
+      // Safe close that only closes once
+      const safeClose = () => {
+        if (isClosed) return;
+        isClosed = true;
+        isActive = false;
+        try {
+          controller.close();
+        } catch {
+          // Already closed
+        }
+      };
 
       // Send initial connection message
       const connectMessage: SSEMessage = {
@@ -75,25 +101,20 @@ export async function GET(request: NextRequest): Promise<Response> {
         data: `Connected to ${channelName}`,
         timestamp: new Date().toISOString(),
       };
-      controller.enqueue(encoder.encode(formatSSE(connectMessage)));
+      safeEnqueue(encoder.encode(formatSSE(connectMessage)));
 
       logger.info("[SSE] Client connected", { userId, orgId, channel: channelName });
 
       // Set up ping every 30 seconds to keep connection alive
       pingInterval = setInterval(() => {
-        if (!isActive) return;
+        if (!isActive || isClosed) return;
 
-        try {
-          const pingMessage: SSEMessage = {
-            type: "ping",
-            data: null,
-            timestamp: new Date().toISOString(),
-          };
-          controller.enqueue(encoder.encode(formatSSE(pingMessage)));
-        } catch {
-          // Connection likely closed
-          isActive = false;
-        }
+        const pingMessage: SSEMessage = {
+          type: "ping",
+          data: null,
+          timestamp: new Date().toISOString(),
+        };
+        safeEnqueue(encoder.encode(formatSSE(pingMessage)));
       }, 30000);
 
       // Poll Redis for new messages (Upstash doesn't support traditional pub/sub subscribe)
@@ -101,7 +122,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       const listKey = `mention_stream:${orgId}`;
 
       pollInterval = setInterval(async () => {
-        if (!isActive) return;
+        if (!isActive || isClosed) return;
 
         try {
           // Pop messages from the list (LPOP removes and returns the first element)
@@ -125,7 +146,7 @@ export async function GET(request: NextRequest): Promise<Response> {
               data: mention,
               timestamp: new Date().toISOString(),
             };
-            controller.enqueue(encoder.encode(formatSSE(sseMessage)));
+            safeEnqueue(encoder.encode(formatSSE(sseMessage)));
           }
         } catch (error) {
           logger.error("[SSE] Error polling Redis", { error, orgId });
@@ -138,7 +159,7 @@ export async function GET(request: NextRequest): Promise<Response> {
         if (pingInterval) clearInterval(pingInterval);
         if (pollInterval) clearInterval(pollInterval);
         logger.info("[SSE] Client disconnected", { userId, orgId });
-        controller.close();
+        safeClose();
       });
     },
   });

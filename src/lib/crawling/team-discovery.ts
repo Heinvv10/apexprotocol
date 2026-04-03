@@ -411,8 +411,10 @@ function extractMemberFromCard(
 ): TeamMember | null {
   let confidence = 0;
 
-  // Extract name
+  // Extract name - try multiple strategies
   let name = "";
+
+  // Strategy 1: Standard selectors
   for (const selector of NAME_SELECTORS) {
     const found = $card.find(selector).first().text().trim();
     if (found && found.length > 1 && found.length < 100 && isLikelyName(found)) {
@@ -422,16 +424,90 @@ function extractMemberFromCard(
     }
   }
 
+  // Strategy 2: Look for bold/strong text followed by regular text (adjacent divs pattern)
+  if (!name) {
+    const $boldElements = $card.find('strong, b, .font-bold, [class*="font-weight"]');
+    for (let i = 0; i < $boldElements.length; i++) {
+      const boldText = $boldElements.eq(i).text().trim();
+      if (boldText && boldText.length > 1 && boldText.length < 100 && isLikelyName(boldText)) {
+        name = boldText;
+        confidence += 0.25;
+        break;
+      }
+    }
+  }
+
   if (!name) return null;
 
-  // Extract title/role
+  // Extract title/role - enhanced to handle adjacent divs
   let title = "";
+
+  // Strategy 1: Standard title selectors
   for (const selector of TITLE_SELECTORS) {
     const found = $card.find(selector).first().text().trim();
     if (found && found !== name && found.length < 200) {
       title = found;
       confidence += 0.2;
       break;
+    }
+  }
+
+  // Strategy 2: Look for text immediately following the name element (adjacent divs pattern)
+  if (!title) {
+    const nameElements = $card.find('h2, h3, h4, h5, strong, b, .name, [class*="name"]');
+    for (let i = 0; i < nameElements.length; i++) {
+      const $nameEl = nameElements.eq(i);
+      if ($nameEl.text().trim() === name) {
+        // Try next sibling (most common pattern: <h3>Name</h3><div>Title</div>)
+        const $nextSibling = $nameEl.next();
+        if ($nextSibling.length > 0) {
+          const siblingText = $nextSibling.text().trim();
+          if (siblingText && siblingText !== name && siblingText.length > 2 && siblingText.length < 200) {
+            title = siblingText;
+            confidence += 0.15;
+            break;
+          }
+        }
+
+        // Try parent's next sibling (pattern: <div><h3>Name</h3></div><div>Title</div>)
+        if (!title) {
+          const $parentNext = $nameEl.parent().next();
+          if ($parentNext.length > 0) {
+            const parentNextText = $parentNext.text().trim();
+            if (parentNextText && parentNextText !== name && parentNextText.length > 2 && parentNextText.length < 200) {
+              title = parentNextText;
+              confidence += 0.15;
+              break;
+            }
+          }
+        }
+
+        // Try sibling of parent's parent (deeper nesting: <div><div><h3>Name</h3></div></div><div>Title</div>)
+        if (!title) {
+          const $grandparentNext = $nameEl.parent().parent().next();
+          if ($grandparentNext.length > 0) {
+            const grandparentText = $grandparentNext.text().trim();
+            if (grandparentText && grandparentText !== name && grandparentText.length > 2 && grandparentText.length < 200) {
+              title = grandparentText;
+              confidence += 0.12;
+              break;
+            }
+          }
+        }
+
+        // Try looking for the next text node in the card (pattern: <h3>Name</h3>Title)
+        if (!title) {
+          const nextTexts = $nameEl.parent().find('p, span, div').not($nameEl);
+          for (let j = 0; j < Math.min(nextTexts.length, 3); j++) {
+            const possibleTitle = nextTexts.eq(j).text().trim();
+            if (possibleTitle && possibleTitle !== name && possibleTitle.length > 2 && possibleTitle.length < 200) {
+              title = possibleTitle;
+              confidence += 0.1;
+              break;
+            }
+          }
+        }
+      }
     }
   }
 
@@ -458,14 +534,76 @@ function extractMemberFromCard(
     }
   }
 
-  // Extract LinkedIn
+  // Extract LinkedIn - enhanced to search parent container for nearby links
   let linkedin = "";
+
+  // Strategy 1: Direct child links
   for (const selector of LINKEDIN_PATTERNS) {
     const href = $card.find(selector).first().attr("href");
     if (href && href.includes("linkedin.com")) {
       linkedin = href;
       confidence += 0.15;
       break;
+    }
+  }
+
+  // Strategy 2: Check parent container for LinkedIn links (nearby but not inside card)
+  if (!linkedin) {
+    const $parent = $card.parent();
+    for (const selector of LINKEDIN_PATTERNS) {
+      const $links = $parent.find(selector);
+      for (let i = 0; i < $links.length; i++) {
+        const href = $links.eq(i).attr("href");
+        if (href && href.includes("linkedin.com")) {
+          // Verify this link is near our card (within reasonable distance)
+          const $link = $links.eq(i);
+          const cardIndex = $card.index();
+          const linkIndex = $link.closest($card.parent().children()).index();
+
+          // If link is within 2 siblings of the card, associate it
+          if (Math.abs(cardIndex - linkIndex) <= 2) {
+            linkedin = href;
+            confidence += 0.12;
+            break;
+          }
+        }
+      }
+      if (linkedin) break;
+    }
+  }
+
+  // Strategy 3: Check if LinkedIn link is in the same containing div/parent as the name
+  if (!linkedin) {
+    const nameElements = $card.find('h2, h3, h4, h5, strong, b, .name, [class*="name"]');
+    for (let i = 0; i < nameElements.length; i++) {
+      const $nameEl = nameElements.eq(i);
+      if ($nameEl.text().trim() === name) {
+        // Search in the name element's immediate parent
+        const $nameParent = $nameEl.parent();
+        const $linkedinLink = $nameParent.find('a[href*="linkedin.com"]').first();
+        if ($linkedinLink.length > 0) {
+          const href = $linkedinLink.attr("href");
+          if (href && href.includes("linkedin.com")) {
+            linkedin = href;
+            confidence += 0.13;
+            break;
+          }
+        }
+
+        // Search in the card's root for any linkedin links
+        if (!linkedin) {
+          const $allLinks = $card.find('a[href*="linkedin.com"]');
+          if ($allLinks.length > 0 && $allLinks.length <= 3) { // Only if there are few links (more likely to be correct)
+            const href = $allLinks.first().attr("href");
+            if (href && href.includes("linkedin.com")) {
+              linkedin = href;
+              confidence += 0.1;
+              break;
+            }
+          }
+        }
+        break;
+      }
     }
   }
 

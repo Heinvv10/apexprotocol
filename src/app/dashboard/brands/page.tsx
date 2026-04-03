@@ -222,6 +222,8 @@ function BrandsPageContent() {
     seoKeywords: [] as string[],
     geoKeywords: [] as string[],
     competitors: [] as Array<{ name: string; url: string; reason: string }>,
+    locations: [] as Array<{ type?: string; address?: string; city?: string; state?: string; country?: string; postalCode?: string; phone?: string; email?: string }>,
+    personnel: [] as Array<{ name: string; title: string; department?: string; bio?: string; email?: string; linkedinUrl?: string; isActive?: boolean; joinedDate?: string }>,
     valuePropositions: [] as string[],
     socialLinks: {} as Record<string, string>,
     voiceTone: "professional" as Brand["voice"]["tone"],
@@ -278,6 +280,8 @@ function BrandsPageContent() {
       seoKeywords: [],
       geoKeywords: [],
       competitors: [],
+      locations: [],
+      personnel: [],
       valuePropositions: [],
       socialLinks: {},
       voiceTone: "professional",
@@ -322,6 +326,8 @@ function BrandsPageContent() {
       seoKeywords: data.seoKeywords || [],
       geoKeywords: data.geoKeywords || [],
       competitors: data.competitors || [],
+      locations: (data as any).locations || [],
+      personnel: (data as any).personnel || [],
       valuePropositions: data.valuePropositions || [],
       socialLinks: data.socialLinks || {},
       voiceTone: "professional",
@@ -357,6 +363,8 @@ function BrandsPageContent() {
       seoKeywords: brand.seoKeywords || [],
       geoKeywords: brand.geoKeywords || [],
       competitors: brand.competitors || [],
+      locations: (brand as any).locations || [],
+      personnel: (brand as any).personnel || [],
       valuePropositions: brand.valuePropositions || [],
       socialLinks: brand.socialLinks || {},
       voiceTone: brand.voice?.tone || "professional",
@@ -475,6 +483,8 @@ function BrandsPageContent() {
         seoKeywords: formData.seoKeywords,
         geoKeywords: formData.geoKeywords,
         competitors: formData.competitors,
+        locations: formData.locations,
+        personnel: formData.personnel,
         valuePropositions: formData.valuePropositions,
         socialLinks: formData.socialLinks,
         voice: {
@@ -525,6 +535,7 @@ function BrandsPageContent() {
         if (data.success) {
           addBrand(data.data);
           closeModal();
+          refreshBrands(); // Refresh meta from server (plan/limit)
           // Trigger completion wizard for newly created brand
           setShowCompletionWizard(data.data);
         } else {
@@ -627,6 +638,8 @@ function BrandsPageContent() {
       if (data.success) {
         removeBrand(brandId);
         setDeleteConfirm(null);
+        // Refresh from server to get accurate plan/limit
+        refreshBrands();
       } else {
         setError(data.error || "Failed to delete brand");
       }

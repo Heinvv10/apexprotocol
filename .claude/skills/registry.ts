@@ -115,6 +115,15 @@ export const APEX_SKILLS: Record<string, SkillDefinition> = {
     priority: 'high',
     implemented: true,
   },
+  'autoresearch': {
+    name: 'autoresearch',
+    category: 'development',
+    path: '_development/autoresearch',
+    triggers: ['autoresearch', 'analyze codebase', 'codebase audit', 'code review everything', 'find issues', 'codebase health check'],
+    description: 'Autonomous codebase analysis with 8 parallel agents — architecture, quality, performance, security, DX, deps, design system, feature coverage',
+    priority: 'high',
+    implemented: true,
+  },
 
   // ============================================================
   // APEX WORKFLOW SKILLS (Apex-specific workflows)

@@ -32,6 +32,28 @@ export interface Brand {
   // Brand positioning
   valuePropositions: string[];
   socialLinks: Record<string, string>;
+  // Business locations
+  locations: Array<{
+    type?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    postalCode?: string;
+    phone?: string;
+    email?: string;
+  }>;
+  // Key personnel
+  personnel: Array<{
+    name: string;
+    title: string;
+    department?: string;
+    bio?: string;
+    email?: string;
+    linkedinUrl?: string;
+    isActive?: boolean;
+    joinedDate?: string;
+  }>;
   // Voice settings
   voice: {
     tone: "professional" | "friendly" | "authoritative" | "casual" | "formal";

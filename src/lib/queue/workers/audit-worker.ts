@@ -98,10 +98,14 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
       where: eq(brands.id, brandId),
     });
 
+    // Wrap external checks in safe fallbacks to prevent crashes on timeout/network errors
+    const safeCheck = async (fn, fallback) => {
+      try { return await fn(); } catch (e) { console.error('[Audit] Check failed:', e && e.message ? e.message : String(e)); return fallback; }
+    };
     const [aiCrawlerIssues, entityIssues, chunkingResult] = await Promise.all([
-      checkAiCrawlers(url),
-      brand ? checkEntityAuthority(brand.name, brand.domain || undefined) : Promise.resolve([]),
-      checkContentChunking(url),
+      safeCheck(() => checkAiCrawlers(url), []),
+      brand ? safeCheck(() => checkEntityAuthority(brand.name, brand.domain || undefined), []) : Promise.resolve([]),
+      safeCheck(() => checkContentChunking(url), { issues: [], score: 0 }),
     ]);
 
     // Merge all issues
