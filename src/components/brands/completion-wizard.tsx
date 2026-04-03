@@ -20,6 +20,7 @@ import {
   Palette,
   Sparkles,
   SkipForward,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -141,6 +142,23 @@ const WIZARD_STEPS: WizardStep[] = [
   },
 ];
 
+// Small badge shown when an item was pre-filled by the scraper
+function ScrapedBadge() {
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+      style={{
+        backgroundColor: `${DESIGN.primaryCyan}20`,
+        color: DESIGN.primaryCyan,
+        border: `1px solid ${DESIGN.primaryCyan}40`,
+      }}
+    >
+      <Zap className="w-3 h-3" />
+      Found on website
+    </span>
+  );
+}
+
 interface CompletionWizardProps {
   brand: Brand;
   onComplete: (updatedData: Partial<Brand>) => Promise<void>;
@@ -148,9 +166,78 @@ interface CompletionWizardProps {
 }
 
 export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizardProps) {
-  const [currentStep, setCurrentStep] = React.useState(0);
-  const [completedSteps, setCompletedSteps] = React.useState<Set<string>>(new Set());
-  const [skippedSteps, setSkippedSteps] = React.useState<Set<string>>(new Set());
+  // ── Capture initial scraped data once (ref value is set only on first render) ──
+  const _scraped = React.useRef({
+    personnel: ((brand as any).personnel?.map((p: any) => ({
+      name: p.name || "",
+      title: p.title || "",
+      bio: p.bio || "",
+    })) || []) as Array<{ name: string; title: string; bio?: string }>,
+    locations: ((brand as any).locations?.map((l: any) => ({
+      address: l.address || "",
+      city: l.city || "",
+      country: l.country || "",
+    })) || []) as Array<{ address: string; city: string; country: string }>,
+    socials: {
+      facebook: !!(brand.socialLinks?.facebook),
+      twitter: !!(brand.socialLinks?.twitter),
+      linkedin: !!(brand.socialLinks?.linkedin),
+      instagram: !!(brand.socialLinks?.instagram),
+    },
+  });
+
+  // Derived booleans — which steps have pre-existing/scraped data
+  const _hasSocial = !!(brand.socialLinks && Object.values(brand.socialLinks).some((l: any) => l && String(l).trim() !== ""));
+  const _hasTeam = _scraped.current.personnel.length > 0;
+  const _hasLocations = _scraped.current.locations.length > 0;
+
+  // Pre-mark completed steps based on existing brand data
+  const [completedSteps, setCompletedSteps] = React.useState<Set<string>>(() => {
+    const s = new Set<string>();
+    if (_hasSocial) s.add("social");
+    if ((brand.keywords || []).length > 0) s.add("keywords");
+    if ((brand.competitors || []).length > 0) s.add("competitors");
+    if (brand.voice?.targetAudience?.trim()) s.add("audience");
+    if ((brand.valuePropositions || []).length > 0) s.add("value-props");
+    if (_hasTeam) s.add("team");
+    if (_hasLocations) s.add("locations");
+    return s;
+  });
+
+  // Auto-skip scraper-dependent steps when no data was found
+  const [skippedSteps, setSkippedSteps] = React.useState<Set<string>>(() => {
+    const s = new Set<string>();
+    if (!_hasSocial) s.add("social");
+    if (!_hasTeam) s.add("team");
+    if (!_hasLocations) s.add("locations");
+    return s;
+  });
+
+  // Start at first step that needs user attention (not auto-completed or auto-skipped)
+  const [currentStep, setCurrentStep] = React.useState(() => {
+    const autoCompleted = new Set<string>();
+    if (_hasSocial) autoCompleted.add("social");
+    if ((brand.keywords || []).length > 0) autoCompleted.add("keywords");
+    if ((brand.competitors || []).length > 0) autoCompleted.add("competitors");
+    if (brand.voice?.targetAudience?.trim()) autoCompleted.add("audience");
+    if ((brand.valuePropositions || []).length > 0) autoCompleted.add("value-props");
+    if (_hasTeam) autoCompleted.add("team");
+    if (_hasLocations) autoCompleted.add("locations");
+    const autoSkipped = new Set<string>();
+    if (!_hasSocial) autoSkipped.add("social");
+    if (!_hasTeam) autoSkipped.add("team");
+    if (!_hasLocations) autoSkipped.add("locations");
+    for (let i = 0; i < WIZARD_STEPS.length; i++) {
+      const id = WIZARD_STEPS[i].id;
+      if (!autoCompleted.has(id) && !autoSkipped.has(id)) return i;
+    }
+    // Everything done/skipped — land on first completed step for review
+    for (let i = 0; i < WIZARD_STEPS.length; i++) {
+      if (autoCompleted.has(WIZARD_STEPS[i].id)) return i;
+    }
+    return 0;
+  });
+
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Form data state
@@ -169,15 +256,30 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
   const [targetAudience, setTargetAudience] = React.useState(brand.voice?.targetAudience || "");
   const [valueProps, setValueProps] = React.useState<string[]>(brand.valuePropositions || []);
   const [valuePropInput, setValuePropInput] = React.useState("");
-  const [team, setTeam] = React.useState<Array<{ name: string; title: string; bio?: string }>>([]);
+
+  // Pre-populate team from scraped personnel
+  const [team, setTeam] = React.useState<Array<{ name: string; title: string; bio?: string }>>(
+    _scraped.current.personnel
+  );
   const [teamInput, setTeamInput] = React.useState({ name: "", title: "", bio: "" });
-  const [locations, setLocations] = React.useState<Array<{ address: string; city: string; country: string }>>([]);
+
+  // Pre-populate locations from scraped locations
+  const [locations, setLocations] = React.useState<Array<{ address: string; city: string; country: string }>>(
+    _scraped.current.locations
+  );
   const [locationInput, setLocationInput] = React.useState({ address: "", city: "", country: "" });
   const [voiceTone, setVoiceTone] = React.useState(brand.voice?.tone || "professional");
 
   const currentStepData = WIZARD_STEPS[currentStep];
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === WIZARD_STEPS.length - 1;
+
+  // Which steps have scraper-detected data (for badges / "Auto-detected" indicators)
+  const scrapedStepData = {
+    social: Object.values(_scraped.current.socials).some(Boolean),
+    team: _scraped.current.personnel.length > 0,
+    locations: _scraped.current.locations.length > 0,
+  };
 
   // Check what was auto-filled
   const autoFilled = {
@@ -251,10 +353,19 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
       case "locations":
         return locations.length > 0;
       case "voice":
-        return voiceTone !== "professional"; // Changed from default
+        return voiceTone !== "professional";
       default:
         return false;
     }
+  };
+
+  // Check if the current step's data was auto-detected by the scraper
+  const isCurrentStepScraped = (): boolean => {
+    const id = currentStepData.id;
+    if (id === "social") return scrapedStepData.social;
+    if (id === "team") return scrapedStepData.team;
+    if (id === "locations") return scrapedStepData.locations;
+    return false;
   };
 
   // Skip current step
@@ -454,10 +565,25 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
                   >
                     <currentStepData.icon className="w-5 h-5" style={{ color: currentStepData.iconColor }} />
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold" style={{ color: DESIGN.textPrimary }}>
-                      {currentStepData.title}
-                    </h3>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-semibold" style={{ color: DESIGN.textPrimary }}>
+                        {currentStepData.title}
+                      </h3>
+                      {isCurrentStepScraped() && (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                          style={{
+                            backgroundColor: `${DESIGN.successGreen}20`,
+                            color: DESIGN.successGreen,
+                            border: `1px solid ${DESIGN.successGreen}40`,
+                          }}
+                        >
+                          <Check className="w-3 h-3" />
+                          Auto-detected ✓
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm" style={{ color: DESIGN.textSecondary }}>
                       {currentStepData.description}
                     </p>
@@ -481,50 +607,35 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
               <div className="space-y-4">
                 {currentStepData.id === "social" && (
                   <div className="space-y-3">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
-                        <Facebook className="w-4 h-4" style={{ color: "#1877F2" }} />
-                        Facebook
-                      </label>
-                      <Input
-                        value={socialLinks.facebook}
-                        onChange={(e) => setSocialLinks(prev => ({ ...prev, facebook: e.target.value }))}
-                        placeholder="https://facebook.com/yourbrand"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
-                        <Twitter className="w-4 h-4" style={{ color: "#1DA1F2" }} />
-                        Twitter/X
-                      </label>
-                      <Input
-                        value={socialLinks.twitter}
-                        onChange={(e) => setSocialLinks(prev => ({ ...prev, twitter: e.target.value }))}
-                        placeholder="https://twitter.com/yourbrand"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
-                        <Linkedin className="w-4 h-4" style={{ color: "#0A66C2" }} />
-                        LinkedIn
-                      </label>
-                      <Input
-                        value={socialLinks.linkedin}
-                        onChange={(e) => setSocialLinks(prev => ({ ...prev, linkedin: e.target.value }))}
-                        placeholder="https://linkedin.com/company/yourbrand"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium flex items-center gap-2">
-                        <Instagram className="w-4 h-4" style={{ color: "#E4405F" }} />
-                        Instagram
-                      </label>
-                      <Input
-                        value={socialLinks.instagram}
-                        onChange={(e) => setSocialLinks(prev => ({ ...prev, instagram: e.target.value }))}
-                        placeholder="https://instagram.com/yourbrand"
-                      />
-                    </div>
+                    {(["facebook", "twitter", "linkedin", "instagram"] as const).map((platform) => {
+                      const icons = {
+                        facebook: <Facebook className="w-4 h-4" style={{ color: "#1877F2" }} />,
+                        twitter: <Twitter className="w-4 h-4" style={{ color: "#1DA1F2" }} />,
+                        linkedin: <Linkedin className="w-4 h-4" style={{ color: "#0A66C2" }} />,
+                        instagram: <Instagram className="w-4 h-4" style={{ color: "#E4405F" }} />,
+                      };
+                      const placeholders = {
+                        facebook: "https://facebook.com/yourbrand",
+                        twitter: "https://twitter.com/yourbrand",
+                        linkedin: "https://linkedin.com/company/yourbrand",
+                        instagram: "https://instagram.com/yourbrand",
+                      };
+                      const wasScraped = _scraped.current.socials[platform];
+                      return (
+                        <div key={platform} className="space-y-2">
+                          <label className="text-sm font-medium flex items-center gap-2">
+                            {icons[platform]}
+                            {platform.charAt(0).toUpperCase() + platform.slice(1).replace("twitter", "Twitter/X")}
+                            {wasScraped && <ScrapedBadge />}
+                          </label>
+                          <Input
+                            value={socialLinks[platform]}
+                            onChange={(e) => setSocialLinks(prev => ({ ...prev, [platform]: e.target.value }))}
+                            placeholder={placeholders[platform]}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -687,31 +798,37 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
                     </div>
                     {team.length > 0 && (
                       <div className="space-y-2">
-                        {team.map((member, idx) => (
-                          <div
-                            key={idx}
-                            className="p-3 rounded-lg flex items-start justify-between"
-                            style={{
-                              backgroundColor: DESIGN.bgElevated,
-                              border: `1px solid ${DESIGN.borderDefault}`,
-                            }}
-                          >
-                            <div>
-                              <div className="font-medium">{member.name}</div>
-                              <div className="text-sm text-muted-foreground">{member.title}</div>
-                              {member.bio && (
-                                <div className="text-xs text-muted-foreground mt-1">{member.bio}</div>
-                              )}
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setTeam(team.filter((_, i) => i !== idx))}
+                        {team.map((member, idx) => {
+                          const isScraped = idx < _scraped.current.personnel.length;
+                          return (
+                            <div
+                              key={idx}
+                              className="p-3 rounded-lg flex items-start justify-between"
+                              style={{
+                                backgroundColor: DESIGN.bgElevated,
+                                border: `1px solid ${isScraped ? DESIGN.primaryCyan + "40" : DESIGN.borderDefault}`,
+                              }}
                             >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ))}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <div className="font-medium">{member.name}</div>
+                                  {isScraped && <ScrapedBadge />}
+                                </div>
+                                <div className="text-sm text-muted-foreground">{member.title}</div>
+                                {member.bio && (
+                                  <div className="text-xs text-muted-foreground mt-1">{member.bio}</div>
+                                )}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setTeam(team.filter((_, i) => i !== idx))}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -741,28 +858,36 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
                     </div>
                     {locations.length > 0 && (
                       <div className="space-y-2">
-                        {locations.map((loc, idx) => (
-                          <div
-                            key={idx}
-                            className="p-3 rounded-lg flex items-start justify-between"
-                            style={{
-                              backgroundColor: DESIGN.bgElevated,
-                              border: `1px solid ${DESIGN.borderDefault}`,
-                            }}
-                          >
-                            <div>
-                              {loc.address && <div className="text-sm">{loc.address}</div>}
-                              <div className="text-sm font-medium">{loc.city}, {loc.country}</div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setLocations(locations.filter((_, i) => i !== idx))}
+                        {locations.map((loc, idx) => {
+                          const isScraped = idx < _scraped.current.locations.length;
+                          return (
+                            <div
+                              key={idx}
+                              className="p-3 rounded-lg flex items-start justify-between"
+                              style={{
+                                backgroundColor: DESIGN.bgElevated,
+                                border: `1px solid ${isScraped ? DESIGN.primaryCyan + "40" : DESIGN.borderDefault}`,
+                              }}
                             >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ))}
+                              <div className="flex-1 min-w-0">
+                                {isScraped && (
+                                  <div className="mb-1">
+                                    <ScrapedBadge />
+                                  </div>
+                                )}
+                                {loc.address && <div className="text-sm">{loc.address}</div>}
+                                <div className="text-sm font-medium">{loc.city}, {loc.country}</div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setLocations(locations.filter((_, i) => i !== idx))}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
