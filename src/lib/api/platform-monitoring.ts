@@ -13,7 +13,7 @@ export interface PlatformMention {
   query: string;
   ourPage: string;
   context: string;
-  sentiment: "positive" | "neutral" | "negative";
+  sentiment: "positive" | "neutral" | "negative" | "unrecognized";
   position: number;
   visibility: number;
 }

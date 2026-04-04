@@ -77,7 +77,7 @@ export function getIndex<T extends RecordMetadata = RecordMetadata>(
 export interface BrandMentionMetadata extends RecordMetadata {
   brandId: string;
   platform: string;
-  sentiment: "positive" | "neutral" | "negative";
+  sentiment: "positive" | "neutral" | "negative" | "unrecognized";
   query: string;
   timestamp: string;
 }

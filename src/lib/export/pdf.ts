@@ -56,7 +56,7 @@ export interface GEOScoreReport {
 export interface MentionsReport {
   total: number;
   byPlatform: Record<string, number>;
-  bySentiment: { positive: number; neutral: number; negative: number };
+  bySentiment: { positive: number; neutral: number; negative: number; unrecognized: number };
   topQueries: { query: string; count: number }[];
   trend: { date: string; count: number }[];
 }

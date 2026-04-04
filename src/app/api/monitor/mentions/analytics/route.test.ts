@@ -175,7 +175,7 @@ describe("GET /api/monitor/mentions/analytics - Data Aggregation by Date (AC-2.2
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.data).toEqual([]);
-    expect(data.sentiment).toEqual({ total: 0, positive: 0, neutral: 0, negative: 0 });
+    expect(data.sentiment).toEqual({ total: 0, positive: 0, neutral: 0, negative: 0, unrecognized: 0 });
     expect(data.platforms).toEqual({});
   });
 });

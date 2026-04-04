@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ApexLogoMark, ApexWordmark } from "@/components/ui/apex-logo";
 import {
   LayoutDashboard,
   Eye,
@@ -12,7 +13,7 @@ import {
   HelpCircle,
   ChevronLeft,
   ChevronRight,
-  Zap,
+  Zap, // kept for other uses
   Building2,
   Target,
   Brain,
@@ -188,11 +189,9 @@ export function Sidebar({ collapsed = false, onCollapsedChange }: SidebarProps) 
         {/* Logo/Brand */}
         <div className="flex items-center h-16 px-4 border-b border-sidebar-border">
           <Link href="/dashboard" className="flex items-center gap-3 rounded-lg focus-ring-primary">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg gradient-primary">
-              <Zap className="h-5 w-5 text-white" />
-            </div>
+            <ApexLogoMark size={32} />
             {!collapsed && (
-              <span className="text-lg font-semibold text-gradient">Apex</span>
+              <ApexWordmark className="text-lg" />
             )}
           </Link>
         </div>

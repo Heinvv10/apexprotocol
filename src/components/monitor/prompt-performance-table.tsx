@@ -53,6 +53,11 @@ const sentimentConfig: Record<SentimentType, { label: string; color: string; bgC
     color: "hsl(var(--error))",
     bgColor: "hsl(var(--error) / 0.1)",
   },
+  unrecognized: {
+    label: "Not on AI Radar",
+    color: "hsl(var(--warning))",
+    bgColor: "hsl(var(--warning) / 0.1)",
+  },
 };
 
 // Move components outside to avoid "Cannot create components during render" error
@@ -124,7 +129,7 @@ export function PromptPerformanceTable({
           comparison = a.frequency - b.frequency;
           break;
         case "sentiment":
-          const sentimentOrder = { positive: 3, neutral: 2, negative: 1 };
+          const sentimentOrder = { positive: 3, neutral: 2, negative: 1, unrecognized: 0 };
           comparison = sentimentOrder[a.sentiment] - sentimentOrder[b.sentiment];
           break;
         case "lastSeen":

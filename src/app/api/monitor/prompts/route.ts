@@ -24,7 +24,7 @@ interface SearchPromptResponse {
   frequency: number;
   trend: "up" | "down" | "stable";
   trendValue: number;
-  sentiment: "positive" | "neutral" | "negative";
+  sentiment: "positive" | "neutral" | "negative" | "unrecognized";
   lastSeen: string;
 }
 
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
       {
         platforms: Set<string>;
         frequency: number;
-        sentiments: { positive: number; neutral: number; negative: number };
+        sentiments: { positive: number; neutral: number; negative: number; unrecognized: number };
         lastSeen: Date;
       }
     >();
@@ -139,6 +139,7 @@ export async function GET(request: NextRequest) {
             positive: mention.sentiment === "positive" ? 1 : 0,
             neutral: mention.sentiment === "neutral" ? 1 : 0,
             negative: mention.sentiment === "negative" ? 1 : 0,
+            unrecognized: mention.sentiment === "unrecognized" ? 1 : 0,
           },
           lastSeen: mention.timestamp,
         });
@@ -177,7 +178,7 @@ export async function GET(request: NextRequest) {
           frequency: data.frequency,
           trend,
           trendValue,
-          sentiment: maxSentiment.key as "positive" | "neutral" | "negative",
+          sentiment: maxSentiment.key as "positive" | "neutral" | "negative" | "unrecognized",
           lastSeen: formatLastSeen(data.lastSeen),
         };
       })

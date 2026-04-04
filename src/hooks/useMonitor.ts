@@ -631,7 +631,7 @@ export interface SearchPromptResponse {
   frequency: number;
   trend: "up" | "down" | "stable";
   trendValue: number;
-  sentiment: "positive" | "neutral" | "negative";
+  sentiment: "positive" | "neutral" | "negative" | "unrecognized";
   lastSeen: string;
 }
 

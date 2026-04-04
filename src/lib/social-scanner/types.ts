@@ -153,7 +153,7 @@ export interface BrandMention {
   authorFollowers: number;
   postUrl: string;
   publishedAt: Date;
-  sentiment: "positive" | "neutral" | "negative" | null;
+  sentiment: "positive" | "neutral" | "negative" | "unrecognized" | null;
   metrics: PostMetrics;
   matchedKeywords: string[];
   metadata: Record<string, unknown>;

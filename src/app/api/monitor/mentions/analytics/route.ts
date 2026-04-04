@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         data: [],
-        sentiment: { total: 0, positive: 0, neutral: 0, negative: 0 },
+        sentiment: { total: 0, positive: 0, neutral: 0, negative: 0, unrecognized: 0 },
         platforms: {},
       });
     }

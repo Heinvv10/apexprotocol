@@ -11,7 +11,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { monitoringJobs, brands, geoScoreHistory, brandMentions, audits } from "@/lib/db/schema";
-import { eq, count, sql, desc } from "drizzle-orm";
+import { eq, and, count, sql, desc } from "drizzle-orm";
 import { runGEOMonitoringForBrand } from "@/lib/services/geo-monitor";
 import { calculateSOV, storeDailySOV } from "@/lib/competitive/share-of-voice";
 import { generateCompetitiveAlerts } from "@/lib/competitive/alert-generator";
@@ -151,11 +151,17 @@ export async function GET(request: Request) {
   };
 
   try {
-    console.log("[GEO Cron] Starting scheduled monitoring run");
+    // Support single-brand targeting via ?brandId= query param
+    const url = new URL(request.url);
+    const targetBrandId = url.searchParams.get("brandId");
 
-    // Get all brands with monitoring enabled
+    console.log("[GEO Cron] Starting scheduled monitoring run" + (targetBrandId ? ` (targeting brand: ${targetBrandId})` : ""));
+
+    // Get all brands with monitoring enabled (or just the target brand)
     const activeBrands = await db.query.brands.findMany({
-      where: eq(brands.monitoringEnabled, true),
+      where: targetBrandId
+        ? and(eq(brands.monitoringEnabled, true), eq(brands.id, targetBrandId))
+        : eq(brands.monitoringEnabled, true),
     });
 
     console.log(`[GEO Cron] Found ${activeBrands.length} brands with monitoring enabled`);

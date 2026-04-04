@@ -15,7 +15,7 @@ export interface StreamMention {
   platform: string;
   query: string;
   response: string;
-  sentiment: "positive" | "neutral" | "negative";
+  sentiment: "positive" | "neutral" | "negative" | "unrecognized";
   position: number | null;
   citationUrl: string | null;
   createdAt: string;

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
 import { platformConfig, PlatformId } from "./platform-card";
 
-export type SentimentType = "positive" | "neutral" | "negative";
+export type SentimentType = "positive" | "neutral" | "negative" | "unrecognized";
 
 interface MentionCardProps {
   platformId: PlatformId;
@@ -35,6 +35,11 @@ const sentimentConfig: Record<
     label: "Negative",
     color: "hsl(var(--error))",
     bgColor: "hsl(var(--error) / 0.1)",
+  },
+  unrecognized: {
+    label: "Not on AI Radar",
+    color: "hsl(var(--warning))",
+    bgColor: "hsl(var(--warning) / 0.1)",
   },
 };
 

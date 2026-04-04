@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ApexLogo } from "@/components/ui/apex-logo";
 
 const footerLinks = {
   platform: [
@@ -36,36 +37,7 @@ export function SiteFooter() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2.5 mb-4">
-              <div className="relative w-8 h-8">
-                {/* Triangular prism SVG */}
-                <svg viewBox="0 0 32 32" className="w-full h-full" fill="none">
-                  <path
-                    d="M16 2L28 26H4L16 2Z"
-                    fill="url(#footerPrismGradient)"
-                  />
-                  <path
-                    d="M16 2L28 26H16V2Z"
-                    fill="url(#footerPrismHighlight)"
-                    opacity="0.6"
-                  />
-                  <path
-                    d="M16 2L4 26H16V2Z"
-                    fill="hsl(var(--primary))"
-                    opacity="0.8"
-                  />
-                  <defs>
-                    <linearGradient id="footerPrismGradient" x1="4" y1="26" x2="28" y2="2">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" />
-                      <stop offset="100%" stopColor="hsl(var(--accent-blue))" />
-                    </linearGradient>
-                    <linearGradient id="footerPrismHighlight" x1="16" y1="2" x2="28" y2="26">
-                      <stop offset="0%" stopColor="hsl(var(--accent-purple))" />
-                      <stop offset="100%" stopColor="hsl(var(--primary))" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-              <span className="font-semibold text-lg tracking-tight">ApexGEO</span>
+              <ApexLogo size={28} showWordmark={true} />
             </Link>
             <p className="text-sm text-muted-foreground mb-4">
               AI Visibility Platform for modern brands.

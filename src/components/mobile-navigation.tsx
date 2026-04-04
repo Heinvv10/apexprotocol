@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { ApexLogo } from "@/components/ui/apex-logo";
 import { usePathname } from "next/navigation";
 import {
   Home,
@@ -155,20 +156,7 @@ export function MobileSidebarDrawer({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <div className="flex items-center gap-2">
-            <div className="apex-logo-icon w-8 h-8">
-              <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradMobile)" />
-                <defs>
-                  <linearGradient id="apexGradMobile" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#00E5CC"/>
-                    <stop offset="1" stopColor="#8B5CF6"/>
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-            <span className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-              APEX
-            </span>
+            <ApexLogo size={28} showWordmark={true} />
           </div>
           <button
             onClick={onClose}
@@ -266,20 +254,7 @@ export function MobileHeader() {
 
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="apex-logo-icon w-6 h-6">
-              <svg viewBox="0 0 32 32" fill="none">
-                <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradHeader)" />
-                <defs>
-                  <linearGradient id="apexGradHeader" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#00E5CC"/>
-                    <stop offset="1" stopColor="#8B5CF6"/>
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-            <span className="text-sm font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-              APEX
-            </span>
+            <ApexLogo size={22} showWordmark={true} />
           </div>
 
           {/* AI Status */}

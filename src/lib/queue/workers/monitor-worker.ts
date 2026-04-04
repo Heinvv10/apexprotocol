@@ -113,7 +113,7 @@ export async function processMonitorJob(job: Job): Promise<MonitorJobResult> {
             // Map sentiment - convert "mixed" to "neutral" as DB only supports positive/neutral/negative
             const dbSentiment = mention.sentiment === "mixed"
               ? "neutral"
-              : (mention.sentiment ?? "neutral") as "positive" | "neutral" | "negative";
+              : (mention.sentiment ?? "neutral") as "positive" | "neutral" | "negative" | "unrecognized";
 
             const [newMention] = await db.insert(brandMentions).values({
               id: createId(),

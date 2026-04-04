@@ -14,7 +14,7 @@ export interface QueryRow {
   id: string;
   query: string;
   platform: "chatgpt" | "claude" | "gemini" | "perplexity" | "grok";
-  sentiment: "positive" | "neutral" | "negative";
+  sentiment: "positive" | "neutral" | "negative" | "unrecognized";
   citationStatus: "cited" | "mentioned" | "not_cited";
   timestamp: string;
   response?: string;

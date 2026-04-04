@@ -25,7 +25,7 @@ export interface PlatformVisibility {
   name: "ChatGPT" | "Claude" | "Perplexity" | "Gemini" | string;
   mentionRate: number; // 0-100 percentage
   averagePosition: number | null;
-  sentiment: "positive" | "neutral" | "negative";
+  sentiment: "positive" | "neutral" | "negative" | "unrecognized";
   citationFrequency: number;
 }
 

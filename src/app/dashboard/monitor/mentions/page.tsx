@@ -215,7 +215,7 @@ export default function MentionsPage() {
       acc[mention.sentiment]++;
       return acc;
     },
-    { positive: 0, neutral: 0, negative: 0 }
+    { positive: 0, neutral: 0, negative: 0, unrecognized: 0 }
   );
 
   const platformCounts = mentions.reduce(

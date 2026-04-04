@@ -72,7 +72,7 @@ export interface AnalysisResult {
   sentiment: {
     overall: number;
     trend: 'improving' | 'stable' | 'declining';
-    distribution: { positive: number; neutral: number; negative: number };
+    distribution: { positive: number; neutral: number; negative: number; unrecognized: number };
   };
   correlations: {
     total: number;
@@ -250,6 +250,7 @@ export class SocialMediaCorrelationSubAgent extends EventEmitter {
           positive: positiveCount / (sentiments.length || 1),
           neutral: neutralCount / (sentiments.length || 1),
           negative: negativeCount / (sentiments.length || 1),
+          unrecognized: 0,
         },
       },
       correlations: {

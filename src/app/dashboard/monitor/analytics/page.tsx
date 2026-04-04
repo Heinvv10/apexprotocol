@@ -152,7 +152,7 @@ export default function AnalyticsPage() {
   );
 
   const data = analyticsResponse?.data || [];
-  const sentimentStats = analyticsResponse?.sentiment || { total: 0, positive: 0, neutral: 0, negative: 0 };
+  const sentimentStats = analyticsResponse?.sentiment || { total: 0, positive: 0, neutral: 0, negative: 0, unrecognized: 0 };
   const platformStats = analyticsResponse?.platforms || {};
   const hasData = data.length > 0 && sentimentStats.total > 0;
 

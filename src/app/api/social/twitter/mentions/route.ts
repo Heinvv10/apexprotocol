@@ -170,7 +170,7 @@ async function storeMentionsToDb(
         authorFollowers: mention.authorFollowers,
         content: mention.content,
         contentType: "text",
-        sentiment: mention.sentiment as "positive" | "neutral" | "negative" | null,
+        sentiment: mention.sentiment as "positive" | "neutral" | "negative" | "unrecognized" | null,
         engagementLikes: mention.metrics?.likes || 0,
         engagementShares: mention.metrics?.shares || 0,
         engagementComments: mention.metrics?.comments || 0,

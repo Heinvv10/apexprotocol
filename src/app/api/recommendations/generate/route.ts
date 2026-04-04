@@ -143,12 +143,12 @@ export async function POST(request: NextRequest) {
           mentioned: r.position !== null, // Brand is mentioned if position is set
           position: r.position ?? undefined,
           context: r.response ?? undefined,
-          sentiment: r.sentiment as "positive" | "neutral" | "negative" | undefined,
+          sentiment: r.sentiment as "positive" | "neutral" | "negative" | "unrecognized" | undefined,
           timestamp: r.timestamp,
         }));
 
         // Calculate sentiment
-        const sentimentCounts = { positive: 0, neutral: 0, negative: 0 };
+        const sentimentCounts = { positive: 0, neutral: 0, negative: 0, unrecognized: 0 };
         for (const m of mentions) {
           if (m.sentiment) {
             sentimentCounts[m.sentiment]++;

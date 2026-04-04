@@ -329,7 +329,7 @@ export interface VisibilityMetrics {
   visibility: number; // 0-100 percentage
   position: number | null; // Position in response (-1 if not found)
   confidence: number; // 0-100 confidence score
-  sentiment?: "positive" | "neutral" | "negative";
+  sentiment?: "positive" | "neutral" | "negative" | "unrecognized";
   citationCount?: number;
 }
 

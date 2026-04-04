@@ -20,7 +20,7 @@ const querySchema = z.object({
       "copilot",
     ])
     .optional(),
-  sentiment: z.enum(["positive", "neutral", "negative"]).optional(),
+  sentiment: z.enum(["positive", "neutral", "negative", "unrecognized"]).optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   limit: z.coerce.number().min(1).max(100).optional().default(50),
@@ -149,7 +149,7 @@ const createMentionSchema = z.object({
   ]),
   query: z.string(),
   response: z.string(),
-  sentiment: z.enum(["positive", "neutral", "negative"]).optional(),
+  sentiment: z.enum(["positive", "neutral", "negative", "unrecognized"]).optional(),
   position: z.number().optional().nullable(),
   citationUrl: z.string().url().optional().nullable(),
   competitors: z
@@ -157,7 +157,7 @@ const createMentionSchema = z.object({
       z.object({
         name: z.string(),
         position: z.number(),
-        sentiment: z.enum(["positive", "neutral", "negative"]),
+        sentiment: z.enum(["positive", "neutral", "negative", "unrecognized"]),
       })
     )
     .optional(),

@@ -80,7 +80,7 @@ export async function calculateSOV(
       brandMentions: number;
       competitorMentions: number;
       positions: number[];
-      sentiments: { positive: number; neutral: number; negative: number };
+      sentiments: { positive: number; neutral: number; negative: number; unrecognized: number };
     }
   >();
 
@@ -90,7 +90,7 @@ export async function calculateSOV(
     {
       mentions: number;
       positions: number[];
-      sentiments: { positive: number; neutral: number; negative: number };
+      sentiments: { positive: number; neutral: number; negative: number; unrecognized: number };
     }
   >();
 
@@ -103,7 +103,7 @@ export async function calculateSOV(
         brandMentions: 0,
         competitorMentions: 0,
         positions: [],
-        sentiments: { positive: 0, neutral: 0, negative: 0 },
+        sentiments: { positive: 0, neutral: 0, negative: 0, unrecognized: 0 },
       });
     }
 
@@ -123,7 +123,7 @@ export async function calculateSOV(
         competitorData.set(comp.name, {
           mentions: 0,
           positions: [],
-          sentiments: { positive: 0, neutral: 0, negative: 0 },
+          sentiments: { positive: 0, neutral: 0, negative: 0, unrecognized: 0 },
         });
       }
 

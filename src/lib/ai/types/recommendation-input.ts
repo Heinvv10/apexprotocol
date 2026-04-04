@@ -15,7 +15,7 @@ export type AIPlatform = "ChatGPT" | "Claude" | "Perplexity" | "Gemini";
 /**
  * Sentiment classification for platform mentions
  */
-export type SentimentType = "positive" | "neutral" | "negative";
+export type SentimentType = "positive" | "neutral" | "negative" | "unrecognized";
 
 /**
  * Severity levels for content gaps

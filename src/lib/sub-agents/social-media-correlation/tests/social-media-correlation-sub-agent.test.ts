@@ -59,7 +59,7 @@ interface AnalysisResult {
   sentiment: {
     overall: number;
     trend: 'improving' | 'stable' | 'declining';
-    distribution: { positive: number; neutral: number; negative: number };
+    distribution: { positive: number; neutral: number; negative: number; unrecognized: number };
   };
   correlations: {
     total: number;

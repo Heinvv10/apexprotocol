@@ -55,7 +55,7 @@ async function getCompetitorCoOccurrence(
   lookbackDays: number = 30
 ): Promise<{
   mentionCount: number;
-  sentimentBreakdown: { positive: number; neutral: number; negative: number };
+  sentimentBreakdown: { positive: number; neutral: number; negative: number; unrecognized: number };
   platforms: Array<{ platform: string; count: number }>;
 }> {
   const startDate = new Date();
@@ -82,6 +82,7 @@ async function getCompetitorCoOccurrence(
     positive: competitorMentions.filter((m) => m.sentiment === "positive").length,
     neutral: competitorMentions.filter((m) => m.sentiment === "neutral").length,
     negative: competitorMentions.filter((m) => m.sentiment === "negative").length,
+    unrecognized: competitorMentions.filter((m) => m.sentiment === "unrecognized").length,
   };
 
   // Calculate platform breakdown
@@ -109,7 +110,7 @@ async function getCompetitorCoOccurrence(
  */
 function estimateCompetitorGEOScore(
   mentionCount: number,
-  sentimentBreakdown: { positive: number; neutral: number; negative: number },
+  sentimentBreakdown: { positive: number; neutral: number; negative: number; unrecognized: number },
   platformCount: number
 ): number {
   const totalMentions = sentimentBreakdown.positive + sentimentBreakdown.neutral + sentimentBreakdown.negative;

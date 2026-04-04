@@ -42,7 +42,7 @@ interface Narrative {
   mentions: Mention[];
   sentiment: {
     average: number;
-    distribution: { positive: number; neutral: number; negative: number };
+    distribution: { positive: number; neutral: number; negative: number; unrecognized: number };
   };
   platforms: string[];
   timeRange: { start: Date; end: Date };

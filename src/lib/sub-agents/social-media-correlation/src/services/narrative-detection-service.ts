@@ -39,7 +39,7 @@ export interface Narrative {
   mentions: Mention[];
   sentiment: {
     average: number;
-    distribution: { positive: number; neutral: number; negative: number };
+    distribution: { positive: number; neutral: number; negative: number; unrecognized: number };
   };
   platforms: string[];
   timeRange: { start: Date; end: Date };
@@ -183,6 +183,7 @@ export class NarrativeDetectionService extends EventEmitter {
               neutral:
                 sentiments.filter((s) => s >= -0.3 && s <= 0.3).length / sentiments.length,
               negative: sentiments.filter((s) => s < -0.3).length / sentiments.length,
+              unrecognized: 0,
             },
           },
           platforms,

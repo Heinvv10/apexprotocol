@@ -22,6 +22,7 @@ const sentimentOptions: { value: SentimentType; label: string; color: string }[]
   { value: "positive", label: "Positive", color: "hsl(var(--success))" },
   { value: "neutral", label: "Neutral", color: "hsl(var(--muted-foreground))" },
   { value: "negative", label: "Negative", color: "hsl(var(--error))" },
+  { value: "unrecognized", label: "Not on AI Radar", color: "hsl(var(--warning))" },
 ];
 
 const dateRangeOptions: { value: "24h" | "7d" | "30d" | "all"; label: string }[] = [

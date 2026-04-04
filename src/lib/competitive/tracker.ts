@@ -43,7 +43,7 @@ export interface PlatformBreakdown {
   platform: string;
   mentions: number;
   avgPosition: number;
-  sentiment: "positive" | "neutral" | "negative";
+  sentiment: "positive" | "neutral" | "negative" | "unrecognized";
 }
 
 export interface ShareOfVoiceResult {
@@ -382,7 +382,7 @@ export class CompetitiveTracker {
           { type: "positive", count: data.sentiments.filter((s) => s === "positive").length },
           { type: "neutral", count: data.sentiments.filter((s) => s === "neutral").length },
           { type: "negative", count: data.sentiments.filter((s) => s === "negative").length },
-        ].sort((a, b) => b.count - a.count)[0].type as "positive" | "neutral" | "negative";
+        ].sort((a, b) => b.count - a.count)[0].type as "positive" | "neutral" | "negative" | "unrecognized";
 
         platforms.push({
           platform,

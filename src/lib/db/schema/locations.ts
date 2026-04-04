@@ -68,7 +68,7 @@ export interface LocationMetadata {
 export interface ReviewKeyword {
   word: string;
   count: number;
-  sentiment: "positive" | "neutral" | "negative";
+  sentiment: "positive" | "neutral" | "negative" | "unrecognized";
 }
 
 // Brand Locations table

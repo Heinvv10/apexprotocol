@@ -75,7 +75,7 @@ export interface PlaceReview {
 }
 
 export interface SentimentAnalysis {
-  sentiment: "positive" | "neutral" | "negative";
+  sentiment: "positive" | "neutral" | "negative" | "unrecognized";
   score: number; // -1 to 1
   keywords: ReviewKeyword[];
 }
@@ -345,7 +345,7 @@ export function analyzeReviewSentiment(text: string): SentimentAnalysis {
   }
 
   // Determine sentiment category
-  let sentiment: "positive" | "neutral" | "negative";
+  let sentiment: "positive" | "neutral" | "negative" | "unrecognized";
   if (score > 0.2) {
     sentiment = "positive";
   } else if (score < -0.2) {

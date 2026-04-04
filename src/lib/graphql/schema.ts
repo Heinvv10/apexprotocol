@@ -1165,11 +1165,11 @@ const resolvers = {
         const mentions = await db.select().from(schema.brandMentions)
           .where(eq(schema.brandMentions.brandId, brandId));
 
-        const platformStats: Record<string, { count: number; positive: number; negative: number; neutral: number }> = {};
+        const platformStats: Record<string, { count: number; positive: number; negative: number; neutral: number; unrecognized: number }> = {};
         mentions.forEach(m => {
           const platform = m.platform;
           if (!platformStats[platform]) {
-            platformStats[platform] = { count: 0, positive: 0, negative: 0, neutral: 0 };
+            platformStats[platform] = { count: 0, positive: 0, negative: 0, neutral: 0, unrecognized: 0 };
           }
           platformStats[platform].count++;
           platformStats[platform][m.sentiment]++;

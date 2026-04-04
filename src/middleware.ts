@@ -46,6 +46,7 @@ const publicRoutes = [
   "/onboarding(.*)",  // Allow onboarding wizard for testing
   "/api/onboarding(.*)",  // Allow all onboarding APIs
   "/api/webhooks(.*)",
+  "/api/cron(.*)",
   "/api/health",
   "/api/status",
   "/api/brands(.*)",  // Handles auth internally via getOrganizationId()

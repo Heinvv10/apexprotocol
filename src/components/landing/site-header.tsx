@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import { ApexLogo } from "@/components/ui/apex-logo";
 
 const navLinks = [
   { href: "#platform", label: "Platform" },
@@ -34,42 +35,9 @@ export function SiteHeader() {
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo - Triangular Prism Design */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="relative w-8 h-8">
-              {/* Triangular prism SVG */}
-              <svg viewBox="0 0 32 32" className="w-full h-full" fill="none">
-                {/* Main triangle face */}
-                <path
-                  d="M16 2L28 26H4L16 2Z"
-                  fill="url(#prismGradient)"
-                  className="drop-shadow-lg"
-                />
-                {/* Right face highlight */}
-                <path
-                  d="M16 2L28 26H16V2Z"
-                  fill="url(#prismHighlight)"
-                  opacity="0.6"
-                />
-                {/* Left face shadow */}
-                <path
-                  d="M16 2L4 26H16V2Z"
-                  fill="hsl(var(--primary))"
-                  opacity="0.8"
-                />
-                <defs>
-                  <linearGradient id="prismGradient" x1="4" y1="26" x2="28" y2="2">
-                    <stop offset="0%" stopColor="hsl(var(--primary))" />
-                    <stop offset="100%" stopColor="hsl(var(--accent-blue))" />
-                  </linearGradient>
-                  <linearGradient id="prismHighlight" x1="16" y1="2" x2="28" y2="26">
-                    <stop offset="0%" stopColor="hsl(var(--accent-purple))" />
-                    <stop offset="100%" stopColor="hsl(var(--primary))" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-            <span className="font-semibold text-lg tracking-tight">ApexGEO</span>
+          {/* Logo */}
+          <Link href="/">
+            <ApexLogo size={30} showWordmark={true} />
           </Link>
 
           {/* Desktop Nav */}

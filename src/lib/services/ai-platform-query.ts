@@ -26,7 +26,7 @@ export interface AIPlatformMention {
     | "copilot";
   query: string;
   response: string;
-  sentiment: "positive" | "neutral" | "negative";
+  sentiment: "positive" | "neutral" | "negative" | "unrecognized";
   position: number | null;
   citationUrl: string | null;
   competitors: CompetitorMention[];
@@ -42,7 +42,7 @@ export interface AIPlatformMention {
 export interface CompetitorMention {
   name: string;
   position: number;
-  sentiment: "positive" | "neutral" | "negative";
+  sentiment: "positive" | "neutral" | "negative" | "unrecognized";
 }
 
 interface QueryTemplate {
@@ -145,9 +145,38 @@ const QUERY_TEMPLATES: Record<string, QueryTemplate> = {
 function analyzeSentiment(
   response: string,
   brandName: string
-): "positive" | "neutral" | "negative" {
+): "positive" | "neutral" | "negative" | "unrecognized" | "unrecognized" {
   const lowerResponse = response.toLowerCase();
   const lowerBrand = brandName.toLowerCase();
+
+  // Check if brand is unrecognized by the AI
+  const unrecognizedPhrases = [
+    "don't have specific information",
+    "don't have information",
+    "do not have specific information",
+    "do not have information",
+    "i'm not aware of",
+    "i am not aware of",
+    "couldn't find information",
+    "could not find information",
+    "no specific information",
+    "not familiar with",
+    "unable to find information",
+    "no information available",
+    "i don't have data",
+    "i do not have data",
+    "not in my knowledge",
+    "outside my knowledge",
+    "not aware of a company",
+    "cannot find any information",
+    "can't find any information",
+    "no record of",
+    "doesn't appear in",
+    "does not appear in",
+  ];
+  if (unrecognizedPhrases.some((phrase) => lowerResponse.includes(phrase))) {
+    return "unrecognized";
+  }
 
   // Check if brand is mentioned
   if (!lowerResponse.includes(lowerBrand)) {
@@ -288,7 +317,7 @@ export async function queryChatGPT(
       .replace("{product_category}", "online shopping");
 
     const completion = await client.chat.completions.create({
-      model: "gpt-4-turbo-preview",
+      model: "gpt-4o",
       messages: [
         {
           role: "user",
@@ -395,7 +424,7 @@ export async function queryGemini(
 ): Promise<AIPlatformMention | null> {
   try {
     const client = getGeminiClient();
-    const model = client.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const promptIndex = Math.floor(Math.random() * queryTemplate.prompts.length);
     const query = queryTemplate.prompts[promptIndex]

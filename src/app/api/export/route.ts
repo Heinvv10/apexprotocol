@@ -234,7 +234,7 @@ async function generateMentionsXLSX(
   }
 
   if (filters?.sentiment && Array.isArray(filters.sentiment) && filters.sentiment.length > 0) {
-    const sentimentValues = filters.sentiment as Array<"positive" | "neutral" | "negative">;
+    const sentimentValues = filters.sentiment as Array<"positive" | "neutral" | "negative" | "unrecognized">;
     conditions.push(inArray(brandMentions.sentiment, sentimentValues));
   }
 
@@ -490,7 +490,7 @@ async function generateMentionsCSV(
 
   if (filters?.sentiment && Array.isArray(filters.sentiment) && filters.sentiment.length > 0) {
     // Cast to the enum type expected by the sentiment column
-    const sentimentValues = filters.sentiment as Array<"positive" | "neutral" | "negative">;
+    const sentimentValues = filters.sentiment as Array<"positive" | "neutral" | "negative" | "unrecognized">;
     conditions.push(inArray(brandMentions.sentiment, sentimentValues));
   }
 
@@ -917,7 +917,7 @@ async function getMentionsReportData(
   return {
     total: mentions.length,
     byPlatform,
-    bySentiment: { positive, neutral, negative },
+    bySentiment: { positive, neutral, negative, unrecognized: mentions.filter((m: { sentiment: string }) => m.sentiment === "unrecognized").length },
     topQueries,
     trend,
   };

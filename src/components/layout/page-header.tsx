@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ApexLogoMark, ApexWordmark } from "@/components/ui/apex-logo";
 
 interface PageHeaderProps {
   pageName: string;
@@ -19,21 +20,9 @@ export function PageHeader({ pageName, currentPage }: PageHeaderProps) {
   return (
     <div className="flex items-center justify-between px-8 py-4 border-b border-white/5">
       <div className="flex items-center gap-2">
-        <div className="apex-logo-icon w-8 h-8">
-          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGrad)" />
-            <defs>
-              <linearGradient id="apexGrad" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#00E5CC"/>
-                <stop offset="1" stopColor="#8B5CF6"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-        <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-          APEX
-        </span>
-        <span className="text-xl font-light text-white ml-1">{pageName}</span>
+        <ApexLogoMark size={32} />
+        <ApexWordmark className="text-xl" />
+        <span className="text-xl font-light text-white/60 ml-1">{pageName}</span>
       </div>
 
       {/* Navigation Tabs */}

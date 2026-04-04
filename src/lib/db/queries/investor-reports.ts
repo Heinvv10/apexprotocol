@@ -104,6 +104,7 @@ export interface MentionsSummary {
     positive: number;
     neutral: number;
     negative: number;
+    unrecognized: number;
   };
 }
 
@@ -190,7 +191,7 @@ export async function getInvestorReportData(
       mentionsSummary: {
         total: 0,
         byPlatform: [],
-        bySentiment: { positive: 0, neutral: 0, negative: 0 },
+        bySentiment: { positive: 0, neutral: 0, negative: 0, unrecognized: 0 },
       },
       recommendationsSummary: {
         total: 0,
@@ -606,7 +607,7 @@ function buildMentionsSummary(mentions: BrandMention[]): MentionsSummary {
   return {
     total: mentions.length,
     byPlatform,
-    bySentiment: { positive, neutral, negative },
+    bySentiment: { positive, neutral, negative, unrecognized: mentions.filter((m) => m.sentiment === "unrecognized").length },
   };
 }
 

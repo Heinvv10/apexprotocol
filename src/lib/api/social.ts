@@ -49,7 +49,7 @@ export interface SocialMention {
   authorAvatarUrl?: string;
   content?: string;
   timestamp?: string;
-  sentiment?: "positive" | "neutral" | "negative" | string;
+  sentiment?: "positive" | "neutral" | "negative" | "unrecognized" | string;
   sentimentScore?: number;
   engagement?: {
     likes?: number;
@@ -226,7 +226,7 @@ export interface Competitor {
   monthlyPosts: number;
   avgEngagement: number;
   shareOfVoice: number;
-  sentiment: "positive" | "neutral" | "negative";
+  sentiment: "positive" | "neutral" | "negative" | "unrecognized";
   topContent: string;
   recentActivity: CompetitorActivity[];
 }

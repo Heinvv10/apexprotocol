@@ -531,7 +531,7 @@ function MentionCard({ mention }: { mention: SocialMention }) {
 }
 
 // Sentiment Summary Card
-function SentimentSummary({ positive, neutral, negative }: { positive: number; neutral: number; negative: number }) {
+function SentimentSummary({ positive, neutral, negative }: { positive: number; neutral: number; negative: number; unrecognized: number }) {
   const total = positive + neutral + negative;
   const positivePercent = total > 0 ? Math.round((positive / total) * 100) : 0;
   const neutralPercent = total > 0 ? Math.round((neutral / total) * 100) : 0;
@@ -808,6 +808,7 @@ export default function SocialPage() {
             positive={summaryData.positiveMentions}
             neutral={summaryData.neutralMentions}
             negative={summaryData.negativeMentions}
+            unrecognized={0}
           />
 
           {/* Recent Mentions */}

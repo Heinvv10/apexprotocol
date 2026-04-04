@@ -39,12 +39,12 @@ export interface MentionData {
   mentioned: boolean;
   position?: number;
   context?: string;
-  sentiment?: "positive" | "neutral" | "negative";
+  sentiment?: "positive" | "neutral" | "negative" | "unrecognized";
   timestamp: Date;
 }
 
 export interface SentimentData {
-  overall: "positive" | "neutral" | "negative";
+  overall: "positive" | "neutral" | "negative" | "unrecognized";
   score: number; // -1 to 1
   breakdown: {
     positive: number;

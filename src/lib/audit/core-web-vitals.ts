@@ -41,7 +41,7 @@ export interface OverallResult {
 export interface AIPerformanceImpact {
   crawlability: "excellent" | "good" | "moderate" | "poor";
   indexPriority: "high" | "medium" | "low";
-  userExperienceSignal: "positive" | "neutral" | "negative";
+  userExperienceSignal: "positive" | "neutral" | "negative" | "unrecognized";
   recommendations: string[];
 }
 

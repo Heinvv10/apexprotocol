@@ -42,6 +42,7 @@ export const sentimentEnum = pgEnum("sentiment", [
   "positive",
   "neutral",
   "negative",
+  "unrecognized",
 ]);
 
 // Brand mentions table
@@ -82,7 +83,7 @@ export const brandMentions = pgTable("brand_mentions", {
 export interface CompetitorMention {
   name: string;
   position: number;
-  sentiment: "positive" | "neutral" | "negative";
+  sentiment: "positive" | "neutral" | "negative" | "unrecognized";
 }
 
 // Mention metadata type
