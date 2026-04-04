@@ -63,9 +63,9 @@ export function HeroSection() {
             <div className="mt-10 pt-8 border-t border-border/30">
               <p className="text-sm text-muted-foreground mb-4">Trusted by innovative brands across Africa</p>
               <div className="flex items-center gap-8 justify-center lg:justify-start opacity-50">
-                <span className="text-lg font-medium">TechFlow</span>
-                <span className="text-lg font-medium">GreenLeaf</span>
-                <span className="text-lg font-medium">FinanceHub</span>
+                <span className="text-lg font-medium">Vodacom</span>
+                <span className="text-lg font-medium">Takealot</span>
+                <span className="text-lg font-medium">Discovery</span>
               </div>
             </div>
           </div>
