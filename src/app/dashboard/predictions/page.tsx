@@ -1,4 +1,3 @@
-import { DashboardShell } from "@/components/layout";
 import { TrendingUp, Zap, Target, Brain } from "lucide-react";
 
 export const metadata = {
@@ -39,60 +38,58 @@ const placeholderPredictions = [
 
 export default function PredictionsPage() {
   return (
-    <DashboardShell>
-      <div className="p-6 md:p-8 max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight mb-1">Predictions</h1>
-          <p className="text-muted-foreground text-sm">
-            AI-powered forecasts and recommendations to stay ahead of the curve.
-          </p>
-        </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight mb-1">Predictions</h1>
+        <p className="text-muted-foreground text-sm">
+          AI-powered forecasts and recommendations to stay ahead of the curve.
+        </p>
+      </div>
 
-        {/* Coming soon badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium mb-8">
-          <Zap className="w-3 h-3" />
-          Full predictions engine launching soon
-        </div>
+      {/* Coming soon badge */}
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium">
+        <Zap className="w-3 h-3" />
+        Full predictions engine launching soon
+      </div>
 
-        {/* Prediction cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {placeholderPredictions.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={item.title}
-                className="rounded-xl border border-border/50 bg-card/50 p-6 flex flex-col gap-3"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
-                      <Icon className={`w-4 h-4 ${item.color}`} />
-                    </div>
-                    <span className="text-sm font-medium text-muted-foreground">
-                      {item.title}
-                    </span>
+      {/* Prediction cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {placeholderPredictions.map((item) => {
+          const Icon = item.icon;
+          return (
+            <div
+              key={item.title}
+              className="card-secondary p-6 flex flex-col gap-3"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
+                    <Icon className={`w-4 h-4 ${item.color}`} />
                   </div>
-                  <span className={`text-lg font-bold ${item.color}`}>
-                    {item.value}
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {item.title}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {item.description}
-                </p>
+                <span className={`text-lg font-bold ${item.color}`}>
+                  {item.value}
+                </span>
               </div>
-            );
-          })}
-        </div>
-
-        {/* Empty state footer note */}
-        <div className="mt-8 rounded-xl border border-dashed border-border/50 p-6 text-center">
-          <Brain className="w-8 h-8 text-muted-foreground mx-auto mb-3 opacity-50" />
-          <p className="text-sm text-muted-foreground">
-            Predictions improve as we gather more data about your brand. Add more brands and check back soon.
-          </p>
-        </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {item.description}
+              </p>
+            </div>
+          );
+        })}
       </div>
-    </DashboardShell>
+
+      {/* Empty state footer note */}
+      <div className="card-tertiary p-6 text-center border-dashed">
+        <Brain className="w-8 h-8 text-muted-foreground mx-auto mb-3 opacity-50" />
+        <p className="text-sm text-muted-foreground">
+          Predictions improve as we gather more data about your brand. Add more brands and check back soon.
+        </p>
+      </div>
+    </div>
   );
 }

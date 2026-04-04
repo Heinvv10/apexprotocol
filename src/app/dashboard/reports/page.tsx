@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
@@ -11,6 +12,7 @@ import {
   Trash2,
   Calendar,
   Clock,
+  AlarmClock,
   CheckCircle,
   AlertCircle,
   Loader2,
@@ -282,7 +284,14 @@ export default function ReportsPage() {
             Generate and manage executive summary reports
           </p>
         </div>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" className="gap-2">
+            <Link href="/dashboard/reports/schedule">
+              <AlarmClock className="w-4 h-4" />
+              Schedule
+            </Link>
+          </Button>
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
@@ -396,6 +405,7 @@ export default function ReportsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Stats */}
