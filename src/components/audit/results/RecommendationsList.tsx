@@ -31,7 +31,7 @@ export function RecommendationsList({ audit }: RecommendationsListProps) {
         // Check if this recommendation already exists
         const existing = categoryRecommendations[category].find(r => r.recommendation === issue.recommendation);
         if (existing) {
-          existing.issues.push(issue);
+          existing.issues?.push(issue);
         } else {
           categoryRecommendations[category].push({
             recommendation: issue.recommendation,
@@ -85,9 +85,9 @@ export function RecommendationsList({ audit }: RecommendationsListProps) {
                       <span className="text-primary mt-1 flex-shrink-0">•</span>
                       <div className="min-w-0">
                         <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
-                        {rec.issues.length > 1 && (
+                        {rec.issues?.length > 1 && (
                           <p className="text-xs text-muted-foreground/70 mt-1">
-                            Affects {rec.issues.length} issue{rec.issues.length > 1 ? 's' : ''}
+                            Affects {rec.issues?.length} issue{rec.issues?.length > 1 ? 's' : ''}
                           </p>
                         )}
                       </div>

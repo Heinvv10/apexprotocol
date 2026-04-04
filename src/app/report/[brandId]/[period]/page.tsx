@@ -128,7 +128,7 @@ export default async function ReportPage({ params, searchParams }: Props) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>AI Visibility Report — {data.brand.name}</title>
+        <title>AI Visibility Report — {data.brand?.name}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
         <style>{`
@@ -164,20 +164,20 @@ export default async function ReportPage({ params, searchParams }: Props) {
           </div>
 
           <div style={{ textAlign: "center", padding: "40px 0" }}>
-            {data.brand.logoUrl && (
-              <img src={data.brand.logoUrl} alt={data.brand.name} style={{ height: 80, objectFit: "contain", marginBottom: 32, borderRadius: 12 }} />
+            {data.brand?.logoUrl && (
+              <img src={data.brand?.logoUrl} alt={data.brand?.name} style={{ height: 80, objectFit: "contain", marginBottom: 32, borderRadius: 12 }} />
             )}
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--report-accent)", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: 16 }}>
               AI Visibility Report
             </div>
             <div style={{ fontSize: 48, fontWeight: 900, lineHeight: 1.1, marginBottom: 12 }}>
-              {data.brand.name}
+              {data.brand?.name}
             </div>
             <div style={{ fontSize: 20, color: "var(--report-text-muted)", marginBottom: 8 }}>
               {periodLabel}
             </div>
-            {data.brand.domain && (
-              <div style={{ fontSize: 13, color: "var(--report-text-muted)" }}>{data.brand.domain}</div>
+            {data.brand?.domain && (
+              <div style={{ fontSize: 13, color: "var(--report-text-muted)" }}>{data.brand?.domain}</div>
             )}
           </div>
 
@@ -194,7 +194,7 @@ export default async function ReportPage({ params, searchParams }: Props) {
         <div className="page">
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: "var(--report-accent)", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 6 }}>Executive Summary</div>
-            <div style={{ fontSize: 28, fontWeight: 700 }}>{data.brand.name} — AI Visibility Overview</div>
+            <div style={{ fontSize: 28, fontWeight: 700 }}>{data.brand?.name} — AI Visibility Overview</div>
           </div>
 
           <div style={{ display: "flex", gap: 24, marginBottom: 24, alignItems: "flex-start" }}>
@@ -248,7 +248,7 @@ export default async function ReportPage({ params, searchParams }: Props) {
           )}
 
           <div className="footer">
-            <span>{data.brand.name} — AI Visibility Report — {periodLabel}</span>
+            <span>{data.brand?.name} — AI Visibility Report — {periodLabel}</span>
             <span className="page-num">2</span>
           </div>
         </div>
@@ -305,12 +305,12 @@ export default async function ReportPage({ params, searchParams }: Props) {
             <p style={{ fontSize: 13, lineHeight: 1.6 }}>
               {data.platformMentions.filter((p) => p.cited).length === 0
                 ? "No AI platform citations detected yet. Focus on structured data, FAQ content, and entity authority to improve citation rates."
-                : `${data.brand.name} is actively cited on ${data.platformMentions.filter((p) => p.cited).length} platform(s). Expand content strategy to improve coverage on uncited platforms.`}
+                : `${data.brand?.name} is actively cited on ${data.platformMentions.filter((p) => p.cited).length} platform(s). Expand content strategy to improve coverage on uncited platforms.`}
             </p>
           </div>
 
           <div className="footer">
-            <span>{data.brand.name} — AI Visibility Report — {periodLabel}</span>
+            <span>{data.brand?.name} — AI Visibility Report — {periodLabel}</span>
             <span className="page-num">3</span>
           </div>
         </div>

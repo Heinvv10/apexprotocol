@@ -297,7 +297,10 @@ export async function POST(request: NextRequest) {
           colorPalette: validatedData.visual?.colorPalette || [],
           fontFamily: validatedData.visual?.fontFamily || null,
         },
-        confidence: validatedData.confidence || { overall: 0, perField: {} },
+        confidence: {
+          overall: validatedData.confidence?.overall ?? 0,
+          perField: (validatedData.confidence?.perField ?? {}) as Record<string, number>,
+        },
         monitoringEnabled: validatedData.monitoringEnabled,
         monitoringPlatforms: validatedData.monitoringPlatforms,
       })

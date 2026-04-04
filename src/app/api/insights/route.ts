@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
       }
 
       case "gaps": {
-        const competitors = (brand.competitors as string[]) || [];
+        const competitors = (brand.competitors as unknown as string[]) || [];
         if (competitors.length === 0) {
           return NextResponse.json({
             success: true,
@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
       }
 
       case "quick-gaps": {
-        const competitors = (brand.competitors as string[]) || [];
+        const competitors = (brand.competitors as unknown as string[]) || [];
         const quickSummary = await getQuickGapSummary(
           brandId,
           brand.name,
@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
       }
 
       case "content-gaps": {
-        const targetCompetitors = competitors || (brand.competitors as string[]) || [];
+        const targetCompetitors = competitors || (brand.competitors as unknown as string[]) || [];
         if (targetCompetitors.length === 0) {
           return NextResponse.json(
             { error: "No competitors provided for gap analysis" },

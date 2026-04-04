@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
         metaDescription: page.metaDescription || "",
         status: status,
         traffic: page.visits || 0,
-        keywords: keywordMap.get(page.url) || 0,
+        keywords: page.url ? (keywordMap.get(page.url) || 0) : 0,
         lastCrawled: page.lastModified || page.createdAt,
         issues: issues,
       };

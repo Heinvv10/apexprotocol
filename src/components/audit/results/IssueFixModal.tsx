@@ -100,7 +100,7 @@ export function IssueFixModal({ issue, actionType, auditUrl, isOpen, onClose }: 
                   </p>
                   <div className="max-h-32 overflow-y-auto">
                     <ul className="text-sm space-y-1">
-                      {issue.affectedPages.slice(0, 5).map((page) => (
+                      {issue.affectedPages.slice(0, 5).map((page: string) => (
                         <li key={page} className="text-muted-foreground truncate">
                           • {page}
                         </li>

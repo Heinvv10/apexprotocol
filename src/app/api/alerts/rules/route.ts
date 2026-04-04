@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     const rules = await db
       .select()
       .from(alertRules)
-      .where(eq(alertRules.organizationId, organizationId))
+      
       .orderBy(desc(alertRules.createdAt));
 
     return NextResponse.json({
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     const parsed = createRuleSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Validation failed", details: parsed.error.errors },
+        { error: "Validation failed", details: parsed.error.issues },
         { status: 400 }
       );
     }
@@ -106,7 +106,6 @@ export async function POST(request: NextRequest) {
       .insert(alertRules)
       .values({
         id: createId(),
-        organizationId,
         brandId: data.brandId || null,
         name: data.name,
         description: data.description,

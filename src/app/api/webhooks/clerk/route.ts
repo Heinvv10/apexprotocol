@@ -166,12 +166,18 @@ async function handleOrgCreated(data: OrganizationJSON) {
     slug,
     plan: "starter",
     branding: {
+      themeId: "apexgeo-default",
       primaryColor: "#4926FA",
       accentColor: "#D82F71",
       logoUrl: imageUrl,
+      logoDarkUrl: null,
       faviconUrl: null,
       appName: null,
+      tagline: null,
       customDomain: null,
+      supportEmail: null,
+      showPoweredBy: true,
+      customFooterText: null,
     },
   });
 }

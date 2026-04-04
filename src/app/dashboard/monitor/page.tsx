@@ -31,7 +31,7 @@ function streamMentionToQueryRow(mention: StreamMention): QueryRow {
     citationStatus: mention.citationUrl ? "cited" : "mentioned",
     timestamp: mention.createdAt,
     response: mention.response,
-    url: mention.citationUrl,
+    url: mention.citationUrl ?? undefined,
     confidence: undefined,
     competitors: [],
   };
@@ -66,7 +66,7 @@ function mentionToQueryRow(mention: Mention): QueryRow {
     citationStatus: mention.mentioned ? (mention.citationUrl ? "cited" : "mentioned") : "not_cited",
     timestamp: mention.createdAt,
     response: mention.response,
-    url: mention.citationUrl,
+    url: mention.citationUrl ?? undefined,
     confidence: mention.sentimentScore ? Math.round(mention.sentimentScore * 100) : undefined,
     competitors: mention.tags,
   };

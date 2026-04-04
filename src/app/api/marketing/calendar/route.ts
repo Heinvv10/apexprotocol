@@ -133,7 +133,17 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Transform to calendar items
-    const calendarItems = [];
+    interface CalendarItem {
+      id: string;
+      title: string;
+      type: string;
+      date: string;
+      status: string;
+      channel: string;
+      audience: number;
+      createdAt: string;
+    }
+    const calendarItems: CalendarItem[] = [];
 
     // Add campaigns
     if (campaignsData.campaigns) {

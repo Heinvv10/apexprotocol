@@ -341,6 +341,9 @@ export interface ConnectedAccount {
   scopes: string[] | null;
   lastError: string | null;
   lastErrorAt: string | null;
+  followerCount: number | null;
+  followingCount: number | null;
+  connectedAt: string | null;
   createdAt: string;
   updatedAt: string;
   isActive: boolean;

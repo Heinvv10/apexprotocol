@@ -75,11 +75,11 @@ export async function POST(request: NextRequest) {
       }
 
       // Check if already has data
-      const hasLocations = brand.locations && Array.isArray(brand.locations) && brand.locations.length > 0;
-      const hasPeople = brand.personnel && Array.isArray(brand.personnel) && brand.personnel.length > 0;
+      const hasLocations = brand.locations && Array.isArray(brand.locations ?? []) && brand.locations?.length > 0;
+      const hasPeople = brand.personnel && Array.isArray(brand.personnel ?? []) && brand.personnel?.length > 0;
 
       if (hasLocations && hasPeople) {
-        console.log(`  Already has data - locations: ${brand.locations.length}, people: ${brand.personnel.length}`);
+        console.log(`  Already has data - locations: ${brand.locations?.length}, people: ${brand.personnel?.length}`);
 
         // Still migrate locations if not in table
         let locationsMigrated = 0;
@@ -110,8 +110,8 @@ export async function POST(request: NextRequest) {
           brandName: brand.name,
           domain: brand.domain,
           status: "skipped",
-          locationsFound: brand.locations.length,
-          peopleFound: brand.personnel.length,
+          locationsFound: brand.locations?.length ?? 0,
+          peopleFound: brand.personnel?.length ?? 0,
           locationsMigrated,
         });
         continue;

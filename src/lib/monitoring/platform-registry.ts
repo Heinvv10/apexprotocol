@@ -311,7 +311,7 @@ export async function disablePlatformForBrand(
     .update(platformIntegrations)
     .set({
       isMonitoring: false,
-      status: "inactive",
+      status: "disabled",
       updatedAt: new Date(),
     })
     .where(
@@ -361,7 +361,7 @@ export async function getActivePlatformsForBrand(
  */
 export async function updateIntegrationStatus(
   integrationId: string,
-  status: "not_configured" | "configured" | "active" | "inactive" | "error",
+  status: "not_configured" | "configured" | "configured" | "disabled" | "error",
   error?: string
 ): Promise<PlatformIntegration> {
   const updates: Record<string, unknown> = {
@@ -373,7 +373,7 @@ export async function updateIntegrationStatus(
   if (error) {
     updates.lastError = error;
     updates.consecutiveFailures = 1; // Will be incremented by caller if needed
-  } else if (status === "active") {
+  } else if (status === "configured") {
     updates.lastSuccessAt = new Date();
     updates.consecutiveFailures = 0;
   }
@@ -410,7 +410,7 @@ export async function recordSuccessfulQuery(
   await db
     .update(platformIntegrations)
     .set({
-      status: "active",
+      status: "configured",
       consecutiveFailures: 0,
       lastSuccessAt: new Date(),
       stats: {

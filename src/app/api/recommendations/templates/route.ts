@@ -13,8 +13,8 @@ import {
   renderTemplate,
   findMatchingTemplate,
   createTemplateFromRecommendation,
-  type RecommendationTemplate,
 } from "@/lib/recommendations";
+import type { RecommendationTemplate } from "@/lib/recommendations/templates";
 import type { RecommendationCategory, RecommendationSource } from "@/lib/recommendations/types";
 
 // Request schemas

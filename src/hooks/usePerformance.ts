@@ -31,7 +31,7 @@ export interface PerformanceMetrics {
  * Extract performance metrics from audit data
  */
 export function usePerformanceMetrics(audit: Audit | null): PerformanceMetrics | null {
-  return useMemo(() => {
+  return useMemo((): PerformanceMetrics | null => {
     if (!audit) return null;
 
     // Get performance data from audit metadata

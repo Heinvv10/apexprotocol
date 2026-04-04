@@ -54,7 +54,7 @@ class MauticPipelineClient {
       }
 
       const data = await response.json();
-      this.accessToken = data.access_token;
+      this.accessToken = data.access_token as string;
       return this.accessToken;
     } catch (error) {
       console.error("[Mautic] Authentication error:", error);
@@ -102,7 +102,7 @@ class MauticPipelineClient {
    * Build pipeline stages from contacts
    */
   private buildPipelineStages(contacts: any[]): any {
-    const stages = [
+    const stages: Array<{ name: string; id: string; deals: unknown[]; value: number; color: string }> = [
       { name: "New", id: "new", deals: [], value: 0, color: "#6B7280" },
       { name: "Qualified", id: "qualified", deals: [], value: 0, color: "#3B82F6" },
       { name: "Proposal", id: "proposal", deals: [], value: 0, color: "#8B5CF6" },

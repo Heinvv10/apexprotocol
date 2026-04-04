@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
         content: [],
         total: 0,
         page: 1,
-        limit,
+        limit: 20,
         totalPages: 0,
       });
     }
@@ -137,12 +137,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const organizationId = await getOrganizationId();
+    if (!organizationId) {
+      return NextResponse.json({ error: "Organization not found" }, { status: 401 });
+    }
+
     const body = await request.json();
     const data = createSchema.parse(body);
 
     const newContent = await db
       .insert(content)
       .values({
+        organizationId,
         brandId: data.brandId,
         title: data.title,
         type: data.type,

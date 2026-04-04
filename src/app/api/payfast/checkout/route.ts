@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Validate plan
-    if (!PLANS[plan]) {
+    if (!Object.prototype.hasOwnProperty.call(PLANS, plan)) {
       return NextResponse.json(
         { error: 'Invalid plan selected' },
         { status: 400 }

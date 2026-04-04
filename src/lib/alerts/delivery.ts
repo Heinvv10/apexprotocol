@@ -157,7 +157,7 @@ async function sendEmailNotification(params: SendAlertParams): Promise<void> {
 async function sendSlackNotification(params: SendAlertParams): Promise<void> {
   const { title, message, priority, data, channelConfig } = params;
 
-  if (!channelConfig?.slackWebhookUrl) {
+  if (!channelConfig?.slack?.webhookUrl) {
     throw new Error("Slack webhook URL not configured");
   }
 
@@ -197,7 +197,7 @@ async function sendSlackNotification(params: SendAlertParams): Promise<void> {
     ],
   };
 
-  const response = await fetch(channelConfig.slackWebhookUrl, {
+  const response = await fetch(channelConfig.slack.webhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -216,7 +216,7 @@ async function sendSlackNotification(params: SendAlertParams): Promise<void> {
 async function sendWebhookNotification(params: SendAlertParams): Promise<void> {
   const { title, message, priority, data, channelConfig, historyId } = params;
 
-  if (!channelConfig?.webhookUrl) {
+  if (!channelConfig?.webhook?.url) {
     throw new Error("Webhook URL not configured");
   }
 
@@ -233,20 +233,20 @@ async function sendWebhookNotification(params: SendAlertParams): Promise<void> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "User-Agent": "Apex-Alerts/1.0",
-    ...(channelConfig.webhookHeaders || {}),
+    ...(channelConfig.webhook.headers ?? {}),
   };
 
   // Add signature if secret configured
-  if (channelConfig.webhookSecret) {
+  if (channelConfig.webhook.secret) {
     const crypto = await import("crypto");
     const signature = crypto
-      .createHmac("sha256", channelConfig.webhookSecret)
+      .createHmac("sha256", channelConfig.webhook.secret)
       .update(JSON.stringify(payload))
       .digest("hex");
     headers["X-Apex-Signature"] = signature;
   }
 
-  const response = await fetch(channelConfig.webhookUrl, {
+  const response = await fetch(channelConfig.webhook.url, {
     method: "POST",
     headers,
     body: JSON.stringify(payload),
@@ -256,7 +256,7 @@ async function sendWebhookNotification(params: SendAlertParams): Promise<void> {
     throw new Error(`Webhook failed: ${response.status} ${response.statusText}`);
   }
 
-  console.log(`[AlertDelivery] Webhook sent to ${channelConfig.webhookUrl}`);
+  console.log(`[AlertDelivery] Webhook sent to ${channelConfig.webhook.url}`);
 }
 
 /**
@@ -265,7 +265,7 @@ async function sendWebhookNotification(params: SendAlertParams): Promise<void> {
 async function sendWhatsAppNotification(params: SendAlertParams): Promise<void> {
   const { channelConfig } = params;
 
-  if (!channelConfig?.whatsappNumber) {
+  if (!channelConfig?.whatsapp?.phoneNumbers?.[0]) {
     throw new Error("WhatsApp number not configured");
   }
 
@@ -280,8 +280,8 @@ async function sendWhatsAppNotification(params: SendAlertParams): Promise<void> 
 async function sendSMSNotification(params: SendAlertParams): Promise<void> {
   const { channelConfig } = params;
 
-  if (!channelConfig?.smsNumber) {
-    throw new Error("SMS number not configured");
+  if (!channelConfig) {
+    throw new Error("SMS channel not configured");
   }
 
   // TODO: Implement Twilio or other SMS provider

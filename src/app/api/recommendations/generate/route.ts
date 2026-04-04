@@ -14,11 +14,8 @@ import { db } from "@/lib/db";
 import { brands, audits, brandMentions, type NewRecommendation } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
-import {
-  generateRecommendations,
-  type MonitorData,
-  type AuditData,
-} from "@/lib/recommendations";
+import { generateRecommendations } from "@/lib/recommendations";
+import type { MonitorData, AuditData } from "@/lib/recommendations/engine";
 import {
   generateAIRecommendations,
   type VisibilityData,
@@ -528,7 +525,7 @@ function transformToVisibilityData(
     // Calculate average position from mentions
     const mentionsWithPosition = monitor.mentions.filter((m) => m.position !== undefined);
     const avgPosition = mentionsWithPosition.length > 0
-      ? mentionsWithPosition.reduce((sum, m) => sum + (m.position ?? 0), 0) / mentionsWithPosition.length
+      ? mentionsWithPosition.reduce((sum: number, m) => sum + (m.position ?? 0), 0) / mentionsWithPosition.length
       : null;
 
     // Calculate mention rate (percentage of mentions where brand was found)

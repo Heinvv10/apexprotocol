@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     );
 
     console.log(`\n✅ Scraping complete!\n`);
-    console.log(`Pages scraped:`, result.pagesScraped);
+    console.log(`Pages scraped:`, (result as unknown as Record<string, unknown>).pagesScraped);
     console.log(`Locations found: ${result.locations?.length || 0}`);
     console.log(`Personnel found: ${result.personnel?.length || 0}`);
 

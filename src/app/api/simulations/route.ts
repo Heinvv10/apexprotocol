@@ -54,7 +54,13 @@ export async function POST(request: NextRequest) {
     }
 
     const isABTest = !!data.variantBBody;
-    const brandContext = buildBrandContext(brand);
+    const brandContext = buildBrandContext({
+      name: brand.name,
+      domain: brand.domain,
+      description: brand.description,
+      keywords: brand.keywords ?? undefined,
+      industry: brand.industry,
+    });
 
     // Create simulation record
     const [simulation] = await db

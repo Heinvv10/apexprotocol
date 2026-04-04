@@ -211,6 +211,7 @@ export async function POST(request: NextRequest) {
     const newContent = await db
       .insert(content)
       .values({
+        organizationId: orgId,
         brandId: validatedData.brandId,
         title: validatedData.title,
         type: validatedData.type,

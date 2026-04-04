@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
       const brandSlug = brand.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
       const filename = `apexgeo-report-${brandSlug}-${reportPeriod}.pdf`;
 
-      return new NextResponse(pdfBuffer, {
+      return new NextResponse(pdfBuffer as unknown as BodyInit, {
         status: 200,
         headers: {
           "Content-Type": "application/pdf",

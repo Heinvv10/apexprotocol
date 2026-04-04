@@ -28,13 +28,18 @@ export const alertPriorityEnum = pgEnum("alert_priority", [
 
 export const alertRules = pgTable("alert_rules", {
   id: text("id").primaryKey().$defaultFn(() => createId()),
+  organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
   brandId: text("brand_id").references(() => brands.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  description: text("description"),
   type: text("type").notNull(),
   trigger: alertTriggerEnum("trigger"),
   priority: alertPriorityEnum("priority").default("medium"),
   conditions: jsonb("conditions"),
+  channels: jsonb("channels").$type<string[]>().default([]),
+  frequency: text("frequency").default("instant"),
   enabled: boolean("enabled").default(true),
+  createdBy: text("created_by"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -48,6 +53,10 @@ export const alertChannels = pgTable("alert_channels", {
   frequency: alertFrequencyEnum("frequency").default("immediate"),
   config: jsonb("config").$type<ChannelConfig>(),
   enabled: boolean("enabled").default(true),
+  messagesSent: integer("messages_sent").default(0),
+  lastUsedAt: timestamp("last_used_at"),
+  lastError: text("last_error"),
+  verified: boolean("verified").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -141,5 +150,9 @@ export interface AlertData {
   locationId?: string;
   competitorId?: string;
   url?: string;
+  platform?: string;
+  brandName?: string;
+  position?: number;
+  visibilityScore?: number;
   details?: Record<string, unknown>;
 }

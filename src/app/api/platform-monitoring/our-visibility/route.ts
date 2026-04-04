@@ -33,8 +33,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Try to fetch real data from brandMentions table
-    let mentions;
-    let platformStats;
+    type MentionRow = typeof brandMentions.$inferSelect;
+    type PlatformStatRow = { platform: string; mentions: number };
+
+    let mentions: MentionRow[] = [];
+    let platformStats: PlatformStatRow[] = [];
 
     try {
       mentions = await db

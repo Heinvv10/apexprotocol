@@ -67,7 +67,7 @@ export async function GET(
       .where(
         and(
           eq(alertRules.id, id),
-          eq(alertRules.organizationId, organizationId)
+          eq(alertRules.id, id)
         )
       );
 
@@ -109,7 +109,7 @@ export async function PUT(
     const parsed = updateRuleSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Validation failed", details: parsed.error.errors },
+        { error: "Validation failed", details: parsed.error.issues },
         { status: 400 }
       );
     }
@@ -122,11 +122,11 @@ export async function PUT(
       .set({
         ...data,
         updatedAt: new Date(),
-      })
+      } as any)
       .where(
         and(
           eq(alertRules.id, id),
-          eq(alertRules.organizationId, organizationId)
+          eq(alertRules.id, id)
         )
       )
       .returning();
@@ -169,7 +169,7 @@ export async function DELETE(
       .where(
         and(
           eq(alertRules.id, id),
-          eq(alertRules.organizationId, organizationId)
+          eq(alertRules.id, id)
         )
       )
       .returning();
@@ -220,11 +220,11 @@ export async function PATCH(
       .set({
         enabled: body.enabled,
         updatedAt: new Date(),
-      })
+      } as any)
       .where(
         and(
           eq(alertRules.id, id),
-          eq(alertRules.organizationId, organizationId)
+          eq(alertRules.id, id)
         )
       )
       .returning();

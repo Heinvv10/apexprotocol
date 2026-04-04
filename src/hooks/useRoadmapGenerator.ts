@@ -54,19 +54,21 @@ export interface Roadmap {
 }
 
 export function useRoadmapGenerator(
-  audit: Audit,
+  audit: Audit | null | undefined,
   mode: "leader" | "beat_competitor" = "leader",
   targetCompetitor?: string
 ): Roadmap | null {
   return React.useMemo(() => {
     if (!audit) return null;
 
-    // Parse current scores from audit
-    const currentGeo = audit.geoScore || 65;
-    const currentSeo = audit.seoScore || 72;
-    const currentAeo = audit.aeoScore || 58;
-    const currentSmo = audit.smoScore || 64;
-    const currentPpo = audit.ppoScore || 71;
+    // Parse current scores from audit categoryScores array
+    const findScore = (category: string, fallback: number) =>
+      audit.categoryScores?.find((c) => c.category === category)?.score ?? fallback;
+    const currentGeo = findScore("geo", 65);
+    const currentSeo = findScore("seo", 72);
+    const currentAeo = findScore("aeo", 58);
+    const currentSmo = findScore("smo", 64);
+    const currentPpo = findScore("ppo", 71);
     const currentUnifiedScore = Math.round(
       (currentGeo + currentSeo + currentAeo + currentSmo + currentPpo) / 5
     );

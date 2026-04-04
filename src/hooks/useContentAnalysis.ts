@@ -49,7 +49,7 @@ export interface ContentAnalysis {
  * Extract and generate content analysis data from audit
  */
 export function useContentAnalysis(audit: Audit | null): ContentAnalysis | null {
-  return useMemo(() => {
+  return useMemo((): ContentAnalysis | null => {
     if (!audit) return null;
 
     const metadata = (audit.metadata as any) || {};

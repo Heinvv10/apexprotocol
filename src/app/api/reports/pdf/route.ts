@@ -4,6 +4,7 @@
  * Generates beautiful PDF reports for brands
  */
 
+import React from 'react';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { renderToBuffer } from '@react-pdf/renderer';
@@ -135,9 +136,16 @@ export async function POST(request: NextRequest) {
     // Fetch report data
     const reportData = await fetchReportData(options);
 
+    if (!reportData) {
+      return NextResponse.json(
+        { error: 'Failed to fetch report data' },
+        { status: 500 }
+      );
+    }
+
     // Generate PDF
     const pdfBuffer = await renderToBuffer(
-      ReportDocument({ data: reportData }) as React.ReactElement
+      React.createElement(ReportDocument, { data: reportData })
     );
 
     // Generate filename
@@ -145,7 +153,7 @@ export async function POST(request: NextRequest) {
     const filename = `${reportData.brandName.replace(/\s+/g, '-')}-AI-Visibility-Report-${dateStr}.pdf`;
 
     // Return PDF
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(pdfBuffer as unknown as BodyInit, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}"`,

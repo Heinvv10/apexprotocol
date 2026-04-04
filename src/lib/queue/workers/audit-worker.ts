@@ -99,7 +99,7 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
     });
 
     // Wrap external checks in safe fallbacks to prevent crashes on timeout/network errors
-    const safeCheck = async (fn, fallback) => {
+    const safeCheck = async (fn: () => Promise<unknown>, fallback: unknown): Promise<unknown> => {
       try { return await fn(); } catch (e) { console.error('[Audit] Check failed:', e && e.message ? e.message : String(e)); return fallback; }
     };
     const [aiCrawlerIssues, entityIssues, chunkingResult] = await Promise.all([
@@ -121,7 +121,7 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
       })),
       ...aiCrawlerIssues,
       ...entityIssues,
-      ...chunkingResult.issues,
+      ...(chunkingResult as Record<string, unknown>).issues,
     ];
 
     result.overallScore = analysis.readability.overall;
@@ -188,8 +188,8 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
             },
             pagesAnalyzed: crawlResult.pages.length,
             grade: analysis.readability.grade,
-            contentChunkingScore: chunkingResult.score,
-            contentChunkingBreakdown: chunkingResult.breakdown,
+            contentChunkingScore: (chunkingResult as Record<string, unknown>).score,
+            contentChunkingBreakdown: (chunkingResult as Record<string, unknown>).breakdown,
           } as AuditMetadata,
           errorMessage:
             result.errors.length > 0 ? result.errors.join("; ") : null,
@@ -200,7 +200,7 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
     result.success = crawlResult.success;
   } catch (error) {
     result.errors.push(
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? (error as Error).message : String(error)
     );
   }
 
@@ -252,7 +252,7 @@ export async function runAuditWorker(): Promise<{
     } catch (error) {
       await auditQueue.failJob(
         job.id,
-        error instanceof Error ? error.message : String(error)
+        error instanceof Error ? (error as Error).message : String(error)
       );
       stats.failed++;
     }

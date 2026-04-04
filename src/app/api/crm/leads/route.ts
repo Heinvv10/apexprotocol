@@ -55,7 +55,7 @@ class MauticLeadsClient {
       }
 
       const data = await response.json();
-      this.accessToken = data.access_token;
+      this.accessToken = data.access_token as string;
       return this.accessToken;
     } catch (error) {
       console.error("[Mautic] Authentication error:", error);

@@ -101,7 +101,7 @@ function AuditResultsPageInner() {
             <div>
               <h1 className="font-semibold text-foreground">{audit.url}</h1>
               <p className="text-xs text-muted-foreground">
-                Scanned on {new Date(audit.createdAt).toLocaleDateString()}
+                Scanned on {new Date(audit.startedAt).toLocaleDateString()}
               </p>
             </div>
           </div>

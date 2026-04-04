@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         .from(audits)
         .where(
           and(
-            eq(audits.organizationId, organizationId),
+            eq(audits.brandId, organizationId),
             eq(audits.status, "completed")
           )
         )
@@ -82,9 +82,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Count recent issues from latest audit
-    const recentIssues = audit?.results?.issues
-      ? audit.results.issues.filter(
-          (issue: { severity: string }) => issue.severity === "critical" || issue.severity === "high"
+    const recentIssues = audit?.issues
+      ? audit.issues.filter(
+          (issue) => issue.severity === "critical" || issue.severity === "high"
         ).length
       : 0;
 
@@ -103,10 +103,15 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Derive category scores from categoryScores array
+    const categoryScores = audit?.categoryScores ?? [];
+    const technicalScore = categoryScores.find((c) => c.category === "technical")?.score ?? 0;
+    const contentScore = categoryScores.find((c) => c.category === "content")?.score ?? 0;
+
     return NextResponse.json({
-      overallScore: audit?.results?.overallScore || 0,
-      technicalHealth: audit?.results?.technicalScore || 0,
-      contentQuality: audit?.results?.contentScore || 0,
+      overallScore: audit?.overallScore ?? 0,
+      technicalHealth: technicalScore,
+      contentQuality: contentScore,
       totalPages: totalPagesCount,
       indexedPages: indexedPagesCount,
       trackedKeywords: 0, // Keywords table not available

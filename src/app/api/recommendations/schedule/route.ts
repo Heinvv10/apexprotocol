@@ -11,9 +11,9 @@ import { z } from "zod";
 import {
   autoScheduler,
   formatScheduleResponse,
-  type Recommendation,
-  type PriorityLevel,
 } from "@/lib/recommendations";
+import type { Recommendation } from "@/lib/recommendations/types";
+import type { PriorityLevel } from "@/lib/recommendations/types";
 
 // Request schemas
 const scheduleRecommendationsSchema = z.object({

@@ -142,7 +142,7 @@ function calculatePipelineMetrics(allLeads: any[]) {
  * Calculate revenue metrics
  */
 function calculateRevenueMetrics(allLeads: any[]) {
-  const wonLeads = allLeads.filter((l) => l.status === "closed-won");
+  const wonLeads = allLeads.filter((l) => l.status === "customer");
   const totalRevenue = wonLeads.reduce((sum, lead) => sum + estimateDealValue(lead), 0);
 
   // Calculate monthly recurring revenue (assume 20% of deals are recurring)
@@ -174,7 +174,7 @@ function calculatePerformanceMetrics(allLeads: any[]) {
   const closedLeads = allLeads.filter((l) =>
     ["closed-won", "closed-lost"].includes(l.status || "")
   );
-  const wonLeads = allLeads.filter((l) => l.status === "closed-won");
+  const wonLeads = allLeads.filter((l) => l.status === "customer");
 
   const winRate = closedLeads.length > 0 ? wonLeads.length / closedLeads.length : 0;
 
@@ -226,7 +226,7 @@ function calculateConversionFunnel(allLeads: any[]) {
     },
     {
       stage: "Closed Won",
-      count: allLeads.filter((l) => l.status === "closed-won").length,
+      count: allLeads.filter((l) => l.status === "customer").length,
       percentage: 0,
     },
   ];
@@ -276,6 +276,7 @@ async function calculateTrends(organizationId: string, startDate: Date, endDate:
     );
 
   allLeads.forEach((lead) => {
+    if (!lead.createdAt) return;
     const leadDate = new Date(lead.createdAt);
     const weekIndex = Math.floor(
       (leadDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)
@@ -284,7 +285,7 @@ async function calculateTrends(organizationId: string, startDate: Date, endDate:
     if (weekIndex >= 0 && weekIndex < weeks.length) {
       weeks[weekIndex].newLeads++;
 
-      if (lead.status === "closed-won") {
+      if (lead.status === "customer") {
         weeks[weekIndex].wonDeals++;
         weeks[weekIndex].revenue += estimateDealValue(lead);
       }
@@ -312,7 +313,7 @@ function calculateTopPerformers(allLeads: any[]) {
       };
     }
 
-    if (lead.status === "closed-won") {
+    if (lead.status === "customer") {
       performerMap[assignedTo].deals++;
       performerMap[assignedTo].revenue += estimateDealValue(lead);
     }

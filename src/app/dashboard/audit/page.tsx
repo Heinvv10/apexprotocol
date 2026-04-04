@@ -38,7 +38,7 @@ const STUCK_AUDIT_THRESHOLD_MS = 10 * 60 * 1000;
 
 // Check if an audit is potentially stuck (running too long)
 function isAuditStuck(audit: Audit): boolean {
-  if (audit.status !== "pending" && audit.status !== "crawling" && audit.status !== "analyzing") {
+  if (audit.status !== "pending" && audit.status !== "in_progress") {
     return false;
   }
   const startTime = new Date(audit.startedAt).getTime();

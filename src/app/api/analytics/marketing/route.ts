@@ -124,9 +124,9 @@ async function getCampaignPerformance(organizationId: string, startDate: Date, e
 
       const metric = campaignMetrics[0];
 
-      const spent = campaign.budget || 0;
-      const revenue = metric?.revenue || 0;
-      const conversions = metric?.conversions || 0;
+      const spent = Number(campaign.budget) || 0;
+      const revenue = Number(metric?.revenue) || 0;
+      const conversions = Number(metric?.conversions) || 0;
       const roi = spent > 0 ? ((revenue - spent) / spent) * 100 : 0;
 
       totalSpend += spent;
@@ -142,9 +142,9 @@ async function getCampaignPerformance(organizationId: string, startDate: Date, e
         revenue: revenue,
         conversions: conversions,
         roi: Math.round(roi),
-        impressions: metric?.impressions || 0,
-        clicks: metric?.clicks || 0,
-        opens: metric?.opens || 0,
+        impressions: Number((metric as Record<string, unknown>)?.impressions) || 0,
+        clicks: Number((metric as Record<string, unknown>)?.clicks) || 0,
+        opens: Number((metric as Record<string, unknown>)?.opens) || 0,
       };
     })
   );
@@ -170,7 +170,7 @@ async function getEmailPerformance(organizationId: string, startDate: Date, endD
   // Get all email events in date range
   const allEvents = await db
     .select({
-      eventType: emailEvents.eventType,
+      eventType: emailEvents.event,
       count: count(),
     })
     .from(emailEvents)
@@ -180,7 +180,7 @@ async function getEmailPerformance(organizationId: string, startDate: Date, endD
         gte(emailEvents.timestamp, startDate)
       )
     )
-    .groupBy(emailEvents.eventType);
+    .groupBy(emailEvents.event);
 
   const eventMap: Record<string, number> = {};
   allEvents.forEach((event) => {
@@ -259,7 +259,7 @@ async function getLeadGeneration(organizationId: string, startDate: Date, endDat
       )
     );
 
-  const totalSpend = allCampaigns.reduce((sum, c) => sum + (c.budget || 0), 0);
+  const totalSpend = allCampaigns.reduce((sum, c) => sum + (Number(c.budget) || 0), 0);
   const totalLeads = leadsBySource.reduce((sum, s) => sum + s.count, 0);
   const costPerLead = totalLeads > 0 ? totalSpend / totalLeads : 0;
 
@@ -417,7 +417,7 @@ async function getMarketingFunnel(organizationId: string, startDate: Date, endDa
       and(
         eq(leads.organizationId, organizationId),
         gte(leads.createdAt, startDate),
-        eq(leads.status, "closed-won")
+        eq(leads.status, "customer")
       )
     );
 
@@ -479,6 +479,7 @@ async function getMarketingTrends(organizationId: string, startDate: Date, endDa
     );
 
   allLeads.forEach((lead) => {
+    if (!lead.createdAt) return;
     const leadDate = new Date(lead.createdAt);
     const weekIndex = Math.floor(
       (leadDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)
@@ -501,6 +502,7 @@ async function getMarketingTrends(organizationId: string, startDate: Date, endDa
     );
 
   allCampaigns.forEach((campaign) => {
+    if (!campaign.createdAt) return;
     const campaignDate = new Date(campaign.createdAt);
     const weekIndex = Math.floor(
       (campaignDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)
@@ -508,7 +510,7 @@ async function getMarketingTrends(organizationId: string, startDate: Date, endDa
 
     if (weekIndex >= 0 && weekIndex < weeks.length) {
       weeks[weekIndex].campaigns++;
-      weeks[weekIndex].spend += campaign.budget || 0;
+      weeks[weekIndex].spend += Number(campaign.budget) || 0;
     }
   });
 

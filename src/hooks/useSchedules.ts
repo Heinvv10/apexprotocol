@@ -30,7 +30,7 @@ export interface UpdateScheduleInput extends Partial<CreateScheduleInput> {
 
 // Fetch all schedules for a brand
 export function useSchedules() {
-  const { selectedBrand } = useSelectedBrand();
+  const selectedBrand = useSelectedBrand();
 
   return useQuery({
     queryKey: ["schedules", selectedBrand?.id],
@@ -64,7 +64,7 @@ export function useSchedule(scheduleId: string) {
 // Create a new schedule
 export function useCreateSchedule() {
   const queryClient = useQueryClient();
-  const { selectedBrand } = useSelectedBrand();
+  const selectedBrand = useSelectedBrand();
 
   return useMutation({
     mutationFn: async (input: CreateScheduleInput) => {
@@ -93,7 +93,7 @@ export function useCreateSchedule() {
 // Update a schedule
 export function useUpdateSchedule() {
   const queryClient = useQueryClient();
-  const { selectedBrand } = useSelectedBrand();
+  const selectedBrand = useSelectedBrand();
 
   return useMutation({
     mutationFn: async (input: UpdateScheduleInput) => {
@@ -120,7 +120,7 @@ export function useUpdateSchedule() {
 // Delete a schedule
 export function useDeleteSchedule() {
   const queryClient = useQueryClient();
-  const { selectedBrand } = useSelectedBrand();
+  const selectedBrand = useSelectedBrand();
 
   return useMutation({
     mutationFn: async (scheduleId: string) => {
@@ -144,7 +144,7 @@ export function useDeleteSchedule() {
 // Toggle schedule enabled/disabled
 export function useToggleSchedule() {
   const queryClient = useQueryClient();
-  const { selectedBrand } = useSelectedBrand();
+  const selectedBrand = useSelectedBrand();
 
   return useMutation({
     mutationFn: async (input: { scheduleId: string; enabled: boolean }) => {

@@ -46,7 +46,7 @@ export interface AIReadinessData {
  * Extract and generate AI Readiness data from audit
  */
 export function useAIReadiness(audit: Audit | null): AIReadinessData | null {
-  return useMemo(() => {
+  return useMemo((): AIReadinessData | null => {
     if (!audit) return null;
 
     const metadata = (audit.metadata as any) || {};

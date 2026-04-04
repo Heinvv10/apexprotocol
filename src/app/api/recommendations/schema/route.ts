@@ -13,8 +13,8 @@ import {
   suggestSchemaTypes,
   combineSchemas,
   generateScriptTag,
-  type SchemaType,
 } from "@/lib/recommendations";
+import type { SchemaType } from "@/lib/recommendations/types";
 
 // Request schemas
 const generateSchemaRequestSchema = z.object({

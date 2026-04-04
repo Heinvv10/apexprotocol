@@ -338,7 +338,7 @@ function generateSWOT(
   if (compScores.geoScore > 80) {
     threats.push(`${competitorName} has established AI presence`);
   }
-  if (compScores.unifiedScore > brandScores.unifiedScore + 10) {
+  if ((competitorScores?.unifiedScore ?? 0) > brandScores.unifiedScore + 10) {
     threats.push(`Significant overall gap with ${competitorName}`);
   }
 

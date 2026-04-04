@@ -105,12 +105,18 @@ export async function PUT(request: NextRequest) {
     // Create organization if it doesn't exist
     if (existingOrg.length === 0) {
       const defaultBranding = {
+        themeId: "apexgeo-default",
         primaryColor: "#4926FA",
         accentColor: "#D82F71",
         logoUrl: null,
+        logoDarkUrl: null,
         faviconUrl: null,
         appName: null,
+        tagline: null,
         customDomain: null,
+        supportEmail: null,
+        showPoweredBy: true,
+        customFooterText: null,
       };
       const defaultSettings = {
         timezone: "UTC",
