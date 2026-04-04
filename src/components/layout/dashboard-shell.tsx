@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
+import { AuthSync } from "@/components/providers/auth-sync";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ export function DashboardShell({ children, title }: DashboardShellProps) {
 
   return (
     <div className="flex h-screen overflow-hidden dashboard-bg">
+      <AuthSync />
       {/* Skip Navigation Links - WCAG 2.4.1 Bypass Blocks */}
       <div className="skip-links">
         <a href="#main-content" className="skip-link">
