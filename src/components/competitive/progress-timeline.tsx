@@ -42,12 +42,13 @@ function CustomTooltip({
     value: number;
     color: string;
     dataKey: string;
+    payload: SnapshotData;
   }>;
   label?: string;
 }) {
   if (!active || !payload || !payload.length) return null;
 
-  const data = payload[0]?.payload as SnapshotData | undefined;
+  const data = payload[0]?.payload;
   if (!data) return null;
 
   return (

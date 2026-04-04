@@ -547,13 +547,15 @@ async function seedContent(
   db: Database,
   schema: Schema,
   brandIds: string[],
-  userId: string
+  userId: string,
+  organizationId?: string
 ): Promise<SeedResult["content"]> {
   const contentTypes = ["blog_post", "landing_page", "faq"] as const;
   const contentStatuses = ["draft", "review", "published"] as const;
 
   const contentData = TEST_IDS.CONTENT.map((id, idx) => ({
     id,
+    organizationId: organizationId || brandIds[0],
     brandId: brandIds[idx % brandIds.length],
     authorId: userId,
     title: `Test Content ${idx + 1}`,
@@ -686,7 +688,7 @@ export async function createTestSeedData(db: Database): Promise<SeedResult> {
   const audits = await seedAudits(db, schema, brandIds);
 
   // Create content for brands
-  const content = await seedContent(db, schema, brandIds, users[0].id);
+  const content = await seedContent(db, schema, brandIds, users[0].id, organization.id);
 
   // Create GEO score history for brands
   const geoScoreHistory = await seedGeoScoreHistory(db, schema, brandIds);

@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Audit } from "@/hooks/useAudit";
 
+type AuditIssueItem = NonNullable<Audit["issues"]>[number];
+
 interface IssueFixModalProps {
-  issue: Audit["issues"][0] | null;
+  issue: AuditIssueItem | null;
   actionType: "ai-generate" | "view-guide" | "custom" | null;
   auditUrl: string;
   isOpen: boolean;

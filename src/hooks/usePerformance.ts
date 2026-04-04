@@ -21,7 +21,7 @@ export interface PerformanceMetrics {
     description: string;
     impact: "high" | "medium" | "low";
     effort: "low" | "medium" | "high";
-    category: string;
+    category: "image-optimization" | "caching" | "code-splitting" | "compression" | "lazy-loading" | "scripts";
     estimatedImprovement: number;
     implementation?: string;
   }>;
@@ -59,7 +59,7 @@ export function usePerformanceMetrics(audit: Audit | null): PerformanceMetrics |
     score = Math.max(0, Math.min(100, score));
 
     // Determine grade and status
-    const grade =
+    const grade: "A" | "B" | "C" | "D" | "F" =
       score >= 90
         ? "A"
         : score >= 80
@@ -70,7 +70,7 @@ export function usePerformanceMetrics(audit: Audit | null): PerformanceMetrics |
         ? "D"
         : "F";
 
-    const status =
+    const status: "excellent" | "good" | "fair" | "poor" | "failing" =
       score >= 90
         ? "excellent"
         : score >= 75
@@ -154,10 +154,19 @@ function generatePerformanceRecommendations(
     score: number;
   }
 ) {
-  const recommendations = [];
+  const recommendations: Array<{
+    id: string;
+    title: string;
+    description: string;
+    impact: "high" | "medium" | "low";
+    effort: "low" | "medium" | "high";
+    category: "image-optimization" | "caching" | "code-splitting" | "compression" | "lazy-loading" | "scripts";
+    estimatedImprovement: number;
+    implementation?: string;
+  }> = [];
 
   // Check for large images
-  if (audit.issues?.some((i) => i.type === "image_optimization")) {
+  if (audit.issues?.some((i) => i.category === "image_optimization")) {
     recommendations.push({
       id: "img-optimization",
       title: "Optimize Images",
@@ -225,7 +234,7 @@ function generatePerformanceRecommendations(
   }
 
   // Check for unminified resources
-  if (audit.issues?.some((i) => i.type === "unminified_js")) {
+  if (audit.issues?.some((i) => i.category === "unminified_js")) {
     recommendations.push({
       id: "minify-js",
       title: "Minify JavaScript",
@@ -238,7 +247,7 @@ function generatePerformanceRecommendations(
   }
 
   // Check for unused CSS
-  if (audit.issues?.some((i) => i.type === "unused_css")) {
+  if (audit.issues?.some((i) => i.category === "unused_css")) {
     recommendations.push({
       id: "remove-unused-css",
       title: "Remove Unused CSS",
@@ -302,35 +311,35 @@ export function generateCoreWebVitals(audit: Audit | null) {
 
   return [
     {
-      metric: "lcp",
+      metric: "lcp" as const,
       label: "Largest Contentful Paint",
       value: lcp,
       unit: "ms",
       good: 2500,
       needsImprovement: 4000,
-      rating: lcp <= 2500 ? "good" : lcp <= 4000 ? "needsImprovement" : "poor",
+      rating: (lcp <= 2500 ? "good" : lcp <= 4000 ? "needsImprovement" : "poor") as "good" | "needsImprovement" | "poor",
       icon: "📦",
       description: "Time for the largest visible element to appear",
     },
     {
-      metric: "fid",
+      metric: "fid" as const,
       label: "First Input Delay",
       value: fid,
       unit: "ms",
       good: 100,
       needsImprovement: 300,
-      rating: fid <= 100 ? "good" : fid <= 300 ? "needsImprovement" : "poor",
+      rating: (fid <= 100 ? "good" : fid <= 300 ? "needsImprovement" : "poor") as "good" | "needsImprovement" | "poor",
       icon: "⚡",
       description: "Time from user input to browser response",
     },
     {
-      metric: "cls",
+      metric: "cls" as const,
       label: "Cumulative Layout Shift",
-      value: (cls * 100).toFixed(2),
+      value: Number((cls * 100).toFixed(2)),
       unit: "%",
       good: 10,
       needsImprovement: 25,
-      rating: cls <= 0.1 ? "good" : cls <= 0.25 ? "needsImprovement" : "poor",
+      rating: (cls <= 0.1 ? "good" : cls <= 0.25 ? "needsImprovement" : "poor") as "good" | "needsImprovement" | "poor",
       icon: "🎯",
       description: "Unexpected layout changes during page load",
     },

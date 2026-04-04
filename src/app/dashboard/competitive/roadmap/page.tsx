@@ -246,7 +246,8 @@ export default function RoadmapPage() {
         ) : (
           <ImprovementRoadmap
             brandId={brandId}
-            roadmapId={activeRoadmap.id}
+            brandName={selectedBrand.name}
+            currentScore={activeRoadmap.currentUnifiedScore}
           />
         )}
       </FeatureGate>

@@ -279,8 +279,8 @@ export async function POST(request: NextRequest) {
         seoKeywords: validatedData.seoKeywords,
         geoKeywords: validatedData.geoKeywords,
         competitors: validatedData.competitors,
-        locations: validatedData.locations,
-        personnel: validatedData.personnel,
+        locations: validatedData.locations as import("@/lib/db/schema/brands").BrandLocation[],
+        personnel: validatedData.personnel as import("@/lib/db/schema/brands").BrandPersonnel[],
         valuePropositions: validatedData.valuePropositions,
         socialLinks: validatedData.socialLinks as Record<string, string>,
         voice: {

@@ -5,9 +5,11 @@ import { AlertTriangle, AlertOctagon, AlertCircle, Info, ChevronRight, Zap, File
 import { Button } from "@/components/ui/button";
 import { Audit } from "@/hooks/useAudit";
 
+type AuditIssueItem = NonNullable<Audit["issues"]>[number];
+
 interface IssueActionCardProps {
-  issue: Audit["issues"][0];
-  onFixClick: (issue: Audit["issues"][0], actionType: "ai-generate" | "view-guide" | "custom") => void;
+  issue: AuditIssueItem;
+  onFixClick: (issue: AuditIssueItem, actionType: "ai-generate" | "view-guide" | "custom") => void;
 }
 
 function getSeverityIcon(severity: string) {
@@ -37,7 +39,7 @@ function getSeverityColor(severity: string): string {
 }
 
 // Determine what kind of action to suggest based on issue category
-function getActionSuggestion(issue: Audit["issues"][0]): { label: string; type: "ai-generate" | "view-guide" | "custom"; icon: React.ReactNode } | null {
+function getActionSuggestion(issue: AuditIssueItem): { label: string; type: "ai-generate" | "view-guide" | "custom"; icon: React.ReactNode } | null {
   const category = issue.category || "";
 
   if (category.includes("schema") || category.includes("meta")) {

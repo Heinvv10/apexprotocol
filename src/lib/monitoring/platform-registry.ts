@@ -400,7 +400,7 @@ export async function recordSuccessfulQuery(
 
   if (!integration) return;
 
-  const stats = integration.stats as Record<string, number>;
+  const stats = (integration.stats ?? {}) as unknown as Record<string, number>;
   const avgTime =
     stats.averageResponseTimeMs === 0
       ? responseTimeMs
@@ -437,7 +437,7 @@ export async function recordFailedQuery(
 
   if (!integration) return;
 
-  const stats = integration.stats as Record<string, number>;
+  const stats = (integration.stats ?? {}) as unknown as Record<string, number>;
   const consecutiveFailures = (integration.consecutiveFailures || 0) + 1;
 
   // Mark as error status if too many consecutive failures

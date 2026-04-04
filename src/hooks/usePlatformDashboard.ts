@@ -33,6 +33,8 @@ export interface DashboardData {
     region: string;
     coverage: number;
     platforms: string[];
+    tier: "tier_1" | "tier_2" | "both";
+    icon: string;
   }[];
 }
 
@@ -116,6 +118,8 @@ const dashboardFetcher = async (
         region: "Western Markets",
         coverage: 95,
         platforms: tier1Platforms.slice(0, 4).map((p) => p.displayName),
+        tier: "tier_1" as const,
+        icon: "🌎",
       },
       {
         region: "Eastern Europe & Russia",
@@ -123,6 +127,8 @@ const dashboardFetcher = async (
         platforms: tier2Platforms
           .filter((p) => p.platform === "yandexgpt")
           .map((p) => p.displayName),
+        tier: "tier_2" as const,
+        icon: "🌍",
       },
       {
         region: "China & Asia-Pacific",
@@ -130,6 +136,8 @@ const dashboardFetcher = async (
         platforms: tier2Platforms
           .filter((p) => ["kimi", "qwen"].includes(p.platform))
           .map((p) => p.displayName),
+        tier: "both" as const,
+        icon: "🌏",
       },
       {
         region: "Enterprise & Research",
@@ -137,6 +145,8 @@ const dashboardFetcher = async (
         platforms: tier2Platforms
           .filter((p) => ["mistral", "llama"].includes(p.platform))
           .map((p) => p.displayName),
+        tier: "both" as const,
+        icon: "🏢",
       },
     ];
 

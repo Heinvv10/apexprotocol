@@ -698,12 +698,11 @@ export default function SettingsClient() {
                 <h1 className="text-2xl font-semibold text-foreground mb-8">Branding & Theme</h1>
                 <BrandingSection
                   branding={orgSettings.branding as any}
-                  onUpdate={async (updates) => {
+                  onUpdate={async (updates: unknown) => {
                     // TODO: Save to API
-                    console.log('Saving branding:', updates);
                     setOrgSettings(prev => ({
                       ...prev,
-                      branding: { ...prev.branding, ...updates } as any,
+                      branding: { ...(prev.branding as Record<string, unknown>), ...(updates as Record<string, unknown>) } as never,
                     }));
                   }}
                 />

@@ -18,7 +18,7 @@ interface PlatformData {
   platform: string;
   visibility: number;
   confidence: number;
-  position?: number;
+  position?: number | null;
 }
 
 interface PlatformComparisonChartProps {

@@ -100,7 +100,7 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
 
     // Wrap external checks in safe fallbacks to prevent crashes on timeout/network errors
     const safeCheck = async (fn: () => Promise<unknown>, fallback: unknown): Promise<unknown> => {
-      try { return await fn(); } catch (e) { console.error('[Audit] Check failed:', e && e.message ? e.message : String(e)); return fallback; }
+      try { return await fn(); } catch (e) { console.error('[Audit] Check failed:', e instanceof Error ? e.message : String(e)); return fallback; }
     };
     const [aiCrawlerIssues, entityIssues, chunkingResult] = await Promise.all([
       safeCheck(() => checkAiCrawlers(url), []),
@@ -119,9 +119,9 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
         recommendation: issue.recommendation,
         impact: issue.impact.description,
       })),
-      ...aiCrawlerIssues,
-      ...entityIssues,
-      ...(chunkingResult as Record<string, unknown>).issues,
+      ...(aiCrawlerIssues as AuditIssue[]),
+      ...(entityIssues as AuditIssue[]),
+      ...((chunkingResult as Record<string, unknown>).issues as AuditIssue[] ?? []),
     ];
 
     result.overallScore = analysis.readability.overall;

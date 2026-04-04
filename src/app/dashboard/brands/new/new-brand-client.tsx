@@ -232,12 +232,12 @@ export default function NewBrandClient() {
   // Handle wizard completion
   const handleWizardComplete = (data: ScrapedBrandData) => {
     // Auto-extract domain from scrapedUrl
-    const domain = extractDomain(data.scrapedUrl);
+    const domain = extractDomain(data.scrapedUrl ?? "");
 
     // Create brand with all scraped data
     createMutation.mutate({
       name: data.brandName,
-      domain: domain,
+      domain: domain || "",
       description: data.description || "",
       industry: data.industry || "",
       logoUrl: data.logoUrl || "",

@@ -85,9 +85,9 @@ export function RecommendationsList({ audit }: RecommendationsListProps) {
                       <span className="text-primary mt-1 flex-shrink-0">•</span>
                       <div className="min-w-0">
                         <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
-                        {rec.issues?.length > 1 && (
+                        {(rec.issues?.length ?? 0) > 1 && (
                           <p className="text-xs text-muted-foreground/70 mt-1">
-                            Affects {rec.issues?.length} issue{rec.issues?.length > 1 ? 's' : ''}
+                            Affects {rec.issues?.length} issue{(rec.issues?.length ?? 0) > 1 ? 's' : ''}
                           </p>
                         )}
                       </div>

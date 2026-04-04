@@ -277,6 +277,6 @@ export function useAIReadiness(audit: Audit | null): AIReadinessData | null {
         overallScore: overallSuitability,
         recommendation: suitabilityRecommendation,
       },
-    };
+    } as AIReadinessData;
   }, [audit]);
 }

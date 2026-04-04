@@ -197,6 +197,6 @@ export function useContentAnalysis(audit: Audit | null): ContentAnalysis | null 
       keywordOpportunities,
       indexationStatus,
       backlinkSummary,
-    };
+    } as ContentAnalysis;
   }, [audit]);
 }

@@ -95,9 +95,8 @@ export async function POST(request: NextRequest) {
     }
 
     const [newChannel] = await db.insert(alertChannels).values({
-      id: createId(),
       organizationId: orgId,
-      type,
+      channelType: type as "email" | "slack" | "whatsapp" | "webhook" | "in_app",
       name,
       config,
       enabled,

@@ -201,9 +201,9 @@ export async function getReportData(
     ? {
         id: auditData.id,
         overallScore: auditData.overallScore,
-        categoryScores: (auditData.categoryScores as CategoryScoreData[]) || [],
-        issues: (auditData.issues as AuditIssueData[]) || [],
-        completedAt: auditData.completedAt,
+        categoryScores: ((auditData.categoryScores ?? []) as unknown as CategoryScoreData[]),
+        issues: ((auditData.issues ?? []) as unknown as AuditIssueData[]),
+        completedAt: auditData.completedAt ? auditData.completedAt.toISOString() : null,
       }
     : null;
 

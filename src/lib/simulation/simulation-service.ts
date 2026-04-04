@@ -47,7 +47,13 @@ export async function runSimulation(simulationId: string): Promise<SimulationSum
     .where(eq(simulations.id, simulationId));
 
   const platforms = (sim.platforms as string[]) || [];
-  const baseContext = sim.brandContextSnapshot || buildBrandContext(brand);
+  const baseContext = sim.brandContextSnapshot || buildBrandContext({
+    name: brand.name,
+    domain: brand.domain,
+    description: brand.description,
+    keywords: brand.keywords ?? undefined,
+    industry: brand.industry,
+  });
   const enrichedContext = buildEnrichedContext(
     baseContext,
     sim.contentTitle,

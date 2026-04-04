@@ -398,9 +398,9 @@ export default function SocialMediaChannelDetailPage() {
     handle: account.accountHandle ? `@${account.accountHandle}` : "N/A",
     profileUrl: account.profileUrl || "#",
     status: account.connectionStatus === "active" ? "active" : "inactive",
-    followers: (account as unknown as Record<string, unknown>).followerCount || 0,
+    followers: account.followerCount ?? 0,
     followersGrowth: 0, // Would need historical data
-    following: (account as unknown as Record<string, unknown>).followingCount || 0,
+    following: account.followingCount ?? 0,
     postsThisMonth: 0, // Would need API integration
     engagement: 0, // Would need API integration
     engagementGrowth: 0,
@@ -411,7 +411,7 @@ export default function SocialMediaChannelDetailPage() {
     impressions: 0,
     profileViews: 0,
     lastPost: null,
-    connectedAt: (account as unknown as Record<string, unknown>).connectedAt,
+    connectedAt: account.connectedAt,
     health: account.connectionStatus === "active" ? "good" : "needs_attention",
     apiQuota: 100,
     postingFrequency: "N/A",

@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
 
     // Generate PDF
     const pdfBuffer = await renderToBuffer(
-      React.createElement(ReportDocument, { data: reportData })
+      React.createElement(ReportDocument, { data: reportData }) as unknown as React.ReactElement<import('@react-pdf/renderer').DocumentProps>
     );
 
     // Generate filename

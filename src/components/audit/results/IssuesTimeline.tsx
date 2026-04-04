@@ -23,8 +23,10 @@ function getSeverityIcon(severity: string) {
   }
 }
 
+type AuditIssueItem = NonNullable<Audit["issues"]>[number];
+
 export function IssuesTimeline({ audit }: IssuesTimelineProps) {
-  const [selectedIssue, setSelectedIssue] = React.useState<Audit["issues"][0] | null>(null);
+  const [selectedIssue, setSelectedIssue] = React.useState<AuditIssueItem | null>(null);
   const [modalAction, setModalAction] = React.useState<"ai-generate" | "view-guide" | "custom" | null>(null);
 
   const issues = audit.issues || [];
@@ -42,7 +44,7 @@ export function IssuesTimeline({ audit }: IssuesTimelineProps) {
     { severity: "low", label: "Low", issues: low },
   ].filter(g => g.issues.length > 0);
 
-  const handleFixClick = (issue: Audit["issues"][0], actionType: "ai-generate" | "view-guide" | "custom") => {
+  const handleFixClick = (issue: AuditIssueItem, actionType: "ai-generate" | "view-guide" | "custom") => {
     setSelectedIssue(issue);
     setModalAction(actionType);
   };

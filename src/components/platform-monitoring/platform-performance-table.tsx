@@ -9,7 +9,7 @@ interface PlatformPerformance {
   id: string;
   platform: string;
   displayName: string;
-  tier: "tier_1" | "tier_2";
+  tier: "tier_1" | "tier_2" | "tier_3" | "tier_4";
   visibility: number;
   position: number | null;
   confidence: number;
@@ -25,9 +25,11 @@ interface PlatformPerformanceTableProps {
   title: string;
 }
 
-const TIER_COLORS = {
+const TIER_COLORS: Record<string, string> = {
   tier_1: "bg-blue-500/10 text-blue-400 border-blue-500/30",
   tier_2: "bg-purple-500/10 text-purple-400 border-purple-500/30",
+  tier_3: "bg-orange-500/10 text-orange-400 border-orange-500/30",
+  tier_4: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
 };
 
 const STATUS_COLORS = {

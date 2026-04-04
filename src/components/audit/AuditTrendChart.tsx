@@ -11,11 +11,11 @@ interface AuditTrendChartProps {
 export function AuditTrendChart({ audits }: AuditTrendChartProps) {
   // Prepare data for chart - only completed audits
   const chartData = audits
-    .filter((a) => a.status === "completed")
-    .sort((a, b) => new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime())
+    .filter((a) => a.status === "completed" && a.completedAt)
+    .sort((a, b) => new Date(a.completedAt!).getTime() - new Date(b.completedAt!).getTime())
     .slice(-10) // Last 10 audits
     .map((audit) => ({
-      date: new Date(audit.completedAt).toLocaleDateString("en-US", {
+      date: new Date(audit.completedAt!).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
       }),

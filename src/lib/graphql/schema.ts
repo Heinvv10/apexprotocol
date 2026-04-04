@@ -1637,7 +1637,9 @@ const resolvers = {
       const user = context.requireAuth();
 
       try {
+        const orgId = user.orgId || user.userId;
         const [content] = await db.insert(schema.content).values({
+          organizationId: orgId,
           brandId: input.brandId,
           title: input.title,
           type: input.type as "blog_post" | "social_post" | "product_description" | "faq" | "landing_page" | "email" | "ad_copy" | "press_release",

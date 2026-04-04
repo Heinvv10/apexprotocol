@@ -30,7 +30,7 @@ export function CategoryScoresGrid({ audit }: CategoryScoresGridProps) {
     },
     {
       name: "Performance",
-      score: (((audit as unknown as Record<string, unknown>).performanceScore ?? audit.overallScore) || 0) as number,
+      score: audit.overallScore || 0,
       icon: "⚡",
       description: "Web Vitals and load times"
     },
