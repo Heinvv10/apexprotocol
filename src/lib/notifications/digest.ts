@@ -159,7 +159,7 @@ export const digestService = {
    */
   configure(digestConfig: DigestConfig): void {
     config = digestConfig;
-    resendClient = new Resend(digestConfig.apiKey);
+    // SMTP credentials come from env — no client init needed
   },
 
   /**

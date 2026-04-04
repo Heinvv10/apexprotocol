@@ -419,32 +419,19 @@ export class EmailManager {
    * Send via Resend
    */
   private async sendViaResend(message: EmailMessage): Promise<{ id: string; success: boolean }> {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.config!.apiKey}`,
-      },
-      body: JSON.stringify({
-        from: `${this.config!.fromName} <${this.config!.fromEmail}>`,
-        to: Array.isArray(message.to) ? message.to : [message.to],
-        cc: message.cc,
-        bcc: message.bcc,
-        subject: message.subject,
-        html: message.html,
-        text: message.text,
-        reply_to: message.replyTo || this.config!.replyTo,
-        tags: message.tags?.map((t) => ({ name: t, value: "true" })),
-      }),
+    // Route through SMTP instead of Resend API
+    const { sendMail } = await import("./smtp");
+    const result = await sendMail({
+      to: message.to,
+      cc: message.cc,
+      bcc: message.bcc,
+      subject: message.subject,
+      html: message.html,
+      text: message.text,
+      replyTo: message.replyTo || this.config?.replyTo,
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Resend API error");
-    }
-
-    return { id: data.id, success: true };
+    if (!result.success) throw new Error(result.error || "SMTP send failed");
+    return { id: result.id, success: true };
   }
 
   /**
