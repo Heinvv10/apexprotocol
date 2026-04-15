@@ -233,3 +233,13 @@ echo "  Shell access:     ssh ${VPS_USER}@${VPS_IP} 'cd ${APP_DIR} && docker-com
 echo ""
 echo "Backup location on VPS: ${BACKUP_DIR}/apex-backup-${TIMESTAMP}.tar.gz"
 echo ""
+
+# Finalize Sentry/Bugsink release (BL-55, fail-open)
+if [ -n "${SENTRY_AUTH_TOKEN:-}" ] && command -v sentry-cli >/dev/null 2>&1; then
+    print_status "Finalizing Sentry release ${GIT_SHA}..."
+    sentry-cli releases finalize "${GIT_SHA}" || print_warning "sentry-cli finalize failed (non-fatal)"
+    sentry-cli releases deploys "${GIT_SHA}" new -e production \
+        || print_warning "sentry-cli deploys failed (non-fatal)"
+else
+    print_status "Skipping Sentry release finalize (no SENTRY_AUTH_TOKEN or sentry-cli)"
+fi

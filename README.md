@@ -20,6 +20,15 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Error Tracking (Bugsink)
+
+Error tracking is wired up via `@sentry/nextjs` pointed at the self-hosted
+Bugsink instance (`errors.isaflow.co.za`). It ships **disabled** —
+toggle `SENTRY_ENABLED=true` + populate the DSN env vars and redeploy.
+
+See [`docs/bugsink-enable.md`](docs/bugsink-enable.md) for the full
+enable/smoke-test/disable procedure.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
