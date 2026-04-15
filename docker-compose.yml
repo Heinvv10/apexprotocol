@@ -13,6 +13,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        GIT_SHA: ${GIT_SHA:-}
+        NEXT_PUBLIC_GIT_SHA: ${NEXT_PUBLIC_GIT_SHA:-}
     container_name: apex-app
     restart: unless-stopped
     ports:
@@ -32,6 +35,13 @@ services:
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      # Bugsink error tracking (BL-55) — inert unless SENTRY_ENABLED=true
+      - SENTRY_ENABLED=${SENTRY_ENABLED:-false}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - NEXT_PUBLIC_SENTRY_ENABLED=${NEXT_PUBLIC_SENTRY_ENABLED:-false}
+      - NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN:-}
+      - GIT_SHA=${GIT_SHA:-}
+      - NEXT_PUBLIC_GIT_SHA=${NEXT_PUBLIC_GIT_SHA:-}
     networks:
       - apex-network
     healthcheck:

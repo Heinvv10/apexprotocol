@@ -26,6 +26,12 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Release tagging for Sentry/Bugsink (BL-55)
+ARG GIT_SHA=""
+ARG NEXT_PUBLIC_GIT_SHA=""
+ENV GIT_SHA=${GIT_SHA}
+ENV NEXT_PUBLIC_GIT_SHA=${NEXT_PUBLIC_GIT_SHA}
+
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
@@ -41,6 +47,10 @@ WORKDIR /app
 # Set production environment
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Release tagging for Sentry/Bugsink runtime (BL-55)
+ARG GIT_SHA=""
+ENV GIT_SHA=${GIT_SHA}
 
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs
