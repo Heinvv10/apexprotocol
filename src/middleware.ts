@@ -47,6 +47,7 @@ const publicRoutes = [
   "/api/onboarding(.*)",  // Allow all onboarding APIs
   "/api/webhooks(.*)",
   "/api/cron(.*)",
+  "/api/sentry-test",  // BL-55 smoke test — remove with the route
   "/api/health",
   "/api/status",
   "/api/brands(.*)",  // Handles auth internally via getOrganizationId()
