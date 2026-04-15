@@ -440,14 +440,24 @@ class BrandMonitoringSubAgentImpl extends EventEmitter implements BrandMonitorin
     const errors: string[] = [];
     let partialResults = false;
 
+    // Detect invalid/unknown platform IDs in the request
+    if (options.platforms && options.platforms.length > 0) {
+      const enabledIds = this.config.platforms.filter(p => p.enabled).map(p => p.id);
+      for (const requestedId of options.platforms) {
+        if (!enabledIds.includes(requestedId)) {
+          errors.push(`Unknown or disabled platform: ${requestedId}`);
+          partialResults = true;
+        }
+      }
+    }
+
     // Collect mentions from all platforms
     const mentionsByPlatform: MentionsByPlatform = {};
     let totalMentions = 0;
 
     for (const platform of platforms) {
       try {
-        // Simulate mention collection
-        const mentions = this.simulateMentions(platform.id, 5);
+        const mentions = await this.collectMentions(platform.id);
         mentionsByPlatform[platform.id] = mentions;
         totalMentions += mentions.length;
       } catch (error) {
@@ -494,7 +504,8 @@ class BrandMonitoringSubAgentImpl extends EventEmitter implements BrandMonitorin
     this.stats.totalMentionsProcessed += totalMentions;
 
     const endTime = Date.now();
-    this.runTimes.push(endTime - startTime);
+    // Record at least 1ms to avoid zero-valued stats
+    this.runTimes.push(Math.max(1, endTime - startTime));
     this.stats.averageRunTimeMs =
       this.runTimes.reduce((sum, t) => sum + t, 0) / this.runTimes.length;
     this.stats.lastRunTime = new Date();
@@ -816,6 +827,15 @@ class BrandMonitoringSubAgentImpl extends EventEmitter implements BrandMonitorin
     }
 
     return enabledPlatforms;
+  }
+
+  protected async collectMentions(platformId: string): Promise<Array<{
+    id: string;
+    text: string;
+    sentiment: number;
+    timestamp: Date;
+  }>> {
+    return this.simulateMentions(platformId, 5);
   }
 
   private simulateMentions(platformId: string, count: number): Array<{

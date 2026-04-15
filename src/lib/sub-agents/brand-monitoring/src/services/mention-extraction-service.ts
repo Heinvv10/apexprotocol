@@ -163,7 +163,10 @@ class MentionExtractionServiceImpl extends EventEmitter implements MentionExtrac
     try {
       // Validate input
       if (!content || typeof content.text !== 'string') {
-        this.emit('error', new Error('Invalid content input'));
+        const err = new Error('Invalid content input');
+        if (this.listenerCount('error') > 0) {
+          this.emit('error', err);
+        }
         return {
           contentId: content?.id || 'unknown',
           mentions: [],
@@ -228,11 +231,17 @@ class MentionExtractionServiceImpl extends EventEmitter implements MentionExtrac
   }
 
   private findMentions(content: RawContent): ExtractedMention[] {
-    const mentions: ExtractedMention[] = [];
     const text = content.text;
     const lowerText = text.toLowerCase();
 
-    const searchTerms = [this.config.brandName, ...this.config.brandAliases];
+    // Sort search terms by length descending so longer (more specific) matches take precedence
+    const searchTerms = [this.config.brandName, ...this.config.brandAliases]
+      .sort((a, b) => b.length - a.length);
+
+    // Track which character positions have been claimed by a match (to avoid overlap)
+    const claimedRanges: Array<{ start: number; end: number }> = [];
+
+    const mentions: ExtractedMention[] = [];
 
     for (const term of searchTerms) {
       const lowerTerm = term.toLowerCase();
@@ -240,23 +249,32 @@ class MentionExtractionServiceImpl extends EventEmitter implements MentionExtrac
       let index: number;
 
       while ((index = lowerText.indexOf(lowerTerm, startIndex)) !== -1) {
-        const confidence = this.calculateConfidence(text, index, term);
+        const end = index + term.length;
 
-        if (confidence >= this.config.minConfidence || this.config.includePartialMatches) {
-          const position = this.determinePosition(text, index, term.length);
-          const context = this.extractContext(text, index, term.length);
-          const relevanceScore = this.calculateRelevance(text, term);
+        // Skip if this range overlaps with an already-claimed longer match
+        const overlaps = claimedRanges.some(r => index < r.end && end > r.start);
 
-          mentions.push({
-            id: `${content.id}-${index}`,
-            contentId: content.id,
-            matchedTerm: term,
-            position,
-            confidence,
-            relevanceScore,
-            context,
-            timestamp: content.timestamp,
-          });
+        if (!overlaps) {
+          const confidence = this.calculateConfidence(text, index, term);
+
+          if (confidence >= this.config.minConfidence || this.config.includePartialMatches) {
+            const position = this.determinePosition(text, index, term.length);
+            const context = this.extractContext(text, index, term.length);
+            const relevanceScore = this.calculateRelevance(text, term);
+
+            mentions.push({
+              id: `${content.id}-${index}`,
+              contentId: content.id,
+              matchedTerm: term,
+              position,
+              confidence,
+              relevanceScore,
+              context,
+              timestamp: content.timestamp,
+            });
+
+            claimedRanges.push({ start: index, end });
+          }
         }
 
         startIndex = index + 1;
@@ -271,6 +289,8 @@ class MentionExtractionServiceImpl extends EventEmitter implements MentionExtrac
     const before = text[index - 1] || ' ';
     const after = text[index + term.length] || ' ';
     const isWordBoundary = /\s|[.,!?;:]/.test(before) && /\s|[.,!?;:]/.test(after);
+    // Detect hyphenated/compound usage (e.g. "Apex-like") — lower confidence than true word boundary
+    const isCompoundUsage = /[-]/.test(after) || /[-]/.test(before);
 
     // Check for context clues that suggest it's about the brand
     const contextWindow = text.substring(
@@ -290,6 +310,7 @@ class MentionExtractionServiceImpl extends EventEmitter implements MentionExtrac
     let confidence = 0.5;
 
     if (isWordBoundary) confidence += 0.2;
+    if (isCompoundUsage) confidence -= 0.1; // Hyphenated usage is less likely to be a direct mention
     if (hasContext) confidence += 0.2;
     if (isNonBrand) confidence -= 0.4;
     if (term.length > this.config.brandName.length) confidence += 0.1; // Alias match
@@ -318,7 +339,8 @@ class MentionExtractionServiceImpl extends EventEmitter implements MentionExtrac
 
     const fullContext = text.substring(beforeStart, afterEnd).toLowerCase();
     const topics = this.extractTopics(fullContext);
-    const keywords = this.extractKeywords(fullContext);
+    // Extract keywords from the full text to capture all relevant terms
+    const keywords = this.extractKeywords(text.toLowerCase());
 
     return { before, after, topics, keywords };
   }

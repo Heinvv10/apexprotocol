@@ -225,10 +225,10 @@ export async function POST(request: NextRequest) {
               platform: result.platform,
               status: result.status,
               error: result.error,
-              analysis: result.analysis
+              analysis: result.analysis && result.analysis.response
                 ? {
                     visibilityScore: result.analysis.visibilityScore,
-                    citations: result.analysis.response.citations,
+                    citations: result.analysis.response.citations ?? [],
                     contentTypePerformance: result.analysis.contentTypePerformance,
                     recommendations: result.analysis.recommendations,
                   }

@@ -339,7 +339,11 @@ export async function onPredictedScoreDrop(
     };
 
     // Evaluate if alert should be triggered
-    const shouldTrigger = shouldTriggerPredictiveAlert(alertContext);
+    const triggerResult = shouldTriggerPredictiveAlert(alertContext);
+
+    // triggerResult can be a boolean (legacy) or a PredictionAlertEvaluation object
+    const shouldTrigger = typeof triggerResult === 'object' ? triggerResult.trigger : triggerResult;
+    const triggerEvaluation = typeof triggerResult === 'object' ? triggerResult : undefined;
 
     if (!shouldTrigger) {
       return {
@@ -348,6 +352,9 @@ export async function onPredictedScoreDrop(
         reason: "Prediction does not meet alert criteria",
       };
     }
+
+    // Extract leadTime from evaluation if available
+    const leadTime = triggerEvaluation?.leadTime;
 
     // Calculate severity for rate limiting
     const severity = calculateAlertPriority(alertContext);
@@ -380,9 +387,12 @@ export async function onPredictedScoreDrop(
     }
 
     // Generate notification content
-    const title = generateAlertTitle(alertContext);
-    const message = generateAlertMessage(alertContext);
-    const actionRecommendation = generateActionRecommendation(alertContext);
+    // Use evaluation object when available (supports PredictionAlertEvaluation signature)
+    const title = triggerEvaluation ? generateAlertTitle(triggerEvaluation) : generateAlertTitle(alertContext);
+    const message = triggerEvaluation
+      ? generateAlertMessage(brand.name, currentScore, prediction as Parameters<typeof generateAlertMessage>[2], triggerEvaluation)
+      : generateAlertMessage(alertContext);
+    const actionRecommendation = triggerEvaluation ? generateActionRecommendation(triggerEvaluation) : generateActionRecommendation(alertContext);
 
     // Create notification
     const result = await createNotification({
@@ -401,6 +411,7 @@ export async function onPredictedScoreDrop(
         changePercentage,
         confidence: prediction.confidence,
         targetDate: prediction.targetDate,
+        leadTime,
         severity,
         trendDirection: alertContext.trendDirection,
         timeframe: alertContext.timeframe,

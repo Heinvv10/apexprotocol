@@ -194,8 +194,9 @@ describe("Monitor Page - Brand Integration", () => {
 
       await waitFor(() => {
         // Should display platform indicators (ChatGPT, Claude icons)
-        expect(screen.getByText(/chatgpt/i)).toBeInTheDocument();
-        expect(screen.getByText(/claude/i)).toBeInTheDocument();
+        // Use getAllByText since platform names may appear multiple times
+        expect(screen.getAllByText(/chatgpt/i).length).toBeGreaterThan(0);
+        expect(screen.getAllByText(/claude/i).length).toBeGreaterThan(0);
       });
     });
   });

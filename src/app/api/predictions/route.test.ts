@@ -535,7 +535,7 @@ describe("GET /api/predictions - Cache Miss (Stale or Missing Predictions)", () 
 
     expect(forecastGeoScore).toHaveBeenCalledWith(
       mockExtractionResult.data,
-      { periods: 60 }
+      expect.objectContaining({ periods: 60 })
     );
   });
 

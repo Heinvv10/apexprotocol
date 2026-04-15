@@ -171,77 +171,74 @@ vi.mock("@/lib/ai/analysis-engine", () => ({
   AnalysisEngine: vi.fn().mockImplementation(() => ({
     analyze: vi.fn(() =>
       Promise.resolve({
-        status: "completed",
-        aggregateStats: {
+        status: "partial",
+        aggregate: {
           averageScore: 72,
           totalCitations: 15,
           totalMentions: 10,
           bestPlatform: "chatgpt",
           worstPlatform: "perplexity",
         },
-        platformResults: [
-          {
-            platform: "chatgpt",
-            status: "completed",
+        // platforms is keyed by platform name (object map), matching AnalysisEngine.analyze return type
+        platforms: {
+          chatgpt: {
+            status: "success",
             error: null,
-            analysis: {
+            platform: "chatgpt",
+            visibilityScore: {
+              total: 75,
+              breakdown: {
+                mentionCount: 30,
+                citationQuality: 25,
+                prominence: 20,
+              },
+              metrics: {
+                totalMentions: 3,
+                averageRelevance: 0.85,
+                firstMentionPosition: 120,
+              },
+            },
+            response: {
               platform: "chatgpt",
-              visibilityScore: {
-                total: 75,
-                breakdown: {
-                  mentionCount: 30,
-                  citationQuality: 25,
-                  prominence: 20,
-                },
-                metrics: {
-                  totalMentions: 3,
-                  averageRelevance: 0.85,
-                  firstMentionPosition: 120,
-                },
-              },
-              response: {
-                platform: "chatgpt",
-                content: "Test Brand is a leading tech company...",
-                citations: [
-                  {
-                    type: "direct_quote",
-                    text: "Test Brand is a leader in technology",
-                    sourceUrl: "https://testbrand.com/about",
-                    sourceTitle: "About Test Brand",
-                    position: 0,
-                    context: "According to Test Brand...",
-                    contentType: "documentation",
-                    relevanceScore: 0.85,
-                  },
-                ],
-                metadata: {
-                  model: "gpt-4",
-                  version: "gpt-4-0613",
-                  temperature: 0.7,
-                  tokensUsed: 1500,
-                  responseTimeMs: 2500,
-                },
-              },
-              contentTypePerformance: {
-                blog_post: 2,
-                documentation: 3,
-              },
-              recommendations: [
+              content: "Test Brand is a leading tech company...",
+              citations: [
                 {
-                  id: "increase_mentions",
-                  title: "Increase Brand Mentions",
-                  description: "Improve brand visibility",
-                  priority: 1,
-                  impact: "high",
-                  difficulty: "medium",
-                  actionItems: ["Create more content", "Optimize existing content"],
-                  examples: ["Example 1", "Example 2"],
+                  type: "direct_quote",
+                  text: "Test Brand is a leader in technology",
+                  sourceUrl: "https://testbrand.com/about",
+                  sourceTitle: "About Test Brand",
+                  position: 0,
+                  context: "According to Test Brand...",
+                  contentType: "documentation",
+                  relevanceScore: 0.85,
                 },
               ],
+              metadata: {
+                model: "gpt-4",
+                version: "gpt-4-0613",
+                temperature: 0.7,
+                tokensUsed: 1500,
+                responseTimeMs: 2500,
+              },
             },
+            contentTypePerformance: {
+              blog_post: 2,
+              documentation: 3,
+            },
+            recommendations: [
+              {
+                id: "increase_mentions",
+                title: "Increase Brand Mentions",
+                description: "Improve brand visibility",
+                priority: 1,
+                impact: "high",
+                difficulty: "medium",
+                actionItems: ["Create more content", "Optimize existing content"],
+                examples: ["Example 1", "Example 2"],
+              },
+            ],
           },
-          {
-            platform: "claude",
+          claude: {
             status: "failed",
             error: {
               platform: "claude",
@@ -251,9 +248,8 @@ vi.mock("@/lib/ai/analysis-engine", () => ({
               retryable: true,
               retryAfter: 60,
             },
-            analysis: null,
           },
-        ],
+        },
       })
     ),
   })),
