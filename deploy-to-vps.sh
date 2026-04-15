@@ -22,8 +22,12 @@ APP_DIR="/opt/apex"
 BACKUP_DIR="/opt/apex-backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
+# Capture git SHA for Sentry/Bugsink release tagging (BL-55)
+GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
 echo -e "${BLUE}================================${NC}"
 echo -e "${BLUE}Apex VPS Deployment${NC}"
+echo -e "${BLUE}Release SHA: ${GIT_SHA}${NC}"
 echo -e "${BLUE}================================${NC}"
 echo ""
 
@@ -151,9 +155,15 @@ fi
 
 print_success "Files transferred"
 
-# Transfer production environment file
-print_status "Transferring production environment..."
-scp .env.production ${VPS_USER}@${VPS_IP}:${APP_DIR}/.env
+# Transfer production environment file, appending release SHA for Sentry/Bugsink
+print_status "Transferring production environment (with GIT_SHA=${GIT_SHA})..."
+{
+    cat .env.production
+    echo ""
+    echo "# Appended by deploy-to-vps.sh (BL-55 release tagging)"
+    echo "GIT_SHA=${GIT_SHA}"
+    echo "NEXT_PUBLIC_GIT_SHA=${GIT_SHA}"
+} | ssh ${VPS_USER}@${VPS_IP} "cat > ${APP_DIR}/.env"
 print_success "Environment file transferred"
 
 # Install Docker and Docker Compose on VPS (if needed)
@@ -223,3 +233,13 @@ echo "  Shell access:     ssh ${VPS_USER}@${VPS_IP} 'cd ${APP_DIR} && docker-com
 echo ""
 echo "Backup location on VPS: ${BACKUP_DIR}/apex-backup-${TIMESTAMP}.tar.gz"
 echo ""
+
+# Finalize Sentry/Bugsink release (BL-55, fail-open)
+if [ -n "${SENTRY_AUTH_TOKEN:-}" ] && command -v sentry-cli >/dev/null 2>&1; then
+    print_status "Finalizing Sentry release ${GIT_SHA}..."
+    sentry-cli releases finalize "${GIT_SHA}" || print_warning "sentry-cli finalize failed (non-fatal)"
+    sentry-cli releases deploys "${GIT_SHA}" new -e production \
+        || print_warning "sentry-cli deploys failed (non-fatal)"
+else
+    print_status "Skipping Sentry release finalize (no SENTRY_AUTH_TOKEN or sentry-cli)"
+fi
