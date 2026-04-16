@@ -9,15 +9,85 @@
 import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
 
-// Rate limits per tier (requests per minute)
+// Rate limits per tier (requests per minute).
+// Tiers now represent route classes, not subscription plans. Dashboard fan-out
+// means a single page can trigger 10+ reads; expensive routes (AI, scraping)
+// need their own tight bucket so one user can't blow through spend.
 const RATE_LIMITS = {
-  free: { perMinute: 10, perHour: 100, perDay: 500 },
+  // Expensive: AI inference, scraping, report generation. One user doing these
+  // in a hot loop is how cost incidents happen.
+  expensive: { perMinute: 10, perHour: 100, perDay: 500 },
+  // Default: standard writes, auth-gated mutations.
   starter: { perMinute: 60, perHour: 1000, perDay: 10000 },
+  // Read-heavy: dashboard/analytics/list endpoints hit on every page load.
+  read: { perMinute: 300, perHour: 5000, perDay: 50000 },
+  // Legacy aliases kept so existing callers still compile.
+  free: { perMinute: 10, perHour: 100, perDay: 500 },
   professional: { perMinute: 300, perHour: 5000, perDay: 50000 },
   enterprise: { perMinute: 1000, perHour: 20000, perDay: 200000 },
 } as const;
 
 export type ApiTier = keyof typeof RATE_LIMITS;
+
+/**
+ * Classify a request path into a rate-limit bucket. Keep this fast — it runs
+ * in middleware on every request.
+ */
+export function classifyRoute(pathname: string): ApiTier {
+  // Expensive first — match by substring so nested routes count too.
+  if (
+    pathname.includes("/monitor/run") ||
+    pathname.includes("/monitor/scrape") ||
+    pathname.includes("/audit/analyze") ||
+    pathname.includes("/brands/scrape") ||
+    pathname.includes("/brands/enrich") ||
+    pathname.includes("/brands/test-multipage") ||
+    pathname.includes("/ai-insights/analyze") ||
+    pathname.includes("/recommendations/generate") ||
+    pathname.includes("/create/content") ||
+    pathname.includes("/create/brief") ||
+    pathname.includes("/predictions/train") ||
+    pathname.includes("/competitive/discover") ||
+    pathname.includes("/people/discover") ||
+    pathname.includes("/people/") && pathname.includes("/enrich") ||
+    pathname.includes("/reports/generate") ||
+    pathname.includes("/reports/") && pathname.includes("/pdf") ||
+    pathname.includes("/export") ||
+    pathname.includes("/simulations") ||
+    pathname.includes("/optimize") ||
+    pathname.includes("/publishing/") ||
+    pathname.includes("/social/publish")
+  ) {
+    return "expensive";
+  }
+  // Read-heavy dashboard/analytics paths — fan out on page load.
+  if (
+    pathname.includes("/analytics/") ||
+    pathname.includes("/monitor/mentions") ||
+    pathname.includes("/monitor/citations") ||
+    pathname.includes("/monitor/stream") ||
+    pathname.includes("/monitor/platforms") ||
+    pathname.includes("/monitor/brands") ||
+    pathname.includes("/monitor/sentiment") ||
+    pathname.includes("/admin/dashboard") ||
+    pathname.includes("/usage/") ||
+    pathname.includes("/notifications") ||
+    pathname.includes("/insights") ||
+    pathname.includes("/engine-room") ||
+    pathname.includes("/gamification") ||
+    pathname.includes("/ai-insights/history") ||
+    pathname.includes("/platform-monitoring") ||
+    pathname.includes("/competitive/comparison") ||
+    pathname.includes("/competitive/scores") ||
+    pathname.includes("/competitive/snapshots") ||
+    pathname.includes("/content/inventory") ||
+    pathname.includes("/content/metrics") ||
+    pathname.includes("/realtime")
+  ) {
+    return "read";
+  }
+  return "starter";
+}
 
 // Singleton rate limiter (per-minute window)
 let rateLimiter: Ratelimit | null = null;

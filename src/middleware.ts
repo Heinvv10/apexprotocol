@@ -294,16 +294,19 @@ async function productionMiddleware(request: NextRequest) {
     await auth.protect();
 
     // Apply per-session rate limiting to API routes (session auth — API key routes
-    // are already rate-limited in handleApiKeyAuth above).
+    // are already rate-limited in handleApiKeyAuth above). Expensive routes
+    // (AI calls, scraping, generation) get their own tighter bucket so a single
+    // user can't blow through AI spend.
     if (req.nextUrl.pathname.startsWith("/api/")) {
       try {
         const { userId, orgId } = await auth();
         const rlKey = orgId || userId;
         if (rlKey) {
-          const { checkApiRateLimit, getRateLimitHeaders } = await import(
+          const { checkApiRateLimit, getRateLimitHeaders, classifyRoute } = await import(
             "@/lib/api/api-rate-limiter"
           );
-          const rlResult = await checkApiRateLimit(rlKey);
+          const bucket = classifyRoute(req.nextUrl.pathname);
+          const rlResult = await checkApiRateLimit(`${rlKey}:${bucket}`, bucket);
           if (!rlResult.allowed) {
             const response = NextResponse.json(
               {
