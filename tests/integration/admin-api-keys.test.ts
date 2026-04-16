@@ -78,6 +78,13 @@ describe("Admin API Keys Integration Tests", () => {
   describe("Create External Service API Key (INSERT with Encryption)", () => {
     let createdKeyId: string | null = null;
 
+    beforeEach(async () => {
+      if (createdKeyId) {
+        await cleanupApiKey(createdKeyId);
+        createdKeyId = null;
+      }
+    });
+
     afterEach(async () => {
       if (createdKeyId) {
         await cleanupApiKey(createdKeyId);

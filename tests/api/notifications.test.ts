@@ -16,7 +16,7 @@ import { GET as getPreferences, PATCH as updatePreferences } from "@/app/api/not
 process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
 
 // Mock auth
-vi.mock("@/lib/auth", () => ({
+vi.mock("@/lib/auth/clerk", () => ({
   getUserId: vi.fn(() => Promise.resolve("demo-user")),
   getOrganizationId: vi.fn(() => Promise.resolve("demo-org")),
 }));

@@ -16,6 +16,15 @@ vi.mock("@/lib/ai/claude", () => ({
     },
   })),
   sendMessage: vi.fn(() => Promise.resolve("Claude response")),
+  CLAUDE_MODELS: {
+    SONNET_4: "claude-sonnet-4-20250514",
+    OPUS_4: "claude-opus-4-20250514",
+    HAIKU_3_5: "claude-3-5-haiku-20241022",
+    SONNET_3_5: "claude-sonnet-4-20250514",
+    OPUS_3: "claude-3-opus-20240229",
+    SONNET_3: "claude-3-sonnet-20240229",
+    HAIKU_3: "claude-3-haiku-20240307",
+  },
 }));
 
 // Mock OpenAI client

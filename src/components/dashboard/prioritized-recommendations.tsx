@@ -113,10 +113,10 @@ export function PrioritizedRecommendations({
         {/* Skeleton loading state */}
         <div className="space-y-3">
           {Array.from({ length: limit }).map((_, index) => (
-            <div key={index} className="p-3 rounded-lg bg-white/5 animate-pulse">
-              <div className="h-4 bg-white/10 rounded mb-2 w-3/4" />
-              <div className="h-3 bg-white/10 rounded w-full mb-1" />
-              <div className="h-3 bg-white/10 rounded w-5/6" />
+            <div key={index} data-slot="skeleton-card" className="p-3 rounded-lg bg-white/5 animate-pulse rounded-xl border bg-card shadow-sm">
+              <div data-slot="skeleton" className="h-4 bg-white/10 rounded mb-2 w-3/4" />
+              <div data-slot="skeleton" className="h-3 bg-white/10 rounded w-full mb-1" />
+              <div data-slot="skeleton" className="h-3 bg-white/10 rounded w-5/6" />
             </div>
           ))}
         </div>

@@ -47,11 +47,15 @@ vi.mock("@/stores", () => ({
 // Mock the useAudit hooks
 const mockUseAuditsByBrand = vi.fn();
 const mockUseStartAudit = vi.fn();
+const mockUseCancelAudit = vi.fn();
+const mockUseRetryAudit = vi.fn();
 
 vi.mock("@/hooks/useAudit", () => ({
   useAuditsByBrand: (brandId: string, filters: unknown) =>
     mockUseAuditsByBrand(brandId, filters),
   useStartAudit: () => mockUseStartAudit(),
+  useCancelAudit: () => mockUseCancelAudit(),
+  useRetryAudit: () => mockUseRetryAudit(),
   useAudit: vi.fn(),
   useAuditIssues: vi.fn(),
 }));

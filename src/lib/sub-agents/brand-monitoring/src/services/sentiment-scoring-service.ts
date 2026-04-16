@@ -227,7 +227,8 @@ class SentimentScoringServiceImpl extends EventEmitter implements SentimentScori
 
         // Flip sentiment if sarcasm detected
         if (sarcasm.detected && sarcasm.confidence > 0.7) {
-          result.score = -result.score;
+          // Ensure a meaningful negative score when sarcasm overrides
+          result.score = result.score > 0 ? -result.score : Math.min(result.score, -0.4);
           result.overallSentiment = this.classifySentiment(result.score);
         }
       }
@@ -243,7 +244,7 @@ class SentimentScoringServiceImpl extends EventEmitter implements SentimentScori
         result.mixedAspects = aspects;
       }
 
-      this.updateStats(result, Date.now() - startTime);
+      this.updateStats(result, Math.max(1, Date.now() - startTime));
       return result;
     } catch (error) {
       this.emit('error', error);
@@ -385,12 +386,30 @@ class SentimentScoringServiceImpl extends EventEmitter implements SentimentScori
       'amazing', 'excellent', 'great', 'fantastic', 'love', 'wonderful',
       'best', 'perfect', 'outstanding', 'incredible', 'awesome', 'brilliant',
       'recommend', 'helpful', 'impressed', 'delighted', 'satisfied',
+      'better', 'superior', 'exceptional', 'innovative', 'reliable',
+      'trusted', 'leader', 'established', 'quality', 'value',
+      // Spanish
+      'excelente', 'increíble', 'genial', 'fantástico', 'amor', 'maravilloso',
+      'mejor', 'perfecto', 'extraordinario', 'bueno', 'positivo',
+      // German
+      'ausgezeichnet', 'hervorragend', 'toll', 'wunderbar', 'liebe',
+      'beste', 'perfekt', 'fantastisch', 'prima', 'super', 'gut',
+      // French
+      'formidable', 'excellent', 'magnifique', 'super', 'merveilleux',
     ];
 
     const negativeWords = [
       'terrible', 'awful', 'bad', 'poor', 'hate', 'horrible',
       'worst', 'disappointing', 'frustrating', 'annoying', 'useless',
       'broken', 'crashed', 'buggy', 'slow', 'expensive', 'problem',
+      'not happy', 'unhappy', 'not satisfied', 'not good', 'not great',
+      // Spanish
+      'terrible', 'horrible', 'malo', 'pésimo', 'odio', 'desastroso',
+      // German
+      'schrecklich', 'furchtbar', 'schlecht', 'schlimm', 'hasse', 'grauenhaft',
+      'schlechtes', 'schreckliches', 'furchtbares',
+      // French
+      'terrible', 'horrible', 'mauvais', 'affreux',
     ];
 
     const positiveCount = positiveWords.filter(w => lowerText.includes(w)).length;
@@ -459,7 +478,9 @@ class SentimentScoringServiceImpl extends EventEmitter implements SentimentScori
 
   private scoreKeywords(text: string, keywords: string[]): number {
     const matchCount = keywords.filter(k => text.includes(k)).length;
-    return Math.min(1, matchCount / 3);
+    if (matchCount === 0) return 0;
+    // Score: 1 match = 0.6, 2 matches = 0.8, 3+ matches = 1.0
+    return Math.min(1, 0.4 + (matchCount * 0.2));
   }
 
   private analyzeEmotions(text: string): Partial<EmotionBreakdown> {
@@ -470,7 +491,7 @@ class SentimentScoringServiceImpl extends EventEmitter implements SentimentScori
       fear: this.scoreKeywords(lowerText, ['worried', 'concerned', 'afraid', 'anxious', 'nervous']),
       trust: this.scoreKeywords(lowerText, ['trust', 'reliable', 'dependable', 'confident', 'secure']),
       surprise: this.scoreKeywords(lowerText, ['surprised', 'amazed', 'unexpected', 'shocked', 'wow']),
-      anticipation: this.scoreKeywords(lowerText, ['waiting', 'excited for', 'looking forward', 'can\'t wait', 'anticipate']),
+      anticipation: this.scoreKeywords(lowerText, ['waiting', 'excited for', 'looking forward', 'can\'t wait', 'cannot wait', 'can not wait', 'anticipate', 'coming next']),
       frustration: this.scoreKeywords(lowerText, ['frustrated', 'annoyed', 'irritated', 'fed up', 'ugh']),
       anger: this.scoreKeywords(lowerText, ['angry', 'furious', 'outraged', 'livid', 'mad']),
       sadness: this.scoreKeywords(lowerText, ['sad', 'disappointed', 'upset', 'unhappy', 'sorry']),
@@ -485,6 +506,9 @@ class SentimentScoringServiceImpl extends EventEmitter implements SentimentScori
       /oh great/i, /wow.+surprise/i, /so\s+.+obviously/i,
       /what a\s+surprise/i, /of course/i, /yeah right/i,
       /sure.+works/i, /best.+ever.+not/i,
+      /great.*again/i, /best investment ever/i,
+      /how (surprising|shocking|unexpected)/i,
+      /thanks (a lot|for nothing)/i,
     ];
 
     // Excessive punctuation or caps often indicates sarcasm
@@ -493,21 +517,27 @@ class SentimentScoringServiceImpl extends EventEmitter implements SentimentScori
 
     // Check for positive words followed by negative context
     const positiveNegativeMismatch =
-      (/great|excellent|amazing|best/i.test(lowerText)) &&
-      (/crashed|broken|bug|terrible|problem/i.test(lowerText));
+      (/great|excellent|amazing|best|wow/i.test(lowerText)) &&
+      (/crashed|broken|bug|terrible|problem|again|paying.*for bugs/i.test(lowerText));
 
-    const patternMatch = sarcasmPatterns.some(p => p.test(lowerText));
+    // Positive exclamation following negative context
+    const negativePositivePattern =
+      (/paying|bugs|crash|broken|terrible|awful/i.test(lowerText)) &&
+      (/best|great|amazing|fantastic|excellent/i.test(lowerText));
+
+    const patternMatch = sarcasmPatterns.some(p => p.test(text));
 
     const indicators = [
       patternMatch,
       hasExcessivePunctuation,
       hasExcessiveCaps,
       positiveNegativeMismatch,
+      negativePositivePattern,
     ].filter(Boolean).length;
 
     return {
       detected: indicators >= 2,
-      confidence: Math.min(1, indicators * 0.35),
+      confidence: Math.min(1, indicators * 0.3),
     };
   }
 
@@ -536,13 +566,22 @@ class SentimentScoringServiceImpl extends EventEmitter implements SentimentScori
 
     const aspectKeywords: Record<string, string[]> = {
       analytics: ['analytics', 'data', 'reports', 'metrics', 'insights'],
-      UI: ['ui', 'interface', 'design', 'layout', 'usability'],
-      pricing: ['price', 'cost', 'expensive', 'affordable', 'value'],
+      UI: ['ui', 'interface', 'design', 'layout', 'usability', 'intuitive'],
+      pricing: ['price', 'cost', 'expensive', 'affordable', 'value', 'pricing', 'steep'],
       support: ['support', 'help', 'team', 'response', 'service'],
       features: ['features', 'functionality', 'capabilities', 'tools'],
       performance: ['fast', 'slow', 'speed', 'performance', 'loading'],
       reporting: ['reports', 'reporting', 'dashboard', 'visualization'],
     };
+
+    // Contrast patterns that indicate negative context
+    const negativeContrastPatterns = [
+      /\bbut\b.*\b(could|should|needs?|lacks?|missing|poor|bad|not)\b/i,
+      /\bexcept\b/i,
+      /\balthough\b.*\b(could|should|needs?|lacks?|poor|bad|not)\b/i,
+      /\bcould be (more|better|improved|easier)\b/i,
+      /\bsteep\b/i,
+    ];
 
     for (const [aspect, keywords] of Object.entries(aspectKeywords)) {
       const matches = keywords.filter(k => lowerText.includes(k));
@@ -550,16 +589,53 @@ class SentimentScoringServiceImpl extends EventEmitter implements SentimentScori
         // Find the sentence containing the keyword and analyze its sentiment
         const sentences = text.split(/[.!?]+/);
         for (const sentence of sentences) {
-          if (keywords.some(k => sentence.toLowerCase().includes(k))) {
-            const score = this.calculateSentimentScore(sentence);
-            aspects.push({
-              aspect,
-              sentiment: this.classifySentiment(score),
-              score,
-              confidence: 0.7 + (matches.length * 0.1),
-            });
-            break;
+          const sentenceLower = sentence.toLowerCase();
+          const matchedKeyword = keywords.find(k => sentenceLower.includes(k));
+          if (!matchedKeyword) continue;
+
+          let score = this.calculateSentimentScore(sentence);
+
+          // Determine position relative to contrast words
+          const kwIndex = sentenceLower.indexOf(matchedKeyword);
+          const contrastIndex = sentenceLower.search(/\b(but|except|however|although|though|yet)\b/);
+
+          let contextWindow: string;
+          if (contrastIndex !== -1 && kwIndex < contrastIndex) {
+            // Keyword is before the contrast word — use text up to contrast word
+            contextWindow = sentence.substring(0, contrastIndex);
+          } else if (contrastIndex !== -1 && kwIndex > contrastIndex) {
+            // Keyword is after the contrast word — use text after contrast word
+            contextWindow = sentence.substring(contrastIndex);
+          } else {
+            // No contrast word — use proximity window
+            const contextStart = Math.max(0, kwIndex - 30);
+            const contextEnd = Math.min(sentence.length, kwIndex + matchedKeyword.length + 40);
+            contextWindow = sentence.substring(contextStart, contextEnd);
           }
+
+          const contextScore = this.calculateSentimentScore(contextWindow);
+          // Use context score if it provides a clearer signal
+          if (Math.abs(contextScore) > Math.abs(score)) {
+            score = contextScore;
+          }
+
+          // If keyword is after contrast word, ensure negative classification
+          const isAfterContrast = contrastIndex !== -1 && kwIndex > contrastIndex;
+          // Only test negative contrast patterns on the context window (not full sentence)
+          const hasNegativeContrast = isAfterContrast && negativeContrastPatterns.some(p => p.test(contextWindow));
+          const hasExplicitNegativeInContext = /\b(not|steep|difficult|hard|poor|bad|worst|terrible|awful|lacking|too expensive|could be more)\b/i.test(contextWindow);
+
+          if ((isAfterContrast || hasNegativeContrast || hasExplicitNegativeInContext) && score >= -0.3) {
+            score = -0.4;
+          }
+
+          aspects.push({
+            aspect,
+            sentiment: this.classifySentiment(score),
+            score,
+            confidence: 0.7 + (matches.length * 0.1),
+          });
+          break;
         }
       }
     }

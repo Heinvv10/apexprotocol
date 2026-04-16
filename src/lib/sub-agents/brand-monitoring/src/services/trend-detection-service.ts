@@ -158,7 +158,13 @@ class TrendDetectionServiceImpl extends EventEmitter implements TrendDetectionSe
 
   async detectTrends(inputs: TrendInput[]): Promise<TrendResult> {
     try {
-      if (!inputs || inputs.length === 0) {
+      if (inputs === null || inputs === undefined) {
+        const err = new Error('Invalid input: null or undefined');
+        this.emit('error', err);
+        return { trends: [], error: err.message };
+      }
+
+      if (inputs.length === 0) {
         return { trends: [] };
       }
 
@@ -398,7 +404,7 @@ class TrendDetectionServiceImpl extends EventEmitter implements TrendDetectionSe
     const maxVolume = Math.max(...inputs.map(i => i.mentionCount));
     const avgVolume = inputs.reduce((sum, i) => sum + i.mentionCount, 0) / inputs.length;
 
-    if (maxVolume > avgVolume * 3) {
+    if (maxVolume > avgVolume * 2) {
       patterns.push({ type: 'burst', confidence: 0.8 });
     }
 
@@ -478,27 +484,57 @@ class TrendDetectionServiceImpl extends EventEmitter implements TrendDetectionSe
 
     for (const input of inputs) {
       // Volume anomaly
-      if (stdVolume > 0) {
-        const zScore = Math.abs((input.mentionCount - avgVolume) / stdVolume);
-        if (zScore > this.config.anomalyThreshold) {
-          anomalies.push({
-            timestamp: input.timestamp,
-            type: 'volume_spike',
-            severity: zScore > 3 ? 'high' : (zScore > 2.5 ? 'medium' : 'low'),
-            value: input.mentionCount,
-            expectedValue: avgVolume,
-          });
-        }
+      const volumeDeviation = Math.abs(input.mentionCount - avgVolume);
+      let volumeZScore = stdVolume > 0 ? volumeDeviation / stdVolume : 0;
+
+      // Ratio-based anomaly: compare to median/minimum baseline for small samples
+      const sortedVolumes = Array.from(volumes).sort((a, b) => a - b);
+      const baselineVolume = inputs.length <= 3
+        ? sortedVolumes[0]  // Use min for small samples
+        : sortedVolumes[Math.floor(sortedVolumes.length / 2)]; // Use median otherwise
+
+      const baselineRatio = baselineVolume > 0 ? input.mentionCount / baselineVolume : 0;
+      const isHighRatioAnomaly = baselineRatio >= 5;
+      const isModerateRatioAnomaly = baselineRatio >= 3 && inputs.length <= 5;
+
+      // Effective severity based on both z-score and ratio
+      let isAnomaly = volumeZScore >= this.config.anomalyThreshold || isHighRatioAnomaly || isModerateRatioAnomaly;
+      let severity: 'low' | 'medium' | 'high';
+
+      if (isHighRatioAnomaly || volumeZScore >= 3) {
+        severity = 'high';
+      } else if (isModerateRatioAnomaly || volumeZScore >= 2.5) {
+        severity = 'medium';
+      } else {
+        severity = 'low';
+      }
+
+      if (isAnomaly) {
+        anomalies.push({
+          timestamp: input.timestamp,
+          type: 'volume_spike',
+          severity,
+          value: input.mentionCount,
+          expectedValue: avgVolume,
+        });
       }
 
       // Sentiment anomaly
       if (stdSentiment > 0) {
         const zScore = Math.abs((input.sentiment - avgSentiment) / stdSentiment);
-        if (zScore > this.config.anomalyThreshold) {
+        // Also check: sentiment flips sign dramatically vs the rest
+        const otherSentiments = sentiments.filter(s => s !== input.sentiment);
+        const otherAvg = otherSentiments.length > 0
+          ? otherSentiments.reduce((a, b) => a + b, 0) / otherSentiments.length
+          : avgSentiment;
+        const isSignFlipAnomaly = Math.sign(input.sentiment) !== Math.sign(otherAvg) &&
+          Math.abs(input.sentiment - otherAvg) > 1.0;
+
+        if (zScore >= this.config.anomalyThreshold || isSignFlipAnomaly) {
           anomalies.push({
             timestamp: input.timestamp,
             type: 'sentiment_anomaly',
-            severity: zScore > 3 ? 'high' : (zScore > 2.5 ? 'medium' : 'low'),
+            severity: zScore >= 3 || isSignFlipAnomaly ? 'high' : (zScore >= 2.5 ? 'medium' : 'low'),
             value: input.sentiment,
             expectedValue: avgSentiment,
           });
@@ -533,9 +569,12 @@ class TrendDetectionServiceImpl extends EventEmitter implements TrendDetectionSe
       : 0;
 
     let acceleration: 'accelerating' | 'decelerating' | 'steady';
-    if (secondRate > firstRate * 1.2) {
+    // Use absolute rate magnitudes: accelerating = rate increasing, decelerating = rate decreasing
+    const absFirst = Math.abs(firstRate);
+    const absSecond = Math.abs(secondRate);
+    if (absSecond > absFirst * 1.2) {
       acceleration = 'accelerating';
-    } else if (secondRate < firstRate * 0.8) {
+    } else if (absSecond < absFirst * 0.8) {
       acceleration = 'decelerating';
     } else {
       acceleration = 'steady';

@@ -79,10 +79,10 @@ export function formatDate(
       return "Invalid date";
     }
 
-    // Treat Unix epoch (Jan 1, 1970) as invalid/unset date
-    // Any date before Jan 1, 1971 is considered invalid
-    const epochCutoff = new Date("1971-01-01").getTime();
-    if (dateObj.getTime() < epochCutoff) {
+    // Treat Unix epoch (Jan 1, 1970) exactly as invalid/unset date
+    const epochCutoff = new Date("1970-01-01").getTime();
+    const epochEnd = new Date("1970-01-02").getTime();
+    if (dateObj.getTime() >= epochCutoff && dateObj.getTime() < epochEnd) {
       return "N/A";
     }
 

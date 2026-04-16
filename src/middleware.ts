@@ -50,6 +50,7 @@ const publicRoutes = [
   "/api/health",
   "/api/status",
   "/api/brands(.*)",  // Handles auth internally via getOrganizationId()
+  "/api/monitor/trigger-by-domain",  // Telegram bot integration (checks API key internally)
   "/_next(.*)",
   "/static(.*)",
   "/favicon.ico",

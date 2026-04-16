@@ -545,7 +545,13 @@ class PerformanceModelServiceImpl extends EventEmitter implements PerformanceMod
       (a, b) => a.period.start.getTime() - b.period.start.getTime()
     );
 
-    // Calculate growth rates between consecutive periods
+    // Calculate absolute changes between consecutive periods
+    const changes: number[] = [];
+    for (let i = 1; i < sorted.length; i++) {
+      changes.push(sorted[i].mentions - sorted[i - 1].mentions);
+    }
+
+    // Calculate growth rates for average rate
     const growthRates: number[] = [];
     for (let i = 1; i < sorted.length; i++) {
       const prev = sorted[i - 1];
@@ -562,18 +568,22 @@ class PerformanceModelServiceImpl extends EventEmitter implements PerformanceMod
     // Average growth rate
     const rate = growthRates.reduce((sum, r) => sum + r, 0) / growthRates.length;
 
-    // Calculate acceleration (change in growth rate)
+    // Calculate acceleration using second derivative (changes in absolute mentions)
     let acceleration: AccelerationType = 'stable';
-    if (growthRates.length >= 2) {
-      const firstHalf = growthRates.slice(0, Math.floor(growthRates.length / 2));
-      const secondHalf = growthRates.slice(Math.floor(growthRates.length / 2));
-      const avgFirst = firstHalf.reduce((sum, r) => sum + r, 0) / firstHalf.length;
-      const avgSecond = secondHalf.reduce((sum, r) => sum + r, 0) / secondHalf.length;
+    if (changes.length >= 2) {
+      // Calculate change-in-changes (second derivative)
+      const changeDeltas: number[] = [];
+      for (let i = 1; i < changes.length; i++) {
+        changeDeltas.push(changes[i] - changes[i - 1]);
+      }
 
-      if (avgSecond > avgFirst + 0.1) {
-        acceleration = 'accelerating';
-      } else if (avgSecond < avgFirst - 0.1) {
-        acceleration = 'decelerating';
+      if (changeDeltas.length > 0) {
+        const avgDelta = changeDeltas.reduce((sum, d) => sum + d, 0) / changeDeltas.length;
+        if (avgDelta > 0.5) {
+          acceleration = 'accelerating';
+        } else if (avgDelta < -0.5) {
+          acceleration = 'decelerating';
+        }
       }
     }
 
@@ -802,7 +812,9 @@ class PerformanceModelServiceImpl extends EventEmitter implements PerformanceMod
     this.stats.lastCalculation = new Date();
     this.stats.platformsAnalyzed.add(platform);
 
-    this.calculationTimes.push(calculationTimeMs);
+    // Ensure we record at least 1ms to avoid 0 values
+    const recordedTime = Math.max(1, calculationTimeMs);
+    this.calculationTimes.push(recordedTime);
     this.stats.averageCalculationTimeMs =
       this.calculationTimes.reduce((sum, t) => sum + t, 0) / this.calculationTimes.length;
   }

@@ -27,7 +27,15 @@ vi.mock("@/lib/auth/super-admin", () => ({
 
 // Mock audit logger to prevent schema access
 vi.mock("@/lib/audit-logger", () => ({
-  createAuditLog: vi.fn().mockResolvedValue(createMockAuditLog()),
+  createAuditLog: vi.fn().mockResolvedValue({
+    id: "log_123",
+    actorId: "test-super-admin-id",
+    action: "test_action",
+    actionType: "access",
+    description: "Test action",
+    integrityHash: "abc123",
+    timestamp: new Date(),
+  }),
 }));
 
 // Mock database with proper query chain

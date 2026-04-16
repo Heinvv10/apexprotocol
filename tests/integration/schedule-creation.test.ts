@@ -48,7 +48,10 @@ describe("Schedule Creation API Integration Tests", () => {
   }));
 
   // Helper to create test content
-  const createTestContent = async (id: string, status: "draft" | "approved" | "published" = "draft") => {
+  const createTestContent = async (idPrefix: string, status: "draft" | "approved" | "published" = "draft") => {
+    // Use timestamp-based unique ID to avoid collisions
+    const id = `${idPrefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
     await db.insert(schema.contentItems).values({
       id,
       userId: "test-user-001",
@@ -83,6 +86,7 @@ describe("Schedule Creation API Integration Tests", () => {
     }
   };
 
+  beforeEach(cleanup);
   afterEach(cleanup);
 
   describe("Schedule Creation Flow", () => {

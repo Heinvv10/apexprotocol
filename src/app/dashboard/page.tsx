@@ -458,9 +458,15 @@ function GenerateReportButton({ brandId, brandName }: { brandId: string; brandNa
 export default function DashboardPage() {
   const brands = useBrands();
   const selectedBrand = useSelectedBrand();
-  const { data: metrics, isLoading: metricsLoading } = useDashboardMetrics(selectedBrand?.id || "");
+  const refreshBrands = useBrandStore((s) => s.refreshBrands);
+  const { data: metrics, isLoading: metricsLoading, error: metricsError, refetch } = useDashboardMetrics(selectedBrand?.id || "");
   const { data: geoScore } = useGEOScore(selectedBrand?.id || "");
   const { data: unifiedScore } = useUnifiedScore(selectedBrand?.id || "");
+
+  // Call refreshBrands on mount
+  React.useEffect(() => {
+    refreshBrands();
+  }, [refreshBrands]);
 
   // Show empty state if no brands
   if (!brands || brands.length === 0) {
@@ -471,13 +477,43 @@ export default function DashboardPage() {
     return <EmptyStateDashboard />;
   }
 
+  // Loading state
+  if (metricsLoading) {
+    return (
+      <div data-testid="dashboard-loading" className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-3 text-muted-foreground">Loading metrics...</span>
+      </div>
+    );
+  }
+
+  // Error state
+  if (metricsError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <AlertCircle className="w-12 h-12 text-destructive" />
+        <h2 className="text-xl font-semibold text-foreground">Failed to load metrics</h2>
+        <p className="text-muted-foreground text-sm">{metricsError instanceof Error ? metricsError.message : "An error occurred"}</p>
+        <Button onClick={() => refetch?.()} variant="outline">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  const geoScoreChange = metrics?.geoScore?.change;
+  const geoScoreChangeLabel = geoScoreChange != null
+    ? geoScoreChange > 0 ? `+${geoScoreChange}` : `${geoScoreChange}`
+    : null;
+
   return (
-    <div className="space-y-8">
+    <div data-testid="dashboard-metrics" className="space-y-8">
       {/* Dashboard Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Overview
+            {selectedBrand.name}
           </h1>
           <p className="text-muted-foreground mt-1">
             Monitor your brand&apos;s performance across AI platforms
@@ -492,33 +528,42 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Navigation Links */}
+      <div className="flex flex-wrap gap-3">
+        <Link href="/dashboard/monitor" className="text-sm text-primary hover:underline flex items-center gap-1">
+          <Activity className="w-4 h-4" />
+          Monitor
+        </Link>
+        <Link href="/dashboard/create" className="text-sm text-primary hover:underline flex items-center gap-1">
+          <PenTool className="w-4 h-4" />
+          Create
+        </Link>
+        <Link href="/dashboard/audit" className="text-sm text-primary hover:underline flex items-center gap-1">
+          <FileSearch className="w-4 h-4" />
+          Audit
+        </Link>
+        <Link href="/dashboard/recommendations" className="text-sm text-primary hover:underline flex items-center gap-1">
+          <Lightbulb className="w-4 h-4" />
+          Recommendations
+        </Link>
+      </div>
+
       {/* Key Metrics Section */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Unified Score Card */}
-        <div className="card-secondary">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Unified Score</p>
-              <h3 className="text-2xl font-bold text-foreground mt-1">
-                {unifiedScore?.score?.overall ?? '--'}
-              </h3>
-            </div>
-            <Target className="w-5 h-5 text-primary" />
-          </div>
-          <p className="text-xs text-muted-foreground">Overall performance</p>
-        </div>
-
         {/* GEO Score Card */}
         <div className="card-secondary">
           <div className="flex items-start justify-between mb-4">
             <div>
               <p className="text-sm text-muted-foreground">GEO Score</p>
               <h3 className="text-2xl font-bold text-foreground mt-1">
-                {geoScore?.overall ?? '--'}
+                {geoScore?.overall ?? metrics?.geoScore?.current ?? '--'}
               </h3>
             </div>
             <Globe className="w-5 h-5 text-accent-purple" />
           </div>
+          {geoScoreChangeLabel && (
+            <p className="text-xs text-success font-medium">{geoScoreChangeLabel}</p>
+          )}
           <p className="text-xs text-muted-foreground">Geographic performance</p>
         </div>
 
@@ -536,13 +581,29 @@ export default function DashboardPage() {
           <p className="text-xs text-muted-foreground">Across all platforms</p>
         </div>
 
+        {/* Recommendations Card */}
+        <div className="card-secondary">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Pending Recommendations</p>
+              <h3 className="text-2xl font-bold text-foreground mt-1">
+                {metrics?.recommendations?.pending ?? '--'}
+              </h3>
+            </div>
+            <Lightbulb className="w-5 h-5 text-warning" />
+          </div>
+          <p className="text-xs text-muted-foreground">Awaiting action</p>
+        </div>
+
         {/* Trending Card */}
         <div className="card-secondary">
           <div className="flex items-start justify-between mb-4">
             <div>
               <p className="text-sm text-muted-foreground">Trend</p>
               <h3 className="text-2xl font-bold text-foreground mt-1">
-                {metrics?.mentions?.change ?? '--'}%
+                {metrics?.mentions?.change != null
+                  ? `${metrics.mentions.change > 0 ? "+" : ""}${metrics.mentions.change}%`
+                  : '--'}
               </h3>
             </div>
             <TrendingUp className="w-5 h-5 text-success" />

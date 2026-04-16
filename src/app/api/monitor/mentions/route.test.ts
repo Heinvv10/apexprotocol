@@ -9,8 +9,9 @@ import { NextRequest } from "next/server";
 import { GET, POST } from "./route";
 
 // Mock Clerk auth via lib/auth
-vi.mock("@/lib/auth", () => ({
+vi.mock("@/lib/auth/clerk", () => ({
   getOrganizationId: vi.fn(),
+  getUserId: vi.fn(),
 }));
 
 // Mock database with chainable query pattern
@@ -115,13 +116,14 @@ vi.mock("@/lib/db", () => {
 });
 
 // Import mocked modules AFTER vi.mock declarations
-import { getOrganizationId } from "@/lib/auth/clerk";
+import { getOrganizationId, getUserId } from "@/lib/auth/clerk";
 import { db } from "@/lib/db";
 
 // Reset mocks before each test
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getOrganizationId).mockResolvedValue("test-org-id");
+  vi.mocked(getUserId).mockResolvedValue("test-user-id");
   lastInsertedData = null;
 });
 

@@ -2,9 +2,13 @@
  * Platform configuration — separated from re-exports to avoid Turbopack circular ref issues
  */
 import { queryChatGPT } from "./chatgpt";
+import { queryChatGPTBrowser } from "./chatgpt-browser";
 import { queryClaude } from "./claude";
+import { queryClaudeBrowser } from "./claude-browser";
 import { queryGemini } from "./gemini";
+import { queryGeminiBrowser } from "./gemini-browser";
 import { queryPerplexity } from "./perplexity";
+import { queryPerplexityBrowser } from "./perplexity-browser";
 import { queryGrok } from "./grok";
 import { queryDeepSeek } from "./deepseek";
 import { queryOpenAISearch } from "./openai-search";
@@ -17,12 +21,19 @@ import { queryLlama } from "./llama";
 import { queryYandexGPT } from "./yandexgpt";
 import { queryKimi } from "./kimi";
 import { queryQwen } from "./qwen";
+import { queryO1Browser, queryO1MiniBrowser } from "./o1-browser";
 
 export const PLATFORM_CONFIG = {
   chatgpt: { name: "ChatGPT", tier: 1, color: "#10a37f", icon: "🤖", queryFn: queryChatGPT },
+  chatgpt_browser: { name: "ChatGPT (Browser)", tier: 1, color: "#10a37f", icon: "🤖", queryFn: queryChatGPTBrowser },
   claude: { name: "Claude", tier: 1, color: "#cc785c", icon: "🧠", queryFn: queryClaude },
+  claude_browser: { name: "Claude (Browser)", tier: 1, color: "#cc785c", icon: "🧠", queryFn: queryClaudeBrowser },
   gemini: { name: "Gemini", tier: 1, color: "#4285f4", icon: "✨", queryFn: queryGemini },
+  gemini_browser: { name: "Gemini (Browser)", tier: 1, color: "#4285f4", icon: "✨", queryFn: queryGeminiBrowser },
   perplexity: { name: "Perplexity", tier: 1, color: "#20808d", icon: "🔍", queryFn: queryPerplexity },
+  perplexity_browser: { name: "Perplexity (Browser)", tier: 1, color: "#20808d", icon: "🔍", queryFn: queryPerplexityBrowser },
+  o1_browser: { name: "OpenAI o1 (Browser)", tier: 1, color: "#412991", icon: "🧠‍💭", queryFn: queryO1Browser },
+  o1_mini_browser: { name: "OpenAI o1-mini (Browser)", tier: 1, color: "#5a3fa0", icon: "🧠", queryFn: queryO1MiniBrowser },
   grok: { name: "Grok", tier: 1, color: "#1d9bf0", icon: "⚡", queryFn: queryGrok },
   deepseek: { name: "DeepSeek", tier: 1, color: "#0066ff", icon: "🌊", queryFn: queryDeepSeek },
   openai_search: { name: "OpenAI Search", tier: 1, color: "#412991", icon: "🔎", queryFn: queryOpenAISearch },

@@ -42,7 +42,10 @@ describe("Webhook Publish API Integration Tests", () => {
   }));
 
   // Helper to create scheduled content
-  const createScheduledContent = async (id: string) => {
+  const createScheduledContent = async (idPrefix: string) => {
+    // Use timestamp-based unique ID to avoid collisions
+    const id = `${idPrefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
     // Create content in approved status (ready for publishing)
     await db.insert(schema.contentItems).values({
       id,
@@ -100,6 +103,7 @@ describe("Webhook Publish API Integration Tests", () => {
     }
   };
 
+  beforeEach(cleanup);
   afterEach(cleanup);
 
   describe("Successful Publishing Flow", () => {

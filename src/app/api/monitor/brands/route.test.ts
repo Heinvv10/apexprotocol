@@ -8,8 +8,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { GET, POST } from "./route";
 
-// Mock Clerk auth via lib/auth
-vi.mock("@/lib/auth", () => ({
+// Mock Clerk auth via lib/auth/clerk
+vi.mock("@/lib/auth/clerk", () => ({
   getOrganizationId: vi.fn(),
 }));
 

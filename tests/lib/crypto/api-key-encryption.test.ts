@@ -126,8 +126,8 @@ describe("API Key Encryption Module", () => {
       expect(decrypted).toBe(originalKey);
     });
 
-    it("should work with generated API keys", () => {
-      const { key } = generateApiKey();
+    it("should work with generated API keys", async () => {
+      const { key } = await generateApiKey();
       const encrypted = encryptApiKey(key);
       const decrypted = decryptApiKey(encrypted);
 
@@ -225,9 +225,9 @@ describe("API Key Encryption Module", () => {
       }
     });
 
-    it("should work for 1000 unique generated keys", () => {
+    it("should work for 1000 unique generated keys", async () => {
       for (let i = 0; i < 1000; i++) {
-        const { key } = generateApiKey();
+        const { key } = await generateApiKey();
         const encrypted = encryptApiKey(key);
         const decrypted = decryptApiKey(encrypted);
         expect(decrypted).toBe(key);
@@ -633,8 +633,8 @@ describe("API Key Encryption Module", () => {
   });
 
   describe("Performance", () => {
-    it("should encrypt and decrypt within reasonable time (< 10ms per operation)", () => {
-      const { key } = generateApiKey();
+    it("should encrypt and decrypt within reasonable time (< 10ms per operation)", async () => {
+      const { key } = await generateApiKey();
       const iterations = 100;
 
       // Measure encryption time

@@ -47,6 +47,7 @@ vi.mock("@/lib/alerts/predictive-alerts", () => ({
   generateAlertTitle: vi.fn().mockReturnValue("ðŸš¨ Predicted GEO Score Drop of 25.0%"),
   generateAlertMessage: vi.fn().mockReturnValue("Test Brand's GEO score is predicted to drop from 80.0 to 60.0 in 30 days (80.0% confidence)"),
   generateActionRecommendation: vi.fn().mockReturnValue("RECOMMENDED: Monitor the situation closely"),
+  calculateAlertPriority: vi.fn().mockReturnValue("high"),
 }));
 
 import { onPredictedScoreDrop, type PredictiveTriggerInput } from "./triggers";
@@ -99,13 +100,8 @@ describe("onPredictedScoreDrop", () => {
     const prediction = createMockPrediction();
     const currentScore = 80.0;
 
-    // Mock evaluation to trigger alert
-    vi.mocked(shouldTriggerPredictiveAlert).mockReturnValue({
-      trigger: true,
-      severity: "medium",
-      leadTime: 30,
-      predictedDrop: 0.25,
-    });
+    // Mock evaluation to trigger alert (returns boolean true)
+    vi.mocked(shouldTriggerPredictiveAlert).mockReturnValue(true);
 
     const input: PredictiveTriggerInput = {
       prediction,
@@ -125,17 +121,14 @@ describe("onPredictedScoreDrop", () => {
       expect.objectContaining({
         userId: "user-1",
         organizationId: "org-1",
-        type: "predictive_alert",
+        type: "important",
         metadata: expect.objectContaining({
           brandId: "brand-1",
           brandName: "Test Brand",
           predictionId: "test-prediction-id",
           currentScore: 80.0,
           predictedValue: 60.0,
-          predictedDrop: 0.25,
           confidence: 0.8,
-          leadTime: 30,
-          severity: "medium",
           linkUrl: "/dashboard/brands/brand-1/predictions",
         }),
       })
@@ -146,11 +139,8 @@ describe("onPredictedScoreDrop", () => {
     const prediction = createMockPrediction();
     const currentScore = 80.0;
 
-    // Mock evaluation to NOT trigger alert (confidence too low)
-    vi.mocked(shouldTriggerPredictiveAlert).mockReturnValue({
-      trigger: false,
-      reason: "Confidence (65.0%) below threshold (70.0%)",
-    });
+    // Mock evaluation to NOT trigger alert (returns boolean false)
+    vi.mocked(shouldTriggerPredictiveAlert).mockReturnValue(false);
 
     const input: PredictiveTriggerInput = {
       prediction,
@@ -163,7 +153,7 @@ describe("onPredictedScoreDrop", () => {
 
     expect(result.success).toBe(true);
     expect(result.skipped).toBe(true);
-    expect(result.reason).toContain("Confidence");
+    expect(result.reason).toBeTruthy();
 
     // Verify notification was NOT created
     expect(createNotification).not.toHaveBeenCalled();

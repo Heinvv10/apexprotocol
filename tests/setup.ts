@@ -34,6 +34,7 @@ process.env.WORDPRESS_URL = "https://example.com";
 process.env.WORDPRESS_USERNAME = "testuser";
 process.env.WORDPRESS_APP_PASSWORD = "test-app-password";
 process.env.APP_VERSION = "1.0.0-test";
+process.env.SKIP_BROWSER_TESTS = "true"; // Skip browser integration tests in unit test runs (require real Chrome/Puppeteer)
 
 // DOM mocks - only apply in jsdom environment
 if (typeof window !== "undefined") {
@@ -115,15 +116,30 @@ vi.mock("@clerk/nextjs", () => ({
 
 // Mock NextResponse for API route testing
 vi.mock("next/server", () => {
+  class MockHeaders {
+    private _map: Record<string, string> = {};
+    set(name: string, value: string) { this._map[name] = value; }
+    get(name: string) { return this._map[name] ?? null; }
+    has(name: string) { return name in this._map; }
+    delete(name: string) { delete this._map[name]; }
+    append(name: string, value: string) { this._map[name] = value; }
+    forEach(cb: (value: string, name: string) => void) {
+      Object.entries(this._map).forEach(([k, v]) => cb(v, k));
+    }
+  }
+
   class MockNextResponse {
     data: unknown;
     status: number;
-    headers: Record<string, string>;
+    headers: MockHeaders;
 
     constructor(body: unknown, init?: { status?: number; headers?: Record<string, string> }) {
       this.data = body;
       this.status = init?.status || 200;
-      this.headers = init?.headers || {};
+      this.headers = new MockHeaders();
+      if (init?.headers) {
+        Object.entries(init.headers).forEach(([k, v]) => this.headers.set(k, v));
+      }
     }
 
     async json() {

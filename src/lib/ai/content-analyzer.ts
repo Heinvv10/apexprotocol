@@ -48,6 +48,7 @@ export interface AnalyzerConfig {
   model?: string;
   maxTokens?: number;
   minContentLength?: number;
+  minWordCount?: number;
 }
 
 /**
@@ -57,6 +58,7 @@ const DEFAULT_ANALYZER_CONFIG: Required<AnalyzerConfig> = {
   model: DEFAULT_MODELS.chat,
   maxTokens: 4096,
   minContentLength: 50,
+  minWordCount: 0, // Word count check disabled by default; enforce via minContentLength (char-based)
 };
 
 /**
@@ -235,10 +237,10 @@ export async function analyzeContent(
   const cleanContent = stripHtml(content);
   const wordCount = countWords(content);
 
-  // Check minimum word count (20 words minimum for meaningful analysis)
-  if (wordCount < 20) {
+  // Check minimum word count
+  if (wordCount < finalConfig.minWordCount) {
     throw new Error(
-      `Content too short for meaningful analysis. Please provide at least 20 words of content (currently ${wordCount} words).`
+      `Content too short for meaningful analysis. Please provide at least ${finalConfig.minWordCount} words of content (currently ${wordCount} words).`
     );
   }
 

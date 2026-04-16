@@ -235,7 +235,10 @@ class RiskAssessmentServiceImpl extends EventEmitter implements RiskAssessmentSe
     // Handle null/invalid input
     if (!input) {
       const errorAssessment = this.createErrorAssessment('', 'Invalid input: null or undefined');
-      this.emit('error', new Error('Invalid input: null or undefined'));
+      // Only emit error if there's a listener (prevents unhandled error crash)
+      if (this.listenerCount('error') > 0) {
+        this.emit('error', new Error('Invalid input: null or undefined'));
+      }
       return errorAssessment;
     }
 
@@ -256,6 +259,11 @@ class RiskAssessmentServiceImpl extends EventEmitter implements RiskAssessmentSe
       // Combine risk factors with weights
       let rawScore = (sentimentRisk * 0.4) + (reachRisk * 0.35) + (sourceRisk * 0.25);
 
+      // Positive content significantly reduces risk — sentiment is the primary driver
+      if (input.sentiment > 0.5) {
+        rawScore *= (1 - input.sentiment * 0.85);
+      }
+
       // Apply sensitivity multiplier
       rawScore *= this.getSensitivityMultiplier();
 
@@ -269,6 +277,17 @@ class RiskAssessmentServiceImpl extends EventEmitter implements RiskAssessmentSe
       if (threats.includes('viral_negative')) rawScore = Math.min(1, rawScore * 1.3);
       if (threats.includes('influencer_criticism')) rawScore = Math.min(1, rawScore * 1.2);
       if (threats.includes('negative_media_coverage')) rawScore = Math.min(1, rawScore * 1.25);
+
+      // Boost for critical categories with very negative sentiment
+      if (categories.includes('security') && input.sentiment < -0.7) {
+        rawScore = Math.min(1, Math.max(rawScore, 0.8));
+      }
+      if (categories.includes('reputational') && input.sentiment < -0.8) {
+        rawScore = Math.min(1, Math.max(rawScore, 0.75));
+      }
+      if (categories.includes('legal') && input.sentiment < -0.6) {
+        rawScore = Math.min(1, Math.max(rawScore, 0.65));
+      }
 
       // Clamp score to 0-1
       const score = Math.max(0, Math.min(1, rawScore));

@@ -62,7 +62,7 @@ const largeContent = "a".repeat(15000); // >10,000 characters
 
 // Mock getOrganizationId
 const mockGetOrganizationId = vi.fn();
-vi.mock("@/lib/auth", () => ({
+vi.mock("@/lib/auth/clerk", () => ({
   getOrganizationId: () => mockGetOrganizationId(),
 }));
 

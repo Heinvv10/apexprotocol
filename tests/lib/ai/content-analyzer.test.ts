@@ -54,7 +54,7 @@ const createMockAnalysisResult = (
 
 const sampleContent = `
 Our product helps businesses optimize their content for AI platforms.
-We provide comprehensive analytics and actionable insights.
+We provide comprehensive analytics and actionable insights to improve visibility.
 `;
 
 const mockOpenAIResponse = {
@@ -661,7 +661,7 @@ describe("Content Analyzer Integration", () => {
   it("should complete full analysis workflow", async () => {
     const content = `
       Our platform helps businesses optimize content for AI platforms.
-      We provide comprehensive analytics and actionable insights.
+      We provide comprehensive analytics and actionable insights for visibility.
     `;
 
     const workflowResponse = {

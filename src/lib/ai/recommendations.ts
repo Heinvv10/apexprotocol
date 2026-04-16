@@ -4,7 +4,7 @@
  */
 
 import { getClaudeClient, CLAUDE_MODELS } from "./claude";
-import { retry, isNonRetryableError } from "../utils/retry";
+import { retry, isNonRetryableError, RetryError } from "../utils/retry";
 
 // ============================================================================
 // Types
@@ -92,7 +92,7 @@ export interface GenerationResult {
 // ============================================================================
 
 const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 1000;
+const RETRY_DELAY_MS = process.env.NODE_ENV === "test" ? 0 : 1000;
 const MIN_IMPACT_THRESHOLD = 30;
 const DEFAULT_MAX_RECOMMENDATIONS = 10;
 
@@ -331,7 +331,10 @@ export async function generateAIRecommendations(
     };
   } catch (error) {
     // Handle retry exhaustion (preserved from original line 323-337)
-    const lastError = error instanceof Error ? error : new Error(String(error));
+    // Unwrap RetryError to get the original error message for cleaner error reporting
+    const lastError = error instanceof RetryError
+      ? error.lastError
+      : (error instanceof Error ? error : new Error(String(error)));
     const totalTime = Date.now() - generationStartTime;
 
     console.error(

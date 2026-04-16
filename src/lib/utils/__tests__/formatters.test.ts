@@ -571,7 +571,7 @@ describe("String Formatters", () => {
     });
 
     it("should use custom ellipsis", () => {
-      expect(truncate("Long string here", 10, "â€¦")).toBe("Long striâ€¦");
+      expect(truncate("Long string here", 10, "…")).toBe("Long stri…");
     });
 
     it("should handle empty strings", () => {
