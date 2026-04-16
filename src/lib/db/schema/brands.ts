@@ -5,6 +5,7 @@ import {
   jsonb,
   boolean,
   integer,
+  index,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
@@ -118,7 +119,11 @@ export const brands = pgTable("brands", {
   // Timestamps
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, (t) => [
+  index("brands_org_active_idx").on(t.organizationId, t.isActive),
+  index("brands_domain_idx").on(t.domain),
+  index("brands_benchmark_idx").on(t.isBenchmark),
+]);
 
 // Brand voice type
 export interface BrandVoice {

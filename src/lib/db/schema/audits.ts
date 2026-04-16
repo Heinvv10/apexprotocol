@@ -5,6 +5,7 @@ import {
   jsonb,
   integer,
   pgEnum,
+  index,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
@@ -63,7 +64,10 @@ export const audits = pgTable("audits", {
   startedAt: timestamp("started_at", { withTimezone: true }),
   completedAt: timestamp("completed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, (t) => [
+  index("audits_brand_created_idx").on(t.brandId, t.createdAt.desc()),
+  index("audits_status_idx").on(t.status),
+]);
 
 // Category score type
 export interface CategoryScore {

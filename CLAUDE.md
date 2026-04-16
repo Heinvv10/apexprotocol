@@ -159,16 +159,18 @@ All other UI docs have been archived to `docs/archive/`.
 - `docs/SEARCHABLE_COMPETITIVE_ANALYSIS.md` - Competitive landscape analysis
 - `docs/IMPLEMENTATION_ROADMAP.md` - Development phases and timeline
 
-## Autonomous Workflow (FOLLOW THIS EVERY SESSION)
+## Autonomous Workflow
 
-1. Run `pwd && ls -la` to orient yourself
-2. Read `feature_list.json` to find next failing test
-3. Read `app_spec.txt` for requirements related to that test
-4. Implement the feature
-5. Test with Playwright browser automation
-6. Update `feature_list.json` to mark test as `"passes": true`
-7. Commit changes with descriptive message
-8. Repeat for next test
+**IMPORTANT**: `feature_list.json` is a *checklist*, not a test source of truth. See `FEATURE_VERIFICATION.md` for why. Every entry currently claims `passes: true` but many features have silently regressed (e.g. citations rendering bug fixed on 2026-04-16).
+
+Trusted signals, in order:
+1. `npx tsc --noEmit` passes (production build gate)
+2. `npx vitest run` passes (unit + integration)
+3. `e2e/*.spec.ts` Playwright smoke tests pass
+4. Manual browser verification of the affected flow
+5. Only THEN update `feature_list.json`
+
+Don't mark a feature `passes: true` without running the actual test.
 
 ## DO NOT
 

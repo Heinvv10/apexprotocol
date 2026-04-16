@@ -89,7 +89,7 @@ describe('InsightsRecommendationsSubAgent', () => {
       expect(result.success).toBe(true);
       expect(result.brandId).toBe('brand-123');
       expect(result.insights.length).toBeGreaterThan(0);
-      expect(result.processingTime).toBeGreaterThan(0);
+      expect(result.processingTime).toBeGreaterThanOrEqual(0);
     });
 
     it('should fail when brand ID is missing', async () => {

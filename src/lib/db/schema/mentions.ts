@@ -5,6 +5,7 @@ import {
   jsonb,
   integer,
   pgEnum,
+  index,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
@@ -77,7 +78,12 @@ export const brandMentions = pgTable("brand_mentions", {
   // Timestamps
   timestamp: timestamp("timestamp", { withTimezone: true }).defaultNow().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, (t) => [
+  index("brand_mentions_brand_timestamp_idx").on(t.brandId, t.timestamp.desc()),
+  index("brand_mentions_brand_platform_idx").on(t.brandId, t.platform),
+  index("brand_mentions_sentiment_idx").on(t.sentiment),
+  index("brand_mentions_created_at_idx").on(t.createdAt.desc()),
+]);
 
 // Competitor mention type
 export interface CompetitorMention {
