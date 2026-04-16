@@ -145,13 +145,15 @@ async function handleApiKeyAuth(request: NextRequest): Promise<NextResponse | nu
       return createUnauthorizedResponse(result.message, result.reason);
     }
 
-    // Check rate limits for API key requests
+    // Check rate limits for API key requests using per-route buckets so
+    // expensive endpoints (AI, scraping) can't be hammered by a single key.
     let rateLimitHeaders: Record<string, string> = {};
     try {
-      const { checkApiRateLimit, getRateLimitHeaders } = await import(
+      const { checkApiRateLimit, getRateLimitHeaders, classifyRoute } = await import(
         "@/lib/api/api-rate-limiter"
       );
-      const rlResult = await checkApiRateLimit(result.organizationId);
+      const bucket = classifyRoute(pathname);
+      const rlResult = await checkApiRateLimit(`${result.organizationId}:${bucket}`, bucket);
       rateLimitHeaders = getRateLimitHeaders(rlResult);
 
       if (!rlResult.allowed) {

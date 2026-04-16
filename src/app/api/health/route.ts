@@ -74,16 +74,16 @@ async function checkDatabase(): Promise<ServiceHealth> {
 async function checkRedis(): Promise<ServiceHealth> {
   const start = Date.now();
   try {
-    const isConfigured =
-      process.env.UPSTASH_REDIS_REST_URL !== undefined &&
-      process.env.UPSTASH_REDIS_REST_TOKEN !== undefined;
+    const isConfigured = Boolean(
+      process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    );
 
     if (!isConfigured) {
       return {
         name: "redis",
-        status: "degraded",
+        status: "healthy",
         latency: Date.now() - start,
-        message: "Redis not configured (optional)",
+        message: "Redis not configured (in-memory fallback active)",
         lastCheck: new Date().toISOString(),
         details: {
           provider: "upstash",
@@ -218,7 +218,7 @@ async function checkVectorDB(): Promise<ServiceHealth> {
 async function checkQueue(): Promise<ServiceHealth> {
   const start = Date.now();
   try {
-    const isConfigured = process.env.UPSTASH_REDIS_REST_URL !== undefined;
+    const isConfigured = Boolean(process.env.UPSTASH_REDIS_REST_URL);
 
     return {
       name: "queue",
