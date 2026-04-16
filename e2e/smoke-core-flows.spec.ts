@@ -5,12 +5,21 @@
  * mismatch).
  *
  * Keep this suite fast (<60s) and focused on wiring, not behaviour.
+ *
+ * AUTH REQUIRED: dashboard tests need a signed-in Clerk session. Set
+ * APEX_TEST_STORAGE_STATE=/path/to/auth.json in the env and configure
+ * it in playwright.config.ts:
+ *   use: { storageState: process.env.APEX_TEST_STORAGE_STATE }
+ * Tests tagged @auth are skipped when no storage state is provided.
  */
 
 import { test, expect } from "@playwright/test";
 
+const hasAuth = !!process.env.APEX_TEST_STORAGE_STATE;
+
 test.describe("Core flow smoke @smoke", () => {
-  test("monitor page loads and renders mention rows", async ({ page }) => {
+  test("monitor page loads and renders mention rows @auth", async ({ page }) => {
+    test.skip(!hasAuth, "APEX_TEST_STORAGE_STATE not set — skipping auth-gated test");
     await page.goto("/dashboard/monitor");
 
     await expect(page.getByRole("heading", { name: /live query analysis/i })).toBeVisible({
@@ -23,7 +32,8 @@ test.describe("Core flow smoke @smoke", () => {
     await expect(tableOrEmpty.first()).toBeVisible({ timeout: 10000 });
   });
 
-  test("citation badges render real statuses, not all 'Omitted'", async ({ page }) => {
+  test("citation badges render real statuses, not all 'Omitted' @auth", async ({ page }) => {
+    test.skip(!hasAuth, "APEX_TEST_STORAGE_STATE not set — skipping auth-gated test");
     await page.goto("/dashboard/monitor");
 
     // If the page has mention rows at all, they shouldn't ALL be "Omitted" —
@@ -40,7 +50,8 @@ test.describe("Core flow smoke @smoke", () => {
     // If rowCount === 0, the test passes trivially — empty DB is fine.
   });
 
-  test("platform score cards render with numeric values", async ({ page }) => {
+  test("platform score cards render with numeric values @auth", async ({ page }) => {
+    test.skip(!hasAuth, "APEX_TEST_STORAGE_STATE not set — skipping auth-gated test");
     await page.goto("/dashboard/monitor");
 
     // At least one platform card (ChatGPT, Claude, Gemini, etc.) should render.
@@ -52,7 +63,8 @@ test.describe("Core flow smoke @smoke", () => {
     await expect(page.getByText("/100").first()).toBeVisible();
   });
 
-  test("nav sidebar links to all primary sections", async ({ page }) => {
+  test("nav sidebar links to all primary sections @auth", async ({ page }) => {
+    test.skip(!hasAuth, "APEX_TEST_STORAGE_STATE not set — skipping auth-gated test");
     await page.goto("/dashboard/monitor");
 
     // These nav items need to exist or half the app is unreachable.
