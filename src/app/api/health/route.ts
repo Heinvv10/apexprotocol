@@ -189,9 +189,10 @@ async function checkVectorDB(): Promise<ServiceHealth> {
     const isConfigured =
       process.env.PINECONE_API_KEY !== undefined && process.env.PINECONE_INDEX !== undefined;
 
+    // Pinecone is optional. Not being configured is a healthy state, not degraded.
     return {
       name: "vectordb",
-      status: isConfigured ? "healthy" : "degraded",
+      status: "healthy",
       latency: Date.now() - start,
       message: isConfigured ? "Pinecone connected" : "Pinecone not configured (optional)",
       lastCheck: new Date().toISOString(),
@@ -221,7 +222,7 @@ async function checkQueue(): Promise<ServiceHealth> {
 
     return {
       name: "queue",
-      status: isConfigured ? "healthy" : "degraded",
+      status: "healthy",
       latency: Date.now() - start,
       message: isConfigured ? "Job queue operational" : "Queue not configured (optional)",
       lastCheck: new Date().toISOString(),
@@ -278,14 +279,19 @@ async function checkExternalAPIs(): Promise<ServiceHealth> {
 async function checkStorage(): Promise<ServiceHealth> {
   const start = Date.now();
   try {
-    // Check disk/memory usage
+    const v8 = await import("v8");
     const memoryUsage = process.memoryUsage();
-    const heapUsedPercent = (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100;
+    // Compare heap used against the V8 max old-space size (the real ceiling),
+    // not heapTotal (which is the currently-allocated heap and grows on demand —
+    // ~95% of heapTotal is normal and says nothing about pressure).
+    const v8MaxMB = Math.round(v8.getHeapStatistics().heap_size_limit / 1024 / 1024);
+    const heapUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
+    const usedPercent = (heapUsedMB / v8MaxMB) * 100;
 
     let status: "healthy" | "degraded" | "unhealthy" = "healthy";
-    if (heapUsedPercent > 90) {
+    if (usedPercent > 90) {
       status = "unhealthy";
-    } else if (heapUsedPercent > 70) {
+    } else if (usedPercent > 75) {
       status = "degraded";
     }
 
@@ -293,10 +299,11 @@ async function checkStorage(): Promise<ServiceHealth> {
       name: "storage",
       status,
       latency: Date.now() - start,
-      message: `Memory usage: ${heapUsedPercent.toFixed(1)}%`,
+      message: `Heap ${heapUsedMB}MB / ${v8MaxMB}MB limit (${usedPercent.toFixed(1)}%)`,
       lastCheck: new Date().toISOString(),
       details: {
-        heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+        heapUsed: heapUsedMB,
+        heapLimit: v8MaxMB,
         heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024),
         external: Math.round(memoryUsage.external / 1024 / 1024),
         unit: "MB",
