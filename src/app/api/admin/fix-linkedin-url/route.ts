@@ -7,9 +7,11 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { socialOauthTokens } from "@/lib/db/schema/social";
 import { eq, and, like } from "drizzle-orm";
+import { requireSuperAdmin } from "@/lib/auth/super-admin";
 
 export async function POST() {
   try {
+    await requireSuperAdmin();
     // Find LinkedIn tokens with member ID-based URLs (which don't work)
     // and set them to null
     const result = await db

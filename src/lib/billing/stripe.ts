@@ -9,7 +9,7 @@ import Stripe from "stripe";
 // Initialize Stripe only if API key is available (prevents build errors)
 const stripeApiKey = process.env.STRIPE_SECRET_KEY;
 const stripe = stripeApiKey
-  ? new Stripe(stripeApiKey, { apiVersion: "2025-12-15.clover" })
+  ? new Stripe(stripeApiKey, { apiVersion: "2026-02-25.clover" })
   : null;
 
 // Helper to get Stripe instance (throws if not configured)

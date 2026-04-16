@@ -11,12 +11,14 @@ import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema/organizations";
 import { brands } from "@/lib/db/schema/brands";
 import { eq, sql } from "drizzle-orm";
+import { requireSuperAdmin } from "@/lib/auth/super-admin";
 
 const PLATFORM_ORG_ID = "platform";
 const PLATFORM_BRAND_ID = "platform";
 
 export async function POST() {
   try {
+    await requireSuperAdmin();
     // Step 1: Check/create platform organization
     const existingOrg = await db.query.organizations.findFirst({
       where: eq(organizations.id, PLATFORM_ORG_ID),

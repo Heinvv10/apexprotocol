@@ -24,7 +24,8 @@ import {
   ContentExtractionError,
 } from "./types";
 import { Page } from "puppeteer";
-import { MultiPlatformQueryResult, VisibilityMetrics } from "../monitoring/multi-platform-query";
+import { MultiPlatformQueryResult } from "../monitoring/multi-platform-query";
+import type { VisibilityMetrics } from "@/lib/db/schema/platform-registry";
 import { analyzeResponseForBrand } from "../monitoring/integrations/shared-analysis";
 
 /**
@@ -103,7 +104,7 @@ class PerplexityDOMExtractor implements DOMExtractor {
           seenUrls.add(href);
           citations.push({
             url: href,
-            title: el.textContent?.trim() || el.getAttribute("title"),
+            title: el.textContent?.trim() || el.getAttribute("title") || undefined,
           });
         }
       });
@@ -203,7 +204,7 @@ class PerplexityDOMExtractor implements DOMExtractor {
 
     // Check HTTP 429 responses
     try {
-      const response = await page.evaluate(() => window.lastResponse?.status);
+      const response = await page.evaluate(() => (window as unknown as { lastResponse?: { status?: number } }).lastResponse?.status);
       if (response === 429) {
         return true;
       }

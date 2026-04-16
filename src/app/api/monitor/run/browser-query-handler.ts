@@ -253,13 +253,10 @@ async function logBrowserQuery(
       status: result.status,
       response: result.response,
       extractedData: {
-        mainContent: result.response.substring(0, 1000), // First 1000 chars
-        metrics: result.metrics,
+        mainContent: result.response.substring(0, 1000),
+        metadata: { metrics: result.metrics },
       },
       errorMessage: result.error,
-      metrics: {
-        responseTime: executionTime,
-      },
       responseTimeMs: executionTime,
       executedAt: new Date(),
     });

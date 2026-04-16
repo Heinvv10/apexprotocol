@@ -293,6 +293,41 @@ async function productionMiddleware(request: NextRequest) {
     // Protect all non-public routes
     await auth.protect();
 
+    // Apply per-session rate limiting to API routes (session auth — API key routes
+    // are already rate-limited in handleApiKeyAuth above).
+    if (req.nextUrl.pathname.startsWith("/api/")) {
+      try {
+        const { userId, orgId } = await auth();
+        const rlKey = orgId || userId;
+        if (rlKey) {
+          const { checkApiRateLimit, getRateLimitHeaders } = await import(
+            "@/lib/api/api-rate-limiter"
+          );
+          const rlResult = await checkApiRateLimit(rlKey);
+          if (!rlResult.allowed) {
+            const response = NextResponse.json(
+              {
+                error: "Too Many Requests",
+                message: "Rate limit exceeded. Please retry after the reset time.",
+                retryAfter: new Date(rlResult.resetMs).toISOString(),
+              },
+              { status: 429 }
+            );
+            for (const [key, value] of Object.entries(getRateLimitHeaders(rlResult))) {
+              response.headers.set(key, value);
+            }
+            response.headers.set(
+              "Retry-After",
+              String(Math.ceil((rlResult.resetMs - Date.now()) / 1000))
+            );
+            return response;
+          }
+        }
+      } catch {
+        // Rate limiter unavailable — fail open
+      }
+    }
+
     // For org routes, ensure user is part of an organization
     if (isOrgRoute(req)) {
       const { orgId } = await auth();

@@ -1,48 +1,59 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+  { key: "X-DNS-Prefetch-Control", value: "on" },
+];
+
 const nextConfig: NextConfig = {
-  // Fix Turbopack root directory detection for git worktrees
   turbopack: {
     root: __dirname,
   },
 
-  // Enable standalone output for Docker deployments
   output: "standalone",
-
-  // Disable telemetry in production
   poweredByHeader: false,
-
-  // Production optimizations
   reactStrictMode: true,
 
-  // Source maps for Sentry (only when Sentry is enabled)
   productionBrowserSourceMaps: process.env.SENTRY_ENABLED === "true",
 
-  // Skip type checking and linting during build (run separately)
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
-  // Image optimization configuration
+
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**",
-      },
+      { protocol: "https", hostname: "img.clerk.com" },
+      { protocol: "https", hostname: "images.clerk.dev" },
+      { protocol: "https", hostname: "res.cloudinary.com" },
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
+      { protocol: "https", hostname: "avatars.githubusercontent.com" },
+      { protocol: "https", hostname: "**.amazonaws.com" },
+      { protocol: "https", hostname: "**.apexgeo.app" },
+      { protocol: "https", hostname: "logo.clearbit.com" },
+      { protocol: "https", hostname: "www.google.com" },
     ],
+  },
+
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: securityHeaders,
+      },
+    ];
   },
 };
 
-// Dark-ship: withSentryConfig is always applied (it's inert at runtime
-// unless SENTRY_ENABLED=true + SENTRY_DSN is set in the Sentry init files).
-// The build-time source map upload is gated on SENTRY_AUTH_TOKEN being set.
 export default withSentryConfig(nextConfig, {
   silent: !process.env.SENTRY_AUTH_TOKEN,
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   disableLogger: true,
-  // Upload source maps only when a token is present
   sourcemaps: {
     disable: !process.env.SENTRY_AUTH_TOKEN,
   },

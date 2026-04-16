@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Radar, ArrowRight, Bot, Sparkles, AlertCircle, Loader2, RefreshCw, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FilterSidebar, SmartTable, QueryRow, LiveIndicator, CitationVelocityCard } from "@/components/monitor";
-import type { VelocityTrend } from "@/components/monitor";
 import { useSelectedBrand } from "@/stores";
 import { useMentionsByBrand, Mention } from "@/hooks/useMonitor";
 import { useRealtimeMonitor, StreamMention } from "@/hooks/useRealtimeMonitor";
@@ -50,20 +49,12 @@ function mentionToQueryRow(mention: Mention): QueryRow {
     copilot: "chatgpt", // Map Copilot to chatgpt styling
   };
 
-  // Map mention status to citation status
-  const citationMap: Record<string, QueryRow["citationStatus"]> = {
-    new: "mentioned",
-    reviewed: "mentioned",
-    actioned: "cited",
-    archived: "not_cited",
-  };
-
   return {
     id: mention.id,
     query: mention.query,
     platform: platformMap[mention.platform] || "chatgpt",
     sentiment: mention.sentiment,
-    citationStatus: mention.mentioned ? (mention.citationUrl ? "cited" : "mentioned") : "not_cited",
+    citationStatus: mention.citationUrl ? "cited" : (mention.position != null ? "mentioned" : "not_cited"),
     timestamp: mention.createdAt,
     response: mention.response,
     url: mention.citationUrl ?? undefined,

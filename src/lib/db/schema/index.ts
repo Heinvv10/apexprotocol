@@ -699,3 +699,15 @@ export {
   type VisibilityBreakdown,
   type SimulationResultMetadata,
 } from "./simulations";
+
+export {
+  browserSessions,
+  browserQueryLogs,
+  browserPlatformHealth,
+  type BrowserSession,
+  type NewBrowserSession,
+  type BrowserQueryLog,
+  type NewBrowserQueryLog,
+  type BrowserPlatformHealth,
+  type NewBrowserPlatformHealth,
+} from "./browser-sessions";

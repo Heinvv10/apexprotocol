@@ -6,7 +6,7 @@
  * Subclasses implement platform-specific DOM extraction and navigation logic.
  */
 
-import { Browser, Page, PuppeteerLaunchOptions } from "puppeteer";
+import { Browser, Page, LaunchOptions } from "puppeteer";
 import {
   BrowserQueryResult,
   BrowserQueryError,
@@ -142,7 +142,7 @@ export abstract class BaseBrowserQueryExecutor {
       this.logger.debug(`Initializing browser for ${this.platformConfig.platformName}`);
 
       const puppeteer = await import("puppeteer");
-      const launchOptions: PuppeteerLaunchOptions = {
+      const launchOptions: LaunchOptions = {
         headless: options.headless ?? this.platformConfig.headless ?? true,
         args: [
           "--no-sandbox",

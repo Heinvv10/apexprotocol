@@ -54,6 +54,7 @@ export interface BrowserSession {
   // Status
   status: "active" | "expired" | "revoked" | "suspended";
   suspensionReason?: string;
+  lastError?: string;
 }
 
 /**

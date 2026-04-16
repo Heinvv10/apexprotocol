@@ -73,9 +73,9 @@ export async function queryChatGPTBrowser(
       status: "failed",
       response: "",
       metrics: {
+        visibility: 0,
+        position: null,
         confidence: 0,
-        relevance: 0,
-        brandMentioned: false,
       },
       responseTimeMs: 0,
       error: error instanceof Error ? error.message : String(error),

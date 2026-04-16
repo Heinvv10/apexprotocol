@@ -2,22 +2,33 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
+import { createId } from "@paralleldrive/cuid2";
+import { getOrganizationId } from "@/lib/auth/clerk";
 
-// Maximum file size: 5MB
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-// Allowed file types
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
+const MIME_TO_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/gif": "gif",
+  "image/webp": "webp",
+};
 
-/**
- * POST /api/upload
- * Handles file uploads for logos and other images
- */
+const ALLOWED_UPLOAD_TYPES = new Set(["logo", "avatar", "brand", "general"]);
+
 export async function POST(request: NextRequest) {
   try {
+    const orgId = await getOrganizationId();
+    if (!orgId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
-    const type = formData.get("type") as string || "general";
+    const rawType = (formData.get("type") as string | null) ?? "general";
 
     if (!file) {
       return NextResponse.json(
@@ -26,15 +37,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file type
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    const type = ALLOWED_UPLOAD_TYPES.has(rawType) ? rawType : "general";
+
+    const ext = MIME_TO_EXT[file.type];
+    if (!ext) {
       return NextResponse.json(
-        { success: false, error: "Invalid file type. Allowed: JPEG, PNG, GIF, WebP, SVG" },
+        { success: false, error: "Invalid file type. Allowed: JPEG, PNG, GIF, WebP" },
         { status: 400 }
       );
     }
 
-    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
         { success: false, error: "File too large. Maximum size: 5MB" },
@@ -42,24 +54,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create uploads directory if it doesn't exist
     const uploadsDir = path.join(process.cwd(), "public", "uploads", type);
     if (!existsSync(uploadsDir)) {
       await mkdir(uploadsDir, { recursive: true });
     }
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const ext = file.name.split(".").pop() || "png";
-    const filename = `${type}-${timestamp}.${ext}`;
+    const filename = `${orgId}-${createId()}.${ext}`;
     const filepath = path.join(uploadsDir, filename);
 
-    // Convert file to buffer and save
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     await writeFile(filepath, buffer);
 
-    // Return the URL path
     const url = `/uploads/${type}/${filename}`;
 
     return NextResponse.json({
