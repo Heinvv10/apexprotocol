@@ -27,13 +27,10 @@ function RoadmapPageInner() {
   const mode = (searchParams.get("mode") || "leader") as "leader" | "beat_competitor";
   const competitorName = searchParams.get("competitor");
 
-  // Fetch audit data
   const { data: audit, isLoading, error } = useAudit(auditId || "");
 
-  // Generate roadmap
   const roadmap = useRoadmapGenerator(audit, mode, competitorName || undefined);
 
-  // Expanded phases state
   const [expandedPhases, setExpandedPhases] = React.useState<Set<number>>(
     new Set([1])
   );
@@ -48,10 +45,35 @@ function RoadmapPageInner() {
     setExpandedPhases(newExpanded);
   };
 
-  // Loading state
+  // Missing audit id — show a picker state instead of a generic error.
+  if (!auditId) {
+    return (
+      <div className="flex items-center justify-center py-20 px-6">
+        <div className="card-secondary max-w-md w-full text-center">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-primary" />
+          </div>
+          <h2 className="text-lg font-semibold text-foreground mb-2">
+            Select an audit run
+          </h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            Improvement roadmaps are generated from a specific audit. Pick one
+            from your audit history to get started.
+          </p>
+          <Link href="/dashboard/audit">
+            <Button variant="outline" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Go to audits
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 text-primary animate-spin" />
           <p className="text-muted-foreground">Generating improvement roadmap...</p>
@@ -60,18 +82,19 @@ function RoadmapPageInner() {
     );
   }
 
-  // Error state
   if (error || !roadmap) {
     return (
-      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 max-w-md">
-          <AlertCircle className="h-8 w-8 text-error" />
-          <div className="text-center">
-            <h2 className="text-lg font-semibold mb-2">Roadmap unavailable</h2>
-            <p className="text-muted-foreground mb-4">
-              {error?.message || "Could not generate the improvement roadmap."}
-            </p>
+      <div className="flex items-center justify-center py-20 px-6">
+        <div className="card-secondary max-w-md w-full text-center">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-error/10 border border-error/30 flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-error" />
           </div>
+          <h2 className="text-lg font-semibold text-foreground mb-2">
+            Roadmap unavailable
+          </h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            {error?.message || "Could not generate the improvement roadmap."}
+          </p>
           <Link href={`/dashboard/audit/results?id=${auditId}`}>
             <Button variant="outline" className="gap-2">
               <ArrowLeft className="h-4 w-4" />
