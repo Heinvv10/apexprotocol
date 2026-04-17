@@ -36,26 +36,20 @@ documented as known behaviour or decisions the team can revisit.
 
 | ID | Area | Severity | Decision |
 |----|------|----------|----------|
-| F5 | Next.js dev "Issue" badge visible in every dev screenshot | LOW | Dev-only — Next strips it from production builds automatically. Verify on first `bun run build && bun start` but not worth code changes. |
+| F5 | Next.js dev "Issue" badge visible in every dev screenshot | LOW | Confirmed dev-only. `grep -rn '1 Issue\|devIndicators' src/` returns nothing — the badge is Next 16's built-in dev indicator, injected by `next-server` in dev mode only and not present in production builds. No action. |
 | F6 | Sidebar collapse control at bottom | LOW | Intentional placement per current design system. Document in design spec if a change is proposed; no action needed for this audit. |
 | F18 | Admin super-admin gate reads JWT only | MEDIUM | Documented in `phase-5-admin-and-marketing.md`. `DEV_SUPER_ADMIN=true` workflow in `.env.example` for dev. Prod fix ships with the `/admin/users` promote action (not a route today) — revoke Clerk sessions at time of promotion. |
 
-## Phase 6 follow-up (not an audit finding)
+## F12 sweep — resolved
 
-The Phase 3 `getInternalUserId()` helper only migrated `/api/ai-insights/analyze`. ~20 other API routes still pass the raw Clerk user id to `users.id` FK columns. Those routes haven't broken in production because the prod Clerk webhook sets `users.id = clerk_user_id` at sign-up, but that's a brittle coincidence. Sweep-migrate with the helper when convenient.
+The Phase 3 `getInternalUserId()` helper migrated `/api/ai-insights/analyze` (commit fd389a8). A follow-up audit (commit 113522a) went through ~35 candidate routes to find every other place the F12 pattern appeared. Result: **only one additional route** needed migration — `/api/user/api-keys`, where `api_keys.user_id` has a real FK to `users.id`.
 
-Routes that need the sweep:
-- `/api/settings/oauth/linkedin/authorize`
-- `/api/create/suggestions`
-- `/api/monitor/sentiment`
-- `/api/monitor/mentions`
-- `/api/brands/scrape`
-- `/api/user/api-keys`, `/api/user/api-keys/[id]`
-- `/api/simulations`
-- `/api/notifications/read-all`, `/api/notifications/[id]/read`
-- `/api/content/suggestions`
-- `/api/gamification`
-- `/api/cron/check-predictions`
-- `/api/recommendations/generate`
+All other candidates were categorised and left alone:
+- ~20 routes call `getUserId()` for auth checks only (no FK insert)
+- ~8 routes insert `userId` but into columns with **no** foreign-key constraint (notifications, ai_usage, simulations, analytics_events, etc.)
+- 3 routes reference `users.clerk_user_id` intentionally (admin/api-config `createdBy`, gamification, admin audit logs)
+- `audit/route.ts` already resolved the internal id correctly via a `users.clerkUserId` lookup before insert
+
+The pattern is narrow in practice. Treating this as closed unless a new finding surfaces.
 
 Audit scope: **complete**. Phase 7 white-label system ships via `NEXT_PUBLIC_BRAND_PRESET` env swap, demonstrated end-to-end with the Solstice preset.
