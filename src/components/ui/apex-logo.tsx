@@ -11,6 +11,7 @@
  * brand preset and colours the suffix with --color-primary.
  */
 
+import * as React from "react";
 import { getActiveBrand } from "@/config/brand-presets";
 
 interface ApexLogoProps {
@@ -22,7 +23,10 @@ interface ApexLogoProps {
 }
 
 export function ApexLogoMark({ size = 32, className = "" }: { size?: number; className?: string }) {
-  const id = `radar-${Math.random().toString(36).substr(2, 6)}`;
+  // useId() is stable across SSR + hydration so the SVG gradient
+  // definitions and the fill/filter url() refs always resolve. Prior
+  // Math.random() produced hydration-mismatch warnings.
+  const id = `radar-${React.useId().replace(/:/g, "")}`;
   return (
     <svg
       width={size}
