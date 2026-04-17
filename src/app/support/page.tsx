@@ -1,3 +1,5 @@
+import { MarketingStub } from "@/components/landing/marketing-stub";
+
 export const metadata = {
   title: "Support | ApexGEO",
   description: "Get help with ApexGEO.",
@@ -5,11 +7,9 @@ export const metadata = {
 
 export default function SupportPage() {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center max-w-md px-4">
-        <h1 className="text-3xl font-bold tracking-tight mb-3">Support</h1>
-        <p className="text-muted-foreground">Get help with ApexGEO.</p>
-      </div>
-    </div>
+    <MarketingStub
+      title="Support"
+      description="Get help with ApexGEO."
+    />
   );
 }
