@@ -152,18 +152,32 @@ Evidence of leak: 27 occurrences of `#4926fa` in components, plus `#0a0a0b` vari
 
 ---
 
-## Known blocker for Phase 2 (browser audit)
+## Critical port correction — Apex is on :4200 (NOT :3010)
 
-The Playwriter extension appears to be attached to a browser tab already sitting on a **Dokploy** deployment dashboard. When Playwright navigated to `http://localhost:3010/sign-in`, the URL bar updated but the rendered page was a Dokploy "400 Oops" error (see `docs/audit/screenshots/00-sign-in.png`). Meanwhile `curl http://localhost:3010/sign-in` returns the real Apex Next.js HTML (200, `X-Powered-By: Next.js`).
+The Phase 0 subagent for the baseline task misidentified port 3010 as Apex because `curl http://localhost:3010/` returned 200 with `X-Powered-By: Next.js`. This was **wrong**. Further investigation on 2026-04-17:
 
-Hypothesis: the Playwriter-enabled Chrome tab has a service worker, cached redirect, or host-matching rule from Dokploy's local router.
+**Actual local port map on this host:**
 
-**Actions required before Phase 2 starts:**
-1. Open a clean Chrome profile or use `--isolated` flag with chrome-devtools MCP.
-2. Verify a manual `curl` and a Playwright navigation both return the same HTML for `/`, `/sign-in`, `/dashboard`.
-3. Sort out how an authenticated Clerk session is established for dashboard routes (storage state file, or bypass for local dev).
+| Port | Service | Notes |
+|---|---|---|
+| **4200** | **Apex** (production standalone build) | `<title>ApexGEO - AI Visibility Platform</title>` — serves from `/home/hein/apexgeo/.next/standalone/` via `next-server` process |
+| 3000 | Unknown Next.js app (build-version `7777a254b`) | Not Apex |
+| 3001 | Redirects to `/dashboard` (unknown Next.js app) | Not Apex |
+| 3010 | **Dokploy** self-hosted deploy platform | Title "Dokploy"; itself built on Next.js so `X-Powered-By: Next.js` misled the scan. Returns 400 for arbitrary paths like `/sign-in`. |
+| 3200 | ISAFlow (BrightTech accounting) | Not Apex |
 
-Not a Phase 0 concern; recorded here for the next session.
+**Key facts for Phase 2 browser audit:**
+1. Audit URL base: `http://localhost:4200` — not 3010.
+2. `/sign-in` returns 200 on 4200; `/dashboard` returns 404 (route is auth-gated or lives elsewhere); `/pricing` returns 404 (no such route in the repo).
+3. The running :4200 build is the PRE-Phase-1 production standalone (built ~2026-04-16 from the master branch). It does NOT include the `feature/phase-1-token-architecture` changes.
+4. `package.json` declares `"dev": "next dev --port 3010"` — that port is held by Dokploy. When running a dev server for Phase 1 verification, use `--port 3011` (or another free port) and start from `/home/hein/Workspace/ApexGEO/`.
+5. The earlier Playwright screenshot `00-sign-in.png` that showed a Dokploy 400 page — it went to the wrong port. The screenshot is kept as evidence of the mistake, not as Apex state.
+
+## Remaining Phase 2 setup tasks
+
+1. Confirm Playwright/chrome-devtools can reach `http://localhost:4200` cleanly.
+2. Figure out how an authenticated Clerk session is established for dashboard routes — Playwright `storageState` file, or a local-dev bypass.
+3. Decide whether Phase 2 audit screenshots reflect pre-Phase-1 state (the live :4200) or post-Phase-1 (build + deploy our feature branch first). Recommendation: audit pre-Phase-1 first to establish baseline findings, re-run after Phase 1 merge to verify visual equivalence.
 
 ---
 
