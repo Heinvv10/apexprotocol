@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMarkBrandAdded, useMarkMonitoringConfigured } from "@/hooks/useOnboarding";
+import { getActiveBrand } from "@/config/brand-presets";
 import { useToast } from "@/components/toast";
 import {
   Select,
@@ -24,10 +25,14 @@ import {
 } from "@/components/ui/select";
 
 // Onboarding steps configuration
+// Welcome-step title is read from the active brand preset so white-
+// label tenants get 'Welcome to <BrandName>' without a code change.
+const WELCOME_TITLE = `Welcome to ${getActiveBrand().name}`;
+
 const steps = [
   {
     id: "welcome",
-    title: "Welcome to Apex",
+    title: WELCOME_TITLE,
     subtitle: "AI Visibility Platform",
     description: "Track and optimize your brand's visibility across AI-powered search engines.",
     icon: Sparkles,
