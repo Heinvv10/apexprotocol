@@ -144,11 +144,10 @@ export interface UnifiedScoreResponse {
 // =============================================================================
 
 async function fetchDashboardMetrics(brandId?: string): Promise<DashboardMetrics> {
-  const url = brandId
-    ? `/api/analytics/dashboard?brandId=${brandId}`
-    : "/api/analytics/dashboard";
-
-  const response = await fetch(url);
+  if (!brandId) {
+    throw new Error("brandId is required to fetch dashboard metrics");
+  }
+  const response = await fetch(`/api/analytics/dashboard?brandId=${brandId}`);
   if (!response.ok) {
     throw new Error("Failed to fetch dashboard metrics");
   }
@@ -199,9 +198,11 @@ export function useDashboardMetrics(
   return useQuery({
     queryKey: queryKeys.analytics.dashboard(brandId || orgId || undefined),
     queryFn: () => fetchDashboardMetrics(brandId),
-    staleTime: 1000 * 60 * 2, // 2 minutes
-    refetchInterval: 1000 * 60 * 5, // Refetch every 5 minutes
-    enabled: !!orgId || !!brandId,
+    staleTime: 1000 * 60 * 2,
+    refetchInterval: 1000 * 60 * 5,
+    // The underlying endpoint requires a brandId. Without one it returns 400
+    // and pollutes the dev console — only fire when we actually have a brand.
+    enabled: !!brandId,
     ...options,
   });
 }
