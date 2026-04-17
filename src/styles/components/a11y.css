@@ -1,0 +1,39 @@
+/*
+ * src/styles/components/a11y.css — shared accessibility utilities.
+ *
+ * Skip-link pattern: visually hidden until keyboard-focused. Matches
+ * WCAG 2.4.1 bypass-blocks. Used by src/components/layout/dashboard-shell.tsx.
+ */
+
+.skip-links {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  width: auto;
+  height: auto;
+  padding: 0.625rem 1rem;
+  background-color: hsl(var(--color-primary));
+  color: hsl(var(--color-primary-foreground));
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  box-shadow: var(--elevation-modal);
+  outline: var(--focus-ring-width-default) solid hsl(var(--focus-ring-primary) / var(--focus-ring-primary-opacity));
+  outline-offset: var(--focus-ring-width-offset);
+}

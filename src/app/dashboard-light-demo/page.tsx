@@ -1,11 +1,8 @@
 "use client";
 
-import "../globals-light.css";
-
 import * as React from "react";
 import Link from "next/link";
 import {
-  Building2,
   Radar,
   FileSearch,
   Lightbulb,
@@ -15,15 +12,12 @@ import {
   TrendingUp,
   Zap,
   ChevronRight,
-  Activity,
   Globe,
   Bot,
   MessageSquare,
   PenTool,
   Moon,
-  Sun,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 // Animated background orbs component (lighter for light theme)
 function BackgroundOrbs() {
@@ -257,47 +251,6 @@ function QuickLink({
         </div>
       </div>
     </Link>
-  );
-}
-
-// Page Header Component
-function PageHeader() {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8">
-          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradDashboardLight)" />
-            <defs>
-              <linearGradient id="apexGradDashboardLight" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#1BA890"/>
-                <stop offset="1" stopColor="#6D28D9"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-        <span className="text-xl font-bold bg-gradient-to-r from-[#1BA890] to-[#6D28D9] bg-clip-text text-transparent">
-          APEX
-        </span>
-        <span className="text-xl font-light text-foreground ml-1">Dashboard</span>
-        <span className="ml-3 text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium border border-primary/20">
-          Light Theme Demo
-        </span>
-      </div>
-
-      {/* Theme Toggle Info */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Sun className="w-4 h-4 text-warning" />
-          <span>Light Mode</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs text-muted-foreground">AI Status:</span>
-          <span className="text-xs text-primary font-medium">Active</span>
-        </div>
-      </div>
-    </div>
   );
 }
 

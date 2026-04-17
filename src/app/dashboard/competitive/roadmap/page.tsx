@@ -13,6 +13,7 @@ import {
   Plus,
   Map,
 } from "lucide-react";
+import { BrandHeader } from "@/components/layout/brand-header";
 import { useSelectedBrand } from "@/stores";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -200,7 +201,14 @@ export default function RoadmapPage() {
   if (!selectedBrand) {
     return (
       <div className="space-y-6 relative">
-        <PageHeader />
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/competitive">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          </Link>
+          <BrandHeader pageName="Improvement Roadmap" className="flex-1" />
+        </div>
         <SelectBrandPrompt />
         <DecorativeStar />
       </div>
@@ -210,7 +218,14 @@ export default function RoadmapPage() {
   if (isLoading) {
     return (
       <div className="space-y-6 relative">
-        <PageHeader />
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/competitive">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          </Link>
+          <BrandHeader pageName="Improvement Roadmap" className="flex-1" />
+        </div>
         <LoadingState />
         <DecorativeStar />
       </div>
@@ -220,7 +235,14 @@ export default function RoadmapPage() {
   if (error) {
     return (
       <div className="space-y-6 relative">
-        <PageHeader />
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/competitive">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          </Link>
+          <BrandHeader pageName="Improvement Roadmap" className="flex-1" />
+        </div>
         <ErrorState error={error as Error} onRetry={() => refetch()} />
         <DecorativeStar />
       </div>
@@ -232,7 +254,23 @@ export default function RoadmapPage() {
 
   return (
     <div className="space-y-6 relative">
-      <PageHeader onGenerateNew={() => setShowGenerator(true)} hasRoadmap={!!activeRoadmap} />
+      <div className="flex items-center gap-4">
+        <Link href="/dashboard/competitive">
+          <Button variant="ghost" size="icon">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+        </Link>
+        <BrandHeader
+          pageName="Improvement Roadmap"
+          className="flex-1"
+          rightSlot={activeRoadmap ? (
+            <Button variant="outline" size="sm" onClick={() => setShowGenerator(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              New Roadmap
+            </Button>
+          ) : undefined}
+        />
+      </div>
 
       {/* Feature Gate for Roadmap */}
       <FeatureGate
@@ -354,55 +392,3 @@ function DecorativeStar() {
 }
 
 // Page Header Component
-function PageHeader({
-  onGenerateNew,
-  hasRoadmap,
-}: {
-  onGenerateNew?: () => void;
-  hasRoadmap?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <Link href="/dashboard/competitive">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-        </Link>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradRoadmap)" />
-              <defs>
-                <linearGradient id="apexGradRoadmap" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#00E5CC"/>
-                  <stop offset="1" stopColor="#8B5CF6"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-            APEX
-          </span>
-          <span className="text-xl font-light text-foreground ml-1">Improvement Roadmap</span>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-4">
-        {hasRoadmap && onGenerateNew && (
-          <Button variant="outline" size="sm" onClick={onGenerateNew} className="gap-2">
-            <Plus className="w-4 h-4" />
-            New Roadmap
-          </Button>
-        )}
-
-        {/* AI Status */}
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs text-muted-foreground">AI Status:</span>
-          <span className="text-xs text-primary font-medium">Active</span>
-        </div>
-      </div>
-    </div>
-  );
-}

@@ -1,0 +1,36 @@
+/*
+ * Typography tokens — Layer 2 semantic (theme-agnostic; fonts don't change per light/dark).
+ * Overridable by brand via Next.js font loader in src/app/layout.tsx.
+ */
+
+:root {
+  /* Font families */
+  --font-sans: var(--font-inter, 'Inter'), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono, 'JetBrains Mono'), 'Fira Code', monospace;
+  --font-heading: var(--font-inter, 'Inter Display'), 'Inter', sans-serif;
+
+  /* Type scale — sizes */
+  --text-display-xl: 48px;
+  --text-display: 36px;
+  --text-h1: 24px;
+  --text-h2: 20px;
+  --text-h3: 16px;
+  --text-body: 14px;
+  --text-small: 12px;
+  --text-tiny: 10px;
+
+  /* Type scale — weights */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Type scale — line heights */
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.65;
+
+  /* Letter spacing */
+  --letter-spacing-tight: -0.02em;
+  --letter-spacing-normal: 0;
+}

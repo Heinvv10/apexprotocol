@@ -8,7 +8,7 @@
  */
 
 import { db } from "@/lib/db";
-import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
+import type { NeonDatabase } from "drizzle-orm/neon-serverless";
 import { apiKeys, users, organizations } from "@/lib/db/schema";
 import type * as schema from "@/lib/db/schema";
 import { eq, and, or, isNull, gt } from "drizzle-orm";
@@ -158,7 +158,7 @@ export function isApexApiKey(token: string | null): boolean {
  */
 export async function validateApiKey(
   apiKey: string,
-  dbInstance: NeonHttpDatabase<typeof schema> = db
+  dbInstance: NeonDatabase<typeof schema> = db
 ): Promise<ApiKeyValidationResult> {
   try {
     // Step 1: Validate key format
@@ -289,7 +289,7 @@ export async function validateApiKey(
  */
 async function updateLastUsedAt(
   keyId: string,
-  dbInstance: NeonHttpDatabase<typeof schema> = db
+  dbInstance: NeonDatabase<typeof schema> = db
 ): Promise<void> {
   await dbInstance
     .update(apiKeys)
@@ -310,7 +310,7 @@ async function updateLastUsedAt(
  */
 export async function validateApiKeyFromHeader(
   authHeader: string | null,
-  dbInstance: NeonHttpDatabase<typeof schema> = db
+  dbInstance: NeonDatabase<typeof schema> = db
 ): Promise<ApiKeyValidationResult> {
   // Extract Bearer token
   const token = extractBearerToken(authHeader);
@@ -376,7 +376,7 @@ export async function getActiveApiKeyCount(
  */
 export async function isApiKeyValid(
   keyHash: string,
-  dbInstance: NeonHttpDatabase<typeof schema> = db
+  dbInstance: NeonDatabase<typeof schema> = db
 ): Promise<boolean> {
   const now = new Date();
 

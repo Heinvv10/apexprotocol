@@ -9,6 +9,7 @@ import {
   AlertCircle,
   Target,
 } from "lucide-react";
+import { BrandHeader } from "@/components/layout/brand-header";
 import { useSelectedBrand } from "@/stores";
 import { Button } from "@/components/ui/button";
 
@@ -78,7 +79,14 @@ export default function CompetitorDeepDivePage() {
   if (!selectedBrand) {
     return (
       <div className="space-y-6 relative">
-        <PageHeader competitorName={competitorName} />
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/competitive">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          </Link>
+          <BrandHeader pageName={`Competitor Analysis: ${competitorName}`} className="flex-1" />
+        </div>
         <SelectBrandPrompt />
         <DecorativeStar />
       </div>
@@ -87,7 +95,14 @@ export default function CompetitorDeepDivePage() {
 
   return (
     <div className="space-y-6 relative">
-      <PageHeader competitorName={competitorName} />
+      <div className="flex items-center gap-4">
+        <Link href="/dashboard/competitive">
+          <Button variant="ghost" size="icon">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+        </Link>
+        <BrandHeader pageName={`Competitor Analysis: ${competitorName}`} className="flex-1" />
+      </div>
 
       {/* Feature Gate for Deep Dive */}
       <FeatureGate
@@ -128,43 +143,3 @@ function DecorativeStar() {
   );
 }
 
-// Page Header Component
-function PageHeader({ competitorName }: { competitorName: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <Link href="/dashboard/competitive">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-        </Link>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradDeepDive)" />
-              <defs>
-                <linearGradient id="apexGradDeepDive" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#00E5CC"/>
-                  <stop offset="1" stopColor="#8B5CF6"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-            APEX
-          </span>
-          <span className="text-xl font-light text-foreground ml-1">
-            Competitor Analysis: <span className="font-medium">{competitorName}</span>
-          </span>
-        </div>
-      </div>
-
-      {/* AI Status */}
-      <div className="flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-        <span className="text-xs text-muted-foreground">AI Status:</span>
-        <span className="text-xs text-primary font-medium">Active</span>
-      </div>
-    </div>
-  );
-}

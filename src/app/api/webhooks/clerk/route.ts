@@ -167,8 +167,8 @@ async function handleOrgCreated(data: OrganizationJSON) {
     plan: "starter",
     branding: {
       themeId: "apexgeo-default",
-      primaryColor: "#4926FA",
-      accentColor: "#D82F71",
+      primaryColor: "#00E5CC",
+      accentColor: "#8B5CF6",
       logoUrl: imageUrl,
       logoDarkUrl: null,
       faviconUrl: null,

@@ -1,0 +1,98 @@
+/*
+ * Dark theme — Layer 2 semantic color mappings.
+ *
+ * This file maps semantic tokens (--color-*) to Layer 1 primitives
+ * (--palette-*). To swap themes, only these mappings change — never
+ * the primitive palette.
+ *
+ * Consumers (components, app code) reference ONLY --color-* semantic
+ * tokens. They do not reference --palette-* primitives directly.
+ *
+ * Applied by default on :root (the app is dark-first). The .light class
+ * in themes/light.css overrides these with paired light values.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --color-surface-deep:     var(--palette-neutral-900); /* page bg */
+  --color-surface-base:     var(--palette-neutral-850); /* main content */
+  --color-surface-elevated: var(--palette-neutral-800); /* elevated surfaces */
+  --color-surface-card:     var(--palette-neutral-750); /* card bg */
+  --color-surface-card-hover: var(--palette-neutral-700);
+  --color-surface-input:    var(--palette-neutral-650);
+
+  /* Brand */
+  --color-primary:          var(--palette-cyan-500);
+  --color-primary-bright:   var(--palette-cyan-400);
+  --color-primary-muted:    var(--palette-cyan-600);
+  --color-primary-foreground: var(--palette-neutral-950);
+
+  --color-accent-purple:        var(--palette-purple-500);
+  --color-accent-purple-light:  var(--palette-purple-400);
+  --color-accent-purple-dark:   var(--palette-purple-600);
+  --color-accent-pink:          var(--palette-pink-500);
+  --color-accent-blue:          var(--palette-blue-500);
+
+  /* Text */
+  --color-foreground:        var(--palette-text-primary-dark);
+  --color-text-primary:      var(--palette-text-primary-dark);
+  --color-text-secondary:    var(--palette-text-secondary-dark);
+  --color-text-muted:        var(--palette-text-muted-dark);
+  --color-text-accent:       var(--palette-cyan-500);
+  --color-text-link:         var(--palette-blue-400);
+  --color-muted-foreground:  var(--palette-text-secondary-dark);
+
+  /* Semantic */
+  --color-success:  var(--palette-success);
+  --color-warning:  var(--palette-warning);
+  --color-error:    var(--palette-error);
+  --color-info:     var(--palette-info);
+  --color-destructive: var(--palette-error);
+
+  /* Borders (rgba over foreground for opacity math) */
+  --color-border-subtle:  255 255 255 / 0.05;
+  --color-border-default: 255 255 255 / 0.08;
+  --color-border-strong:  255 255 255 / 0.12;
+  --color-border-accent:  var(--palette-cyan-500) / 0.3;
+  --color-border-glow:    var(--palette-cyan-500) / 0.5;
+
+  /* Shadcn/Tailwind compatibility (UNPREFIXED) — existing utilities depend on these */
+  --background: var(--palette-neutral-900);
+  --foreground: var(--palette-text-primary-dark);
+  --card: var(--palette-neutral-750);
+  --card-foreground: var(--palette-text-primary-dark);
+  --popover: var(--palette-neutral-850);
+  --popover-foreground: var(--palette-text-primary-dark);
+  --primary: var(--palette-cyan-500);
+  --primary-foreground: var(--palette-neutral-950);
+  --secondary: 235 35% 18%;
+  --secondary-foreground: var(--palette-text-primary-dark);
+  --muted: 240 20% 15%;
+  --muted-foreground: var(--palette-text-secondary-dark);
+  --accent: 232 40% 15%;
+  --accent-foreground: var(--palette-text-primary-dark);
+  --destructive: var(--palette-error);
+  --border: 0 0% 100% / 0.08;
+  --input: var(--palette-neutral-650);
+  --ring: var(--palette-cyan-500);
+  --success: var(--palette-success);
+  --success-muted: var(--palette-success) / 0.15;
+  --warning: var(--palette-warning);
+  --warning-muted: var(--palette-warning) / 0.15;
+  --error: var(--palette-error);
+  --error-muted: var(--palette-error) / 0.15;
+  --info: var(--palette-info);
+  --info-muted: var(--palette-info) / 0.15;
+
+  /* Sidebar */
+  --sidebar: 225 40% 7%;
+  --sidebar-foreground: var(--palette-text-primary-dark);
+  --sidebar-primary: var(--palette-cyan-500);
+  --sidebar-primary-foreground: var(--palette-neutral-950);
+  --sidebar-accent: 227 50% 12%;
+  --sidebar-accent-foreground: var(--palette-text-primary-dark);
+  --sidebar-border: 0 0% 100% / 0.08;
+  --sidebar-ring: var(--palette-cyan-500);
+}

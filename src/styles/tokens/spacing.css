@@ -1,0 +1,26 @@
+/*
+ * Spacing tokens — Layer 2 semantic (theme-agnostic; spacing doesn't change per brand).
+ * Base unit: 4px. Use `var(--space-N)` everywhere; avoid raw px values.
+ */
+
+:root {
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* Layout */
+  --layout-max-width: 1440px;
+  --layout-page-padding-desktop: 32px;
+  --layout-page-padding-mobile: 16px;
+  --layout-card-gap-desktop: 24px;
+  --layout-card-gap-mobile: 16px;
+}

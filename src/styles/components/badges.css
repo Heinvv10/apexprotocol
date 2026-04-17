@@ -1,0 +1,146 @@
+/* ============================================
+   APEX DESIGN SYSTEM — BADGES & STATUS INDICATORS
+   Extracted from globals.css (Task 18, Phase 1)
+   Source: globals.css lines 629–753
+
+   Contains:
+   - Status dots (.status-*)
+   - Status badges (.badge-*)
+   - Impact/severity/citation indicator badges
+   ============================================ */
+
+/* ------------------------------------------
+   STATUS DOTS
+   ------------------------------------------ */
+
+.status-success {
+  @apply w-2 h-2 rounded-full;
+  background: hsl(var(--color-success));
+  box-shadow: 0 0 8px hsl(var(--color-success) / 0.5);
+}
+
+.status-warning {
+  @apply w-2 h-2 rounded-full;
+  background: hsl(var(--color-warning));
+  box-shadow: 0 0 8px hsl(var(--color-warning) / 0.5);
+}
+
+.status-error {
+  @apply w-2 h-2 rounded-full;
+  background: hsl(var(--color-error));
+  box-shadow: 0 0 8px hsl(var(--color-error) / 0.5);
+}
+
+/* ------------------------------------------
+   STATUS BADGES — General
+   ------------------------------------------ */
+
+.badge-success {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  background: hsl(var(--color-success) / 0.15);
+  color: #4ADE80; /* TODO: no exact token for #4ADE80 (success-light) — flagged for human review */
+  border: 1px solid hsl(var(--color-success) / 0.3);
+}
+
+.badge-warning {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  background: hsl(var(--color-warning) / 0.15);
+  color: #FBBF24; /* TODO: no exact token for #FBBF24 (warning-light) — flagged for human review */
+  border: 1px solid hsl(var(--color-warning) / 0.3);
+}
+
+.badge-error {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  background: hsl(var(--color-error) / 0.15);
+  color: #F87171; /* TODO: no exact token for #F87171 (error-light) — flagged for human review */
+  border: 1px solid hsl(var(--color-error) / 0.3);
+}
+
+.badge-primary {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  background: hsl(var(--color-primary) / 0.15);
+  color: hsl(var(--color-primary));
+  border: 1px solid hsl(var(--color-primary) / 0.3);
+}
+
+/* ------------------------------------------
+   CITATION STATUS BADGES
+   ------------------------------------------ */
+
+.badge-primary-citation {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  background: hsl(var(--color-primary) / 0.15);
+  color: hsl(var(--color-primary));
+  border: 1px solid hsl(var(--color-primary) / 0.3);
+}
+
+.badge-mentioned {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  background: hsl(var(--color-accent-purple) / 0.15);
+  color: hsl(var(--color-accent-purple-light));
+  border: 1px solid hsl(var(--color-accent-purple) / 0.3);
+}
+
+.badge-omitted {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  background: hsl(var(--color-error) / 0.15);
+  color: #F87171; /* TODO: no exact token for #F87171 (error-light) — flagged for human review */
+  border: 1px solid hsl(var(--color-error) / 0.3);
+}
+
+.badge-featured {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  background: hsl(var(--color-accent-blue) / 0.15);
+  color: hsl(var(--color-text-link));
+  border: 1px solid hsl(var(--color-accent-blue) / 0.3);
+}
+
+/* ------------------------------------------
+   SENTIMENT BADGES
+   ------------------------------------------ */
+
+.badge-highly-positive {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  background: hsl(var(--color-success) / 0.15);
+  color: #4ADE80; /* TODO: no exact token for #4ADE80 (success-light) — flagged for human review */
+  border: 1px solid hsl(var(--color-success) / 0.3);
+}
+
+.badge-highly-negative {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  background: hsl(var(--color-error) / 0.15);
+  color: #F87171; /* TODO: no exact token for #F87171 (error-light) — flagged for human review */
+  border: 1px solid hsl(var(--color-error) / 0.3);
+}
+
+/* ------------------------------------------
+   IMPACT / PRIORITY BADGES
+   ------------------------------------------ */
+
+.badge-critical {
+  @apply inline-flex items-center px-2.5 py-1 rounded text-xs font-medium;
+  background: hsl(var(--color-error) / 0.15);
+  color: hsl(var(--color-error));
+  border: 1px solid hsl(var(--color-error) / 0.3);
+}
+
+.badge-high {
+  @apply inline-flex items-center px-2.5 py-1 rounded text-xs font-medium;
+  background: hsl(var(--color-warning) / 0.15);
+  color: hsl(var(--color-warning));
+  border: 1px solid hsl(var(--color-warning) / 0.3);
+}
+
+.badge-medium {
+  @apply inline-flex items-center px-2.5 py-1 rounded text-xs font-medium;
+  background: hsl(var(--color-accent-blue) / 0.15);
+  color: hsl(var(--color-accent-blue));
+  border: 1px solid hsl(var(--color-accent-blue) / 0.3);
+}
+
+.badge-low {
+  @apply inline-flex items-center px-2.5 py-1 rounded text-xs font-medium;
+  background: rgba(107, 114, 128, 0.15); /* neutral grey — no token equivalent, keep literal */
+  color: #9ca3af; /* TODO: no token for #9ca3af (neutral-400) — flagged for human review */
+  border: 1px solid rgba(107, 114, 128, 0.3); /* neutral grey — keep literal */
+}

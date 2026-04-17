@@ -2,7 +2,6 @@
 
 import { ReactNode, useEffect } from "react";
 import { DashboardShell } from "@/components/layout";
-import "../globals-light.css";
 
 export default function LightDemoLayout({ children }: { children: ReactNode }) {
   useEffect(() => {

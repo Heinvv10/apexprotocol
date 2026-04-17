@@ -51,14 +51,14 @@ export async function GET(_request: NextRequest) {
       .where(eq(organizations.id, orgId))
       .limit(1);
 
-    // Create default organization if doesn't exist
     if (org.length === 0) {
       const newOrg = await db
         .insert(organizations)
         .values({
           id: orgId,
           name: "My Organization",
-          slug: "my-organization",
+          slug: `org-${orgId.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now().toString(36)}`,
+          clerkOrgId: orgId.startsWith("org_") ? orgId : null,
         })
         .returning();
       org = newOrg;
@@ -106,8 +106,8 @@ export async function PUT(request: NextRequest) {
     if (existingOrg.length === 0) {
       const defaultBranding = {
         themeId: "apexgeo-default",
-        primaryColor: "#4926FA",
-        accentColor: "#D82F71",
+        primaryColor: "#00E5CC",
+        accentColor: "#8B5CF6",
         logoUrl: null,
         logoDarkUrl: null,
         faviconUrl: null,

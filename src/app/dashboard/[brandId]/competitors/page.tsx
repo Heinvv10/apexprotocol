@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { BrandHeader } from "@/components/layout/brand-header";
 import {
   Target,
   TrendingUp,
@@ -319,7 +320,7 @@ export default function BrandCompetitorsPage({ params }: { params: Promise<{ bra
   if (summaryLoading) {
     return (
       <div className="space-y-6 relative">
-        <PageHeader brandName={(summary as CompetitiveSummary | undefined)?.brandName} />
+        <BrandHeader pageName={(summary as CompetitiveSummary | undefined)?.brandName ? `${(summary as CompetitiveSummary | undefined)?.brandName} - Competitors` : "Competitors"} />
         <LoadingState />
         <DecorativeStar />
       </div>
@@ -329,7 +330,7 @@ export default function BrandCompetitorsPage({ params }: { params: Promise<{ bra
   if (summaryError) {
     return (
       <div className="space-y-6 relative">
-        <PageHeader brandName={(summary as CompetitiveSummary | undefined)?.brandName} />
+        <BrandHeader pageName={(summary as CompetitiveSummary | undefined)?.brandName ? `${(summary as CompetitiveSummary | undefined)?.brandName} - Competitors` : "Competitors"} />
         <ErrorState error={summaryError as Error} onRetry={() => refetchSummary()} />
         <DecorativeStar />
       </div>
@@ -348,7 +349,7 @@ export default function BrandCompetitorsPage({ params }: { params: Promise<{ bra
 
   return (
     <div className="space-y-6 relative">
-      <PageHeader brandName={summary?.brandName} />
+      <BrandHeader pageName={summary?.brandName ? `${summary.brandName} - Competitors` : "Competitors"} />
 
       <div className="space-y-6">
         {/* Top Row - SOV and Key Metrics */}
@@ -571,36 +572,3 @@ function DecorativeStar() {
   );
 }
 
-// Page Header Component
-function PageHeader({ brandName }: { brandName?: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8">
-          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradCompetitive)" />
-            <defs>
-              <linearGradient id="apexGradCompetitive" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#00E5CC"/>
-                <stop offset="1" stopColor="#8B5CF6"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-        <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-          APEX
-        </span>
-        <span className="text-xl font-light text-foreground ml-1">
-          {brandName ? `${brandName} - Competitors` : "Competitors"}
-        </span>
-      </div>
-
-      {/* AI Status */}
-      <div className="flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-        <span className="text-xs text-muted-foreground">AI Status:</span>
-        <span className="text-xs text-primary font-medium">Active</span>
-      </div>
-    </div>
-  );
-}

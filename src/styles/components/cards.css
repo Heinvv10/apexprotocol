@@ -1,0 +1,108 @@
+/*
+ * 3-Tier card system — Apex canonical pattern.
+ * Consumers: use .card-primary/.card-secondary/.card-tertiary in JSX,
+ * NEVER reconstruct the styles inline.
+ */
+
+/* ============================================================
+   Tier 1: Primary cards — hero metrics, main KPIs, GEO Score
+   ============================================================ */
+.card-primary {
+  @apply relative rounded-2xl p-4;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--color-surface-base) / 0.9) 0%,
+    hsl(var(--color-surface-deep) / 0.95) 100%
+  );
+  border: 1.5px solid hsl(var(--color-primary) / 0.25);
+  box-shadow: var(--elevation-card-primary);
+  overflow: hidden;
+}
+
+.card-primary::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--color-primary) / 0.5) 50%,
+    transparent 100%
+  );
+}
+
+.card-primary-gradient {
+  @apply relative rounded-2xl p-4;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--color-surface-base) / 0.95) 0%,
+    hsl(var(--color-surface-deep) / 0.98) 100%
+  );
+  overflow: hidden;
+}
+
+.card-primary-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--color-primary) / 0.6) 0%,
+    hsl(var(--color-accent-blue) / 0.4) 25%,
+    hsl(var(--color-accent-purple) / 0.6) 50%,
+    hsl(var(--color-accent-purple) / 0.4) 75%,
+    hsl(var(--color-accent-purple) / 0.6) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.card-primary-gradient::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--color-primary) / 0.1),
+    hsl(var(--color-accent-purple) / 0.1)
+  );
+  filter: blur(16px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ============================================================
+   Tier 2: Secondary cards — charts, recommendations, tables
+   ============================================================ */
+.card-secondary {
+  @apply rounded-xl p-5;
+  background: hsl(var(--color-surface-base) / 0.4);
+  border: 1px solid hsl(var(--color-border-default));
+  box-shadow: var(--elevation-card-secondary);
+  transition: border-color var(--duration-fast) var(--ease-default);
+}
+
+.card-secondary:hover {
+  border-color: hsl(var(--color-border-strong));
+}
+
+/* ============================================================
+   Tier 3: Tertiary cards — list items, activity rows, stats
+   ============================================================ */
+.card-tertiary {
+  @apply rounded-lg p-4;
+  background: hsl(var(--color-surface-base) / 0.4);
+  border: 1px solid hsl(var(--color-border-subtle));
+  transition: border-color var(--duration-fast) var(--ease-default);
+}
+
+.card-tertiary:hover {
+  border-color: hsl(var(--color-border-default));
+}

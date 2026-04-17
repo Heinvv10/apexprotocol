@@ -1,0 +1,2507 @@
+/* ============================================
+   APEX DESIGN SYSTEM — LAYOUTS & PAGE COMPONENTS
+   Extracted from globals.css (Task 18, Phase 1)
+   Source: globals.css lines 759–3389
+
+   Sections:
+   - Animation timing utilities (KEPT — transition helpers not in tokens/motion.css)
+   - Gradient utilities
+   - GEO score gauge
+   - Sidebar navigation
+   - Form enhancements + input-with-icon
+   - FOCUS INDICATOR UTILITIES (SKIP — already in tokens/focus.css)
+   - Data visualization
+   - Scrollbar styling
+   - Utility classes
+   - AI platform icon utilities
+   - Metric display styles
+   - Header navigation
+   - Recommendation items
+   - AI platform cards
+   - Apex v2.0 reference image styles
+   - Monitor page (V1 — prefer V2 where overlapping)
+   - Landing page styles
+   - 3D illustration placeholder
+   - Settings page styles (V1)
+   - Engine room styles (V1)
+   - Feedback page styles (V1)
+   - Utility animations
+   - Empty state animations
+   - Monitor page V2
+   - Feedback page V2
+   - Engine room V2
+   - Settings page V2
+
+   SKIPPED (already extracted):
+   - ANIMATION TIMING tokens → tokens/motion.css
+   - FOCUS INDICATOR UTILITIES → tokens/focus.css
+   - CLERK AUTHENTICATION → components/third-party.css
+   ============================================ */
+
+/* ============================================
+   ANIMATION TIMING UTILITIES
+   Note: raw timing values are in tokens/motion.css.
+   These are *utility classes* using those values.
+   ============================================ */
+
+/* Standard transitions — 150ms */
+.transition-standard {
+  transition: all 150ms ease-in-out;
+}
+
+/* Modal animations — 250ms cubic-bezier */
+.transition-modal {
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Gauge entrance animations — 800ms */
+.transition-gauge {
+  transition: all 800ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Hover lift effect */
+.hover-lift {
+  transition: all 150ms ease-in-out;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   GRADIENT UTILITIES
+   ============================================ */
+
+/* Primary gradient — Purple to Blue */
+.gradient-primary {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent-blue)) 100%);
+}
+
+/* Secondary gradient — Blue to Pink */
+.gradient-secondary {
+  background: linear-gradient(135deg, hsl(var(--accent-blue)) 0%, hsl(var(--accent-pink)) 100%);
+}
+
+/* Subtle background gradient */
+.gradient-subtle {
+  background: linear-gradient(
+    180deg,
+    hsl(var(--background)) 0%,
+    hsl(var(--muted) / 0.3) 100%
+  );
+}
+
+/* Text gradient */
+.text-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent-pink)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   GEO SCORE GAUGE
+   ============================================ */
+
+.geo-score-gauge {
+  @apply relative flex items-center justify-center;
+}
+
+.geo-score-value {
+  @apply text-5xl font-bold;
+  font-family: 'Inter Display', 'Inter', sans-serif;
+  font-feature-settings: "tnum";
+}
+
+.geo-score-label {
+  @apply text-sm font-medium text-muted-foreground uppercase tracking-wider;
+}
+
+/* Score color variants */
+.geo-score-excellent {
+  color: hsl(var(--success));
+}
+
+.geo-score-good {
+  color: hsl(var(--primary));
+}
+
+.geo-score-average {
+  color: hsl(var(--warning));
+}
+
+.geo-score-poor {
+  color: hsl(var(--error));
+}
+
+/* ============================================
+   SIDEBAR NAVIGATION
+   ============================================ */
+
+/* Sidebar container with gradient matching dashboard-bg */
+.sidebar-gradient {
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); /* TODO: no token for slate-900/slate-800 — flagged for review */
+  position: relative;
+}
+
+.sidebar-gradient::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70%;
+  background: radial-gradient(
+    ellipse at top left,
+    hsl(var(--color-accent-purple) / 0.15) 0%,
+    hsl(var(--color-primary) / 0.08) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Header with matching gradient */
+.header-gradient {
+  background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%); /* TODO: no token for slate-900/slate-800 — flagged for review */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.header-gradient::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60%;
+  height: 100%;
+  background: radial-gradient(
+    ellipse at top right,
+    hsl(var(--color-accent-purple) / 0.1) 0%,
+    hsl(var(--color-primary) / 0.05) 30%,
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+.sidebar-nav-item {
+  @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium;
+  @apply text-muted-foreground;
+  transition: all 150ms ease-in-out;
+}
+
+.sidebar-nav-item:hover {
+  @apply bg-sidebar-accent text-sidebar-accent-foreground;
+}
+
+.sidebar-nav-item.active {
+  @apply bg-primary/10 text-primary;
+}
+
+.sidebar-nav-item.active::before {
+  content: '';
+  @apply absolute left-0 w-0.5 h-6 rounded-r;
+  background: hsl(var(--primary));
+}
+
+/* ============================================
+   FORM ENHANCEMENTS
+   ============================================ */
+
+/* Input with icon */
+.input-with-icon {
+  @apply pl-10;
+}
+
+/* ============================================
+   DATA VISUALIZATION
+   ============================================ */
+
+/* Chart container */
+.chart-container {
+  @apply w-full h-full min-h-[200px];
+}
+
+/* Chart legend */
+.chart-legend {
+  @apply flex flex-wrap gap-4 text-sm;
+}
+
+.chart-legend-item {
+  @apply flex items-center gap-2;
+}
+
+.chart-legend-dot {
+  @apply w-3 h-3 rounded-full;
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.3) hsl(var(--muted) / 0.3);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Text truncation */
+.truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.truncate-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Loading skeleton */
+.skeleton {
+  @apply animate-pulse rounded;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted) / 0.5) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+}
+
+/* No select for UI elements */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ============================================
+   AI PLATFORM ICON UTILITIES
+   ============================================ */
+
+/* AI Platform Icon Colors */
+.ai-icon-chatgpt { color: hsl(var(--ai-chatgpt)); }
+.ai-icon-claude { color: hsl(var(--ai-claude)); }
+.ai-icon-gemini { color: hsl(var(--ai-gemini)); }
+.ai-icon-perplexity { color: hsl(var(--ai-perplexity)); }
+.ai-icon-grok { color: hsl(var(--ai-grok)); }
+.ai-icon-deepseek { color: hsl(var(--ai-deepseek)); }
+
+/* AI Status Indicator */
+.ai-status {
+  @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium;
+  background: hsl(var(--bg-elevated));
+  border: 1px solid hsl(var(--border));
+}
+
+.ai-status-active {
+  color: hsl(var(--success));
+}
+
+.ai-status-active::before {
+  content: '';
+  @apply w-2 h-2 rounded-full;
+  background: hsl(var(--success));
+  box-shadow: 0 0 8px hsl(var(--success) / 0.5);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 hsl(var(--success) / 0.4); }
+  70% { box-shadow: 0 0 0 10px hsl(var(--success) / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(var(--success) / 0); }
+}
+
+/* ============================================
+   METRIC DISPLAY STYLES
+   ============================================ */
+
+/* Hero Metric — Large percentage display */
+.metric-hero {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, hsl(var(--color-primary)) 0%, hsl(var(--color-primary-muted)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 40px hsl(var(--color-primary) / 0.3);
+}
+
+/* Hero Score — Extra large for gauge centers */
+.metric-hero-xl {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 72px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  background: linear-gradient(135deg, hsl(var(--color-primary)) 0%, #0EA5E9 50%, hsl(var(--color-accent-purple)) 100%); /* TODO: #0EA5E9 sky-500 — no exact token, flagged for review */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Secondary Metric — Trust Score, secondary KPIs */
+.metric-secondary {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: hsl(var(--color-foreground));
+}
+
+/* Large Metric (alias) */
+.metric-large {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, hsl(var(--color-primary)) 0%, hsl(var(--color-accent-blue)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Medium Metric */
+.metric-medium {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Small Metric */
+.metric-small {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Change Indicators */
+.metric-change-positive {
+  font-size: 14px;
+  font-weight: 500;
+  color: hsl(var(--color-success));
+}
+
+.metric-change-negative {
+  font-size: 14px;
+  font-weight: 500;
+  color: hsl(var(--color-error));
+}
+
+.metric-change-neutral {
+  font-size: 14px;
+  font-weight: 500;
+  color: hsl(var(--color-text-secondary));
+}
+
+/* Gauge Container */
+.gauge-container {
+  @apply relative flex items-center justify-center;
+  min-width: 200px;
+  min-height: 200px;
+}
+
+.gauge-track {
+  stroke: hsl(var(--border-subtle));
+  fill: none;
+}
+
+.gauge-progress {
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 800ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.gauge-center {
+  @apply absolute inset-0 flex flex-col items-center justify-center;
+}
+
+/* Smart Table Styles */
+.smart-table-row {
+  @apply relative border-b border-border/50 transition-colors;
+}
+
+.smart-table-row:hover {
+  background: hsl(var(--bg-elevated));
+}
+
+.smart-table-row-expanded {
+  background: hsl(var(--bg-card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  margin: 8px 0;
+}
+
+.smart-table-detail {
+  @apply grid grid-cols-2 gap-4 p-4;
+}
+
+.smart-table-ai-output {
+  @apply p-4 rounded-lg;
+  background: hsl(var(--bg-elevated));
+  border: 1px solid hsl(var(--border-subtle));
+}
+
+.smart-table-analysis {
+  @apply p-4 rounded-lg;
+  background: hsl(var(--bg-elevated));
+  border: 1px solid hsl(var(--border-subtle));
+}
+
+/* Filter Sidebar */
+.filter-sidebar {
+  @apply flex flex-col gap-4 p-4;
+  background: hsl(var(--bg-card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+}
+
+.filter-section {
+  @apply flex flex-col gap-2;
+}
+
+.filter-section-header {
+  @apply flex items-center justify-between text-sm font-medium;
+}
+
+.filter-checkbox {
+  @apply flex items-center gap-2 text-sm text-muted-foreground;
+}
+
+.filter-checkbox input[type="checkbox"]:checked + span {
+  color: hsl(var(--foreground));
+}
+
+/* AI Engine Icons Row */
+.ai-engine-icons {
+  @apply flex items-center gap-2;
+}
+
+.ai-engine-icon {
+  @apply w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-all;
+  background: hsl(var(--bg-elevated));
+  border: 1px solid hsl(var(--border-subtle));
+}
+
+.ai-engine-icon:hover {
+  border-color: hsl(var(--primary) / 0.5);
+  box-shadow: 0 0 8px hsl(var(--primary) / 0.2);
+}
+
+.ai-engine-icon.active {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+}
+
+/* Knowledge Graph Workflow */
+.kg-workflow {
+  @apply grid grid-cols-3 gap-6;
+}
+
+.kg-column {
+  @apply flex flex-col gap-4;
+}
+
+.kg-column-header {
+  @apply text-sm font-medium text-muted-foreground uppercase tracking-wider;
+}
+
+.kg-card {
+  @apply p-4 rounded-lg;
+  background: hsl(var(--bg-card));
+  border: 1px solid hsl(var(--border));
+}
+
+/* Code Snippet Display */
+.code-block {
+  @apply p-4 rounded-lg overflow-x-auto;
+  background: #0D0D0D; /* intentional near-black for code editor bg — keep literal */
+  border: 1px solid hsl(var(--border-subtle));
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.code-block .keyword { color: #C678DD; } /* code syntax highlight — keep literal */
+.code-block .string { color: #98C379; }  /* code syntax highlight — keep literal */
+.code-block .property { color: #E06C75; } /* code syntax highlight — keep literal */
+.code-block .value { color: #D19A66; }    /* code syntax highlight — keep literal */
+.code-block .comment { color: #5C6370; }  /* code syntax highlight — keep literal */
+
+/* Competitive Radar */
+.radar-container {
+  @apply relative w-full aspect-square max-w-[300px] mx-auto;
+}
+
+/* Brand Perception Bubbles */
+.bubble-chart {
+  @apply relative w-full h-[300px];
+}
+
+.perception-bubble {
+  @apply absolute rounded-full flex items-center justify-center text-xs font-medium;
+  background: hsl(var(--bg-elevated));
+  border: 1px solid hsl(var(--border));
+  transition: all 200ms ease;
+}
+
+.perception-bubble:hover {
+  transform: scale(1.1);
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 12px hsl(var(--primary) / 0.3);
+}
+
+/* Neural Graph */
+.neural-graph {
+  @apply relative w-full h-[400px];
+}
+
+.neural-node {
+  @apply absolute rounded-full flex items-center justify-center;
+  background: hsl(var(--bg-card));
+  border: 2px solid hsl(var(--primary) / 0.5);
+  transition: all 200ms ease;
+}
+
+.neural-node-center {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.4);
+}
+
+.neural-node:hover {
+  transform: scale(1.1);
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 16px hsl(var(--primary) / 0.4);
+}
+
+.neural-edge {
+  stroke: hsl(var(--primary) / 0.3);
+  stroke-width: 2;
+  fill: none;
+}
+
+/* Authority Heatmap */
+.heatmap-grid {
+  @apply grid gap-2;
+}
+
+.heatmap-cell {
+  @apply px-3 py-1.5 rounded text-xs font-medium text-center;
+  transition: all 150ms ease;
+}
+
+.heatmap-cell-primary {
+  background: hsl(var(--primary) / 0.15);
+  color: hsl(var(--primary));
+}
+
+.heatmap-cell-mentioned {
+  background: hsl(var(--accent-purple) / 0.15);
+  color: hsl(var(--accent-purple));
+}
+
+.heatmap-cell-featured {
+  background: hsl(var(--accent-blue) / 0.15);
+  color: hsl(var(--accent-blue));
+}
+
+.heatmap-cell-omitted {
+  background: hsl(var(--error) / 0.1);
+  color: hsl(var(--muted-foreground));
+}
+
+/* Settings Sidebar */
+.settings-sidebar {
+  @apply flex flex-col gap-1 p-2;
+  background: hsl(var(--bg-card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  min-width: 200px;
+}
+
+.settings-nav-item {
+  @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium;
+  color: hsl(var(--muted-foreground));
+  transition: all 150ms ease;
+}
+
+.settings-nav-item:hover {
+  background: hsl(var(--bg-elevated));
+  color: hsl(var(--foreground));
+}
+
+.settings-nav-item.active {
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+}
+
+/* ============================================
+   HEADER NAVIGATION
+   ============================================ */
+
+.header-nav {
+  @apply flex items-center gap-1;
+}
+
+.header-nav-item {
+  @apply px-4 py-2 text-sm font-medium rounded-lg transition-all;
+  color: hsl(var(--color-text-secondary));
+}
+
+.header-nav-item:hover {
+  color: hsl(var(--color-foreground));
+  background: rgba(255, 255, 255, 0.05); /* keep literal — white overlay, brand-agnostic */
+}
+
+.header-nav-item.active {
+  color: hsl(var(--color-primary));
+  background: hsl(var(--color-primary) / 0.1);
+}
+
+/* Header Container */
+.header-container {
+  @apply h-16 flex items-center justify-between px-6;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+  background: hsl(var(--palette-neutral-950) / 0.8);
+  backdrop-filter: blur(8px);
+}
+
+/* Logo + Module Name */
+.header-brand {
+  @apply flex items-center gap-3;
+}
+
+.header-logo {
+  @apply text-lg font-bold text-white;
+}
+
+.header-module {
+  @apply text-lg font-semibold;
+  color: hsl(var(--color-primary));
+}
+
+/* AI Status Indicator */
+.ai-status-indicator {
+  @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium;
+  background: rgba(15, 23, 42, 0.8); /* TODO: no token for #0f172a (slate-900) — flagged for review */
+  border: 1px solid rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+}
+
+.ai-status-indicator.active {
+  color: hsl(var(--color-success));
+}
+
+.ai-status-indicator.active::before {
+  content: '';
+  @apply w-2 h-2 rounded-full;
+  background: hsl(var(--color-success));
+  box-shadow: 0 0 8px hsl(var(--color-success) / 0.5);
+  animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 hsl(var(--color-success) / 0.4); }
+  70% { box-shadow: 0 0 0 8px hsl(var(--color-success) / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(var(--color-success) / 0); }
+}
+
+/* ============================================
+   RECOMMENDATION ITEMS
+   ============================================ */
+
+.recommendation-item {
+  @apply flex items-start gap-3 p-3 rounded-lg;
+  background: rgba(255, 255, 255, 0.02); /* keep literal — white overlay */
+  border: 1px solid rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+  transition: all 150ms ease;
+}
+
+.recommendation-item:hover {
+  background: rgba(255, 255, 255, 0.04); /* keep literal — white overlay */
+  border-color: rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+}
+
+.recommendation-icon {
+  @apply w-6 h-6 rounded flex items-center justify-center flex-shrink-0;
+}
+
+.recommendation-icon-warning {
+  background: hsl(var(--color-warning) / 0.2);
+  color: hsl(var(--color-warning));
+}
+
+.recommendation-icon-info {
+  background: hsl(var(--color-accent-blue) / 0.2);
+  color: hsl(var(--color-accent-blue));
+}
+
+.recommendation-icon-success {
+  background: hsl(var(--color-success) / 0.2);
+  color: hsl(var(--color-success));
+}
+
+.recommendation-icon-error {
+  background: hsl(var(--color-error) / 0.2);
+  color: hsl(var(--color-error));
+}
+
+.recommendation-content {
+  @apply flex-1 min-w-0;
+}
+
+.recommendation-title {
+  @apply text-sm text-white mb-1;
+}
+
+.recommendation-description {
+  @apply text-xs text-slate-400;
+}
+
+/* Module Branding */
+.module-title {
+  @apply text-xl font-semibold;
+}
+
+.module-title .module-name {
+  color: hsl(var(--primary));
+}
+
+/* Sparkline Chart Container */
+.sparkline {
+  @apply h-8 w-20;
+}
+
+/* Trend Indicator */
+.trend-up {
+  color: hsl(var(--success));
+}
+
+.trend-down {
+  color: hsl(var(--error));
+}
+
+.trend-neutral {
+  color: hsl(var(--muted-foreground));
+}
+
+/* Citation Velocity Chart */
+.citation-chart {
+  @apply w-full h-[200px];
+}
+
+/* ============================================
+   AI PLATFORM CARDS
+   ============================================ */
+
+/* AI Platform Card — Horizontal row style */
+.ai-platform-card {
+  @apply flex items-center gap-4 p-4 rounded-xl transition-all;
+  background: rgba(15, 23, 42, 0.7); /* TODO: no token for #0f172a (slate-900) — flagged for review */
+  border: 1px solid rgba(75, 85, 99, 0.25); /* keep literal — neutral grey overlay */
+  min-width: 140px;
+}
+
+.ai-platform-card:hover {
+  border-color: hsl(var(--color-accent-purple) / 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); /* keep literal — black shadow */
+  transform: translateY(-2px);
+}
+
+.ai-platform-icon {
+  @apply w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0;
+  transition: transform 200ms ease;
+}
+
+.ai-platform-card:hover .ai-platform-icon {
+  transform: scale(1.05);
+}
+
+.ai-platform-info {
+  @apply flex-1 min-w-0;
+}
+
+.ai-platform-name {
+  @apply text-sm font-medium text-white truncate;
+}
+
+.ai-platform-share {
+  @apply text-xs text-slate-400;
+}
+
+/* Platform-specific icon backgrounds */
+.ai-platform-icon-chatgpt {
+  background: hsl(var(--ai-chatgpt) / 0.2);
+  color: hsl(var(--ai-chatgpt));
+}
+
+.ai-platform-icon-claude {
+  background: hsl(var(--ai-claude) / 0.2);
+  color: hsl(var(--ai-claude));
+}
+
+.ai-platform-icon-gemini {
+  background: hsl(var(--ai-gemini) / 0.2);
+  color: hsl(var(--ai-gemini));
+}
+
+.ai-platform-icon-perplexity {
+  background: hsl(var(--ai-perplexity) / 0.2);
+  color: hsl(var(--ai-perplexity));
+}
+
+.ai-platform-icon-grok {
+  background: rgba(255, 255, 255, 0.1); /* keep literal — white overlay for grok */
+  color: hsl(var(--color-foreground));
+}
+
+.ai-platform-icon-deepseek {
+  background: hsl(var(--ai-deepseek) / 0.2);
+  color: hsl(var(--ai-deepseek));
+}
+
+/* Vertical Platform Card (alternative layout) */
+.ai-platform-card-vertical {
+  @apply relative flex flex-col items-center p-5 rounded-xl;
+  background: rgba(15, 23, 42, 0.7); /* TODO: no token for #0f172a (slate-900) — flagged for review */
+  border: 1px solid rgba(75, 85, 99, 0.25); /* keep literal — neutral grey */
+  transition: all 200ms ease;
+}
+
+.ai-platform-card-vertical:hover {
+  border-color: hsl(var(--color-accent-purple) / 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); /* keep literal — black shadow */
+  transform: translateY(-2px);
+}
+
+.ai-platform-card-vertical .ai-platform-icon {
+  @apply w-14 h-14 rounded-xl mb-3;
+}
+
+.ai-platform-card-vertical .ai-platform-name {
+  @apply mb-1;
+}
+
+.ai-platform-card-vertical .ai-platform-share {
+  @apply text-xs;
+}
+
+/* Decorative Elements */
+.apex-diamond {
+  @apply fixed bottom-8 right-8 w-6 h-6 opacity-30;
+  color: hsl(var(--primary));
+}
+
+/* Page Layout */
+.page-container {
+  @apply max-w-[1600px] mx-auto px-6 py-4;
+}
+
+.page-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.page-title {
+  @apply text-2xl font-semibold;
+}
+
+/* Section */
+.section {
+  @apply mb-4;
+}
+
+.section-title {
+  @apply text-lg font-medium mb-3;
+}
+
+/* Grid Layouts */
+.grid-dashboard {
+  @apply grid gap-4;
+  grid-template-columns: 1fr 1fr 2fr;
+}
+
+.grid-monitor {
+  @apply grid gap-4;
+  grid-template-columns: 280px 1fr;
+}
+
+.grid-settings {
+  @apply grid gap-4;
+  grid-template-columns: 200px 1fr;
+}
+
+@media (max-width: 1024px) {
+  .grid-dashboard {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .grid-monitor {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-settings {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .page-container {
+    @apply px-4;
+  }
+}
+
+/* ============================================
+   APEX v2.0 — REFERENCE IMAGE STYLES
+   Purple/Blue gradient aesthetic
+   ============================================ */
+
+/* Main Dashboard Background with Gradient Glow */
+.dashboard-bg {
+  @apply relative;
+  background: linear-gradient(135deg, hsl(var(--color-surface-base)) 0%, hsl(var(--color-surface-elevated)) 50%, hsl(var(--color-surface-base)) 100%);
+}
+
+.dashboard-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(
+    ellipse at top right,
+    hsl(var(--color-accent-purple) / 0.15) 0%,
+    rgba(168, 85, 247, 0.08) 30%, /* TODO: #A855F7 purple-500 — no exact token, flagged for review */
+    hsl(var(--color-accent-pink) / 0.05) 50%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dashboard-bg::after {
+  content: '';
+  position: absolute;
+  bottom: 20%;
+  left: 10%;
+  width: 40%;
+  height: 40%;
+  background: radial-gradient(
+    ellipse at center,
+    hsl(var(--color-primary) / 0.08) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Hero Card — Large AI Visibility Pulse with Gradient Border */
+.hero-card {
+  @apply relative rounded-2xl p-8;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--color-surface-deep) / 0.95) 0%,
+    rgba(15, 20, 40, 0.98) 100% /* TODO: no exact token for #0f1428 — flagged for review */
+  );
+  overflow: hidden;
+}
+
+/* Gradient Border Effect using pseudo-element */
+.hero-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--color-primary) / 0.6) 0%,
+    rgba(14, 165, 233, 0.4) 25%, /* TODO: #0EA5E9 sky-500 — no token, flagged for review */
+    hsl(var(--color-accent-purple) / 0.6) 50%,
+    rgba(168, 85, 247, 0.4) 75%, /* TODO: #A855F7 purple-500 — no token, flagged for review */
+    hsl(var(--color-accent-purple) / 0.6) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  /* NOTE: #fff inside mask properties are compositing tokens — keep literal per task spec */
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Glow effect */
+.hero-card::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--color-primary) / 0.15) 0%,
+    hsl(var(--color-accent-purple) / 0.15) 50%,
+    rgba(168, 85, 247, 0.1) 100% /* TODO: #A855F7 purple-500 — no token, flagged for review */
+  );
+  filter: blur(20px);
+  z-index: -1;
+}
+
+/* Hero Score — Large Number Display */
+.hero-score {
+  font-family: 'Inter Display', 'Inter', sans-serif;
+  font-size: 96px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  background: linear-gradient(135deg, hsl(var(--color-primary)) 0%, #0EA5E9 50%, hsl(var(--color-accent-purple)) 100%); /* TODO: #0EA5E9 sky-500 — no token, flagged for review */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-score-subtitle {
+  @apply text-lg text-muted-foreground mt-2;
+  font-weight: 500;
+}
+
+/* Side Cards — Stacked vertically */
+.side-card {
+  @apply relative rounded-xl p-5;
+  background: rgba(15, 23, 42, 0.8); /* TODO: no token for #0f172a (slate-900) — flagged for review */
+  border: 1px solid rgba(75, 85, 99, 0.3); /* keep literal — neutral grey */
+  backdrop-filter: blur(8px);
+}
+
+.side-card-title {
+  @apply text-sm font-medium text-muted-foreground mb-2;
+}
+
+.side-card-value {
+  @apply text-3xl font-bold;
+  font-family: 'Inter Display', 'Inter', sans-serif;
+}
+
+.side-card-subtitle {
+  @apply text-xs text-muted-foreground mt-1;
+}
+
+/* AI Platform Cards with Share % */
+.platform-card-v2 {
+  @apply relative flex flex-col items-center p-5 rounded-xl;
+  background: rgba(15, 23, 42, 0.7); /* TODO: no token for #0f172a (slate-900) — flagged for review */
+  border: 1px solid rgba(75, 85, 99, 0.25); /* keep literal — neutral grey */
+  transition: all 200ms ease;
+}
+
+.platform-card-v2:hover {
+  border-color: hsl(var(--color-accent-purple) / 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); /* keep literal — black shadow */
+  transform: translateY(-2px);
+}
+
+.platform-icon-wrapper {
+  @apply w-14 h-14 rounded-xl flex items-center justify-center mb-3;
+  transition: all 200ms ease;
+}
+
+.platform-card-v2:hover .platform-icon-wrapper {
+  transform: scale(1.05);
+}
+
+.platform-name {
+  @apply text-sm font-medium text-foreground mb-1;
+}
+
+.platform-share {
+  @apply text-xs text-muted-foreground;
+}
+
+/* Recommendation Items — Reference Style */
+.recommendation-item-v2 {
+  @apply flex items-center gap-4 p-4 rounded-lg;
+  background: rgba(15, 23, 42, 0.5); /* TODO: no token for #0f172a (slate-900) — flagged for review */
+  border: 1px solid rgba(75, 85, 99, 0.2); /* keep literal — neutral grey */
+  transition: all 150ms ease;
+}
+
+.recommendation-item-v2:hover {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(75, 85, 99, 0.4); /* keep literal — neutral grey */
+}
+
+.recommendation-badge {
+  @apply px-2.5 py-1 rounded text-xs font-medium;
+}
+
+.recommendation-badge-critical {
+  background: hsl(var(--color-error) / 0.15);
+  color: hsl(var(--color-error));
+  border: 1px solid hsl(var(--color-error) / 0.3);
+}
+
+.recommendation-badge-high {
+  background: hsl(var(--color-warning) / 0.15);
+  color: hsl(var(--color-warning));
+  border: 1px solid hsl(var(--color-warning) / 0.3);
+}
+
+.recommendation-badge-medium {
+  background: hsl(var(--color-accent-blue) / 0.15);
+  color: hsl(var(--color-accent-blue));
+  border: 1px solid hsl(var(--color-accent-blue) / 0.3);
+}
+
+.recommendation-badge-low {
+  background: rgba(107, 114, 128, 0.15); /* keep literal — neutral grey, no token */
+  color: #9ca3af; /* TODO: no token for neutral-400 — flagged for review */
+  border: 1px solid rgba(107, 114, 128, 0.3); /* keep literal — neutral grey */
+}
+
+/* Decorative Star/Sparkle */
+.decorative-star {
+  @apply absolute pointer-events-none;
+  color: hsl(var(--color-accent-purple) / 0.5);
+  text-shadow: 0 0 30px hsl(var(--color-accent-purple) / 0.4);
+}
+
+.decorative-star::before {
+  content: '✦';
+  font-size: 48px;
+}
+
+/* Smaller decorative stars */
+.decorative-star-sm::before {
+  font-size: 20px;
+}
+
+.decorative-star-lg::before {
+  font-size: 72px;
+}
+
+/* Area Chart Gradient Fill */
+.chart-gradient-cyan-purple {
+  background: linear-gradient(
+    180deg,
+    hsl(var(--color-primary) / 0.3) 0%,
+    hsl(var(--color-accent-purple) / 0.1) 50%,
+    transparent 100%
+  );
+}
+
+/* Flow Line Animation */
+@keyframes flowLine {
+  0% { stroke-dashoffset: 1000; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.flow-line {
+  stroke-dasharray: 1000;
+  animation: flowLine 3s ease-out forwards;
+}
+
+/* Glow Pulse Animation */
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.glow-pulse {
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+/* Trust Score Circle */
+.trust-score-circle {
+  @apply relative w-24 h-24 rounded-full flex items-center justify-center;
+  background: conic-gradient(
+    from 180deg,
+    hsl(var(--primary)) 0deg,
+    hsl(var(--accent-purple)) 270deg,
+    rgba(75, 85, 99, 0.3) 270deg, /* keep literal — neutral grey */
+    rgba(75, 85, 99, 0.3) 360deg  /* keep literal — neutral grey */
+  );
+}
+
+.trust-score-circle::before {
+  content: '';
+  @apply absolute inset-1 rounded-full;
+  background: rgba(15, 23, 42, 1); /* TODO: no token for #0f172a — flagged for review */
+}
+
+.trust-score-inner {
+  @apply relative z-10 text-center;
+}
+
+/* Velocity Sparkline */
+.velocity-sparkline {
+  @apply h-16 w-full;
+  background: linear-gradient(
+    180deg,
+    hsl(var(--color-accent-purple) / 0.2) 0%,
+    transparent 100%
+  );
+}
+
+/* ============================================
+   MONITOR PAGE — V1 Reference Design Match
+   TODO: Compare with V2 section below. V2 preferred
+   for duplicate classes. V1-only classes kept here.
+   ============================================ */
+
+/* Monitor Expanded Panel — Two Column Layout */
+.monitor-expanded-panel {
+  background: linear-gradient(
+    135deg,
+    rgba(10, 20, 40, 0.95) 0%,
+    rgba(15, 25, 50, 0.98) 100% /* keep literal — dark panel bg, no token */
+  );
+}
+
+/* AI Output Panel — Left Column */
+.monitor-ai-output-panel {
+  @apply p-4 rounded-xl;
+  background: rgba(20, 30, 50, 0.7); /* keep literal — dark panel bg */
+  border: 1px solid hsl(var(--color-primary) / 0.2);
+}
+
+.monitor-ai-output-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--color-primary) / 0.5) 0%,
+    hsl(var(--color-accent-purple) / 0.5) 100%
+  );
+  border-radius: 2px 2px 0 0;
+}
+
+/* Apex Analysis Panel — Right Column */
+.monitor-analysis-panel {
+  @apply p-4 rounded-xl relative;
+  background: rgba(20, 30, 50, 0.7); /* keep literal — dark panel bg */
+  border: 1px solid rgba(23, 202, 41, 0.3); /* TODO: #17CA29 — no token, custom green, flagged for review */
+}
+
+/* Sentiment Gauge Ring */
+.monitor-sentiment-gauge {
+  @apply flex-shrink-0;
+}
+
+.monitor-sentiment-gauge svg {
+  filter: drop-shadow(0 0 8px rgba(23, 202, 41, 0.3)); /* TODO: #17CA29 — no token, custom green */
+}
+
+/* Citation Status Badges — Reference Style (Monitor page variants) */
+.monitor-badge-primary-citation {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium;
+  background: hsl(var(--color-primary) / 0.15);
+  color: hsl(var(--color-primary));
+  border: 1px solid hsl(var(--color-primary) / 0.3);
+}
+
+.monitor-badge-mentioned {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium;
+  background: hsl(var(--color-warning) / 0.15);
+  color: hsl(var(--color-warning));
+  border: 1px solid hsl(var(--color-warning) / 0.3);
+}
+
+.monitor-badge-omitted {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium;
+  background: rgba(107, 114, 128, 0.15); /* keep literal — neutral grey */
+  color: #9ca3af; /* TODO: no token for neutral-400 — flagged for review */
+  border: 1px solid rgba(107, 114, 128, 0.3); /* keep literal — neutral grey */
+}
+
+/* Leading Engine Indicator */
+.monitor-leading-engine {
+  @apply inline-flex items-center gap-1 text-xs text-muted-foreground;
+}
+
+.monitor-leading-engine::before {
+  content: '';
+  @apply w-2 h-2 rounded-full bg-success;
+  animation: pulse 2s infinite;
+}
+
+/* Smart Table Enhanced — V2 Reference Design */
+.smart-table-header-v2 {
+  @apply border-b;
+  border-color: hsl(var(--border-subtle));
+  background: rgba(15, 25, 45, 0.5); /* keep literal — dark panel bg */
+}
+
+.monitor-row-card {
+  @apply rounded-xl overflow-hidden;
+  background: linear-gradient(
+    135deg,
+    rgba(20, 35, 60, 0.8) 0%, /* keep literal — dark panel bg */
+    rgba(15, 30, 55, 0.9) 100%
+  );
+  border: 1px solid rgba(75, 85, 99, 0.2); /* keep literal — neutral grey */
+}
+
+.monitor-row {
+  @apply rounded-xl;
+}
+
+.monitor-row:hover {
+  background: rgba(30, 45, 70, 0.6); /* keep literal — dark panel bg */
+}
+
+.monitor-row-expanded {
+  background: rgba(25, 40, 65, 0.4); /* keep literal — dark panel bg */
+  border-bottom: 1px solid rgba(75, 85, 99, 0.2); /* keep literal — neutral grey */
+}
+
+.monitor-expanded-content {
+  background: linear-gradient(
+    180deg,
+    rgba(15, 25, 45, 0.95) 0%, /* keep literal — dark panel bg */
+    rgba(20, 35, 55, 0.98) 100%
+  );
+}
+
+/* AI Output Panel — Cyan left border like reference */
+.monitor-ai-output {
+  @apply p-4 rounded-xl relative;
+  background: rgba(20, 35, 55, 0.7); /* keep literal — dark panel bg */
+  border-left: 3px solid hsl(var(--color-primary));
+  border-top: 1px solid hsl(var(--color-primary) / 0.2);
+  border-right: 1px solid hsl(var(--color-primary) / 0.1);
+  border-bottom: 1px solid hsl(var(--color-primary) / 0.1);
+}
+
+/* Apex Analysis Panel — Green accent */
+.monitor-apex-analysis {
+  @apply p-4 rounded-xl relative;
+  background: rgba(20, 35, 55, 0.7); /* keep literal — dark panel bg */
+  border: 1px solid rgba(23, 202, 41, 0.2); /* TODO: #17CA29 — no token, custom green, flagged for review */
+}
+
+/* ============================================
+   LANDING PAGE STYLES
+   ============================================ */
+
+/* Landing Page Container */
+.landing-container {
+  @apply min-h-screen;
+  background: linear-gradient(180deg, hsl(var(--palette-neutral-950)) 0%, #060812 50%, hsl(var(--palette-neutral-950)) 100%); /* TODO: #060812 — no token, close to neutral-950, flagged for review */
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Ambient Gradient Effects */
+.landing-ambient {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.landing-ambient-top-right {
+  top: 0;
+  right: 0;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(
+    ellipse at top right,
+    hsl(var(--color-accent-purple) / 0.15) 0%,
+    rgba(168, 85, 247, 0.08) 30%, /* TODO: #A855F7 purple-500 — no token, flagged for review */
+    transparent 60%
+  );
+}
+
+.landing-ambient-bottom-left {
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  height: 50%;
+  background: radial-gradient(
+    ellipse at bottom left,
+    hsl(var(--color-primary) / 0.1) 0%,
+    transparent 60%
+  );
+}
+
+/* Landing Header */
+.landing-header {
+  @apply h-16 flex items-center justify-between px-6 lg:px-8;
+  background: hsl(var(--palette-neutral-950) / 0.8);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.landing-nav-link {
+  @apply text-sm font-medium text-slate-400 hover:text-white transition-colors;
+}
+
+.landing-nav-link.active {
+  color: hsl(var(--color-primary));
+}
+
+/* Hero Section */
+.landing-hero {
+  @apply py-20 lg:py-32 px-6 lg:px-8;
+  position: relative;
+  z-index: 1;
+}
+
+.landing-hero-content {
+  @apply max-w-3xl;
+}
+
+.landing-hero-title {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: clamp(40px, 6vw, 64px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: hsl(var(--color-foreground));
+}
+
+.landing-hero-title .highlight {
+  background: linear-gradient(135deg, hsl(var(--color-primary)) 0%, hsl(var(--color-accent-purple)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.landing-hero-subtitle {
+  @apply text-lg lg:text-xl text-slate-400 mt-6 max-w-2xl;
+  line-height: 1.6;
+}
+
+/* CTA Buttons */
+.btn-primary {
+  @apply inline-flex items-center justify-center px-6 py-3 rounded-lg text-sm font-semibold;
+  background: linear-gradient(135deg, hsl(var(--color-primary)) 0%, hsl(var(--color-primary-muted)) 100%);
+  color: hsl(var(--palette-neutral-950));
+  transition: all 200ms ease;
+  box-shadow: 0 4px 20px hsl(var(--color-primary) / 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px hsl(var(--color-primary) / 0.4);
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center px-6 py-3 rounded-lg text-sm font-semibold;
+  background: rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+  color: hsl(var(--color-foreground));
+  border: 1px solid rgba(255, 255, 255, 0.1); /* keep literal — white overlay */
+  transition: all 200ms ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1); /* keep literal — white overlay */
+  border-color: rgba(255, 255, 255, 0.2); /* keep literal — white overlay */
+}
+
+/* Feature Cards */
+.feature-card {
+  @apply relative p-6 rounded-xl;
+  background: rgba(15, 18, 37, 0.4); /* keep literal — dark panel bg */
+  border: 1px solid rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+  transition: all 200ms ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  border-color: hsl(var(--color-accent-purple) / 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); /* keep literal — black shadow */
+}
+
+.feature-card-icon {
+  @apply w-12 h-12 rounded-xl flex items-center justify-center mb-4;
+  background: linear-gradient(135deg, hsl(var(--color-accent-purple) / 0.2) 0%, hsl(var(--color-primary) / 0.2) 100%);
+}
+
+.feature-card-title {
+  @apply text-lg font-semibold text-white mb-2;
+}
+
+.feature-card-description {
+  @apply text-sm text-slate-400;
+  line-height: 1.6;
+}
+
+/* Value Proposition Section */
+.values-section {
+  @apply py-16 lg:py-24;
+  position: relative;
+  z-index: 1;
+}
+
+.values-section-title {
+  @apply text-center text-2xl lg:text-3xl font-semibold text-white mb-12;
+}
+
+.value-card {
+  @apply text-center p-6;
+}
+
+.value-card-icon {
+  @apply w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center;
+  background: hsl(var(--color-accent-purple) / 0.1);
+  border: 1px solid hsl(var(--color-accent-purple) / 0.2);
+}
+
+.value-card-title {
+  @apply text-lg font-semibold text-white mb-2;
+}
+
+.value-card-description {
+  @apply text-sm text-slate-400;
+}
+
+/* Pricing Section */
+.pricing-section {
+  @apply py-16 lg:py-24 px-6 lg:px-8;
+  position: relative;
+  z-index: 1;
+}
+
+.pricing-toggle {
+  @apply flex items-center justify-center gap-4 mb-12;
+}
+
+.pricing-toggle-label {
+  @apply text-sm text-slate-400;
+}
+
+.pricing-toggle-label.active {
+  color: hsl(var(--color-foreground));
+}
+
+/* Pricing Cards */
+.pricing-card {
+  @apply relative p-6 rounded-xl;
+  background: rgba(15, 18, 37, 0.4); /* keep literal — dark panel bg */
+  border: 1px solid rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+  transition: all 200ms ease;
+}
+
+.pricing-card:hover {
+  border-color: rgba(255, 255, 255, 0.15); /* keep literal — white overlay */
+}
+
+.pricing-card.recommended {
+  border-color: hsl(var(--color-primary) / 0.4);
+  box-shadow: 0 0 40px hsl(var(--color-primary) / 0.1);
+}
+
+.pricing-card.recommended::before {
+  content: 'Recommended';
+  @apply absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-semibold rounded-full;
+  background: linear-gradient(135deg, hsl(var(--color-primary)) 0%, hsl(var(--color-primary-muted)) 100%);
+  color: hsl(var(--palette-neutral-950));
+}
+
+.pricing-tier-name {
+  @apply text-lg font-semibold text-white mb-2;
+}
+
+.pricing-amount {
+  @apply text-4xl font-bold text-white mb-1;
+}
+
+.pricing-period {
+  @apply text-sm text-slate-400 mb-6;
+}
+
+.pricing-features {
+  @apply space-y-3 mb-6;
+}
+
+.pricing-feature {
+  @apply flex items-center gap-2 text-sm text-slate-300;
+}
+
+.pricing-feature-icon {
+  @apply w-4 h-4 text-cyan-400;
+}
+
+/* FAQ Section */
+.faq-section {
+  @apply py-16 px-6 lg:px-8;
+  position: relative;
+  z-index: 1;
+}
+
+.faq-item {
+  @apply border-b border-white/5;
+}
+
+.faq-question {
+  @apply w-full flex items-center justify-between py-4 text-left text-white font-medium;
+}
+
+.faq-question:hover {
+  color: hsl(var(--color-primary));
+}
+
+.faq-answer {
+  @apply text-sm text-slate-400 pb-4;
+  line-height: 1.6;
+}
+
+/* Landing Footer */
+.landing-footer {
+  @apply py-12 px-6 lg:px-8;
+  border-top: 1px solid rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+  position: relative;
+  z-index: 1;
+}
+
+.landing-footer-content {
+  @apply flex flex-col lg:flex-row items-center justify-between gap-6;
+}
+
+.landing-footer-links {
+  @apply flex items-center gap-6;
+}
+
+.landing-footer-link {
+  @apply text-sm text-slate-400 hover:text-white transition-colors;
+}
+
+.landing-footer-socials {
+  @apply flex items-center gap-4;
+}
+
+.landing-social-icon {
+  @apply w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-colors;
+  background: rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+}
+
+/* ============================================
+   3D ILLUSTRATION PLACEHOLDER
+   ============================================ */
+
+.hero-illustration {
+  @apply relative w-full max-w-lg aspect-square;
+}
+
+.hero-cube {
+  @apply absolute inset-0 flex items-center justify-center;
+  perspective: 1000px;
+}
+
+/* Decorative Elements */
+.decorative-diamond {
+  @apply fixed pointer-events-none;
+  color: hsl(var(--color-primary) / 0.3);
+}
+
+.decorative-diamond-sm {
+  font-size: 24px;
+}
+
+.decorative-diamond-lg {
+  font-size: 48px;
+}
+
+/* ============================================
+   SETTINGS PAGE STYLES — V1
+   (V2 below is preferred; V1 kept for classes
+   not present in V2)
+   ============================================ */
+
+.settings-layout {
+  @apply grid gap-6;
+  grid-template-columns: 240px 1fr;
+}
+
+@media (max-width: 768px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.settings-content {
+  @apply space-y-6;
+}
+
+.settings-card {
+  @apply p-6 rounded-xl;
+  background: rgba(15, 18, 37, 0.4); /* keep literal — dark panel bg */
+  border: 1px solid rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+}
+
+.settings-card-title {
+  @apply text-lg font-semibold text-white mb-4;
+}
+
+.settings-form-group {
+  @apply space-y-4;
+}
+
+.settings-label {
+  @apply block text-sm font-medium text-slate-300 mb-1.5;
+}
+
+.settings-input {
+  @apply w-full px-4 py-2.5 rounded-lg text-sm text-white;
+  background: rgba(13, 16, 32, 0.8); /* keep literal — dark input bg */
+  border: 1px solid rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+  transition: all 150ms ease;
+}
+
+.settings-input:focus {
+  border-color: hsl(var(--color-primary) / 0.5);
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--color-primary) / 0.1);
+}
+
+.settings-input::placeholder {
+  color: hsl(var(--color-text-muted));
+}
+
+/* Team Member Cards */
+.team-member-card {
+  @apply flex items-center gap-4 p-4 rounded-xl;
+  background: rgba(255, 255, 255, 0.02); /* keep literal — white overlay */
+  border: 1px solid rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+}
+
+.team-member-avatar {
+  @apply w-12 h-12 rounded-full;
+  background: linear-gradient(135deg, hsl(var(--color-accent-purple)) 0%, hsl(var(--color-primary)) 100%);
+}
+
+.team-member-name {
+  @apply text-sm font-medium text-white;
+}
+
+.team-member-role {
+  @apply text-xs text-slate-400;
+}
+
+/* Brand Logo Upload */
+.brand-logo-upload {
+  @apply w-24 h-24 rounded-xl flex items-center justify-center cursor-pointer;
+  background: rgba(13, 16, 32, 0.8); /* keep literal — dark input bg */
+  border: 2px dashed rgba(255, 255, 255, 0.1); /* keep literal — white overlay */
+  transition: all 150ms ease;
+}
+
+.brand-logo-upload:hover {
+  border-color: hsl(var(--color-primary) / 0.3);
+  background: hsl(var(--color-primary) / 0.05);
+}
+
+/* Danger Zone */
+.settings-danger-zone {
+  @apply mt-8 p-4 rounded-xl;
+  background: hsl(var(--color-error) / 0.05);
+  border: 1px solid hsl(var(--color-error) / 0.2);
+}
+
+.settings-danger-title {
+  @apply text-sm font-medium text-red-400 mb-2;
+}
+
+.settings-danger-description {
+  @apply text-xs text-slate-400 mb-3;
+}
+
+.btn-danger {
+  @apply px-4 py-2 rounded-lg text-sm font-medium;
+  background: hsl(var(--color-error) / 0.15);
+  color: hsl(var(--color-error));
+  border: 1px solid hsl(var(--color-error) / 0.3);
+  transition: all 150ms ease;
+}
+
+.btn-danger:hover {
+  background: hsl(var(--color-error) / 0.25);
+}
+
+/* ============================================
+   ENGINE ROOM STYLES — V1
+   (V2 below is preferred; V1 kept for classes
+   not present in V2)
+   ============================================ */
+
+/* Engine Tabs */
+.engine-tabs {
+  @apply flex items-center gap-2 mb-6 overflow-x-auto;
+}
+
+.engine-tab {
+  @apply px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap;
+  color: hsl(var(--color-text-secondary));
+  background: rgba(255, 255, 255, 0.02); /* keep literal — white overlay */
+  border: 1px solid rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+  transition: all 150ms ease;
+}
+
+.engine-tab:hover {
+  background: rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+  color: hsl(var(--color-foreground));
+}
+
+.engine-tab.active {
+  background: hsl(var(--color-primary) / 0.1);
+  color: hsl(var(--color-primary));
+  border-color: hsl(var(--color-primary) / 0.3);
+}
+
+/* Engine Header */
+.engine-header {
+  @apply mb-6;
+}
+
+.engine-title {
+  @apply text-xl font-semibold text-white;
+}
+
+.engine-subtitle {
+  @apply text-sm text-slate-400 mt-1;
+}
+
+/* Brand Perception Bubbles */
+.perception-container {
+  @apply relative h-64 flex items-center justify-center;
+}
+
+.perception-bubble-container {
+  @apply relative w-full h-full;
+}
+
+/* NOTE: .perception-bubble is also defined in V1 Metric section above.
+   This V1 Engine Room variant is slightly different (px-4 py-2 layout).
+   Keeping both — TODO: reconcile in future refactor. */
+.perception-bubble {
+  @apply absolute px-4 py-2 rounded-full text-sm font-medium;
+  background: hsl(var(--color-accent-purple) / 0.1);
+  border: 1px solid hsl(var(--color-accent-purple) / 0.3);
+  color: hsl(var(--color-accent-purple-light));
+  white-space: nowrap;
+  transition: all 200ms ease;
+}
+
+.perception-bubble:hover {
+  transform: scale(1.1);
+  background: hsl(var(--color-accent-purple) / 0.2);
+  border-color: hsl(var(--color-accent-purple) / 0.5);
+}
+
+.perception-bubble.primary {
+  background: hsl(var(--color-primary) / 0.1);
+  border-color: hsl(var(--color-primary) / 0.3);
+  color: hsl(var(--color-primary));
+}
+
+/* ============================================
+   FEEDBACK PAGE STYLES — V1
+   ============================================ */
+
+/* 3-Column Workflow */
+.feedback-workflow {
+  @apply grid grid-cols-1 lg:grid-cols-3 gap-6;
+}
+
+.feedback-column {
+  @apply space-y-4;
+}
+
+.feedback-column-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.feedback-column-title {
+  @apply text-lg font-semibold text-white;
+}
+
+.feedback-column-count {
+  @apply px-2 py-0.5 rounded-full text-xs font-medium;
+  background: rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+  color: hsl(var(--color-text-secondary));
+}
+
+/* Hallucination Card */
+.hallucination-card {
+  @apply p-4 rounded-xl;
+  background: rgba(15, 18, 37, 0.4); /* keep literal — dark panel bg */
+  border: 1px solid rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+}
+
+.hallucination-platform {
+  @apply flex items-center gap-2 mb-3;
+}
+
+.hallucination-title {
+  @apply text-sm font-medium text-white mb-1;
+}
+
+.hallucination-description {
+  @apply text-xs text-slate-400 mb-3;
+}
+
+.hallucination-progress {
+  @apply h-1.5 rounded-full overflow-hidden;
+  background: rgba(255, 255, 255, 0.1); /* keep literal — white overlay */
+}
+
+.hallucination-progress-bar {
+  @apply h-full rounded-full;
+  background: linear-gradient(90deg, hsl(var(--color-primary)) 0%, hsl(var(--color-accent-purple)) 100%);
+}
+
+.hallucination-timeline {
+  @apply text-xs text-slate-500 mt-2;
+}
+
+/* Fix Deployed Card */
+.fix-card {
+  @apply p-4 rounded-xl;
+  background: rgba(15, 18, 37, 0.4); /* keep literal — dark panel bg */
+  border: 1px solid hsl(var(--color-primary) / 0.2);
+}
+
+.fix-card-deployed {
+  border-color: hsl(var(--color-success) / 0.3);
+}
+
+/* Verified Card */
+.verified-card {
+  @apply p-4 rounded-xl;
+  background: linear-gradient(135deg,
+    hsl(var(--color-accent-purple) / 0.1) 0%,
+    hsl(var(--color-primary) / 0.1) 100%);
+  border: 1px solid hsl(var(--color-success) / 0.3);
+}
+
+.verified-badge {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium;
+  background: hsl(var(--color-success) / 0.15);
+  color: hsl(var(--color-success));
+  border: 1px solid hsl(var(--color-success) / 0.3);
+}
+
+/* ============================================
+   UTILITY ANIMATIONS
+   ============================================ */
+
+/* Fade In Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Scale In Animation */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out forwards;
+}
+
+/* Slide Up Animation */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out forwards;
+}
+
+/* Stagger Children Animation */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+
+/* Number Animation */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-number {
+  animation: countUp 0.6s ease-out forwards;
+}
+
+/* Gradient Shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%, /* keep literal — white overlay compositing */
+    rgba(255, 255, 255, 0.05) 50%, /* keep literal — white overlay compositing */
+    rgba(255, 255, 255, 0) 100% /* keep literal — white overlay compositing */
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* ============================================
+   EMPTY STATE ANIMATIONS
+   ============================================ */
+
+/* Icon Glow Pulse — Subtle ambient glow effect for empty state icons */
+@keyframes empty-state-glow-pulse {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.05);
+  }
+}
+
+/* Accessibility: Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes empty-state-glow-pulse {
+    0%, 100% {
+      opacity: 0.3;
+      transform: scale(1);
+    }
+  }
+}
+
+/* ============================================
+   MONITOR PAGE V2 — Reference Design Match
+   Preferred over V1 for duplicate class names.
+   ============================================ */
+
+/* Filter Sidebar — Deep space aesthetic */
+.monitor-filter-sidebar {
+  @apply p-5 rounded-2xl;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 20, 40, 0.95) 0%, /* keep literal — dark panel bg */
+    rgba(10, 15, 35, 0.98) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+  min-height: calc(100vh - 180px);
+}
+
+/* Filter Group */
+.filter-group {
+  @apply pb-4 border-b;
+  border-color: rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+}
+
+.filter-group:last-child {
+  border-bottom: none;
+}
+
+/* Filter Option */
+.filter-option {
+  transition: background 150ms ease;
+}
+
+.filter-option:hover {
+  background: rgba(255, 255, 255, 0.03); /* keep literal — white overlay */
+}
+
+/* AI Engine Filter Icons */
+.ai-engine-filter-icon {
+  @apply w-9 h-9 rounded-lg flex items-center justify-center transition-all;
+  background: rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* keep literal — white overlay */
+  color: hsl(var(--color-text-muted));
+}
+
+.ai-engine-filter-icon:hover {
+  background: rgba(255, 255, 255, 0.1); /* keep literal — white overlay */
+  border-color: rgba(255, 255, 255, 0.2); /* keep literal — white overlay */
+  color: hsl(var(--color-text-secondary));
+}
+
+.ai-engine-filter-icon.active {
+  background: hsl(var(--color-primary) / 0.15);
+  border-color: hsl(var(--color-primary) / 0.3);
+  color: hsl(var(--color-primary));
+}
+
+/* Add New Tracking Scenario Button */
+.monitor-add-scenario-btn {
+  @apply w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition-all;
+  background: hsl(var(--color-primary) / 0.1);
+  border: 1px dashed hsl(var(--color-primary) / 0.3);
+  color: hsl(var(--color-primary));
+}
+
+.monitor-add-scenario-btn:hover {
+  background: hsl(var(--color-primary) / 0.15);
+  border-color: hsl(var(--color-primary) / 0.5);
+}
+
+/* Monitor Content Card */
+.monitor-content-card {
+  @apply p-6 rounded-2xl;
+  background: linear-gradient(
+    135deg,
+    rgba(15, 20, 40, 0.95) 0%, /* keep literal — dark panel bg */
+    rgba(10, 18, 38, 0.98) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+  min-height: calc(100vh - 180px);
+}
+
+/* Smart Table Badge */
+.smart-table-badge {
+  @apply inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium;
+  background: rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* keep literal — white overlay */
+  color: hsl(var(--color-text-secondary));
+}
+
+/* Decorative Star (V2 override — simpler than V1) */
+.decorative-star {
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* AI Status Indicator (V2 override) */
+.ai-status-indicator {
+  @apply flex items-center gap-2;
+}
+
+.ai-status-dot {
+  @apply w-2 h-2 rounded-full;
+  background: hsl(var(--color-text-muted));
+}
+
+.ai-status-dot.active {
+  background: hsl(var(--color-primary));
+  box-shadow: 0 0 8px hsl(var(--color-primary) / 0.5);
+  animation: pulse 2s infinite;
+}
+
+/* Apex Logo Icon */
+.apex-logo-icon {
+  @apply flex items-center justify-center;
+}
+
+/* ============================================
+   FEEDBACK PAGE V2 — Reference Design Match
+   ============================================ */
+
+/* Feedback Column Card */
+.feedback-column-card {
+  @apply p-5 rounded-2xl;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 20, 40, 0.95) 0%, /* keep literal — dark panel bg */
+    rgba(10, 15, 35, 0.98) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+  min-height: 400px;
+}
+
+/* ============================================
+   ENGINE ROOM PAGE V2 — Reference Design Match
+   ============================================ */
+
+/* Engine Platform Tabs */
+.engine-platform-tab {
+  @apply flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all;
+  background: rgba(255, 255, 255, 0.03); /* keep literal — white overlay */
+  border: 1px solid transparent;
+  color: hsl(var(--color-text-secondary));
+}
+
+.engine-platform-tab:hover {
+  background: rgba(255, 255, 255, 0.06); /* keep literal — white overlay */
+  color: #CBD5E1; /* TODO: no token for slate-300 — flagged for review */
+}
+
+.engine-platform-tab.active {
+  background: rgba(15, 20, 40, 0.95); /* keep literal — dark panel bg */
+  border: 1px solid;
+  color: hsl(var(--color-foreground));
+}
+
+/* Engine Sidebar Card */
+.engine-sidebar-card {
+  @apply p-4 rounded-2xl;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 20, 40, 0.95) 0%, /* keep literal — dark panel bg */
+    rgba(10, 15, 35, 0.98) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+}
+
+/* Engine Filter Group */
+.filter-group-engine {
+  @apply pb-3;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+}
+
+.filter-group-engine:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* Engine Metric Badge */
+.engine-metric-badge {
+  @apply flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all;
+  background: rgba(255, 255, 255, 0.03); /* keep literal — white overlay */
+  border: 1px solid rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+  color: hsl(var(--color-text-muted));
+}
+
+.engine-metric-badge:hover {
+  background: rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+  border-color: rgba(255, 255, 255, 0.12); /* keep literal — white overlay */
+}
+
+.engine-metric-badge.active {
+  background: hsl(var(--color-primary) / 0.08);
+  border-color: hsl(var(--color-primary) / 0.2);
+  color: hsl(var(--color-primary));
+}
+
+/* Engine Content Card */
+.engine-content-card {
+  @apply p-6 rounded-2xl;
+  background: linear-gradient(
+    135deg,
+    rgba(15, 20, 40, 0.95) 0%, /* keep literal — dark panel bg */
+    rgba(10, 18, 38, 0.98) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+}
+
+/* Engine Radar Section */
+.engine-radar-section {
+  @apply p-4 rounded-xl;
+  background: rgba(0, 0, 0, 0.2); /* keep literal — black overlay */
+}
+
+/* Engine Perception Bubble */
+.engine-perception-bubble {
+  @apply absolute rounded-full flex items-center justify-center text-center font-medium transition-all;
+  background: rgba(100, 116, 139, 0.15); /* keep literal — slate-500 overlay */
+  border: 1px solid rgba(100, 116, 139, 0.3); /* keep literal — slate-500 overlay */
+  color: hsl(var(--color-text-secondary));
+  transform: translate(-50%, -50%);
+}
+
+.engine-perception-bubble:hover {
+  background: hsl(var(--color-primary) / 0.15);
+  border-color: hsl(var(--color-primary) / 0.3);
+  color: hsl(var(--color-primary));
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+/* ============================================
+   SETTINGS PAGE V2 — Reference Design Match
+   ============================================ */
+
+/* Settings Sidebar Card */
+.settings-sidebar-card {
+  @apply p-5 rounded-2xl;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 20, 40, 0.95) 0%, /* keep literal — dark panel bg */
+    rgba(10, 15, 35, 0.98) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+}
+
+/* Settings Nav Item (V2 override) */
+.settings-nav-item {
+  @apply w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all;
+  color: hsl(var(--color-text-muted));
+}
+
+.settings-nav-item:hover {
+  background: rgba(255, 255, 255, 0.03); /* keep literal — white overlay */
+  color: hsl(var(--color-text-secondary));
+}
+
+.settings-nav-item.active {
+  background: hsl(var(--color-primary) / 0.1);
+  color: hsl(var(--color-primary));
+}
+
+/* Settings Content Card */
+.settings-content-card {
+  @apply p-8 rounded-2xl;
+  background: linear-gradient(
+    135deg,
+    rgba(15, 20, 40, 0.95) 0%, /* keep literal — dark panel bg */
+    rgba(10, 18, 38, 0.98) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+}
+
+/* Settings Edit Button */
+.settings-edit-btn {
+  @apply px-4 py-2 rounded-lg text-sm font-medium transition-all;
+  background: rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* keep literal — white overlay */
+  color: hsl(var(--color-text-secondary));
+}
+
+.settings-edit-btn:hover {
+  background: rgba(255, 255, 255, 0.1); /* keep literal — white overlay */
+  border-color: rgba(255, 255, 255, 0.15); /* keep literal — white overlay */
+  color: #CBD5E1; /* TODO: no token for slate-300 — flagged for review */
+}
+
+/* Settings Input (V2 override) */
+.settings-input {
+  @apply w-full px-4 py-3 rounded-xl text-sm;
+  background: rgba(0, 0, 0, 0.2); /* keep literal — black overlay */
+  border: 1px solid rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+  color: hsl(var(--color-text-muted));
+}
+
+/* Settings Dropdown */
+.settings-dropdown {
+  @apply flex items-center gap-2 px-4 py-2 rounded-lg text-sm;
+  background: rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* keep literal — white overlay */
+  color: hsl(var(--color-text-secondary));
+}
+
+/* Settings Delete Button */
+.settings-delete-btn {
+  @apply flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all;
+  background: rgba(255, 255, 255, 0.03); /* keep literal — white overlay */
+  border: 1px solid rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+  color: hsl(var(--color-text-muted));
+}
+
+.settings-delete-btn:hover {
+  background: rgba(220, 38, 38, 0.1); /* TODO: #DC2626 — no exact token, close to color-error, keep literal for now */
+  border-color: rgba(220, 38, 38, 0.3); /* TODO: same as above */
+  color: hsl(var(--color-error));
+}
+
+/* Settings Feature Card */
+.settings-feature-card {
+  @apply p-5 rounded-xl;
+  background: rgba(0, 0, 0, 0.2); /* keep literal — black overlay */
+  border: 1px solid rgba(255, 255, 255, 0.05); /* keep literal — white overlay */
+}
+
+/* Settings Preview Image */
+.settings-preview-image {
+  @apply mt-4;
+}
+
+/* Settings Locale Button */
+.settings-locale-btn {
+  @apply px-4 py-2 rounded-lg text-sm font-medium transition-all;
+  background: rgba(255, 255, 255, 0.03); /* keep literal — white overlay */
+  border: 1px solid rgba(255, 255, 255, 0.08); /* keep literal — white overlay */
+  color: hsl(var(--color-text-muted));
+}
+
+.settings-locale-btn.active {
+  background: hsl(var(--color-primary) / 0.1);
+  border-color: hsl(var(--color-primary) / 0.3);
+  color: hsl(var(--color-primary));
+}
+
+/* Settings Promo Card */
+.settings-promo-card {
+  @apply p-4 rounded-xl;
+  background: hsl(var(--color-accent-purple) / 0.05);
+  border: 1px solid hsl(var(--color-accent-purple) / 0.15);
+}
+
+/* Settings Toggle Row */
+.settings-toggle-row {
+  @apply flex items-center justify-between cursor-pointer;
+}
+
+/* Settings Toggle */
+.settings-toggle {
+  @apply relative w-10 h-5 rounded-full transition-all;
+  background: rgba(255, 255, 255, 0.1); /* keep literal — white overlay */
+}
+
+.settings-toggle.active {
+  background: hsl(var(--color-primary) / 0.3);
+}
+
+.settings-toggle-knob {
+  @apply absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-all;
+  background: hsl(var(--color-text-muted));
+}
+
+.settings-toggle.active .settings-toggle-knob {
+  background: hsl(var(--color-primary));
+  transform: translateX(20px);
+}
+
+/* Settings Save Button */
+.settings-save-btn {
+  @apply px-6 py-3 rounded-xl text-sm font-semibold transition-all;
+  background: linear-gradient(135deg, hsl(var(--color-primary)) 0%, #0EA5E9 100%); /* TODO: #0EA5E9 sky-500 — no token, flagged for review */
+  color: #0A0D14; /* TODO: #0A0D14 — very close to palette-neutral-950, keep literal for now, flagged for review */
+}
+
+.settings-save-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}

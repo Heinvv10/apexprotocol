@@ -1,0 +1,152 @@
+/*
+ * Third-party component overrides — Clerk + Radix need !important to beat
+ * their inline styles. Keep these in one place; never scatter.
+ *
+ * IMPORTANT: these must use semantic tokens — the Clerk overrides currently
+ * in globals.css hardcode #4926FA (electric purple-blue from the abandoned
+ * white-label plan) which is WRONG. This extraction fixes that drift.
+ */
+
+/* ============================================================
+   Radix — Dropdown / Select / Popover
+   ============================================================ */
+[data-slot="dropdown-menu-content"],
+[data-radix-popper-content-wrapper] [role="menu"],
+[data-radix-popper-content-wrapper] [role="listbox"],
+[data-radix-select-content] {
+  background-color: hsl(var(--color-surface-base)) !important;
+  color: hsl(var(--color-foreground)) !important;
+  border: 1px solid hsl(var(--color-border-default) / 0.5) !important;
+}
+
+[data-radix-select-content] [role="option"] {
+  color: hsl(var(--color-foreground)) !important;
+}
+
+[data-radix-select-content] [role="option"]:hover,
+[data-radix-select-content] [role="option"][data-highlighted] {
+  background-color: hsl(var(--color-primary) / 0.15) !important;
+  color: hsl(var(--color-foreground)) !important;
+}
+
+[data-radix-select-content] [role="option"][data-state="checked"] {
+  background-color: hsl(var(--color-primary) / 0.25) !important;
+}
+
+/* ============================================================
+   Clerk — Modal + UserProfile + UserButton
+   ============================================================ */
+.cl-modalContent,
+.cl-card,
+.cl-userProfile-root,
+.cl-profilePage,
+.cl-navbar,
+.cl-pageScrollBox,
+.cl-scrollBox,
+.cl-page,
+.cl-userProfile__account,
+.cl-profileSection__profile,
+.cl-profileSectionContent,
+.cl-accordionContent,
+.cl-formContainer,
+.cl-form,
+[data-localization-key] {
+  background-color: hsl(var(--color-surface-base)) !important;
+  color: hsl(var(--color-foreground)) !important;
+}
+
+.cl-modalBackdrop {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+.cl-userButtonPopoverCard,
+.cl-userButtonPopoverMain,
+.cl-userButtonPopoverFooter,
+.cl-userButtonPopoverActions {
+  background-color: hsl(var(--color-surface-base)) !important;
+}
+
+.cl-profileSection,
+.cl-profileSectionHeader {
+  border-color: hsl(var(--color-border-default) / 0.5) !important;
+}
+
+.cl-profileSectionTitle__profile,
+.cl-profileSectionTitle__emailAddresses,
+.cl-profileSectionTitle__connectedAccounts,
+.cl-headerTitle,
+.cl-profileSectionTitleText,
+.cl-formFieldLabel,
+.cl-identityPreviewText,
+.cl-userPreviewMainIdentifier,
+.cl-userPreviewSecondaryIdentifier,
+.cl-internal-1e1g7t0 {
+  color: hsl(var(--color-foreground)) !important;
+}
+
+.cl-profileSectionContent__profile,
+.cl-profileSectionContent__emailAddresses,
+.cl-profileSectionPrimaryButton,
+.cl-formFieldAction {
+  color: hsl(var(--color-primary)) !important;
+}
+
+.cl-navbarButton,
+.cl-navbarButtonIcon {
+  color: hsl(var(--color-text-muted)) !important;
+}
+
+.cl-navbarButton:hover,
+.cl-navbarButton[data-active="true"] {
+  background-color: hsl(var(--color-primary) / 0.1) !important;
+  color: hsl(var(--color-primary)) !important;
+}
+
+.cl-formButtonPrimary {
+  background-color: hsl(var(--color-primary)) !important;
+  color: hsl(var(--color-primary-foreground)) !important;
+}
+
+.cl-formButtonPrimary:hover {
+  background-color: hsl(var(--color-primary) / 0.9) !important;
+}
+
+.cl-avatarBox {
+  border: 2px solid hsl(var(--color-primary) / 0.3) !important;
+}
+
+.cl-formFieldSuccessText {
+  color: hsl(var(--color-success)) !important;
+}
+
+.cl-formFieldErrorText {
+  color: hsl(var(--color-error)) !important;
+}
+
+.cl-formFieldHintText,
+.cl-dividerText,
+.cl-footerPages,
+.cl-formFieldInputShowPasswordButton {
+  color: hsl(var(--color-text-muted)) !important;
+}
+
+.cl-formFieldInputShowPasswordButton:hover {
+  color: hsl(var(--color-text-secondary)) !important;
+}
+
+.cl-alert {
+  background: hsl(var(--color-error) / 0.1) !important;
+  border: 1px solid hsl(var(--color-error) / 0.3) !important;
+  color: hsl(var(--color-error)) !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+.cl-internal-card,
+.cl-internal-rootBox {
+  background: transparent !important;
+}
+
+.cl-footer {
+  opacity: 0.6;
+}

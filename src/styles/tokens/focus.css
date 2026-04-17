@@ -1,0 +1,39 @@
+/*
+ * Focus-ring tokens — Layer 2 semantic. Already well-structured in the
+ * existing globals.css — extracted verbatim. Dark values in :root, light
+ * overrides in .light (theme layer handles the swap).
+ */
+
+:root {
+  /* Focus Ring Thickness */
+  --focus-ring-width-default: 3px;
+  --focus-ring-width-offset: 2px;
+  --focus-ring-width-strong: 3px;
+
+  /* Focus Ring Offset */
+  --focus-ring-offset-default: 0px;
+  --focus-ring-offset-gap: 2px;
+
+  /* Focus Ring Colors — dark mode defaults (light overrides in themes/light.css) */
+  --focus-ring-primary: var(--palette-cyan-500);
+  --focus-ring-primary-opacity: 0.5;
+  --focus-ring-input: var(--palette-cyan-500);
+  --focus-ring-input-opacity: 0.3;
+  --focus-ring-destructive: var(--palette-error);
+  --focus-ring-destructive-opacity: 0.4;
+  --focus-ring-offset-color: var(--palette-cyan-500);
+  --focus-ring-offset-opacity: 1;
+
+  /* Focus Border Colors */
+  --focus-border-primary: var(--palette-cyan-500);
+  --focus-border-input: var(--palette-cyan-500);
+  --focus-border-destructive: var(--palette-error);
+
+  /* Focus Background Colors (for menu items) */
+  --focus-bg-menu: 232 40% 15%;
+  --focus-bg-menu-foreground: 0 0% 100%;
+
+  /* Focus Outline */
+  --focus-outline-width: 1px;
+  --focus-outline-color: var(--palette-cyan-500);
+}
