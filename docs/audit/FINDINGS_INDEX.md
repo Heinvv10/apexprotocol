@@ -53,3 +53,9 @@ All other candidates were categorised and left alone:
 The pattern is narrow in practice. Treating this as closed unless a new finding surfaces.
 
 Audit scope: **complete**. Phase 7 white-label system ships via `NEXT_PUBLIC_BRAND_PRESET` env swap, demonstrated end-to-end with the Solstice preset.
+
+## Post-merge verification
+
+- `bun run build` — clean, no errors. Every refactored route (sign-in, dashboard/*, admin/*, blog, careers, support, changelog, docs/api, onboarding, not-found) prerenders statically or as server-rendered. Confirms Phase 6 `<BrandHeader />`, Phase 7 brand-preset resolution, Phase 3 Neon pool driver swap, and the marketing-stub wrap all survive SSR.
+- `/api/analytics/dashboard` no longer 400s on every dashboard navigation (commit `dc79616`): hook gated on `brandId` instead of `orgId || brandId`.
+- Token contract tests: 10/10. Brand preset unit tests: 4/4. Total: 14/14 green after the full sweep.
