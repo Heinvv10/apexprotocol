@@ -1,10 +1,17 @@
 "use client";
 
 /**
- * ApexGEO Brand Logo Component
- * Radar mark — approved brand identity April 2026
- * Use this component everywhere instead of inline SVGs
+ * Brand Logo Component
+ *
+ * The radar mark below is Apex-specific. For white-label tenants that
+ * ship their own logo SVG via `public/brands/<slug>/logo.svg`, use the
+ * `logoUrl` field from brand-presets.ts to render an <img>.
+ *
+ * The wordmark reads `name` + optional `wordmarkSuffix` from the active
+ * brand preset and colours the suffix with --color-primary.
  */
+
+import { getActiveBrand } from "@/config/brand-presets";
 
 interface ApexLogoProps {
   size?: number;
@@ -112,10 +119,16 @@ export function ApexLogoMark({ size = 32, className = "" }: { size?: number; cla
 }
 
 export function ApexWordmark({ className = "" }: { className?: string }) {
+  const brand = getActiveBrand();
+
   return (
     <span className={`font-bold tracking-tight ${className}`}>
-      <span className="text-white">Apex</span>
-      <span style={{ color: "#00E5CC" }}>GEO</span>
+      <span className="text-white">{brand.name}</span>
+      {brand.wordmarkSuffix && (
+        <span style={{ color: "hsl(var(--color-primary))" }}>
+          {brand.wordmarkSuffix}
+        </span>
+      )}
     </span>
   );
 }

@@ -12,17 +12,19 @@
 export type BrandPresetKey = keyof typeof BRAND_PRESETS;
 
 export interface BrandPreset {
-  readonly name: string;            // Display name in UI ("Apex", "Aurora")
-  readonly tagline: string;         // Subtitle/tagline
-  readonly cssFile: string;         // Filename under src/styles/themes/brand/
-  readonly logoUrl: string;         // Light-bg logo
-  readonly logoDarkUrl: string;     // Dark-bg logo
+  readonly name: string;                   // Display name in UI ("Apex", "Solstice")
+  readonly wordmarkSuffix?: string;        // Accent-coloured suffix appended to the name in the sidebar wordmark (e.g. Apex's "GEO"). Omit for brands that don't want a coloured suffix.
+  readonly tagline: string;                // Subtitle/tagline
+  readonly cssFile: string;                // Filename under src/styles/themes/brand/
+  readonly logoUrl: string;                // Light-bg logo
+  readonly logoDarkUrl: string;            // Dark-bg logo
   readonly faviconUrl: string;
 }
 
 export const BRAND_PRESETS = {
   apex: {
     name: 'Apex',
+    wordmarkSuffix: 'GEO',
     tagline: 'The Credibility Engine for African Business',
     cssFile: 'apex.css',
     logoUrl: '/brands/apex/logo.svg',
