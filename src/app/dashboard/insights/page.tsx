@@ -200,8 +200,17 @@ function SummaryStats() {
             <Bot className="w-5 h-5 text-success" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-foreground">{summary.platformsAnalyzed}</div>
-            <div className="text-xs text-muted-foreground">Platforms Analyzed</div>
+            <div className="text-2xl font-bold text-foreground">
+              {summary.platformsAnalyzed}
+              {typeof summary.platformsRequested === "number" && (
+                <span className="text-base font-normal text-muted-foreground ml-1">
+                  / {summary.platformsRequested}
+                </span>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Platforms with data
+            </div>
           </div>
         </div>
       </div>
@@ -320,8 +329,9 @@ function RecentAnalysesSection() {
             <Brain className="h-6 w-6 text-muted-foreground" />
           </div>
           <p className="text-muted-foreground">
-            No analyses yet. Enter a query above to analyze your brand&apos;s visibility across AI
-            platforms.
+            No completed analyses yet. Run a query above to analyze your
+            brand&apos;s visibility across AI platforms — results appear here
+            once each platform responds.
           </p>
         </div>
       </div>

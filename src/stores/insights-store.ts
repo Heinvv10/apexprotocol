@@ -47,6 +47,7 @@ export interface AnalysisSummary {
   totalCitations: number;
   totalMentions: number;
   platformsAnalyzed: number;
+  platformsRequested?: number;
   bestPlatform: AIPlatform | null;
   worstPlatform: AIPlatform | null;
 }
@@ -142,6 +143,7 @@ interface HistoryApiEntry {
     totalCitations: number;
     totalMentions: number;
     platformsAnalyzed: number;
+    platformsRequested?: number;
   };
   createdAt: string;
   platformBreakdown?: Array<{
@@ -329,6 +331,7 @@ export const useInsightsStore = create<InsightsState>()(
               totalCitations: analysisSummary?.totalCitations || 0,
               totalMentions: analysisSummary?.totalMentions || 0,
               platformsAnalyzed: analysisSummary?.platformsAnalyzed || 0,
+              platformsRequested: analysisSummary?.platformsRequested,
               bestPlatform: analysisSummary?.bestPlatform || null,
               worstPlatform: analysisSummary?.worstPlatform || null,
             },
