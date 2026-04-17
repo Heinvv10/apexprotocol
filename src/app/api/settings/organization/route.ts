@@ -51,14 +51,14 @@ export async function GET(_request: NextRequest) {
       .where(eq(organizations.id, orgId))
       .limit(1);
 
-    // Create default organization if doesn't exist
     if (org.length === 0) {
       const newOrg = await db
         .insert(organizations)
         .values({
           id: orgId,
           name: "My Organization",
-          slug: "my-organization",
+          slug: `org-${orgId.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now().toString(36)}`,
+          clerkOrgId: orgId.startsWith("org_") ? orgId : null,
         })
         .returning();
       org = newOrg;

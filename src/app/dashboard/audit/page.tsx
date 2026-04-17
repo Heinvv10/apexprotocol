@@ -186,10 +186,10 @@ export default function AuditPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [isValid, setIsValid] = React.useState<boolean | null>(null);
 
-  // Pre-fill URL with brand domain when brand changes
   React.useEffect(() => {
     if (selectedBrand?.domain) {
-      const brandUrl = `https://${selectedBrand.domain}`;
+      const bare = selectedBrand.domain.replace(/^https?:\/\//i, "");
+      const brandUrl = `https://${bare}`;
       setUrl(brandUrl);
       setIsValid(URL_REGEX.test(brandUrl));
     }

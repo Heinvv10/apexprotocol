@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getUserId } from "@/lib/auth/clerk";
+import { getInternalUserId } from "@/lib/auth/clerk";
 import { z } from "zod";
 import { AnalysisEngine } from "@/lib/ai/analysis-engine";
 import { analyzeRequestSchema } from "@/lib/ai/validation";
@@ -26,7 +26,7 @@ const isDatabaseConfigured = () => {
  */
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getUserId();
+    const userId = await getInternalUserId();
 
     if (!userId) {
       return NextResponse.json(

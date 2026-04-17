@@ -444,6 +444,55 @@ export async function getUserId(): Promise<string | null> {
   }
 }
 
+// Resolve the internal users.id for the current Clerk user, creating a
+// users row on first call (useful when Clerk webhooks haven't mirrored
+// the user yet — e.g. local dev without a tunnel). Returns null if the
+// request is unauthenticated.
+//
+// Use this helper whenever you need a value for a column that FKs into
+// users.id (e.g. platform_queries.user_id, content.user_id). Do NOT pass
+// the Clerk user id (user_...) straight through — see Phase 3 finding F12.
+export async function getInternalUserId(): Promise<string | null> {
+  const clerkUserId = await getUserId();
+  if (!clerkUserId) return null;
+
+  const { db } = await import("@/lib/db");
+  const { users } = await import("@/lib/db/schema");
+  const { eq } = await import("drizzle-orm");
+
+  const existing = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.clerkUserId, clerkUserId))
+    .limit(1);
+
+  if (existing.length > 0) {
+    return existing[0].id;
+  }
+
+  // Self-heal: webhook hasn't fired yet. Create a minimal users row.
+  const orgId = await getOrganizationId();
+  let email = "";
+  try {
+    const user = await currentUser();
+    email = user?.primaryEmailAddress?.emailAddress ?? "";
+  } catch {
+    // currentUser() may throw outside request context
+  }
+
+  const inserted = await db
+    .insert(users)
+    .values({
+      clerkUserId,
+      organizationId: orgId,
+      email,
+      role: "viewer",
+    })
+    .returning({ id: users.id });
+
+  return inserted[0]?.id ?? null;
+}
+
 // Require authentication - throws if not authenticated
 // Checks API key headers (set by middleware) first, falls back to Clerk session
 export async function requireAuth(): Promise<{ userId: string; orgId: string }> {
