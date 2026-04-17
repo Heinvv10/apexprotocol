@@ -281,7 +281,11 @@ export default function AuditHistoryPage() {
             <h2 className="text-2xl font-bold tracking-tight">Score History</h2>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Globe className="h-4 w-4" />
-              <span>https://example.com</span>
+              <span>
+                {auditsData?.audits?.[0]?.url ??
+                  selectedBrand?.domain ??
+                  "No audits yet"}
+              </span>
             </div>
           </div>
         </div>
