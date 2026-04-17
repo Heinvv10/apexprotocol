@@ -8,7 +8,7 @@ Screenshots: `docs/audit/screenshots/phase-3/`.
 | # | Route | Status | Screenshot | Notes |
 |---|-------|--------|------------|-------|
 | 1 | `/dashboard` | 200 | `01-dashboard-root.png` | Onboarding hero — "Let's optimize your ..."; 4 step cards all "Completed" |
-| 2 | `/dashboard/overview` | **404** | `02-dashboard-overview.png` | **Default Next.js 404, unstyled, light mode** |
+| 2 | ~~`/dashboard/overview`~~ | — | — | **Not a real route.** My enumeration loop invented it; the sidebar "Overview" correctly points at `/dashboard`. Confirmed in `src/components/layout/sidebar.tsx:48`. |
 | 3 | `/dashboard/brands` | 200 | `02-dashboard-brands.png` | Good empty state — cyan wireframe + dashed outline card |
 | 4 | `/dashboard/monitor` | 200 | `02-dashboard-monitor.png` | "OFFLINE" badge; "Select a Brand" empty state |
 | 5 | `/dashboard/competitive` | 200 | `02-dashboard-competitive.png` | Empty state similar to monitor |
@@ -24,15 +24,13 @@ Screenshots: `docs/audit/screenshots/phase-3/`.
 
 ### HIGH severity
 
-**F1 — `/dashboard/overview` returns 404.** The sidebar has an "Overview" nav item linking to `/dashboard/overview`, but the route doesn't exist. Clicking it drops the user into an unbranded Next.js default error page. Either:
-- Move the Overview content out of `/dashboard` and into `/dashboard/overview`, or
-- Remove/rename the sidebar link to point at `/dashboard` (the root).
+~~**F1 — `/dashboard/overview` returns 404.**~~ **Invalidated.** I hit this by typing a route my enumeration loop invented; the sidebar "Overview" correctly routes to `/dashboard`, confirmed at `src/components/layout/sidebar.tsx:48`. The real 404 behaviour is covered by F2.
 
 ### MEDIUM severity
 
-**F2 — Default Next.js 404 page bleeds through unstyled.** When an auth'd user hits a missing route they get a white-background Next error page with no Apex chrome, no nav back home, no dark mode. Ship a branded `src/app/not-found.tsx` inside `(dashboard)` using the token system (and another at the root for public routes).
+**F2 — Default Next.js 404 page bleeds through unstyled.** When any user hits a missing route they got a white-background Next error page with no Apex chrome, no nav back home, no dark mode. **Fixed** in this phase by adding `src/app/not-found.tsx` (token-driven, dashboard-bg + card-secondary + gradient-primary CTA). Verified at `docs/audit/screenshots/phase-3/03-branded-404.png`. A dashboard-shell variant (`src/app/dashboard/not-found.tsx` that preserves the sidebar) can be added later if the UX team wants 404s *inside* the nav shell.
 
-**F3 — "ApexGEO" logo vs "APEX" page headers.** Sidebar logo renders `Apex**GEO**` (cyan suffix) while page breadcrumbs show uppercase `APEX`. Pick one — either `ApexGEO` everywhere or `APEX`/`Apex` everywhere. Today both appear on the same viewport (brands, monitor, insights, settings, audit).
+**F3 — "ApexGEO" logo vs "APEX" page headers.** Sidebar logo renders `Apex**GEO**` (via `ApexWordmark` in `src/components/ui/apex-logo.tsx:114`) while ~20 dashboard pages have their own inline `APEX` + gradient-triangle SVG pasted directly into `page.tsx` (engine-room, recommendations, audit, feedback, simulate, reports/*, [brandId]/competitors, etc.). Today both appear in the same viewport on brands, monitor, insights, settings, audit. **Defer to Phase 6.** Fix is: extract a single `<BrandHeader pageName={...} />` component that reads from `brand-presets` and replace all inline copies. Bundled with the token refactor since both touch the same files.
 
 ### LOW severity
 
