@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { Radar, ArrowRight, Bot, Sparkles, AlertCircle, Loader2, RefreshCw, Settings } from "lucide-react";
+import { BrandHeader } from "@/components/layout/brand-header";
 import { Button } from "@/components/ui/button";
 import { FilterSidebar, SmartTable, QueryRow, LiveIndicator, CitationVelocityCard } from "@/components/monitor";
 import { useSelectedBrand } from "@/stores";
@@ -420,36 +421,21 @@ export default function MonitorPage() {
 
   return (
     <div className="space-y-6 relative">
-      {/* Header Row: APEX branding + AI Status */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradMonitor)" />
-              <defs>
-                <linearGradient id="apexGradMonitor" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#00E5CC"/>
-                  <stop offset="1" stopColor="#8B5CF6"/>
-                </linearGradient>
-              </defs>
-            </svg>
+      {/* Header Row: APEX branding + Live Status */}
+      <BrandHeader
+        pageName="Monitor"
+        aiStatus={false}
+        rightSlot={
+          <div className="flex items-center gap-4">
+            <LiveIndicator isConnected={isConnected} size="md" />
+            {realtimeError && (
+              <span className="text-xs text-error">
+                {realtimeError.message}
+              </span>
+            )}
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-            APEX
-          </span>
-          <span className="text-xl font-light text-foreground ml-1">Monitor</span>
-        </div>
-
-        {/* Live Status Indicator */}
-        <div className="flex items-center gap-4">
-          <LiveIndicator isConnected={isConnected} size="md" />
-          {realtimeError && (
-            <span className="text-xs text-error">
-              {realtimeError.message}
-            </span>
-          )}
-        </div>
-      </div>
+        }
+      />
 
       {/* Platform Score Cards */}
       {selectedBrand && !isLoading && (

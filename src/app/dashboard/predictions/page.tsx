@@ -1,4 +1,5 @@
 import { TrendingUp, Zap, Target, Brain } from "lucide-react";
+import { BrandHeader } from "@/components/layout/brand-header";
 
 export const metadata = {
   title: "Predictions | ApexGEO",
@@ -39,9 +40,8 @@ const placeholderPredictions = [
 export default function PredictionsPage() {
   return (
     <div className="space-y-6">
-      {/* Header */}
+      <BrandHeader pageName="Predictions" />
       <div>
-        <h1 className="text-2xl font-bold tracking-tight mb-1">Predictions</h1>
         <p className="text-muted-foreground text-sm">
           AI-powered forecasts and recommendations to stay ahead of the curve.
         </p>

@@ -41,38 +41,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-
-// Page Header Component
-function PageHeader() {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8">
-          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M16 4L28 28H4L16 4Z" fill="url(#apexGradPortfolios)" />
-            <defs>
-              <linearGradient id="apexGradPortfolios" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#00E5CC"/>
-                <stop offset="1" stopColor="#8B5CF6"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-        <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-          APEX
-        </span>
-        <span className="text-xl font-light text-foreground ml-1">Portfolios</span>
-      </div>
-
-      {/* AI Status */}
-      <div className="flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-        <span className="text-xs text-muted-foreground">AI Status:</span>
-        <span className="text-xs text-primary font-medium">Active</span>
-      </div>
-    </div>
-  );
-}
+import { BrandHeader } from "@/components/layout/brand-header";
 
 // Decorative star component
 function DecorativeStar() {
@@ -502,7 +471,7 @@ export default function PortfoliosPage() {
   return (
     <div className="space-y-6 relative">
       {/* APEX Header */}
-      <PageHeader />
+      <BrandHeader pageName="Portfolios" />
 
       {/* Content Section Header */}
       <div className="flex items-center justify-between">
