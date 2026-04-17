@@ -1,0 +1,24 @@
+/*
+ * Elevation tokens — Layer 2 semantic. Theme-aware shadows + glows.
+ * Shadows use pure black/primary rgba (not palette vars) because they overlay
+ * arbitrary backgrounds and are brand-independent by design.
+ */
+
+:root {
+  /* Soft shadows (used on cards, popovers) */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+
+  /* Primary glow (cyan accent — references --color-primary via hsl()) */
+  --glow-primary-sm: 0 0 12px hsl(var(--color-primary) / 0.15);
+  --glow-primary-md: 0 0 30px hsl(var(--color-primary) / 0.08);
+  --glow-primary-lg: 0 0 40px hsl(var(--color-primary) / 0.15);
+
+  /* Card-specific composite elevations (shadow + glow for primary cards) */
+  --elevation-card-primary: var(--glow-primary-md), 0 4px 24px rgba(0, 0, 0, 0.4);
+  --elevation-card-secondary: 0 2px 12px rgba(0, 0, 0, 0.3);
+  --elevation-modal: 0 0 40px hsl(var(--color-primary) / 0.08),
+                     0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
