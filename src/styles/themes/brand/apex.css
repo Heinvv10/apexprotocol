@@ -1,0 +1,68 @@
+/*
+ * Apex — Default Brand Preset (Layer 1 primitives)
+ *
+ * THIS FILE DEFINES THE APEX BRAND PALETTE.
+ *
+ * To rebrand Apex as another tenant, copy this file to `brand/<name>.css`,
+ * change the palette values below, and set `NEXT_PUBLIC_BRAND_PRESET=<name>`.
+ *
+ * ONLY Layer 1 primitives live here (--palette-*). Do NOT add semantic
+ * tokens (--color-*) — those live in themes/{dark,light}.css and map to
+ * these primitives.
+ *
+ * All values are in HSL-triplet form ("H S% L%") so they can be wrapped
+ * with hsl() and / for opacity math: hsl(var(--palette-cyan-500) / 0.3).
+ */
+
+:root {
+  /* ===== Brand palette — Cyan (primary) ===== */
+  --palette-cyan-300: 170 100% 58%;
+  --palette-cyan-400: 170 100% 50%;   /* #00FFE0 - hover/bright */
+  --palette-cyan-500: 170 100% 45%;   /* #00E5CC - Apex primary */
+  --palette-cyan-600: 170 70% 38%;    /* #00B8A3 - subdued */
+  --palette-cyan-700: 170 70% 30%;
+
+  /* ===== Brand palette — Purple (secondary accent) ===== */
+  --palette-purple-300: 262 83% 80%;
+  --palette-purple-400: 262 83% 74%;  /* #A78BFA */
+  --palette-purple-500: 262 83% 66%;  /* #8B5CF6 */
+  --palette-purple-600: 262 83% 46%;  /* #6D28D9 */
+
+  /* ===== Brand palette — Pink (tertiary accent) ===== */
+  --palette-pink-500: 330 81% 56%;    /* #EC4899 */
+
+  /* ===== Brand palette — Blue (info/link) ===== */
+  --palette-blue-400: 213 94% 68%;    /* #60A5FA - link */
+  --palette-blue-500: 217 91% 60%;    /* #3B82F6 - info */
+
+  /* ===== Brand palette — Neutrals (dark-side) ===== */
+  --palette-neutral-950: 230 67% 2%;   /* #02030A - deepest */
+  --palette-neutral-900: 225 40% 6%;   /* #0a0f1a - page bg (dark) */
+  --palette-neutral-850: 227 50% 9%;   /* #0d1224 - main content (dark) */
+  --palette-neutral-800: 228 40% 11%;  /* #111827 - elevated (dark) */
+  --palette-neutral-750: 232 35% 12%;  /* #141930 - card (dark) */
+  --palette-neutral-700: 232 30% 16%;  /* #1a2040 - card hover (dark) */
+  --palette-neutral-650: 230 35% 10%;  /* #101828 - input (dark) */
+
+  /* ===== Brand palette — Neutrals (light-side) ===== */
+  --palette-neutral-50:  0 0% 98%;     /* #FAFAFA - page bg (light) */
+  --palette-neutral-100: 220 20% 99%;  /* #FCFDFE - card (light) */
+  --palette-neutral-150: 220 25% 96%;  /* #F3F5F8 - card hover (light) */
+  --palette-neutral-200: 220 15% 97%;  /* #F8F9FB - elevated (light) */
+
+  /* ===== Brand palette — Text (dark-side) ===== */
+  --palette-text-primary-dark: 0 0% 100%;     /* #FFFFFF */
+  --palette-text-secondary-dark: 215 16% 58%; /* #94A3B8 slate-400 */
+  --palette-text-muted-dark: 215 16% 47%;     /* #64748B slate-500 */
+
+  /* ===== Brand palette — Text (light-side) ===== */
+  --palette-text-primary-light: 222 47% 11%;  /* #0F172A */
+  --palette-text-secondary-light: 235 20% 40%;
+  --palette-text-muted-light: 235 20% 55%;
+
+  /* ===== Semantic primitives (brand-agnostic but brand-tunable) ===== */
+  --palette-success: 142 71% 45%;    /* #22C55E */
+  --palette-warning: 38 92% 50%;     /* #F59E0B */
+  --palette-error: 0 84% 60%;        /* #EF4444 */
+  --palette-info: 217 91% 60%;       /* #3B82F6 */
+}
