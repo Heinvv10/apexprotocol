@@ -1,7 +1,5 @@
 "use client";
 
-import "../globals-light.css";
-
 import * as React from "react";
 import Link from "next/link";
 import {
