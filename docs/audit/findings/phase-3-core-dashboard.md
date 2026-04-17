@@ -34,7 +34,7 @@ Screenshots: `docs/audit/screenshots/phase-3/`.
 
 ### LOW severity
 
-**F4 — Accessibility "Skip" links render visually.** "Skip to main content / Skip to navigation" text is visible in the top-left on every dashboard route. These should be `sr-only` with a `:focus-visible` override so they only appear during keyboard navigation. Current state clutters the viewport.
+**F4 — Accessibility "Skip" links render visually.** ~~"Skip to main content / Skip to navigation" text visible in the top-left on every dashboard route.~~ **Fixed** in this phase. The `.skip-link` class was referenced in `src/components/layout/dashboard-shell.tsx` but had no CSS definition anywhere in the codebase — it was rendering as unstyled visible text. Added `src/styles/components/a11y.css` with the standard visually-hidden + `:focus-visible` pattern (off-screen at `left: -9999px` by default, pops in as a cyan Apex-primary button with focus ring when keyboard-focused). Wired into `src/styles/index.css`. Verified: `04-dashboard-skiplinks-hidden.png` (normal), `04-dashboard-skiplinks-focused.png` (on first Tab).
 
 **F5 — Next.js dev indicator ("1 Issue" badge, bottom-left).** Visible in every screenshot. Dev-only — verify it's stripped in `next build`. If Sentry, audit the telemetry scope.
 
@@ -56,4 +56,15 @@ Still owed for Phase 3 scope (~20 pages):
 - `/dashboard/create/[contentId]`
 - `/onboarding/*` (post-signup flow)
 
-These all need data seeded — defer to after we scaffold a test brand via API (or after you add one through the UI).
+These all need data seeded. Attempted to seed a test brand via the live `POST /api/monitor/brands` endpoint using the logged-in browser session — see **F7** below.
+
+### F7 — Neon serverless HTTP driver failing intermittently (BLOCKS deep Phase 3)
+
+During brand seeding, `POST /api/monitor/brands` returned 500 with root cause `Error connecting to database: TypeError: fetch failed` from the `@neondatabase/serverless` driver. `GET /api/notifications/unread-count` and `GET /api/onboarding/status` on the same session alternated 200/500 over ~30 seconds, indicating the pooler connection (`ep-nameless-base-ahzec9h2-pooler.c-3.us-east-1.aws.neon.tech`) is flaky from this dev host. The error object has `severity/code/detail/constraint: undefined` — network-level, not a query/constraint problem.
+
+Immediate unblockers (in priority order):
+1. Spin up a local Postgres (docker compose one-liner) for audit/E2E work; point `DATABASE_URL` at it and seed via the migrations in `drizzle/` + a small fixture script. Removes Neon flakiness from the audit critical path.
+2. Or retry with exponential backoff + connection-pool reset in `src/lib/db/index.ts` so transient fetch failures don't surface as 500s (separate fix — belongs with the production-readiness work).
+3. Keep remaining Phase 3 deep routes deferred until one of the above is in place.
+
+Phase 3 core coverage (12 top-level routes) is done. Deep routes blocked on F7 — not worth retry-looping here.
