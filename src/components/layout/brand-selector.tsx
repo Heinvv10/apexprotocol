@@ -104,7 +104,7 @@ export function BrandSelector({ className }: BrandSelectorProps) {
           />
 
           {/* Brand Name */}
-          <span className="max-w-[120px] truncate text-sm font-medium">
+          <span className="max-w-[180px] truncate text-sm font-medium">
             {selectedBrand?.name || "Select Brand"}
           </span>
 
