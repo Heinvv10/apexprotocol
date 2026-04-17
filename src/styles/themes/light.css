@@ -1,0 +1,106 @@
+/*
+ * Light theme — Layer 2 semantic mappings, paired to dark.css.
+ *
+ * Every --color-* token defined in dark.css MUST have a paired value here,
+ * otherwise the CSS contract test will fail.
+ *
+ * Applied via .light class on <html>.
+ */
+
+.light {
+  color-scheme: light;
+
+  /* Surfaces — inverted neutrals */
+  --color-surface-deep:        var(--palette-neutral-50);
+  --color-surface-base:        0 0% 100%;
+  --color-surface-elevated:    var(--palette-neutral-200);
+  --color-surface-card:        var(--palette-neutral-100);
+  --color-surface-card-hover:  var(--palette-neutral-150);
+  --color-surface-input:       var(--palette-neutral-200);
+
+  /* Brand — darker cyan for better contrast on light backgrounds */
+  --color-primary:          174 72% 38%;   /* #1BA890 */
+  --color-primary-bright:   174 72% 45%;   /* #20C9A8 */
+  --color-primary-muted:    174 50% 30%;   /* #0C7A65 */
+  --color-primary-foreground: 0 0% 100%;
+
+  --color-accent-purple:        var(--palette-purple-600);
+  --color-accent-purple-light:  var(--palette-purple-500);
+  --color-accent-purple-dark:   262 83% 36%;
+  --color-accent-pink:          var(--palette-pink-500);
+  --color-accent-blue:          217 91% 50%;
+
+  /* Text */
+  --color-foreground:       var(--palette-text-primary-light);
+  --color-text-primary:     var(--palette-text-primary-light);
+  --color-text-secondary:   var(--palette-text-secondary-light);
+  --color-text-muted:       var(--palette-text-muted-light);
+  --color-text-accent:      174 72% 38%;
+  --color-text-link:        217 91% 50%;
+  --color-muted-foreground: var(--palette-text-secondary-light);
+
+  /* Semantic — darker for contrast */
+  --color-success:  142 71% 35%;
+  --color-warning:  38 92% 45%;
+  --color-error:    0 72% 51%;
+  --color-info:     217 91% 50%;
+  --color-destructive: 0 72% 51%;
+
+  /* Borders — darker for visibility on light */
+  --color-border-subtle:  222 47% 11% / 0.05;
+  --color-border-default: 222 47% 11% / 0.1;
+  --color-border-strong:  222 47% 11% / 0.16;
+  --color-border-accent:  174 72% 38% / 0.3;
+  --color-border-glow:    174 72% 38% / 0.5;
+
+  /* Shadcn/Tailwind compatibility (UNPREFIXED) — paired to dark.css */
+  --background: var(--palette-neutral-50);
+  --foreground: var(--palette-text-primary-light);
+  --card: var(--palette-neutral-100);
+  --card-foreground: var(--palette-text-primary-light);
+  --popover: 0 0% 100%;
+  --popover-foreground: var(--palette-text-primary-light);
+  --primary: 174 72% 38%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 235 20% 95%;
+  --secondary-foreground: var(--palette-text-primary-light);
+  --muted: 235 20% 95%;
+  --muted-foreground: 235 20% 40%;
+  --accent: 235 20% 95%;
+  --accent-foreground: var(--palette-text-primary-light);
+  --destructive: 0 72% 51%;
+  --border: 222 47% 11% / 0.1;
+  --input: 222 47% 11% / 0.1;
+  --ring: 174 72% 38%;
+  --success: 142 71% 35%;
+  --success-muted: 142 71% 35% / 0.12;
+  --warning: 38 92% 45%;
+  --warning-muted: 38 92% 45% / 0.12;
+  --error: 0 72% 51%;
+  --error-muted: 0 72% 51% / 0.12;
+  --info: 217 91% 50%;
+  --info-muted: 217 91% 50% / 0.12;
+
+  /* Sidebar */
+  --sidebar: 235 20% 98%;
+  --sidebar-foreground: var(--palette-text-primary-light);
+  --sidebar-primary: 174 72% 38%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 235 20% 95%;
+  --sidebar-accent-foreground: var(--palette-text-primary-light);
+  --sidebar-border: 222 47% 11% / 0.1;
+  --sidebar-ring: 174 72% 38%;
+
+  /* Focus ring light-mode overrides */
+  --focus-ring-primary: 174 72% 38%;
+  --focus-ring-input: 174 72% 38%;
+  --focus-ring-destructive: 0 72% 51%;
+  --focus-ring-destructive-opacity: 0.2;
+  --focus-ring-offset-color: 174 72% 38%;
+  --focus-border-primary: 174 72% 38%;
+  --focus-border-input: 174 72% 38%;
+  --focus-border-destructive: 0 72% 51%;
+  --focus-bg-menu: 235 20% 95%;
+  --focus-bg-menu-foreground: var(--palette-text-primary-light);
+  --focus-outline-color: 174 72% 38%;
+}
