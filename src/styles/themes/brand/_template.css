@@ -14,9 +14,12 @@
  *   - Never add semantic tokens (--color-*) here — those live in themes/{dark,light}.css.
  *   - Keep HSL-triplet format ("H S% L%") so opacity math works.
  *   - Keep the same variable names; the semantic layer references them by name.
+ *   - Scope by :root[data-brand="<yourbrand>"] — every brand file is loaded,
+ *     the active brand is whichever data-brand attribute lands on <html>.
+ *     Only Apex (the default) also matches bare :root as a safety fallback.
  */
 
-:root {
+:root[data-brand="<YOUR-BRAND-SLUG>"] {
   /* Replace these with your brand palette: */
   --palette-cyan-300: 0 0% 0%;
   --palette-cyan-400: 0 0% 0%;

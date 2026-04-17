@@ -15,8 +15,17 @@
  * set NEXT_PUBLIC_BRAND_PRESET to the corresponding key in brand-presets.ts.
  */
 
-/* 1. Brand primitives (Layer 1) */
+/*
+ * 1. Brand primitives (Layer 1)
+ *
+ * Every registered brand's palette is loaded. Selectors are scoped by
+ * :root[data-brand="<slug>"] so only the active brand's rules apply —
+ * NEXT_PUBLIC_BRAND_PRESET controls which slug lands on <html data-brand>
+ * via src/app/layout.tsx. `apex.css` also matches bare :root as a safety
+ * fallback if data-brand is ever missing.
+ */
 @import "./themes/brand/apex.css";
+@import "./themes/brand/solstice.css";
 
 /* 2. Non-color tokens */
 @import "./tokens/index.css";

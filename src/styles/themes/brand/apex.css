@@ -14,7 +14,8 @@
  * with hsl() and / for opacity math: hsl(var(--palette-cyan-500) / 0.3).
  */
 
-:root {
+:root,
+:root[data-brand="apex"] {
   /* ===== Brand palette — Cyan (primary) ===== */
   --palette-cyan-300: 170 100% 58%;
   --palette-cyan-400: 170 100% 50%;   /* #00FFE0 - hover/bright */

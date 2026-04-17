@@ -29,6 +29,14 @@ export const BRAND_PRESETS = {
     logoDarkUrl: '/brands/apex/logo-dark.svg',
     faviconUrl: '/brands/apex/favicon.ico',
   },
+  solstice: {
+    name: 'Solstice',
+    tagline: 'AI Visibility for Warm-Market Brands',
+    cssFile: 'solstice.css',
+    logoUrl: '/brands/solstice/logo.svg',
+    logoDarkUrl: '/brands/solstice/logo-dark.svg',
+    faviconUrl: '/brands/solstice/favicon.ico',
+  },
 } as const satisfies Record<string, BrandPreset>;
 
 const FALLBACK: BrandPresetKey = 'apex';

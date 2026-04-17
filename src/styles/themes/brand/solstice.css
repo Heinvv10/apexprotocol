@@ -1,0 +1,62 @@
+/*
+ * Solstice — Example white-label brand preset (Layer 1 primitives)
+ *
+ * Demonstrates what a second tenant looks like: warm amber primary +
+ * rose accent instead of Apex's cyan + purple. Same design system,
+ * same component set — only the palette flips.
+ *
+ * This file was created by copying _template.css and filling in the
+ * palette. It is referenced from src/config/brand-presets.ts under the
+ * key "solstice". Activate with NEXT_PUBLIC_BRAND_PRESET=solstice.
+ */
+
+:root[data-brand="solstice"] {
+  /* ===== Brand palette — Amber (primary) ===== */
+  --palette-cyan-300: 38 95% 68%;    /* #FBC570 - hover/bright */
+  --palette-cyan-400: 38 94% 60%;    /* #F5A638 - hover */
+  --palette-cyan-500: 38 92% 50%;    /* #F59E0B - Solstice primary */
+  --palette-cyan-600: 35 85% 42%;    /* #C97B10 - subdued */
+  --palette-cyan-700: 32 78% 32%;    /* #92540C - deep */
+
+  /* ===== Brand palette — Rose (secondary accent) ===== */
+  --palette-purple-300: 350 90% 80%; /* #F9A8B4 */
+  --palette-purple-400: 350 89% 72%; /* #F78A9B */
+  --palette-purple-500: 350 89% 60%; /* #F43F5E - Solstice accent */
+  --palette-purple-600: 350 82% 48%; /* #C72546 */
+
+  /* ===== Brand palette — Pink (tertiary accent) ===== */
+  --palette-pink-500: 14 90% 55%;    /* #EA682C - burnt orange */
+
+  /* ===== Brand palette — Blue (info/link — unchanged, platform-agnostic) ===== */
+  --palette-blue-400: 213 94% 68%;
+  --palette-blue-500: 217 91% 60%;
+
+  /* ===== Neutrals — kept identical to Apex (dark chrome is the shared dashboard shell) ===== */
+  --palette-neutral-950: 230 67% 2%;
+  --palette-neutral-900: 225 40% 6%;
+  --palette-neutral-850: 227 50% 9%;
+  --palette-neutral-800: 228 40% 11%;
+  --palette-neutral-750: 232 35% 12%;
+  --palette-neutral-700: 232 30% 16%;
+  --palette-neutral-650: 230 35% 10%;
+
+  --palette-neutral-50:  0 0% 98%;
+  --palette-neutral-100: 220 20% 99%;
+  --palette-neutral-150: 220 25% 96%;
+  --palette-neutral-200: 220 15% 97%;
+
+  /* ===== Text (dark-side / light-side) ===== */
+  --palette-text-primary-dark: 0 0% 100%;
+  --palette-text-secondary-dark: 215 16% 58%;
+  --palette-text-muted-dark: 215 16% 47%;
+
+  --palette-text-primary-light: 222 47% 11%;
+  --palette-text-secondary-light: 235 20% 40%;
+  --palette-text-muted-light: 235 20% 55%;
+
+  /* ===== Semantic primitives ===== */
+  --palette-success: 142 71% 45%;
+  --palette-warning: 38 92% 50%;
+  --palette-error: 0 84% 60%;
+  --palette-info: 217 91% 60%;
+}
