@@ -1,0 +1,61 @@
+/*
+ * Brand Template — COPY THIS FILE TO ADD A NEW WHITE-LABEL BRAND
+ *
+ * Steps:
+ *   1. cp src/styles/themes/brand/_template.css src/styles/themes/brand/<yourbrand>.css
+ *   2. Replace every PALETTE VALUE below with your brand's values.
+ *   3. Add your brand to src/config/brand-presets.ts.
+ *   4. Drop logo/favicon into public/brands/<yourbrand>/.
+ *   5. Set env: NEXT_PUBLIC_BRAND_PRESET=<yourbrand>
+ *   6. bun run build && bun start → rebranded.
+ *
+ * RULES:
+ *   - Only change Layer 1 primitives (--palette-*).
+ *   - Never add semantic tokens (--color-*) here — those live in themes/{dark,light}.css.
+ *   - Keep HSL-triplet format ("H S% L%") so opacity math works.
+ *   - Keep the same variable names; the semantic layer references them by name.
+ */
+
+:root {
+  /* Replace these with your brand palette: */
+  --palette-cyan-300: 0 0% 0%;
+  --palette-cyan-400: 0 0% 0%;
+  --palette-cyan-500: 0 0% 0%;   /* Your brand primary */
+  --palette-cyan-600: 0 0% 0%;
+  --palette-cyan-700: 0 0% 0%;
+
+  --palette-purple-300: 0 0% 0%;
+  --palette-purple-400: 0 0% 0%;
+  --palette-purple-500: 0 0% 0%;  /* Your brand accent */
+  --palette-purple-600: 0 0% 0%;
+
+  --palette-pink-500: 0 0% 0%;
+
+  --palette-blue-400: 0 0% 0%;
+  --palette-blue-500: 0 0% 0%;
+
+  --palette-neutral-950: 0 0% 0%;
+  --palette-neutral-900: 0 0% 0%;
+  --palette-neutral-850: 0 0% 0%;
+  --palette-neutral-800: 0 0% 0%;
+  --palette-neutral-750: 0 0% 0%;
+  --palette-neutral-700: 0 0% 0%;
+  --palette-neutral-650: 0 0% 0%;
+
+  --palette-neutral-50:  0 0% 100%;
+  --palette-neutral-100: 0 0% 98%;
+  --palette-neutral-150: 0 0% 94%;
+  --palette-neutral-200: 0 0% 96%;
+
+  --palette-text-primary-dark: 0 0% 100%;
+  --palette-text-secondary-dark: 0 0% 70%;
+  --palette-text-muted-dark: 0 0% 50%;
+  --palette-text-primary-light: 0 0% 10%;
+  --palette-text-secondary-light: 0 0% 40%;
+  --palette-text-muted-light: 0 0% 55%;
+
+  --palette-success: 142 71% 45%;
+  --palette-warning: 38 92% 50%;
+  --palette-error: 0 84% 60%;
+  --palette-info: 217 91% 60%;
+}
