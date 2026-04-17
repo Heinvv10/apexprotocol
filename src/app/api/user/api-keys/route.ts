@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getInternalUserId, getOrganizationId } from "@/lib/auth/clerk";
 /**
  * User API Keys Management API
  * GET /api/user/api-keys - List user's API keys (masked values)
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Get authenticated user
-    const userId = await getUserId();
+    const userId = await getInternalUserId();
     const orgId = await getOrganizationId();
 
     if (!userId) {
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // Get authenticated user
-    const userId = await getUserId();
+    const userId = await getInternalUserId();
     const orgId = await getOrganizationId();
 
     if (!userId) {

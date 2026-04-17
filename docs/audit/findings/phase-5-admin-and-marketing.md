@@ -33,16 +33,19 @@ Screenshots: `docs/audit/screenshots/phase-5/`.
 
 ## Findings
 
-### F18 — super-admin gate only reads JWT publicMetadata (MEDIUM)
+### F18 — super-admin gate only reads JWT publicMetadata (MEDIUM, DOCUMENTED)
 
-`src/middleware.ts:346-357` checks `sessionClaims.publicMetadata.isSuperAdmin` ONLY. No DB fallback. Meanwhile `src/lib/auth/super-admin.ts:22` (used by server components) checks JWT *then* falls back to `users.is_super_admin`. Two different sources of truth:
+`src/middleware.ts:346-357` checks `sessionClaims.publicMetadata.isSuperAdmin` ONLY — no DB fallback. Meanwhile `src/lib/auth/super-admin.ts:22` (used by server components) checks JWT *then* falls back to `users.is_super_admin`. Two sources of truth diverge:
 
-- If an admin is promoted via DB flag, the middleware still rejects them until their JWT cycles (up to 60s + page refresh).
-- Promoting via Clerk Backend API (`users/{id}/metadata`) takes a JWT refresh too, since existing tokens are cached client-side.
+- If an admin is promoted via DB flag alone, middleware keeps rejecting them until their JWT cycles (~60s + page refresh).
+- Promoting via Clerk Backend API (`users/{id}/metadata`) *does* propagate, but existing client-cached `__session` cookies are stale until the user signs out / in or calls `Clerk.session.getToken({skipCache:true})`.
 
-The `DEV_SUPER_ADMIN` env flag was added to work around this — it's a dev-only escape hatch. Prod needs either (a) force a Clerk session refresh when `users.is_super_admin` flips, (b) have middleware also consult the DB, or (c) document that promotion requires the user to sign out + back in.
+**Resolution (not a code change — workflow):**
+1. **Local dev:** set `DEV_SUPER_ADMIN=true` in `.env.local` (already in `.env.example`). Middleware honours this unconditionally. Gitignored so prod is unaffected.
+2. **Prod promotion flow (future):** when `/admin/users` eventually gets a promote-to-super-admin action, call both `clerkClient.users.updateUserMetadata({publicMetadata:{isSuperAdmin:true}})` AND `clerkClient.sessions.revokeSession()` for every session of that user. Revoking sessions forces the next request to re-authenticate, which mints a fresh JWT with the new claim. No UI prompt needed.
+3. **Edge-runtime DB check:** would close this without a sessions-revoke, but requires switching middleware to `runtime = "nodejs"` (Neon-serverless needs Node's `ws`). Larger blast radius than the workflow above.
 
-For this audit session: I set `DEV_SUPER_ADMIN=true` in `.env.local` (gitignored) and restarted dev — admin routes then worked.
+Not urgent: `/admin/users` doesn't have a promote action today. Closed as documented.
 
 ### F19 — Marketing pages are unstyled stubs (MEDIUM)
 
