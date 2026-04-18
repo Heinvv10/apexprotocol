@@ -1,17 +1,12 @@
+import { db } from '../src/lib/db';
+
 import { config } from "dotenv";
 import { resolve } from "path";
 
 // Load environment variables from .env.local
 config({ path: resolve(__dirname, "../.env.local") });
-
-import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
 import { brands } from "../src/lib/db/schema/brands";
 import { eq } from "drizzle-orm";
-
-const sql = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql);
-
 async function updateVEABrand() {
   console.log("Updating VEA Group brand with scraped website data...");
 

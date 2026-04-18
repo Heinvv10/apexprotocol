@@ -3,14 +3,14 @@
  * Run with: npx tsx scripts/fix-geo-alerts-table.ts
  */
 
+import { sql } from 'drizzle-orm';
+import { db } from '../src/lib/db';
+
 import { config } from 'dotenv';
 import { resolve } from 'path';
 
 // Load environment variables from .env.local
 config({ path: resolve(process.cwd(), '.env.local') });
-
-import { neon } from '@neondatabase/serverless';
-
 async function fixTable() {
   const databaseUrl = process.env.DATABASE_URL;
 
@@ -20,16 +20,14 @@ async function fixTable() {
   }
 
   console.log('Connecting to database...');
-  const sql = neon(databaseUrl);
-
   try {
     // Drop the existing table
     console.log('Dropping existing geo_alerts table...');
-    await sql`DROP TABLE IF EXISTS geo_alerts CASCADE;`;
+    await db.execute(sql`DROP TABLE IF EXISTS geo_alerts CASCADE;`);
 
     // Recreate with JSONB columns
     console.log('Creating geo_alerts table with JSONB columns...');
-    await sql`
+    await db.execute(sql`
       CREATE TABLE geo_alerts (
         id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
         organization_id VARCHAR(255) NOT NULL,
@@ -47,17 +45,17 @@ async function fixTable() {
         expires_at TIMESTAMP WITH TIME ZONE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
       );
-    `;
+    `);
 
     console.log('geo_alerts table recreated successfully');
 
     // Recreate indexes
     console.log('Creating indexes...');
-    await sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_org ON geo_alerts(organization_id);`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_brand ON geo_alerts(brand_id);`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_type ON geo_alerts(alert_type);`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_unread ON geo_alerts(read_at);`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_created ON geo_alerts(created_at DESC);`;
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_org ON geo_alerts(organization_id);`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_brand ON geo_alerts(brand_id);`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_type ON geo_alerts(alert_type);`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_unread ON geo_alerts(read_at);`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_created ON geo_alerts(created_at DESC);`);
 
     console.log('\n✅ geo_alerts table fixed successfully!');
 

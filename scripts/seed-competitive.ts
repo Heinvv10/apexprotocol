@@ -6,25 +6,18 @@
  * Usage: npx tsx scripts/seed-competitive.ts
  */
 
+import { db, schema } from '../src/lib/db';
+
 import { config } from "dotenv";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
 import { eq } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
 
 config({ path: ".env.local" });
-
-import * as schema from "../src/lib/db/schema";
-
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) {
   console.error("DATABASE_URL not set");
   process.exit(1);
 }
-
-const sql = neon(DATABASE_URL);
-const db = drizzle(sql, { schema });
-
 // AI Platforms
 const platforms = ["chatgpt", "claude", "gemini", "perplexity", "grok", "deepseek", "copilot"] as const;
 const sentiments = ["positive", "neutral", "negative"] as const;

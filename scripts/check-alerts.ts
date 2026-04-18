@@ -1,22 +1,21 @@
 /**
  * Check competitive alerts
  */
-import { neon } from '@neondatabase/serverless';
+import { sql } from 'drizzle-orm';
+import { db } from '../src/lib/db';
+
 import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
-
-const sql = neon(process.env.DATABASE_URL!);
-
 async function check() {
-  const alerts = await sql`
+  const alerts = await db.execute(sql`
     SELECT id, brand_id, alert_type, title, severity, is_read, is_dismissed, triggered_at
     FROM competitive_alerts
     ORDER BY triggered_at DESC
     LIMIT 10
-  `;
+  `);
 
-  console.log('All alerts in database:', alerts.length);
-  for (const a of alerts) {
+  console.log('All alerts in database:', alerts.rows.length);
+  for (const a of alerts.rows) {
     console.log('');
     console.log('  ID:', a.id);
     console.log('  Brand ID:', a.brand_id);

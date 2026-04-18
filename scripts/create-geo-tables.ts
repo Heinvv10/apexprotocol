@@ -3,14 +3,14 @@
  * Run with: npx tsx scripts/create-geo-tables.ts
  */
 
+import { sql } from 'drizzle-orm';
+import { db } from '../src/lib/db';
+
 import { config } from 'dotenv';
 import { resolve } from 'path';
 
 // Load environment variables from .env.local
 config({ path: resolve(process.cwd(), '.env.local') });
-
-import { neon } from '@neondatabase/serverless';
-
 async function createTables() {
   const databaseUrl = process.env.DATABASE_URL;
 
@@ -20,41 +20,39 @@ async function createTables() {
   }
 
   console.log('Connecting to database...');
-  const sql = neon(databaseUrl);
-
   try {
     // Create enums if they don't exist
     console.log('Creating enums...');
 
-    await sql`
+    await db.execute(sql`
       DO $$ BEGIN
         CREATE TYPE geo_platform AS ENUM ('chatgpt', 'claude', 'gemini', 'perplexity', 'grok', 'deepseek', 'copilot');
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `;
+    `);
 
-    await sql`
+    await db.execute(sql`
       DO $$ BEGIN
         CREATE TYPE geo_alert_type AS ENUM ('algorithm_change', 'recommendation_updated', 'strategy_deprecated', 'new_opportunity', 'competitor_move', 'score_impact');
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `;
+    `);
 
-    await sql`
+    await db.execute(sql`
       DO $$ BEGIN
         CREATE TYPE alert_severity AS ENUM ('info', 'warning', 'critical');
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `;
+    `);
 
     console.log('Enums created successfully');
 
     // Create geo_alerts table
     console.log('Creating geo_alerts table...');
-    await sql`
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS geo_alerts (
         id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
         organization_id VARCHAR(255) NOT NULL,
@@ -72,13 +70,13 @@ async function createTables() {
         expires_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT NOW()
       );
-    `;
+    `);
 
     console.log('geo_alerts table created successfully');
 
     // Create geo_best_practices table
     console.log('Creating geo_best_practices table...');
-    await sql`
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS geo_best_practices (
         id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
         platform VARCHAR(50),
@@ -95,13 +93,13 @@ async function createTables() {
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
-    `;
+    `);
 
     console.log('geo_best_practices table created successfully');
 
     // Create schema_templates table
     console.log('Creating schema_templates table...');
-    await sql`
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS schema_templates (
         id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
         schema_type VARCHAR(100) NOT NULL,
@@ -113,13 +111,13 @@ async function createTables() {
         created_at TIMESTAMP DEFAULT NOW(),
         superseded_by VARCHAR(255)
       );
-    `;
+    `);
 
     console.log('schema_templates table created successfully');
 
     // Create platform_changes table
     console.log('Creating platform_changes table...');
-    await sql`
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS platform_changes (
         id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
         platform VARCHAR(50) NOT NULL,
@@ -132,13 +130,13 @@ async function createTables() {
         source VARCHAR(255),
         created_at TIMESTAMP DEFAULT NOW()
       );
-    `;
+    `);
 
     console.log('platform_changes table created successfully');
 
     // Create action_plans table
     console.log('Creating action_plans table...');
-    await sql`
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS action_plans (
         id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
         organization_id VARCHAR(255) NOT NULL,
@@ -153,13 +151,13 @@ async function createTables() {
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
-    `;
+    `);
 
     console.log('action_plans table created successfully');
 
     // Create action_plan_progress table
     console.log('Creating action_plan_progress table...');
-    await sql`
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS action_plan_progress (
         id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
         action_plan_id VARCHAR(255) NOT NULL,
@@ -171,21 +169,21 @@ async function createTables() {
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
-    `;
+    `);
 
     console.log('action_plan_progress table created successfully');
 
     // Create indexes
     console.log('Creating indexes...');
 
-    await sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_org ON geo_alerts(organization_id);`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_brand ON geo_alerts(brand_id);`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_type ON geo_alerts(alert_type);`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_created ON geo_alerts(created_at DESC);`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_geo_best_practices_platform ON geo_best_practices(platform);`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_geo_best_practices_category ON geo_best_practices(category);`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_platform_changes_platform ON platform_changes(platform);`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_action_plans_org ON action_plans(organization_id);`;
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_org ON geo_alerts(organization_id);`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_brand ON geo_alerts(brand_id);`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_type ON geo_alerts(alert_type);`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_geo_alerts_created ON geo_alerts(created_at DESC);`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_geo_best_practices_platform ON geo_best_practices(platform);`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_geo_best_practices_category ON geo_best_practices(category);`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_platform_changes_platform ON platform_changes(platform);`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_action_plans_org ON action_plans(organization_id);`);
 
     console.log('Indexes created successfully');
 

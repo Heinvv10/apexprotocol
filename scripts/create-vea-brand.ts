@@ -1,17 +1,12 @@
+import { db } from '../src/lib/db';
+
 import { config } from "dotenv";
 import { resolve } from "path";
 
 // Load environment variables from .env.local
 config({ path: resolve(__dirname, "../.env.local") });
-
-import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
 import { brands } from "../src/lib/db/schema/brands";
 import { createId } from "@paralleldrive/cuid2";
-
-const sql = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql);
-
 async function createVEABrand() {
   const brandId = createId();
   const organizationId = "s5emwdzfollhth1819bprw2a"; // Apex Demo Company

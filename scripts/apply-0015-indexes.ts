@@ -1,4 +1,6 @@
-import { neon } from "@neondatabase/serverless";
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+
 import fs from "node:fs";
 import path from "node:path";
 
@@ -7,9 +9,6 @@ if (!url) {
   console.error("DATABASE_URL not set");
   process.exit(1);
 }
-
-const sql = neon(url);
-
 const migration = fs.readFileSync(
   path.join(process.cwd(), "drizzle/0015_add_hot_table_indexes.sql"),
   "utf-8"

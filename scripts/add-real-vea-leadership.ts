@@ -1,18 +1,13 @@
+import { db } from '../src/lib/db';
+
 import { config } from "dotenv";
 import { resolve } from "path";
 
 config({ path: resolve(__dirname, "../.env.local") });
-
-import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
 import { brands } from "../src/lib/db/schema/brands";
 import { brandPeople } from "../src/lib/db/schema/people";
 import { eq } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
-
-const sql = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql);
-
 async function addRealLeadership() {
   console.log("👥 Adding REAL VEA Group leadership team from veagroup.co.za/our-team\n");
 

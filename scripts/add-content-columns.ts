@@ -2,8 +2,9 @@
  * Add missing columns to content table
  * Run with: npx tsx scripts/add-content-columns.ts
  */
+import { sql } from 'drizzle-orm';
+import { db } from '../src/lib/db';
 
-import { neon } from "@neondatabase/serverless";
 import * as dotenv from "dotenv";
 
 // Load environment variables
@@ -15,9 +16,6 @@ if (!DATABASE_URL) {
   console.error("DATABASE_URL not found in environment");
   process.exit(1);
 }
-
-const sql = neon(DATABASE_URL);
-
 async function addMissingColumns() {
   console.log("Adding missing columns to content table...\n");
 
@@ -72,19 +70,19 @@ async function addMissingColumns() {
 
   // Verify columns
   console.log("\n--- Verifying content table columns ---\n");
-  const columns = await sql`
+  const columns = await db.execute(sql`
     SELECT column_name, data_type, is_nullable
     FROM information_schema.columns
     WHERE table_name = 'content'
     ORDER BY ordinal_position
-  `;
+  `);
 
   console.log("Content table columns:");
-  for (const col of columns) {
+  for (const col of columns.rows) {
     console.log(`  ${col.column_name}: ${col.data_type} (${col.is_nullable === "YES" ? "nullable" : "not null"})`);
   }
 
-  console.log(`\nTotal columns: ${columns.length}`);
+  console.log(`\nTotal columns: ${columns.rows.length}`);
   console.log("\n✓ Migration complete!");
 }
 

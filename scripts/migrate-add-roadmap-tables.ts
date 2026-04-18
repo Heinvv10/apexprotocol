@@ -1,6 +1,7 @@
-import { neon } from '@neondatabase/serverless';
-
-const sql = neon(process.env.DATABASE_URL!);
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+import { sql } from 'drizzle-orm';
+import { db } from '../src/lib/db';
 
 async function migrate() {
   console.log('🔄 Creating roadmap tables for Phase 9.2...\n');
@@ -9,63 +10,63 @@ async function migrate() {
     // Create enums first (if they don't exist)
     console.log('Creating enums...');
 
-    await sql`
+    await db.execute(sql`
       DO $$ BEGIN
         CREATE TYPE roadmap_status AS ENUM ('draft', 'active', 'paused', 'completed');
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `;
+    `);
     console.log('✅ roadmap_status enum created\n');
 
-    await sql`
+    await db.execute(sql`
       DO $$ BEGIN
         CREATE TYPE roadmap_target_position AS ENUM ('leader', 'top3', 'competitive');
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `;
+    `);
     console.log('✅ roadmap_target_position enum created\n');
 
-    await sql`
+    await db.execute(sql`
       DO $$ BEGIN
         CREATE TYPE score_category AS ENUM ('geo', 'seo', 'aeo', 'smo', 'ppo');
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `;
+    `);
     console.log('✅ score_category enum created\n');
 
-    await sql`
+    await db.execute(sql`
       DO $$ BEGIN
         CREATE TYPE milestone_status AS ENUM ('pending', 'in_progress', 'completed', 'skipped');
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `;
+    `);
     console.log('✅ milestone_status enum created\n');
 
-    await sql`
+    await db.execute(sql`
       DO $$ BEGIN
         CREATE TYPE milestone_difficulty AS ENUM ('easy', 'medium', 'hard');
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `;
+    `);
     console.log('✅ milestone_difficulty enum created\n');
 
-    await sql`
+    await db.execute(sql`
       DO $$ BEGIN
         CREATE TYPE score_data_source AS ENUM ('scraped', 'estimated', 'manual');
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
-    `;
+    `);
     console.log('✅ score_data_source enum created\n');
 
     // Create competitor_scores table
     console.log('Creating competitor_scores table...');
-    await sql`
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS competitor_scores (
         id TEXT PRIMARY KEY,
         brand_id TEXT NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
@@ -93,12 +94,12 @@ async function migrate() {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
       )
-    `;
+    `);
     console.log('✅ competitor_scores table created\n');
 
     // Create improvement_roadmaps table
     console.log('Creating improvement_roadmaps table...');
-    await sql`
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS improvement_roadmaps (
         id TEXT PRIMARY KEY,
         brand_id TEXT NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
@@ -128,12 +129,12 @@ async function migrate() {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
       )
-    `;
+    `);
     console.log('✅ improvement_roadmaps table created\n');
 
     // Create roadmap_milestones table
     console.log('Creating roadmap_milestones table...');
-    await sql`
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS roadmap_milestones (
         id TEXT PRIMARY KEY,
         roadmap_id TEXT NOT NULL REFERENCES improvement_roadmaps(id) ON DELETE CASCADE,
@@ -158,12 +159,12 @@ async function migrate() {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
       )
-    `;
+    `);
     console.log('✅ roadmap_milestones table created\n');
 
     // Create roadmap_progress_snapshots table
     console.log('Creating roadmap_progress_snapshots table...');
-    await sql`
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS roadmap_progress_snapshots (
         id TEXT PRIMARY KEY,
         roadmap_id TEXT NOT NULL REFERENCES improvement_roadmaps(id) ON DELETE CASCADE,
@@ -184,41 +185,41 @@ async function migrate() {
 
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
       )
-    `;
+    `);
     console.log('✅ roadmap_progress_snapshots table created\n');
 
     // Create indexes
     console.log('Creating indexes...');
 
-    await sql`
+    await db.execute(sql`
       CREATE INDEX IF NOT EXISTS idx_competitor_scores_brand
       ON competitor_scores(brand_id)
-    `;
+    `);
 
-    await sql`
+    await db.execute(sql`
       CREATE INDEX IF NOT EXISTS idx_improvement_roadmaps_brand
       ON improvement_roadmaps(brand_id)
-    `;
+    `);
 
-    await sql`
+    await db.execute(sql`
       CREATE INDEX IF NOT EXISTS idx_improvement_roadmaps_status
       ON improvement_roadmaps(status)
-    `;
+    `);
 
-    await sql`
+    await db.execute(sql`
       CREATE INDEX IF NOT EXISTS idx_roadmap_milestones_roadmap
       ON roadmap_milestones(roadmap_id)
-    `;
+    `);
 
-    await sql`
+    await db.execute(sql`
       CREATE INDEX IF NOT EXISTS idx_roadmap_progress_snapshots_roadmap
       ON roadmap_progress_snapshots(roadmap_id)
-    `;
+    `);
 
-    await sql`
+    await db.execute(sql`
       CREATE UNIQUE INDEX IF NOT EXISTS rps_roadmap_date_idx
       ON roadmap_progress_snapshots(roadmap_id, snapshot_date)
-    `;
+    `);
 
     console.log('✅ All indexes created\n');
 
