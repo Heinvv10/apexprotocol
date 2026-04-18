@@ -34,8 +34,8 @@
  * ```
  */
 
-import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
-import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";
+import { Pool } from "pg";
+import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { sql, eq, and, or, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach } from "vitest";
 import * as schema from "../../src/lib/db/schema";
@@ -44,11 +44,11 @@ import { createTestSeedData, cleanupTestData, TEST_IDS } from "./seed";
 
 // Export schema types for use in tests
 export type IntegrationTestSchema = typeof schema;
-export type IntegrationDatabase = NeonHttpDatabase<typeof schema>;
+export type IntegrationDatabase = NodePgDatabase<typeof schema>;
 
 // Database connection singleton
-let _sql: NeonQueryFunction<boolean, boolean> | null = null;
-let _db: NeonHttpDatabase<typeof schema> | null = null;
+let _pool: Pool | null = null;
+let _db: NodePgDatabase<typeof schema> | null = null;
 
 // Track seeded data for cleanup
 let _seededData: SeedResult | null = null;
@@ -106,11 +106,14 @@ export function isDatabaseConfigured(): boolean {
  * Get the database instance for integration tests
  * Creates a singleton connection that's reused across tests
  */
-export function getIntegrationDb(): NeonHttpDatabase<typeof schema> {
+export function getIntegrationDb(): NodePgDatabase<typeof schema> {
   if (!_db) {
     const url = getTestDatabaseUrl();
-    _sql = neon(url);
-    _db = drizzle(_sql, { schema });
+    _pool = new Pool({
+      connectionString: url,
+      ssl: { rejectUnauthorized: false },
+    });
+    _db = drizzle(_pool, { schema });
   }
   return _db;
 }

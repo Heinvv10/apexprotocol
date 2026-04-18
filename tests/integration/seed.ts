@@ -15,12 +15,12 @@
  */
 
 import { eq, and, inArray } from "drizzle-orm";
-import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type * as schemaTypes from "../../src/lib/db/schema";
 
 // Use module-level import for schema
 type Schema = typeof import("../../src/lib/db/schema");
-type Database = NeonHttpDatabase<Schema>;
+type Database = NodePgDatabase<Schema>;
 
 /**
  * Fixed test IDs for consistent reference in tests

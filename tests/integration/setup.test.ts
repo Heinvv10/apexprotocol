@@ -15,9 +15,14 @@ import {
 } from "./setup";
 import { TEST_IDS } from "./seed";
 
-// Mock the database module for unit testing the setup utilities
-vi.mock("@neondatabase/serverless", () => ({
-  neon: vi.fn(() => vi.fn()),
+// Mock pg.Pool for unit testing the setup utilities (no real connection).
+vi.mock("pg", () => ({
+  Pool: class {
+    connect() { return Promise.resolve({ release: () => {}, query: () => Promise.resolve({ rows: [] }) }); }
+    end() { return Promise.resolve(); }
+    query() { return Promise.resolve({ rows: [] }); }
+    on() { return this; }
+  },
 }));
 
 describe("Integration Test Setup Utilities", () => {
