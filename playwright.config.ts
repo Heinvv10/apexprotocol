@@ -36,5 +36,11 @@ export default defineConfig({
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    // Parallel specs burst through the per-session rate limiter (60/min
+    // Starter). Disable it for the e2e dev server — see
+    // src/lib/api/api-rate-limiter.ts for the escape hatch.
+    env: {
+      E2E_DISABLE_RATE_LIMIT: "true",
+    },
   },
 });

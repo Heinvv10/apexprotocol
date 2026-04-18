@@ -174,6 +174,22 @@ export async function checkApiRateLimit(
   orgId: string,
   tier: ApiTier = "starter"
 ): Promise<RateLimitCheckResult> {
+  // Dev-only escape hatch for the Playwright e2e suite. Parallel specs
+  // burst through the 60/min Starter budget and poison the suite with
+  // 429s that aren't representative of real-user behaviour. Never set
+  // E2E_DISABLE_RATE_LIMIT=true in any production environment.
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.E2E_DISABLE_RATE_LIMIT === "true"
+  ) {
+    return {
+      allowed: true,
+      limit: Number.MAX_SAFE_INTEGER,
+      remaining: Number.MAX_SAFE_INTEGER,
+      resetMs: Date.now() + 60_000,
+    };
+  }
+
   const limits = RATE_LIMITS[tier] || RATE_LIMITS.starter;
   const key = `${tier}:${orgId}`;
 

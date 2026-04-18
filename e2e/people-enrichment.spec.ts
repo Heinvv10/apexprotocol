@@ -55,11 +55,21 @@ test.describe("People Enrichment Module - Phase 9.3", () => {
   });
 
   test.describe("Opportunities API", () => {
-    test("should require authentication for opportunities list", async ({ request }) => {
-      const response = await request.get("/api/opportunities");
-
-      // Should return 401 unauthorized or 404 if route not compiled
-      expect([401, 404, 429]).toContain(response.status());
+    test("should require authentication for opportunities list", async ({
+      playwright,
+    }) => {
+      // This test specifically verifies the route rejects unauth requests,
+      // so override the global auth storageState with a blank one.
+      const anon = await playwright.request.newContext({
+        baseURL: "http://localhost:3011",
+        storageState: { cookies: [], origins: [] },
+      });
+      try {
+        const response = await anon.get("/api/opportunities");
+        expect([401, 404, 429]).toContain(response.status());
+      } finally {
+        await anon.dispose();
+      }
     });
 
     test("should handle opportunity creation request", async ({ request }) => {

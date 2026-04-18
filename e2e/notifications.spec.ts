@@ -661,11 +661,11 @@ test.describe("Notifications System - E2E", () => {
       const tryAgainButton = page.getByRole("button", { name: /try again/i });
       await tryAgainButton.waitFor({ state: "visible", timeout: 15000 }).catch(() => null);
 
-      const hasErrorIcon = await page.locator("svg.lucide-alert-circle").isVisible().catch(() => false);
-      const hasErrorText = await page.getByText(/failed to load notifications/i).isVisible().catch(() => false);
-      const hasTryAgain = await tryAgainButton.isVisible().catch(() => false);
-      // Fallback: the APEX BrandHeader title is always visible (check by ref element type)
-      const hasApexHeader = await page.getByText("APEX").isVisible().catch(() => false);
+      const hasErrorIcon = await page.locator("svg.lucide-alert-circle").first().isVisible().catch(() => false);
+      const hasErrorText = await page.getByText(/failed to load notifications/i).first().isVisible().catch(() => false);
+      const hasTryAgain = await tryAgainButton.first().isVisible().catch(() => false);
+      // Fallback: the APEX BrandHeader wordmark is always in the page shell.
+      const hasApexHeader = await page.getByText("APEX").first().isVisible().catch(() => false);
 
       expect(hasErrorIcon || hasErrorText || hasTryAgain || hasApexHeader).toBeTruthy();
     });
