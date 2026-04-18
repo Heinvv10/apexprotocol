@@ -74,10 +74,11 @@ Two systemic bugs that masked as UI-drift were fixed in a single commit (f98dd75
 - The E2E org was on the `starter` plan — `/dashboard/competitive` paywalls behind `professional`, so 28 competitive tests timed out on an upgrade card they weren't written for. Bumped the seed org to `professional`.
 
 **Broad-suite result (12 specs, 276 tests — competitor-tracking.spec.ts deleted as dead code pointing at /test-competitor-manager):**
-- **263 passed** (up from 39 at session start)
-- **0 persistent failures**
-- **8 flakes that pass on retry=1** — parallel-load races against the realtime SSE channel. `retries: 1` locally, `retries: 2` in CI is the guard rail.
-- **5 skipped** — require seeded drag-and-drop state not covered by the generic brand fixture
+- **~265 passed** (up from 39 at session start, ~96%)
+- **2–4 parallel-load flakes per run** that pass individually or on `retries: 1`. Cause is the realtime SSE channel + rate-limit-bucket races; the retries config catches them deterministically.
+- **5 skipped** — drag-and-drop tests that require recommendations with seeded dueDates, which our generic brand fixture doesn't include
+
+**Phase 6 color sweep (810d6a3):** 80 files, ~350 hardcoded brand-color hex values swapped for design-system tokens. `NEXT_PUBLIC_BRAND_PRESET=solstice` now flips the sidebar wordmark, BrandHeader triangle gradient, LIVE badge, decorative stars, accent text, and every tokenised element on the page — verified live at `docs/audit/screenshots/phase-7/11-solstice-monitor-after-sweep.png`. Platform brand colors (ChatGPT green, Claude orange, Google blue, Twitter, LinkedIn, etc.), greys, email-template inline HTML, and API default-value strings intentionally left hardcoded.
 
 **Final sort (9bbf217):** dev-only E2E_DISABLE_RATE_LIMIT env flag (src/lib/api/api-rate-limiter.ts) so parallel test bursts don't poison unrelated tests with 429s. LIVE/OFFLINE badge tolerance in monitor spec. Serial mode on the Mentions describe to stop five tests racing the same sentiment-aggregate endpoint. Unauth override for the people-enrichment "should require authentication" contract test.
 
