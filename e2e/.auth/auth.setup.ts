@@ -117,10 +117,11 @@ async function seedLocalDbRows(
       "DATABASE_URL is not set — auth.setup.ts cannot seed the local DB"
     );
   }
-  const { Pool, neonConfig } = await import("@neondatabase/serverless");
-  const ws = (await import("ws")).default;
-  neonConfig.webSocketConstructor = ws;
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const { Pool } = await import("pg");
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+  });
 
   try {
     if (clerkOrgId) {
