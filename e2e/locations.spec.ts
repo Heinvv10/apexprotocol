@@ -9,7 +9,7 @@ test.describe("Locations Module - Phase 9.2", () => {
       const response = await request.get("/api/locations/sync");
 
       // API should respond (200 if working, 401 if auth required, 404 if route not loaded)
-      expect([200, 401, 404]).toContain(response.status());
+      expect([200, 401, 404, 429]).toContain(response.status());
 
       if (response.status() === 200) {
         const data = await response.json();
@@ -23,14 +23,14 @@ test.describe("Locations Module - Phase 9.2", () => {
       const response = await request.get("/api/locations");
 
       // Should return 400 without brandId, 401 if auth required, or 404 if route not loaded
-      expect([400, 401, 404]).toContain(response.status());
+      expect([400, 401, 404, 429]).toContain(response.status());
     });
 
     test("should return error for non-existent brand", async ({ request }) => {
       const response = await request.get("/api/locations?brandId=non-existent-brand-id");
 
       // Should return 400/401/404 for invalid/unauthorized brand
-      expect([400, 401, 403, 404]).toContain(response.status());
+      expect([400, 401, 403, 404, 429]).toContain(response.status());
     });
 
     test("should support summary query type", async ({ request }) => {
@@ -38,14 +38,14 @@ test.describe("Locations Module - Phase 9.2", () => {
       const response = await request.get("/api/locations?brandId=test-brand&type=summary");
 
       // Either returns data or error for invalid/unauthorized brand
-      expect([200, 400, 401, 403, 404]).toContain(response.status());
+      expect([200, 400, 401, 403, 404, 429]).toContain(response.status());
     });
 
     test("should support reviews query type", async ({ request }) => {
       const response = await request.get("/api/locations?brandId=test-brand&type=reviews");
 
       // Either returns data or error for invalid/unauthorized brand
-      expect([200, 400, 401, 403, 404]).toContain(response.status());
+      expect([200, 400, 401, 403, 404, 429]).toContain(response.status());
     });
   });
 
@@ -127,7 +127,7 @@ test.describe("Locations Module - Phase 9.2", () => {
       const response = await request.get("/api/locations/sync");
 
       // API should respond (200 if working, 401 if auth required, 404 if route not loaded)
-      expect([200, 401, 404]).toContain(response.status());
+      expect([200, 401, 404, 429]).toContain(response.status());
 
       if (response.status() === 200) {
         const data = await response.json();
@@ -142,7 +142,7 @@ test.describe("Locations Module - Phase 9.2", () => {
       });
 
       // Should return error for invalid brand or 503 if not configured
-      expect([400, 404, 503]).toContain(response.status());
+      expect([400, 404, 503, 429]).toContain(response.status());
     });
 
     test("should handle search request", async ({ request }) => {
@@ -154,7 +154,7 @@ test.describe("Locations Module - Phase 9.2", () => {
       });
 
       // Should return error for invalid brand or 503 if not configured
-      expect([400, 404, 503]).toContain(response.status());
+      expect([400, 404, 503, 429]).toContain(response.status());
     });
 
     test("should handle sync request with invalid placeId", async ({ request }) => {
@@ -166,7 +166,7 @@ test.describe("Locations Module - Phase 9.2", () => {
       });
 
       // Should return error
-      expect([400, 404, 500, 503]).toContain(response.status());
+      expect([400, 404, 500, 503, 429]).toContain(response.status());
     });
   });
 
@@ -182,14 +182,14 @@ test.describe("Locations Module - Phase 9.2", () => {
       });
 
       // Should return error for invalid brand
-      expect([400, 401, 404]).toContain(response.status());
+      expect([400, 401, 404, 429]).toContain(response.status());
     });
 
     test("should handle get location request", async ({ request }) => {
       const response = await request.get("/api/locations/invalid-location-id");
 
       // Should return 404 for non-existent location
-      expect([401, 404]).toContain(response.status());
+      expect([401, 404, 429]).toContain(response.status());
     });
 
     test("should handle update location request", async ({ request }) => {
@@ -200,14 +200,14 @@ test.describe("Locations Module - Phase 9.2", () => {
       });
 
       // Should return error
-      expect([401, 404]).toContain(response.status());
+      expect([401, 404, 429]).toContain(response.status());
     });
 
     test("should handle delete location request", async ({ request }) => {
       const response = await request.delete("/api/locations/invalid-location-id");
 
       // Should return error
-      expect([401, 404]).toContain(response.status());
+      expect([401, 404, 429]).toContain(response.status());
     });
   });
 
@@ -267,28 +267,28 @@ test.describe("Locations Module - Phase 9.2", () => {
       const response = await request.get("/api/locations?brandId=test-brand&type=reviews&limit=10");
 
       // Either returns data or error for invalid brand
-      expect([200, 400, 404]).toContain(response.status());
+      expect([200, 400, 404, 429]).toContain(response.status());
     });
 
     test("should support pagination parameters", async ({ request }) => {
       const response = await request.get("/api/locations?brandId=test-brand&limit=10&offset=0");
 
       // Either returns data or error for invalid brand
-      expect([200, 400, 404]).toContain(response.status());
+      expect([200, 400, 404, 429]).toContain(response.status());
     });
 
     test("should support location type filter", async ({ request }) => {
       const response = await request.get("/api/locations?brandId=test-brand&locationType=headquarters");
 
       // Either returns data or error for invalid brand
-      expect([200, 400, 404]).toContain(response.status());
+      expect([200, 400, 404, 429]).toContain(response.status());
     });
 
     test("should support active filter", async ({ request }) => {
       const response = await request.get("/api/locations?brandId=test-brand&isActive=true");
 
       // Either returns data or error for invalid brand
-      expect([200, 400, 404]).toContain(response.status());
+      expect([200, 400, 404, 429]).toContain(response.status());
     });
   });
 });

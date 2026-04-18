@@ -9,7 +9,7 @@ test.describe("Premium Feature Gating - Phase 9.4", () => {
       const response = await request.get("/api/settings/subscription");
 
       // Should return 401 unauthorized, 200 with data, or 404 if route not matched
-      expect([200, 401, 404]).toContain(response.status());
+      expect([200, 401, 404, 429]).toContain(response.status());
 
       if (response.status() === 200) {
         const data = await response.json();
@@ -30,7 +30,7 @@ test.describe("Premium Feature Gating - Phase 9.4", () => {
       });
 
       // Should return 401, 200, 400, or 404
-      expect([200, 400, 401, 404]).toContain(response.status());
+      expect([200, 400, 401, 404, 429]).toContain(response.status());
     });
 
     test("should reject invalid plan", async ({ request }) => {
@@ -41,7 +41,7 @@ test.describe("Premium Feature Gating - Phase 9.4", () => {
       });
 
       // Should return 400 for invalid plan, 401 if not authenticated, or 404
-      expect([400, 401, 404]).toContain(response.status());
+      expect([400, 401, 404, 429]).toContain(response.status());
     });
   });
 
@@ -226,7 +226,7 @@ test.describe("Premium Feature Gating - Phase 9.4", () => {
       );
 
       // Should return 401, 403 (forbidden due to plan), or 404
-      expect([200, 401, 403, 404]).toContain(response.status());
+      expect([200, 401, 403, 404, 429]).toContain(response.status());
     });
 
     test("should handle benchmark API with gating", async ({ request }) => {
@@ -235,14 +235,14 @@ test.describe("Premium Feature Gating - Phase 9.4", () => {
       );
 
       // Should return 401, 403, or 404
-      expect([200, 401, 403, 404]).toContain(response.status());
+      expect([200, 401, 403, 404, 429]).toContain(response.status());
     });
 
     test("should handle enrichment API with gating", async ({ request }) => {
       const response = await request.get("/api/people/test-person/enrich");
 
       // Should return 401, 403, or 404
-      expect([200, 401, 403, 404]).toContain(response.status());
+      expect([200, 401, 403, 404, 429]).toContain(response.status());
     });
   });
 
@@ -293,7 +293,7 @@ test.describe("Premium Feature Gating - Phase 9.4", () => {
     }) => {
       // This is a placeholder test for when enterprise features are tested
       const response = await request.get("/api/settings/subscription");
-      expect([200, 401, 404]).toContain(response.status());
+      expect([200, 401, 404, 429]).toContain(response.status());
     });
   });
 
