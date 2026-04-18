@@ -51,6 +51,36 @@ Otherwise commit straight to `master`.
 
 ---
 
+## Discovered scope (recorded by Task 1, 2026-04-18)
+
+Grep revealed significantly more sites than the plan originally anticipated. Full list:
+
+**Production code (`src/`):** 3 files, ~15 references
+- `src/lib/db/index.ts` — `Pool`, `neonConfig`, `NeonDatabase<typeof schema>` (×5)
+- `src/lib/db/rls.ts` — `neon`, `drizzle-orm/neon-http`, `typeof import("neon-http").drizzle`
+- `src/lib/auth/api-key-auth.ts` — type import + **4 function signatures** at lines 161, 292, 313, 379 (Plan Task 5 originally covered only the import — now expanded to cover all 5 sites)
+
+**Test infrastructure (`tests/`):** 3 files
+- `tests/integration/setup.ts` — `neon`, `NeonQueryFunction`, `NeonHttpDatabase`
+- `tests/integration/seed.ts` — `NeonHttpDatabase` type
+- `tests/integration/setup.test.ts` — `vi.mock("@neondatabase/serverless")`
+
+**E2E auth fixture (`e2e/`):** 1 file
+- `e2e/.auth/auth.setup.ts` — `Pool + neonConfig + ws` (used by Playwright for test users)
+
+**Dev/migration scripts (`scripts/`):** 26 files
+All share one of two patterns:
+- Pattern A (raw SQL): `import { neon }; const sql = neon(URL); await sql\`SELECT ...\``
+- Pattern B (Drizzle): `import { neon }; import { drizzle } from "drizzle-orm/neon-http"; const db = drizzle(neon(URL), { schema })`
+
+Both are replaced with the canonical form:
+- `import { db } from "../src/lib/db";`
+- `import { sql } from "drizzle-orm";`
+- Raw SQL → `const result = await db.execute(sql\`SELECT ...\`); result.rows[0]...`
+- Drizzle → just use `db.select().from(schema.X)` directly
+
+---
+
 ## Task 1: Inventory all Neon imports
 
 **Why:** The known sites are `src/lib/db/index.ts`, `src/lib/db/rls.ts`, `src/lib/auth/api-key-auth.ts`. Confirm with a fresh grep — if there's a 4th, this plan needs amending.
@@ -533,7 +563,9 @@ cd /home/hein/Workspace/ApexGEO && \
   src/lib/auth/api-key-auth.ts
 ```
 
-- [ ] **Step 5.3: Replace any references to `NeonDatabase<` in the same file with `NodePgDatabase<`**
+- [ ] **Step 5.3: Replace all function-signature references to `NeonDatabase<` in the same file with `NodePgDatabase<`**
+
+The file has 4 function signatures at lines 161, 292, 313, 379 that use `NeonDatabase<typeof schema>` as a parameter type:
 
 ```bash
 cd /home/hein/Workspace/ApexGEO && \
@@ -541,7 +573,7 @@ cd /home/hein/Workspace/ApexGEO && \
   grep -n 'NeonDatabase\|NodePgDatabase' src/lib/auth/api-key-auth.ts
 ```
 
-Expected: no `NeonDatabase` references remain; `NodePgDatabase` is the only one.
+Expected: no `NeonDatabase` references remain; `NodePgDatabase` appears 5 times (1 import + 4 signatures).
 
 - [ ] **Step 5.4: TypeScript check on this file's compile unit**
 
@@ -558,6 +590,372 @@ Expected: no errors mentioning `api-key-auth.ts`.
 cd /home/hein/Workspace/ApexGEO && \
   git add src/lib/auth/api-key-auth.ts && \
   git commit -m "refactor(auth): swap NeonDatabase type import for NodePgDatabase"
+```
+
+---
+
+## Task 5b: Swap `tests/integration/` test infrastructure
+
+**Files:**
+- Modify: `tests/integration/setup.ts`
+- Modify: `tests/integration/seed.ts`
+- Modify: `tests/integration/setup.test.ts`
+
+- [ ] **Step 5b.1: Read `tests/integration/setup.ts` to understand how it builds the test DB connection**
+
+```bash
+sed -n '30,60p' /home/hein/Workspace/ApexGEO/tests/integration/setup.ts
+```
+
+Capture: how the db connection is constructed (via `neon(url)` + `drizzle(sql)`), what it's assigned to, and which test files import it.
+
+- [ ] **Step 5b.2: Replace the Neon imports**
+
+In `tests/integration/setup.ts`:
+- `import { neon, type NeonQueryFunction } from "@neondatabase/serverless";` → remove
+- `import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";` → `import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";` AND add `import { Pool } from "pg";`
+- `const sql = neon(url)` → `const pool = new Pool({ connectionString: url, ssl: { rejectUnauthorized: false } })`
+- `drizzle(sql, { schema })` → `drizzle(pool, { schema })`
+- Type `NeonHttpDatabase<typeof schema>` → `NodePgDatabase<typeof schema>`
+- `NeonQueryFunction` usages → delete (not needed — drizzle is the only API used)
+
+In `tests/integration/seed.ts`:
+- `import type { NeonHttpDatabase } from "drizzle-orm/neon-http";` → `import type { NodePgDatabase } from "drizzle-orm/node-postgres";`
+- All `NeonHttpDatabase<typeof schema>` type references → `NodePgDatabase<typeof schema>`
+
+In `tests/integration/setup.test.ts`:
+- `vi.mock("@neondatabase/serverless", () => ({ ... }))` → `vi.mock("pg", () => ({ Pool: class { connect() {} end() {} query() { return { rows: [] }; } } }))` — a minimal Pool mock that satisfies the test imports
+
+- [ ] **Step 5b.3: Run the integration test setup test**
+
+```bash
+cd /home/hein/Workspace/ApexGEO && \
+  npx vitest run tests/integration/setup.test.ts
+```
+
+Expected: pass. If the mock shape doesn't match what setup.ts uses, refine the mock to match.
+
+- [ ] **Step 5b.4: Commit**
+
+```bash
+cd /home/hein/Workspace/ApexGEO && \
+  git add tests/integration/setup.ts tests/integration/seed.ts tests/integration/setup.test.ts && \
+  git commit -m "test(integration): swap Neon test-DB setup for pg Pool"
+```
+
+---
+
+## Task 5c: Swap `e2e/.auth/auth.setup.ts` (Playwright auth fixture)
+
+**Files:**
+- Modify: `e2e/.auth/auth.setup.ts` lines 118-125
+
+- [ ] **Step 5c.1: Read the existing block**
+
+```bash
+sed -n '115,135p' /home/hein/Workspace/ApexGEO/e2e/.auth/auth.setup.ts
+```
+
+Expected to see:
+```ts
+const { Pool, neonConfig } = await import("@neondatabase/serverless");
+const ws = (await import("ws")).default;
+neonConfig.webSocketConstructor = ws;
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+```
+
+- [ ] **Step 5c.2: Replace with plain pg**
+
+```bash
+cd /home/hein/Workspace/ApexGEO && \
+  python3 - <<'PY'
+import re
+path = 'e2e/.auth/auth.setup.ts'
+with open(path) as f:
+    text = f.read()
+
+old = '''const { Pool, neonConfig } = await import("@neondatabase/serverless");
+  const ws = (await import("ws")).default;
+  neonConfig.webSocketConstructor = ws;
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });'''
+
+new = '''const { Pool } = await import("pg");
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+  });'''
+
+if old not in text:
+    print("MISMATCH — lines don't match expected. Manual edit needed.")
+else:
+    text = text.replace(old, new)
+    with open(path, 'w') as f:
+        f.write(text)
+    print("OK")
+PY
+```
+
+If the python reports MISMATCH, open the file and manually swap the 4 neon lines for the 3 pg lines.
+
+- [ ] **Step 5c.3: TypeScript check**
+
+```bash
+cd /home/hein/Workspace/ApexGEO && \
+  npx tsc --noEmit 2>&1 | grep -E 'auth\.setup\.ts' | head -5
+```
+
+Expected: no errors on this file.
+
+- [ ] **Step 5c.4: Commit**
+
+```bash
+cd /home/hein/Workspace/ApexGEO && \
+  git add e2e/.auth/auth.setup.ts && \
+  git commit -m "test(e2e): swap Neon auth fixture to pg Pool"
+```
+
+---
+
+## Task 5d: Swap all 26 dev/migration scripts in `scripts/`
+
+**Files:** All `scripts/*.ts` files identified by the Task 1 grep. Current list (verify before editing):
+```
+scripts/verify-migration.ts
+scripts/check-competitive-data.ts
+scripts/migrate-add-roadmap-tables.ts
+scripts/apply-0015-indexes.ts
+scripts/scrape-vea-enhanced.ts
+scripts/create-vea-brand.ts
+scripts/seed-competitive.ts
+scripts/apply-completion-tracking-migration.ts
+scripts/check-monitoring-status.ts
+scripts/migrate-oauth-enum.ts
+scripts/create-geo-tables.ts
+scripts/seed-notion-competitive.ts
+scripts/check-alerts.ts
+scripts/check-mentions.ts
+scripts/add-real-vea-leadership.ts
+scripts/fix-geo-alerts-table.ts
+scripts/migrate-add-location-personnel.ts
+scripts/pentest-prod.ts
+scripts/populate-vea-data.ts
+scripts/list-brands.ts
+scripts/delete-fake-vea-data.ts
+scripts/update-vea-brand.ts
+scripts/check-brands-status.ts
+scripts/migrate-add-benchmark-fields.ts
+scripts/add-sov-index.ts
+scripts/seed.ts
+scripts/add-content-columns.ts
+```
+
+All 26 follow one of two patterns. The replacement target is a **unified** form that uses the main `db` from `src/lib/db` + Drizzle's `sql` tag — no separate driver, no separate connection pool.
+
+### Target form (after swap)
+
+**Before (Pattern A — raw SQL):**
+```ts
+import { neon } from '@neondatabase/serverless';
+import * as dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+const sql = neon(process.env.DATABASE_URL!);
+
+const rows = await sql`SELECT COUNT(*) as count FROM brands`;
+console.log(rows[0].count);
+```
+
+**After (Pattern A — raw SQL via Drizzle):**
+```ts
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+import { sql } from 'drizzle-orm';
+import { db } from '../src/lib/db';
+
+const result = await db.execute(sql`SELECT COUNT(*) as count FROM brands`);
+console.log(result.rows[0].count);
+```
+
+**Before (Pattern B — Drizzle):**
+```ts
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
+import * as schema from "../src/lib/db/schema";
+const sql = neon(DATABASE_URL);
+const db = drizzle(sql, { schema });
+const brands = await db.select().from(schema.brands);
+```
+
+**After (Pattern B — use main db):**
+```ts
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+import { db, schema } from '../src/lib/db';
+const brands = await db.select().from(schema.brands);
+```
+
+### Execution
+
+- [ ] **Step 5d.1: Write a bulk-swap helper script**
+
+Create `/tmp/swap-scripts.sh`:
+
+```bash
+#!/bin/bash
+# Migrates scripts/*.ts from Neon driver to shared db module.
+# Runs idempotent sed/python passes. Fails on any unexpected pattern.
+set -e
+
+cd /home/hein/Workspace/ApexGEO
+
+for f in scripts/*.ts; do
+  # Only touch files that actually reference Neon
+  if ! grep -qE '@neondatabase/serverless|drizzle-orm/neon-http' "$f"; then
+    continue
+  fi
+  echo "processing $f"
+
+  python3 - "$f" <<'PY'
+import re, sys
+path = sys.argv[1]
+with open(path) as fh:
+    s = fh.read()
+orig = s
+
+# Remove neon imports
+s = re.sub(r"^\s*import\s*\{[^}]*\bneon\b[^}]*\}\s*from\s*['\"]@neondatabase/serverless['\"];?\s*\n", "", s, flags=re.MULTILINE)
+# Remove drizzle/neon-http imports
+s = re.sub(r"^\s*import\s*\{[^}]*\bdrizzle\b[^}]*\}\s*from\s*['\"]drizzle-orm/neon-http['\"];?\s*\n", "", s, flags=re.MULTILINE)
+# Remove the "const sql = neon(...)" line
+s = re.sub(r"^\s*const\s+sql\s*=\s*neon\([^)]*\);\s*\n", "", s, flags=re.MULTILINE)
+# Remove the "const db = drizzle(sql, { schema });" line (scripts that used Drizzle)
+s = re.sub(r"^\s*const\s+db\s*=\s*drizzle\(sql,\s*\{\s*schema\s*\}\);\s*\n", "", s, flags=re.MULTILINE)
+
+# If file uses `await sql\`...\``, we need to replace with `await db.execute(sql\`...\`)`.
+# Heuristic: any tagged-template call matching await sql`...` becomes await db.execute(sql`...`)
+# Drizzle's `sql` tag is compatible with template-literal usage.
+s = re.sub(r"\bawait\s+sql`", "await db.execute(sql`", s)
+
+# Similarly for NON-awaited: `const x = sql\`...\`` — rare but possible.
+# Only do this if there's still bare `sql\`` usage after the await replacement.
+# Actually drizzle's sql tag returns a SQL node, not a promise — wrap in db.execute.
+# Keep it simple: assume every call site was `await sql\`...\``.
+
+# Rows access: `rows[0]` becomes `result.rows[0]` ONLY when scripts did `const x = await sql\`...\``.
+# Hard to auto-detect; leave for manual review in Step 5d.3.
+
+# Add necessary imports at the top if not present
+needs_sql = 'db.execute(sql`' in s and "from 'drizzle-orm'" not in s and 'from "drizzle-orm"' not in s
+needs_db_and_schema = re.search(r'\bschema\.\w+', s) is not None
+needs_db_only = re.search(r'\bdb\.(select|insert|update|delete|execute)\b', s) is not None and not needs_db_and_schema
+
+# Build new imports block
+new_imports = []
+# dotenv config — if existing `dotenv.config` exists, keep; otherwise add standard form
+if 'dotenv.config' not in s and "config(" not in s:
+    new_imports.append("import { config } from 'dotenv';\nconfig({ path: '.env.local' });")
+if needs_sql:
+    new_imports.append("import { sql } from 'drizzle-orm';")
+if needs_db_and_schema:
+    new_imports.append("import { db, schema } from '../src/lib/db';")
+elif needs_db_only:
+    new_imports.append("import { db } from '../src/lib/db';")
+
+# Insert imports after the existing top-of-file comment block
+if new_imports:
+    # Find end of opening comment or first non-comment line
+    lines = s.split('\n')
+    insert_at = 0
+    in_block_comment = False
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith('/**'):
+            in_block_comment = True
+            continue
+        if in_block_comment:
+            if stripped.endswith('*/'):
+                in_block_comment = False
+                insert_at = i + 1
+                continue
+            continue
+        if stripped.startswith('//') or stripped == '':
+            insert_at = i + 1
+            continue
+        break
+    lines[insert_at:insert_at] = new_imports + ['']
+    s = '\n'.join(lines)
+
+if s != orig:
+    with open(path, 'w') as fh:
+        fh.write(s)
+    print(f"  modified")
+else:
+    print(f"  no changes (already clean?)")
+PY
+done
+```
+
+Run it:
+
+```bash
+chmod +x /tmp/swap-scripts.sh && /tmp/swap-scripts.sh 2>&1 | tail -40
+```
+
+- [ ] **Step 5d.2: Verify no Neon imports left in scripts/**
+
+```bash
+grep -lE '@neondatabase/serverless|drizzle-orm/neon-http' /home/hein/Workspace/ApexGEO/scripts/*.ts || echo 'CLEAN'
+```
+
+Expected: `CLEAN`. If any files are listed, inspect manually — they likely have a pattern the bulk script didn't catch. Fix by hand.
+
+- [ ] **Step 5d.3: Fix `rows[0]` access patterns where the variable still expects Neon-style arrays**
+
+Many scripts did `const rows = await sql\`...\`; rows[0].count`. After the swap, the await target is `db.execute(sql\`...\`)` which returns `{ rows: Array<...> }`. So:
+
+- If a script stored the result in a variable and indexed into it as an array (`rows[0]`), the access needs to become `rows.rows[0]` — OR the variable should be renamed to `result` and accessed as `result.rows[0]`.
+
+Grep for the likely-broken patterns:
+
+```bash
+cd /home/hein/Workspace/ApexGEO && \
+  grep -nE '^\s*const\s+\w+\s*=\s*await\s+db\.execute\(sql' scripts/*.ts | head -20
+```
+
+For each match, manually review the file and update downstream access from `varname[0]` to `varname.rows[0]` (or similar). There is no safe bulk substitution for this — the variable names differ per script.
+
+Work through each file. After each fix, commit:
+```bash
+cd /home/hein/Workspace/ApexGEO && \
+  git add scripts/<file>.ts && \
+  git commit -m "refactor(scripts): adapt row access for pg driver return shape in <file>"
+```
+
+- [ ] **Step 5d.4: TypeScript check on scripts/**
+
+```bash
+cd /home/hein/Workspace/ApexGEO && \
+  npx tsc --noEmit 2>&1 | grep -E 'scripts/' | head -30
+```
+
+Expected: 0 errors on scripts/*.ts. Fix any remaining issues individually.
+
+- [ ] **Step 5d.5: Commit the bulk-swap pass (if not committed per-file above)**
+
+```bash
+cd /home/hein/Workspace/ApexGEO && \
+  git add scripts/*.ts && \
+  git commit -m "refactor(scripts): migrate all dev scripts from Neon to shared db module
+
+All 26 scripts/*.ts previously used neon() directly for raw SQL or
+drizzle-orm/neon-http for query-builder calls. They now use the main
+db instance from src/lib/db (backed by pg Pool), with drizzle's sql
+tag for raw queries. One driver across the entire codebase."
+```
+
+- [ ] **Step 5d.6: Clean up the helper**
+
+```bash
+rm /tmp/swap-scripts.sh
 ```
 
 ---
