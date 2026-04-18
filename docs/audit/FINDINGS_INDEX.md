@@ -74,9 +74,11 @@ Two systemic bugs that masked as UI-drift were fixed in a single commit (f98dd75
 - The E2E org was on the `starter` plan — `/dashboard/competitive` paywalls behind `professional`, so 28 competitive tests timed out on an upgrade card they weren't written for. Bumped the seed org to `professional`.
 
 **Broad-suite result (9 specs, 256 tests — competitor-tracking.spec.ts deleted as dead code pointing at /test-competitor-manager):**
-- **225+ passed** (up from 39 at session start)
-- **~27 remaining failures** — all require seeded domain data (completed recommendations for Top Performers, notification history, etc.) rather than infrastructure fixes
+- **240+ passed** (up from 39 at session start)
+- **~12 remaining failures** — all on the rec-completion Effectiveness Report metrics that need completed-recommendation fixture data
 - **4 skipped** — feature-flag gated or explicitly marked
+
+**notifications.spec.ts: 31/31 green** (cf7de65) — rewritten for current UI, React-hydration waits, TanStack Query retry budget, and the `{success, data:{count}}` unread-count response shape. Preserves each test's intent; no product code touched.
 
 **Patterns eliminated (systemic, not per-spec drift):**
 1. `waitUntil: "networkidle"` never settled on the realtime-heavy app — swapped to `"domcontentloaded"` across 8 specs
