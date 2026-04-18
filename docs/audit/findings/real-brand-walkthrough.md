@@ -72,9 +72,23 @@ Two code paths now exist:
 
 `/api/ai-insights/analyze` uses OpenAI / Anthropic / Gemini / Perplexity / xAI / DeepSeek. All six keys are set in `.env.production`, none in `.env.local`. The honest empty state renders on the dev box; the prod deploy will actually query platforms.
 
-### Performance module — not implemented
+### Performance module — wired via Google PageSpeed Insights
 
-No Lighthouse / Puppeteer / WebPageTest pass wired into the audit engine. The fabricated metrics are now gated; wiring real measurement is a separate feature task.
+Every completed audit now calls Google's PageSpeed Insights v5 API in
+parallel with the other checks. PSI returns Lighthouse-measured FCP /
+LCP / TBT / CLS / Speed Index and server response time for the audit
+URL. The worker persists these to `metadata.performance` and
+`PerformanceDeepDive` renders real numbers.
+
+Failure modes (timeout, 429 quota, PSI can't reach the URL) fall back
+to `null` and the UI still renders the honest "not captured" empty
+state — never a fabricated number.
+
+**Dev/staging:** unauthenticated calls share a tiny anonymous quota
+and get 429'd within a handful of requests. Set
+`GOOGLE_PAGESPEED_API_KEY` (Google Cloud → Enable PageSpeed Insights
+API → create credentials) to get 25,000 requests/day. Add the key to
+`.env.production` before enabling for real brands.
 
 ### AI Readiness module — not implemented
 
@@ -99,7 +113,7 @@ Ran audits on 3 of 10. The other 7 (MTN, Standard Bank, Naspers, Woolworths, Vod
 | Audit engine (scraping, scoring, issues) | ✅ Real |
 | Audit category breakdown | ✅ Real (after fix) |
 | Audit "Quick Wins" (embedded) | ✅ Real |
-| Performance Deep Dive | ⚠️ Honest empty state (module not implemented) |
+| Performance Deep Dive | ✅ Real (PSI) — honest empty state when quota exhausted or key missing |
 | AI Readiness Analysis | ⚠️ Honest empty state (module not implemented) |
 | Monitor platform cards | ⚠️ Honest empty state (monitoring never runs for the brand) |
 | Recommendations (persisted) | ⚠️ Honest empty state (needs ANTHROPIC_API_KEY) |

@@ -9,3 +9,4 @@ export {
   checkContentChunking,
   type ContentChunkingResult,
 } from "./content-chunking-check";
+export { checkPageSpeed, type PageSpeedResult } from "./pagespeed-check";

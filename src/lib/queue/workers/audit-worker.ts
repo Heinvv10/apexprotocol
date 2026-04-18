@@ -12,6 +12,7 @@ import {
   checkAiCrawlers,
   checkEntityAuthority,
   checkContentChunking,
+  checkPageSpeed,
 } from "../../audit/checks";
 import type { AuditIssue, AuditMetadata } from "../../db/schema/audits";
 import {
@@ -106,10 +107,11 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
     const safeCheck = async (fn: () => Promise<unknown>, fallback: unknown): Promise<unknown> => {
       try { return await fn(); } catch (e) { console.error('[Audit] Check failed:', e instanceof Error ? e.message : String(e)); return fallback; }
     };
-    const [aiCrawlerIssues, entityIssues, chunkingResult] = await Promise.all([
+    const [aiCrawlerIssues, entityIssues, chunkingResult, pageSpeedResult] = await Promise.all([
       safeCheck(() => checkAiCrawlers(url), []),
       brand ? safeCheck(() => checkEntityAuthority(brand.name, brand.domain || undefined), []) : Promise.resolve([]),
       safeCheck(() => checkContentChunking(url), { issues: [], score: 0 }),
+      safeCheck(() => checkPageSpeed(url), null),
     ]);
 
     // Merge all issues
@@ -173,13 +175,21 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
         categoryScores: finalCategoryScores,
       });
 
-      // NOTE on performance metrics: the current `CrawlPage` type (worker
-      // path) doesn't carry per-page timing data. Real FCP/LCP/TBT/CLS
-      // require a headless-browser pass (Puppeteer/Playwright) which the
-      // audit pipeline doesn't run yet. Rather than ship estimated numbers
-      // that look like Lighthouse output, we leave metadata.performance
-      // undefined and PerformanceDeepDive renders an honest "not captured"
-      // empty state.
+      // Performance metrics come from Google PageSpeed Insights when
+      // the safeCheck above succeeded. When PSI is unreachable or rate-
+      // limited, performance stays undefined and PerformanceDeepDive
+      // renders an honest "not captured" empty state rather than the
+      // fabricated defaults it used to fall back to.
+      const performance = pageSpeedResult as
+        | {
+            firstContentfulPaint: number;
+            largestContentfulPaint: number;
+            totalBlockingTime: number;
+            cumulativeLayoutShift: number;
+            speedIndex: number;
+            responseTime?: number;
+          }
+        | null;
 
       const finalMetadata = {
         timing: {
@@ -193,6 +203,7 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
         contentChunkingBreakdown: (chunkingResult as Record<string, unknown>).breakdown,
         contentAnalysis: analysis.contentAnalysis,
         aiReadiness,
+        ...(performance ? { performance } : {}),
       } as AuditMetadata;
 
       await db
