@@ -14,6 +14,8 @@
 
 **Secrets handling:** Throughout this plan, `<POSTGRES_PASSWORD from .env>`, `<SERVICE_ROLE_KEY from .env>`, etc. mean: open `/home/velo/apexgeo-supabase/.env` on Velo, copy the value, paste into the command. Never let secrets pass through Claude Code's tool layer where they'd be logged.
 
+**Executor location:** This plan is written assuming the operator is on a remote machine SSH'ing into Velo (`ssh velo@100.96.203.105 '...'`). If you are running directly on Velo (`hostname=velo-server`), drop the SSH wrapper and run commands locally. As user `hein` (in `docker` and `velo` groups), use `sudo -u velo <cmd>` for filesystem writes under `/home/velo/`; docker commands run directly without sudo.
+
 ---
 
 ## File / artifact map
@@ -32,6 +34,41 @@ All work happens on the Velo server (`100.96.203.105`) over SSH as user `velo`. 
 - **Create:** `/home/velo/apexgeo-supabase/.gitignore` — ignore `.env` and `volumes/`
 
 Secrets file lives outside source control. The `.env` is **not** committed anywhere.
+
+---
+
+## Discovered ingress (recorded by Task 1, 2026-04-18)
+
+Velo uses **Cloudflare Tunnel via systemd services**, one dedicated tunnel per project. No host nginx fronts the internet; nginx runs only as an internal/container service. Public TLS terminates inside Cloudflare's network — tunnels carry plain HTTP from CF edge to local services.
+
+**Active tunnel services** (`/etc/systemd/system/cloudflared-*.service`):
+- `cloudflared.service` — generic
+- `cloudflared-api.service` → `api.fibreflow.app`
+- `cloudflared-bf.service` → Blitz Fibre
+- `cloudflared-brighttech.service` → `brighttech.co.za`
+- `cloudflared-qfield.service` → FibreFlow QField
+- `cloudflared-tunnel.service` → `vf.fibreflow.app`
+- `cloudflared-vf.service` → VelocityFibre (`ai@velocityfibre.co.za`)
+- `cloudflared-update.service` + `cloudflared-update.timer` → updater
+- Plus separate `brighttech-tunnel.service` and `impande-tunnel.service`
+
+**Two configuration styles in use:**
+- **Token-based** (e.g. `cloudflared-vf.service`) — systemd `ExecStart=/home/velo/cloudflared tunnel run --token <jwt>`. Ingress hostname routing lives in the Cloudflare Zero Trust dashboard; no local YAML.
+- **YAML-config** (e.g. `cloudflared-brighttech.service`) — `--config` flag points at `/home/velo/.cloudflared/{config,api-tunnel-config,brighttech-config}.yml`. Routes versioned locally.
+
+**Network bindings:**
+- Host port `:80` bound on `0.0.0.0` (likely ACME/redirect)
+- Host port `:443` bound **only** on Tailscale IP `100.96.203.105` — not internet-facing
+- Local nginx + Dokploy run as internal services, not edge
+
+**Decision for ApexGEO:** create a dedicated `cloudflared-apexgeo.service` matching the per-project pattern. Style preference is for Task 10 to settle:
+- Token-based — matches the dominant pattern on this server, ops live in Cloudflare dashboard, no local YAML drift
+- YAML-based — routes git-trackable in `/home/velo/.cloudflared/apexgeo-config.yml`
+
+**Open questions for Task 10** (not blocking Task 1):
+1. Which Cloudflare zone hosts ApexGEO? Candidates: `velocityfibre.co.za`, `fibreflow.app`, or a new dedicated domain
+2. Token-based vs YAML-based tunnel for ApexGEO
+3. Hein creates the tunnel + DNS records via Cloudflare dashboard during Task 10
 
 ---
 
