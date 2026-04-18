@@ -67,20 +67,20 @@ What the setup does on a fresh run:
 6. Writes `selectedBrandId` into the `apex-brand-state` zustand localStorage entry
 7. Saves Playwright storage state for all specs to consume
 
-### Spec health
+### Spec health (after the bulk fixes)
 
-**Green (53 tests pass clean):**
-- `auth.spec.ts` — 12 tests (selectors refreshed for current Clerk UI)
-- `smoke-core-flows.spec.ts` — 5 tests (all pass with brand seeded)
-- `onboarding.spec.ts` — 3 tests (rewritten for current 5-step wizard)
-- `notifications.spec.ts` — 33 tests pass on the auth session
+Two systemic bugs that masked as UI-drift were fixed in a single commit (f98dd75):
+- Most specs used `waitUntil: "networkidle"` on page navigation. The app holds long-lived realtime connections + auth refreshes, so networkidle never settled and tests timed out after 30s before even querying selectors. Swapped to `domcontentloaded` across 8 specs.
+- The E2E org was on the `starter` plan — `/dashboard/competitive` paywalls behind `professional`, so 28 competitive tests timed out on an upgrade card they weren't written for. Bumped the seed org to `professional`.
 
-**Pre-existing drift (~63 tests failing):**
-- `monitor.spec.ts` — tests assert on a pre-refactor UI ("Live Query Analysis" heading, "Smart Table" badge, "Tracked Topics / Entity Types / AI Engines" filter sidebar). The monitor page has been redone — these are UI rewrites, not auth-setup issues.
-- `competitive.spec.ts` — every test times out at 30s waiting for selectors that no longer exist. `/dashboard/competitive` is paywalled behind the Professional plan; the Starter-plan seed-org sees the upgrade card.
-- `premium-gates.spec.ts` — ~3 API-contract assertions against endpoints that have moved.
+**Broad-suite result (10 specs, 284 tests):**
+- **190 passed** (up from 39)
+- **90 failing** — genuine UI drift (e.g. tests expecting `/test-competitor-manager` which we deleted in Phase 2, or selectors against a pre-refactor monitor page)
+- **4 skipped** — feature-flag gated or explicitly marked
 
-These are not fixable via infrastructure. They're pending a "refresh e2e coverage" work item — probably best tackled spec-by-spec alongside the features they exercise.
+**Failures by spec:** people-enrichment 23, locations 17, competitor-tracking 14, recommendation-completion 13, notifications 7, premium-gates 5, monitor 5, recommendations-calendar 4, recommendations-cross-view 2.
+
+The remaining 90 are genuine test rewrites aligned with the specific features they exercise — appropriate for a future "refresh e2e coverage" work item rather than infrastructure tuning.
 
 ## Post-merge verification
 
