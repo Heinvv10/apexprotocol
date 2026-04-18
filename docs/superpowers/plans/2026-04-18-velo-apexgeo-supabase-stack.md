@@ -1,4 +1,34 @@
-# Plan 1: Provision dedicated `apexgeo-supabase` stack on Velo
+# Plan 1: Provision dedicated `apexgeo-supabase` stack on Velo  (✅ COMPLETE 2026-04-18)
+
+## Verified state (2026-04-18 21:21 SAST)
+
+- **Stack:** 13 containers `Up + (healthy)` under project `apexgeo-supabase` on network `apexgeo_network`
+- **Postgres:** 15.8 in `apexgeo-supabase-db`, hosting `apexgeo` database with full Supabase schema set (`auth`, `storage`, `realtime`, `vault`, `extensions`, `graphql`, `pgbouncer`, `public`, `supabase_functions`, `_realtime`)
+- **Service bindings:** Auth/Storage/Realtime/REST all on `apexgeo` database via `db:5436/apexgeo`
+- **Pooler:** Supavisor accepting `postgres.apexgeo` connections on host port 7783 (txn) and 7784 (session)
+- **Internal verification:** `curl -H "apikey: $ANON" http://localhost:7780/auth/v1/health` → `{"version":"v2.186.0","name":"GoTrue",...}` HTTP 200
+- **Auth pipeline:** Admin-API user create → Postgres confirm → password sign-in returning JWT → Admin-API delete → confirmed empty (Task 9 end-to-end)
+- **External ingress:** `https://api.apexgeo.app/auth/v1/health` → HTTP 200 over TLS 1.3 with valid `apexgeo.app` cert
+- **Cloudflare tunnel:** `cloudflared-apexgeo.service` (systemd, runs as `velo`), tunnel `apexgeo` (id `ee07388f-6bf1-4f79-8cfc-969a26f9c9c7`), connected to CPT02 datacenter via QUIC
+- **DNS:** `api.apexgeo.app` and `studio.apexgeo.app` proxied CNAMEs to `<tunnel-id>.cfargotunnel.com`
+- **Secrets:** `.env` chmod 600 velo:velo at `/home/velo/apexgeo-supabase/.env`; tunnel token in `/etc/systemd/system/cloudflared-apexgeo.service` chmod 600 root
+
+## Connection strings for Plan 2 (apex-app)
+
+```
+DATABASE_URL=postgresql://postgres.apexgeo:<POSTGRES_PASSWORD>@apexgeo-supabase-pooler:6543/apexgeo?pgbouncer=true
+DIRECT_URL=postgresql://postgres:<POSTGRES_PASSWORD>@apexgeo-supabase-db:5436/apexgeo
+NEXT_PUBLIC_SUPABASE_URL=https://api.apexgeo.app
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<ANON_KEY from /home/velo/apexgeo-supabase/.env>
+SUPABASE_SERVICE_ROLE_KEY=<SERVICE_ROLE_KEY from /home/velo/apexgeo-supabase/.env>
+SUPABASE_JWT_SECRET=<JWT_SECRET from /home/velo/apexgeo-supabase/.env>
+```
+
+When `apex-app` joins the `apexgeo_network` Docker network in Plan 5, it reaches `apexgeo-supabase-pooler` and `apexgeo-supabase-db` by service name (no host ports needed for internal traffic).
+
+---
+
+## Original plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
