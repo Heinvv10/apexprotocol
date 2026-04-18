@@ -109,6 +109,9 @@ async function seedLocalDbRows(
   clerkUserId: string,
   clerkOrgId: string | null
 ): Promise<void> {
+  console.log(
+    `[e2e auth setup] seeding DB rows — clerkUserId=${clerkUserId}, clerkOrgId=${clerkOrgId ?? "null"}`
+  );
   if (!process.env.DATABASE_URL) {
     throw new Error(
       "DATABASE_URL is not set — auth.setup.ts cannot seed the local DB"
@@ -127,6 +130,30 @@ async function seedLocalDbRows(
          ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name`,
         [clerkOrgId, E2E_TEST_ORG_NAME, `e2e-${clerkOrgId.toLowerCase()}`]
       );
+
+      // Seed a demo brand so brand-scoped pages (monitor, insights,
+      // mentions, simulate) render their real UI instead of the
+      // 'Select a Brand' empty state. Tests that want to exercise the
+      // empty state can delete/rename the brand in a fixture.
+      await pool.query(
+        `INSERT INTO brands (
+           id, organization_id, name, domain, description, industry,
+           keywords, monitoring_enabled, monitoring_platforms, is_active
+         ) VALUES (
+           $1, $2, $3, $4, $5, $6, $7::jsonb, true,
+           '["chatgpt","claude","gemini","perplexity","grok","deepseek","copilot"]'::jsonb,
+           true
+         ) ON CONFLICT (id) DO UPDATE SET updated_at = now()`,
+        [
+          "brand_e2e_demo",
+          clerkOrgId,
+          "E2E Demo Brand",
+          "https://apexgeo.app",
+          "Seeded by e2e/.auth/auth.setup.ts so brand-scoped pages render their real UI.",
+          "SaaS",
+          JSON.stringify(["AI visibility", "GEO", "AEO"]),
+        ]
+      );
     }
 
     await pool.query(
@@ -141,10 +168,10 @@ async function seedLocalDbRows(
 }
 
 async function getExistingOrgForUser(userId: string): Promise<string | null> {
-  const memberships = await clerkFetch<Array<{ organization: { id: string } }>>(
+  const res = await clerkFetch<{ data: Array<{ organization: { id: string } }> }>(
     `/users/${userId}/organization_memberships`
   );
-  return memberships[0]?.organization.id ?? null;
+  return res.data[0]?.organization.id ?? null;
 }
 
 export default async function globalSetup(_config: FullConfig): Promise<void> {
@@ -192,6 +219,17 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
     // Now that we know the Clerk org id, seed/refresh the mirror rows in Neon.
     const postAuthOrgId = await getExistingOrgForUser(user.id);
     await seedLocalDbRows(user.id, postAuthOrgId);
+
+    // Pre-select the seeded brand so dashboard pages render real UI
+    // instead of the 'Select a Brand' empty state. Matches the zustand
+    // persist key defined at src/stores/brand-store.ts:222.
+    await page.evaluate(() => {
+      const persisted = {
+        state: { selectedBrandId: "brand_e2e_demo" },
+        version: 0,
+      };
+      localStorage.setItem("apex-brand-state", JSON.stringify(persisted));
+    });
 
     const storage = await context.storageState();
     writeFileSync(STORAGE_STATE_PATH, JSON.stringify(storage, null, 2));
