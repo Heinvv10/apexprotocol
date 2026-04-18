@@ -10,6 +10,9 @@ test-results/
 videos/
 tsconfig.tsbuildinfo
 
+# Playwright auth state — regenerated per run, contains live session cookies
+e2e/.auth/storage-state.json
+
 # Environment files
 .env
 .env.local

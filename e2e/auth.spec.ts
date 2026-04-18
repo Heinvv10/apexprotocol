@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
 
+// These tests exercise the unauthenticated sign-in surface; the global
+// storage state from auth.setup.ts would redirect them to /dashboard.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe("Authentication Flow", () => {
   test.describe("Sign In Page", () => {
     test("should display sign-in page", async ({ page }) => {
