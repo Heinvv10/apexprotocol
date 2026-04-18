@@ -6,7 +6,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
 
   test.describe("Unified Empty State Components", () => {
     test("should render EmptyState component with proper structure", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -46,7 +46,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
     });
 
     test("should have accessible ARIA attributes on empty states", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for ARIA attributes on empty/loading states
@@ -65,7 +65,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
     });
 
     test("should display action buttons in empty states", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Look for empty state action buttons
@@ -88,7 +88,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
     });
 
     test("should have proper theme colors applied", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check if empty state has theme-appropriate styling
@@ -106,7 +106,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
     });
 
     test("should render empty state in discovery card", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Look for discovery section
@@ -130,7 +130,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
 
   test.describe("Main Competitive Page", () => {
     test("should display competitive page with header and navigation", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Should show APEX branding and Competitive title
       await expect(page.getByText("APEX", { exact: true })).toBeVisible();
@@ -138,7 +138,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
     });
 
     test("should display AI status indicator", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Should show AI Status
       await expect(page.getByText(/ai status/i)).toBeVisible();
@@ -146,7 +146,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
     });
 
     test("should display Share of Voice gauge", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Wait for any dynamic content
       await page.waitForTimeout(2000);
@@ -161,7 +161,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
     });
 
     test("should display key metrics cards", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Wait for any dynamic content
       await page.waitForTimeout(2000);
@@ -179,7 +179,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
 
   test.describe("Phase 9.1: Benchmark Section", () => {
     test("should display benchmark radar chart component", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -193,7 +193,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
     });
 
     test("should display competitor position card", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -207,7 +207,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
     });
 
     test("should display radar chart legend", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Give time for the chart to render
       await page.waitForTimeout(2000);
@@ -223,7 +223,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
     });
 
     test("should display metric rows in comparison card", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Wait for page to load
       await page.waitForTimeout(2000);
@@ -239,7 +239,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
 
   test.describe("Phase 9.1: Discovery Section", () => {
     test("should display competitor discovery card", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -253,7 +253,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
     });
 
     test("should display AI-powered discovery description", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -267,7 +267,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
     });
 
     test("should have re-scan button", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -281,7 +281,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
     });
 
     test("should show discovery suggestions when available", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Wait for data to load
       await page.waitForTimeout(3000);
@@ -298,7 +298,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
 
   test.describe("Competitive Gaps Section", () => {
     test("should display competitive gaps section", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -312,7 +312,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
     });
 
     test("should show opportunity indicators", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Wait for page to load
       await page.waitForTimeout(2000);
@@ -329,7 +329,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
 
   test.describe("Competitive Alerts Section", () => {
     test("should display competitive alerts section", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -343,7 +343,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
     });
 
     test("should show unread count or empty state", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Wait for page to load
       await page.waitForTimeout(2000);
@@ -360,7 +360,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
 
   test.describe("AI Insights Section", () => {
     test("should display AI insights section", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -374,7 +374,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
     });
 
     test("should show analysis cards", async ({ page }) => {
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Wait for page to load
       await page.waitForTimeout(2000);
@@ -393,7 +393,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
   test.describe("Responsive Design", () => {
     test("should display correctly on mobile viewport", async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Page should still load
       await expect(page.locator("body")).toBeVisible();
@@ -404,7 +404,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
 
     test("should stack cards on mobile", async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Key sections should still be accessible
       await expect(page.getByText(/competitive/i).first()).toBeVisible();
@@ -427,7 +427,7 @@ test.describe("Competitive Intelligence Module - Phase 9.1", () => {
 
     test("should handle no brand selected state", async ({ page }) => {
       // Clear any stored brand selection
-      await page.goto("/dashboard/competitive", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/competitive", { waitUntil: "domcontentloaded" });
 
       // Should either show brand selection prompt or the competitive page
       const pageContent = await page.textContent("body");

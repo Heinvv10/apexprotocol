@@ -6,7 +6,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
 
   test.describe("Calendar Page Display", () => {
     test("should display calendar page with header and navigation", async ({ page }) => {
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -22,7 +22,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
     });
 
     test("should display month navigation controls", async ({ page }) => {
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -41,7 +41,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
     });
 
     test("should display day headers (Sun, Mon, Tue, etc.)", async ({ page }) => {
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -57,7 +57,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
     });
 
     test("should display calendar grid with dates", async ({ page }) => {
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -105,7 +105,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for error state
       await page.waitForTimeout(3000);
@@ -132,7 +132,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for empty state
       await page.waitForTimeout(2000);
@@ -147,7 +147,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
 
   test.describe("Calendar Recommendations Display", () => {
     test("should display recommendations with dueDate on correct calendar dates", async ({ page }) => {
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -170,7 +170,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
     });
 
     test("should display stats bar with counts", async ({ page }) => {
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -186,7 +186,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
     });
 
     test("should display priority legend", async ({ page }) => {
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -207,7 +207,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
 
   test.describe("Calendar Drag-and-Drop Functionality", () => {
     test("should show draggable cursor on recommendation cards", async ({ page }) => {
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -235,7 +235,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
     });
 
     test("should show drag handle icon on recommendation cards", async ({ page }) => {
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -259,7 +259,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
     });
 
     test("should highlight drop zone when dragging over calendar date", async ({ page }) => {
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(3000);
@@ -319,7 +319,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
         await route.continue();
       });
 
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(3000);
@@ -398,7 +398,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
     });
 
     test("should show success toast after successful drag-and-drop", async ({ page }) => {
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(3000);
@@ -443,7 +443,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
     });
 
     test("should persist date change after page refresh", async ({ page }) => {
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(3000);
@@ -483,7 +483,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
 
           if (targetCellDate) {
             // Refresh the page
-            await page.reload({ waitUntil: "networkidle" });
+            await page.reload({ waitUntil: "domcontentloaded" });
             await page.waitForTimeout(2000);
 
             // Try to find the card in the new location
@@ -512,7 +512,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
         }
       });
 
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(3000);
@@ -573,7 +573,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
         }
       });
 
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(3000);
@@ -610,7 +610,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
 
   test.describe("Calendar Month Navigation", () => {
     test("should navigate to previous month", async ({ page }) => {
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(3000);
@@ -641,7 +641,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
     });
 
     test("should navigate to next month", async ({ page }) => {
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(3000);
@@ -672,7 +672,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
     });
 
     test("should return to today's month when clicking Today button", async ({ page }) => {
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(3000);
@@ -710,7 +710,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
 
   test.describe("Calendar Back Navigation", () => {
     test("should navigate back to recommendations list", async ({ page }) => {
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(3000);
@@ -734,7 +734,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
   test.describe("Calendar Responsive Design", () => {
     test("should display correctly on mobile viewport", async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content
       await page.waitForTimeout(2000);
@@ -752,7 +752,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
 
     test("should display correctly on tablet viewport", async ({ page }) => {
       await page.setViewportSize({ width: 768, height: 1024 });
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content
       await page.waitForTimeout(2000);
@@ -778,7 +778,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
         await route.continue();
       });
 
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for API call
       await page.waitForTimeout(3000);
@@ -801,7 +801,7 @@ test.describe("Recommendations Calendar Drag-and-Drop - E2E", () => {
         await route.continue();
       });
 
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(3000);

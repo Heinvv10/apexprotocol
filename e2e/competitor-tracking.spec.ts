@@ -12,7 +12,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
 
   test.describe("Unified Empty State Components", () => {
     test("should render EmptyState with proper structure in CompetitorManager", async ({ page }) => {
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Look for empty state with ARIA attributes
@@ -54,7 +54,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should have Users icon in empty state", async ({ page }) => {
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for Users icon in empty state (primary theme)
@@ -74,7 +74,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should have primary action button with Plus icon", async ({ page }) => {
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Look for empty state action button
@@ -97,7 +97,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should have proper ARIA attributes for accessibility", async ({ page }) => {
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check ARIA attributes on empty state
@@ -117,7 +117,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should transition from empty to populated state", async ({ page }) => {
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check initial state
@@ -160,7 +160,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
         });
       });
 
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       // Look for error state
@@ -188,7 +188,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
 
   test.describe("CompetitorManager Component", () => {
     test("should display empty state with call to action", async ({ page }) => {
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
 
       // Wait for the page to load
       await page.waitForTimeout(2000);
@@ -204,7 +204,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should open add competitor dialog", async ({ page }) => {
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -224,7 +224,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should add a new competitor successfully", async ({ page }) => {
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -253,7 +253,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should display competitor card with details", async ({ page }) => {
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
 
       // Wait for competitors to load
       await page.waitForTimeout(3000);
@@ -272,7 +272,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should show remove button on hover", async ({ page }) => {
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
 
       // Wait for competitors to load
       await page.waitForTimeout(3000);
@@ -295,7 +295,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should remove a competitor with confirmation", async ({ page }) => {
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
 
       // Wait for competitors to load
       await page.waitForTimeout(3000);
@@ -339,7 +339,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should enforce 10 competitor limit", async ({ page }) => {
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -370,7 +370,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should show validation error for empty fields", async ({ page }) => {
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -392,7 +392,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
 
   test.describe("Competitor Tracking Dashboard Integration", () => {
     test("should display competitors page with header", async ({ page }) => {
-      await page.goto(`/dashboard/${TEST_BRAND_ID}/competitors`, { waitUntil: "networkidle" });
+      await page.goto(`/dashboard/${TEST_BRAND_ID}/competitors`, { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -406,7 +406,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should display AI status indicator", async ({ page }) => {
-      await page.goto(`/dashboard/${TEST_BRAND_ID}/competitors`, { waitUntil: "networkidle" });
+      await page.goto(`/dashboard/${TEST_BRAND_ID}/competitors`, { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -417,7 +417,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should display share of voice gauge", async ({ page }) => {
-      await page.goto(`/dashboard/${TEST_BRAND_ID}/competitors`, { waitUntil: "networkidle" });
+      await page.goto(`/dashboard/${TEST_BRAND_ID}/competitors`, { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -428,7 +428,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should display key metrics cards", async ({ page }) => {
-      await page.goto(`/dashboard/${TEST_BRAND_ID}/competitors`, { waitUntil: "networkidle" });
+      await page.goto(`/dashboard/${TEST_BRAND_ID}/competitors`, { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -442,7 +442,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should display competitive gaps section", async ({ page }) => {
-      await page.goto(`/dashboard/${TEST_BRAND_ID}/competitors`, { waitUntil: "networkidle" });
+      await page.goto(`/dashboard/${TEST_BRAND_ID}/competitors`, { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -453,7 +453,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should display competitive alerts section", async ({ page }) => {
-      await page.goto(`/dashboard/${TEST_BRAND_ID}/competitors`, { waitUntil: "networkidle" });
+      await page.goto(`/dashboard/${TEST_BRAND_ID}/competitors`, { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -464,7 +464,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should display AI insights section", async ({ page }) => {
-      await page.goto(`/dashboard/${TEST_BRAND_ID}/competitors`, { waitUntil: "networkidle" });
+      await page.goto(`/dashboard/${TEST_BRAND_ID}/competitors`, { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -478,7 +478,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
   test.describe("End-to-End Competitor Flow", () => {
     test("should complete full competitor tracking workflow", async ({ page }) => {
       // Step 1: Navigate to competitors page
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Step 2: Get initial competitor count
@@ -547,7 +547,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
     });
 
     test("should prevent adding 11th competitor", async ({ page }) => {
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check current count
@@ -593,7 +593,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
   test.describe("Responsive Design", () => {
     test("should display correctly on mobile viewport", async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
 
       // Page should still load
       await expect(page.locator("body")).toBeVisible();
@@ -604,7 +604,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
 
     test("should display competitors page on mobile", async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto(`/dashboard/${TEST_BRAND_ID}/competitors`, { waitUntil: "networkidle" });
+      await page.goto(`/dashboard/${TEST_BRAND_ID}/competitors`, { waitUntil: "domcontentloaded" });
 
       // Wait for content
       await page.waitForTimeout(2000);
@@ -631,7 +631,7 @@ test.describe("Competitor Tracking Flow - Phase 11", () => {
         await route.abort('failed');
       });
 
-      await page.goto("/test-competitor-manager", { waitUntil: "networkidle" });
+      await page.goto("/test-competitor-manager", { waitUntil: "domcontentloaded" });
 
       // Page should still load even with API errors
       await expect(page.locator("body")).toBeVisible();

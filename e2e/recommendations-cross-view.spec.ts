@@ -14,7 +14,7 @@ test.describe("Cross-View Data Consistency", () => {
   test.describe("Kanban to Calendar Status Consistency", () => {
     test("should reflect status update from Kanban in Calendar view styling", async ({ page }) => {
       // Navigate to Kanban view
-      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       // Check if we have recommendations
@@ -61,7 +61,7 @@ test.describe("Cross-View Data Consistency", () => {
       }
 
       // Navigate to Calendar view
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       // Check if calendar loaded
@@ -93,7 +93,7 @@ test.describe("Cross-View Data Consistency", () => {
       });
 
       // Navigate to Kanban view
-      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       // Check if we have recommendations
@@ -138,7 +138,7 @@ test.describe("Cross-View Data Consistency", () => {
       }
 
       // Navigate to Calendar view
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       // If the completed recommendation has a dueDate, it should show with completed styling
@@ -160,7 +160,7 @@ test.describe("Cross-View Data Consistency", () => {
   test.describe("Calendar to Kanban Due Date Consistency", () => {
     test("should update due date in Calendar and verify Kanban loads updated data", async ({ page }) => {
       // Navigate to Calendar view first
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       // Check if calendar has recommendations
@@ -210,7 +210,7 @@ test.describe("Cross-View Data Consistency", () => {
       await page.waitForTimeout(2000);
 
       // Navigate to Kanban view
-      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       // Verify Kanban loads successfully (data is from same API)
@@ -229,7 +229,7 @@ test.describe("Cross-View Data Consistency", () => {
 
     test("should reflect Calendar due date change in subsequent Calendar visits", async ({ page }) => {
       // Navigate to Calendar view
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       const calendarEmptyState = await page.getByText(/no scheduled recommendations/i).isVisible().catch(() => false);
@@ -277,11 +277,11 @@ test.describe("Cross-View Data Consistency", () => {
       }
 
       // Navigate away and back to verify persistence
-      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Come back to Calendar
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       // Verify the calendar still has the cards
@@ -313,7 +313,7 @@ test.describe("Cross-View Data Consistency", () => {
       });
 
       // Navigate to Kanban
-      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       // Check if page loaded (may redirect to login)
@@ -321,7 +321,7 @@ test.describe("Cross-View Data Consistency", () => {
       const hasKanbanContent = await page.getByText(/back to list/i).isVisible().catch(() => false);
 
       // Navigate to Calendar (should trigger a new fetch due to navigation)
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       // Check if page loaded
@@ -358,7 +358,7 @@ test.describe("Cross-View Data Consistency", () => {
       });
 
       // Navigate to Kanban and perform a drag
-      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       const hasEmptyState = await page.getByText(/no recommendations/i).isVisible().catch(() => false);
@@ -391,7 +391,7 @@ test.describe("Cross-View Data Consistency", () => {
   test.describe("Navigation Flow Tests", () => {
     test("should maintain data consistency through Kanban -> Calendar -> Kanban navigation", async ({ page }) => {
       // Start at Kanban
-      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       const kanbanLoaded1 = await page.getByText("Kanban Board").isVisible().catch(() => false);
@@ -412,7 +412,7 @@ test.describe("Cross-View Data Consistency", () => {
       const initialCount = await initialCards.count();
 
       // Navigate to Calendar
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       const calendarLoaded = await page.getByText("Calendar View").isVisible().catch(() => false);
@@ -424,7 +424,7 @@ test.describe("Cross-View Data Consistency", () => {
       expect(calendarAccessible).toBeTruthy();
 
       // Navigate back to Kanban
-      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       const kanbanLoaded2 = await page.getByText("Kanban Board").isVisible().catch(() => false);
@@ -444,7 +444,7 @@ test.describe("Cross-View Data Consistency", () => {
 
     test("should use Back to List navigation from both views", async ({ page }) => {
       // Test from Kanban
-      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       const backButtonKanban = page.getByText(/back to list/i).first();
@@ -460,7 +460,7 @@ test.describe("Cross-View Data Consistency", () => {
       }
 
       // Test from Calendar
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       const backButtonCalendar = page.getByText(/back to list/i).first();
@@ -480,7 +480,7 @@ test.describe("Cross-View Data Consistency", () => {
   test.describe("Status Visibility Across Views", () => {
     test("should show same status in Kanban column as Calendar card styling", async ({ page }) => {
       // Navigate to Kanban
-      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       const kanbanEmptyState = await page.getByText(/no recommendations/i).isVisible().catch(() => false);
@@ -502,7 +502,7 @@ test.describe("Cross-View Data Consistency", () => {
       const completedCards = await completedColumn.locator("[draggable='true']").count();
 
       // Navigate to Calendar
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       const calendarEmptyState = await page.getByText(/no scheduled recommendations/i).isVisible().catch(() => false);
@@ -527,7 +527,7 @@ test.describe("Cross-View Data Consistency", () => {
   test.describe("Priority Visibility Across Views", () => {
     test("should show priority indicator consistently in both views", async ({ page }) => {
       // Navigate to Kanban
-      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       const kanbanEmptyState = await page.getByText(/no recommendations/i).isVisible().catch(() => false);
@@ -547,7 +547,7 @@ test.describe("Cross-View Data Consistency", () => {
       expect(hasPriorityInKanban).toBeTruthy();
 
       // Navigate to Calendar
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       const calendarEmptyState = await page.getByText(/no scheduled recommendations/i).isVisible().catch(() => false);
@@ -600,11 +600,11 @@ test.describe("Cross-View Data Consistency", () => {
       });
 
       // Navigate to Kanban (should fail initially)
-      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/kanban", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       // Try refreshing to recover
-      await page.reload({ waitUntil: "networkidle" });
+      await page.reload({ waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       // Should now load (second request) - check for any indication page loaded
@@ -625,7 +625,7 @@ test.describe("Cross-View Data Consistency", () => {
 
       // Clear route and navigate to Calendar
       await page.unroute("**/api/recommendations**");
-      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations/calendar", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
       // Calendar should also load

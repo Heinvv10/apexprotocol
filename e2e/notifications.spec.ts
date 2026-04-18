@@ -6,7 +6,7 @@ test.describe("Notifications System - E2E", () => {
 
   test.describe("Notification Bell Display", () => {
     test("should display notification bell icon in header", async ({ page }) => {
-      await page.goto("/dashboard", { waitUntil: "networkidle" });
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -28,7 +28,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard", { waitUntil: "networkidle" });
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for unread badge
@@ -39,7 +39,7 @@ test.describe("Notifications System - E2E", () => {
     });
 
     test("should open notification dropdown when bell is clicked", async ({ page }) => {
-      await page.goto("/dashboard", { waitUntil: "networkidle" });
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       const bellButton = page.locator('button[aria-label*="Notifications"]');
@@ -68,7 +68,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard", { waitUntil: "networkidle" });
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       const hasBadgeWithCount = await page.locator('button[aria-label*="Notifications"] span').filter({ hasText: /\d+/ }).isVisible().catch(() => false);
@@ -106,7 +106,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard", { waitUntil: "networkidle" });
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       const bellButton = page.locator('button[aria-label*="Notifications"]');
@@ -140,7 +140,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard", { waitUntil: "networkidle" });
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       const bellButton = page.locator('button[aria-label*="Notifications"]');
@@ -184,7 +184,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard", { waitUntil: "networkidle" });
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       const bellButton = page.locator('button[aria-label*="Notifications"]');
@@ -203,7 +203,7 @@ test.describe("Notifications System - E2E", () => {
     });
 
     test("should display notification settings link in dropdown footer", async ({ page }) => {
-      await page.goto("/dashboard", { waitUntil: "networkidle" });
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       const bellButton = page.locator('button[aria-label*="Notifications"]');
@@ -224,7 +224,7 @@ test.describe("Notifications System - E2E", () => {
 
   test.describe("Notification History Page", () => {
     test("should display notifications history page", async ({ page }) => {
-      await page.goto("/dashboard/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for page title
@@ -236,7 +236,7 @@ test.describe("Notifications System - E2E", () => {
     });
 
     test("should display statistics dashboard", async ({ page }) => {
-      await page.goto("/dashboard/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for stats
@@ -248,7 +248,7 @@ test.describe("Notifications System - E2E", () => {
     });
 
     test("should display filter controls", async ({ page }) => {
-      await page.goto("/dashboard/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for filter dropdowns
@@ -286,7 +286,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for notification cards
@@ -323,7 +323,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for pagination
@@ -371,7 +371,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Try to find and click mark as read button
@@ -435,7 +435,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Try to find and click mark all as read button
@@ -474,7 +474,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard", { waitUntil: "networkidle" });
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check initial badge
@@ -489,7 +489,7 @@ test.describe("Notifications System - E2E", () => {
 
   test.describe("Notification Preferences Page", () => {
     test("should display notification preferences page", async ({ page }) => {
-      await page.goto("/dashboard/settings/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/settings/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for page title
@@ -501,7 +501,7 @@ test.describe("Notifications System - E2E", () => {
     });
 
     test("should display email digest toggle", async ({ page }) => {
-      await page.goto("/dashboard/settings/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/settings/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for email digest section
@@ -534,7 +534,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard/settings/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/settings/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for frequency dropdown
@@ -546,7 +546,7 @@ test.describe("Notifications System - E2E", () => {
     });
 
     test("should display notification type toggles", async ({ page }) => {
-      await page.goto("/dashboard/settings/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/settings/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for notification type settings
@@ -559,7 +559,7 @@ test.describe("Notifications System - E2E", () => {
     });
 
     test("should display save preferences button", async ({ page }) => {
-      await page.goto("/dashboard/settings/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/settings/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for save button
@@ -600,7 +600,7 @@ test.describe("Notifications System - E2E", () => {
         }
       });
 
-      await page.goto("/dashboard/settings/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/settings/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Try to click save button
@@ -631,7 +631,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for error state
@@ -681,7 +681,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Try to search for non-existent notification
@@ -740,7 +740,7 @@ test.describe("Notifications System - E2E", () => {
         }
       });
 
-      await page.goto("/dashboard/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Try to expand notification card and find delete button
@@ -764,7 +764,7 @@ test.describe("Notifications System - E2E", () => {
     });
 
     test("should display connection status indicator", async ({ page }) => {
-      await page.goto("/dashboard/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for connection status indicator
@@ -802,7 +802,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for mention badge
@@ -837,7 +837,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for score change badge
@@ -872,7 +872,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for recommendation badge
@@ -907,7 +907,7 @@ test.describe("Notifications System - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard/notifications", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/notifications", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2000);
 
       // Check for important badge

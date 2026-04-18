@@ -124,10 +124,17 @@ async function seedLocalDbRows(
 
   try {
     if (clerkOrgId) {
+      // Use the 'professional' plan so premium surfaces (competitive
+      // intelligence, content tooling) render their real UI rather
+      // than the Starter-plan upgrade card. Real tenants on paid
+      // plans are the common test target.
       await pool.query(
         `INSERT INTO organizations (id, name, slug, clerk_org_id, plan, brand_limit)
-         VALUES ($1, $2, $3, $1, 'starter', 5)
-         ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name`,
+         VALUES ($1, $2, $3, $1, 'professional', 25)
+         ON CONFLICT (id) DO UPDATE SET
+           name = EXCLUDED.name,
+           plan = EXCLUDED.plan,
+           brand_limit = EXCLUDED.brand_limit`,
         [clerkOrgId, E2E_TEST_ORG_NAME, `e2e-${clerkOrgId.toLowerCase()}`]
       );
 

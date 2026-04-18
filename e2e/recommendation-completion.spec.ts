@@ -6,7 +6,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
   test.describe("Recommendations Page", () => {
     test("should display recommendations page with header and navigation", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Should show APEX branding and Recommendations title
       await expect(page.getByText("APEX", { exact: true })).toBeVisible();
@@ -14,7 +14,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should display AI status indicator", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Should show AI Status
       await expect(page.getByText(/ai status/i)).toBeVisible();
@@ -22,7 +22,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should display stats bar with recommendation counts", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for page to load
       await page.waitForTimeout(2000);
@@ -39,7 +39,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
   test.describe("Completion Tracking Component", () => {
     test("should display completion tracking section in recommendation cards", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -69,7 +69,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should show Start Implementation button for pending recommendations", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -109,7 +109,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
   test.describe("Completion Workflow", () => {
     test("should open score input dialog when clicking Start Implementation", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -153,7 +153,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should validate score input range (0-100)", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -204,7 +204,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should show Mark Completed button for in_progress recommendations", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -243,7 +243,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
   test.describe("Score Display", () => {
     test("should display scores for completed recommendations", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -282,7 +282,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should display score improvement with trend indicator", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -322,7 +322,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
   test.describe("Feedback Section", () => {
     test("should show feedback option for completed recommendations", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -362,7 +362,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
   test.describe("Feedback Workflow", () => {
     test("should open feedback dialog when clicking Provide Feedback", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -406,7 +406,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should display star rating component with 5 clickable stars", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -456,7 +456,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should select 4-star rating and show corresponding text", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -503,7 +503,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should allow entering optional text feedback", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -553,7 +553,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should disable Submit button until rating is selected", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -603,7 +603,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should close dialog without saving when Skip is clicked", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -666,7 +666,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should submit feedback and update recommendation display", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -733,7 +733,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should allow editing existing feedback", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -797,7 +797,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should display rating hints for each star level", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -856,7 +856,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
   test.describe("Full Feedback Workflow Integration", () => {
     test("should complete full feedback workflow: open dialog -> select rating -> enter feedback -> submit -> verify saved", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -958,7 +958,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
   test.describe("Responsive Design", () => {
     test("should display correctly on mobile viewport", async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Page should still load
       await expect(page.locator("body")).toBeVisible();
@@ -969,7 +969,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
     test("should show metrics on mobile in expanded view", async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1008,7 +1008,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should handle no brand selected state", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Should either show brand selection prompt or the recommendations page
       const pageContent = await page.textContent("body");
@@ -1018,7 +1018,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
   test.describe("Full Completion Workflow Integration", () => {
     test("should complete full workflow: pending -> in_progress -> completed", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1105,7 +1105,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
   test.describe("Effectiveness Report Page", () => {
     test("should display effectiveness report page with header and title", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Should show APEX branding
       await expect(page.getByText("APEX", { exact: true })).toBeVisible();
@@ -1119,7 +1119,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should display page title and description", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Should show main page title
       await expect(page.getByText("Recommendation Effectiveness").first()).toBeVisible();
@@ -1129,7 +1129,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should display Recommendation Effectiveness section heading", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1154,7 +1154,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
   test.describe("Effectiveness Report Metrics", () => {
     test("should display Total Completed metric card", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1168,7 +1168,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should display Average Effectiveness metric card", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1182,7 +1182,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should display Average Improvement metric card", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1196,7 +1196,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should display metrics with proper number formatting (no NaN or undefined)", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1213,7 +1213,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should display percentage format for effectiveness score", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1229,7 +1229,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should display points format for score improvement", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1247,7 +1247,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
   test.describe("Effectiveness Report Top Performers", () => {
     test("should display Top Performers section when completed recommendations exist", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1263,7 +1263,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should display ranked list with numbered positions", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1280,7 +1280,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should display effectiveness level badges on performers", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1303,7 +1303,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should display maximum 5 top performers", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1323,7 +1323,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should show trend indicators for score improvements", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1343,7 +1343,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
   test.describe("Effectiveness Report Empty State", () => {
     test("should display empty state when no completed recommendations", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1358,7 +1358,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should show guidance text in empty state", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1376,7 +1376,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
   test.describe("Effectiveness Report Improvements Stats", () => {
     test("should display positive improvements count", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1392,7 +1392,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
     });
 
     test("should conditionally display negative improvements if any exist", async ({ page }) => {
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1419,7 +1419,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
         }
       });
 
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1445,7 +1445,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
         });
       });
 
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for error state
       await page.waitForTimeout(2000);
@@ -1462,7 +1462,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
   test.describe("Effectiveness Report Responsive Design", () => {
     test("should display correctly on mobile viewport", async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Page should load
       await expect(page.locator("body")).toBeVisible();
@@ -1473,7 +1473,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
     test("should stack metric cards on mobile", async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1485,7 +1485,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
     test("should display correctly on tablet viewport", async ({ page }) => {
       await page.setViewportSize({ width: 768, height: 1024 });
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
@@ -1498,13 +1498,13 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
   test.describe("Effectiveness Report Integration with Completion Tracking", () => {
     test("should navigate from recommendations page to effectiveness report", async ({ page }) => {
-      await page.goto("/dashboard/recommendations", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/recommendations", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);
 
       // Navigate to effectiveness report
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Verify we're on the effectiveness report page
       await expect(page.getByText(/effectiveness report/i).first()).toBeVisible();
@@ -1512,7 +1512,7 @@ test.describe("Recommendation Completion Tracking - E2E", () => {
 
     test("should reflect completed recommendations from tracking workflow", async ({ page }) => {
       // First visit effectiveness report to get baseline
-      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/reports/effectiveness", { waitUntil: "domcontentloaded" });
 
       // Wait for content to load
       await page.waitForTimeout(2000);

@@ -51,7 +51,7 @@ test.describe("Locations Module - Phase 9.2", () => {
 
   test.describe("Locations in Brand Detail View", () => {
     test("should display brands page", async ({ page }) => {
-      await page.goto("/dashboard/brands", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/brands", { waitUntil: "domcontentloaded" });
 
       // Should show APEX branding and Brands title
       await expect(page.getByText("APEX", { exact: true })).toBeVisible();
@@ -59,14 +59,14 @@ test.describe("Locations Module - Phase 9.2", () => {
     });
 
     test("should display brand management section", async ({ page }) => {
-      await page.goto("/dashboard/brands", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/brands", { waitUntil: "domcontentloaded" });
 
       // Should show Brand Management header
       await expect(page.getByText(/brand management/i)).toBeVisible();
     });
 
     test("should show add brand button", async ({ page }) => {
-      await page.goto("/dashboard/brands", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/brands", { waitUntil: "domcontentloaded" });
 
       // Should have Add Brand button
       const addButton = page.getByRole("button", { name: /add brand/i });
@@ -74,7 +74,7 @@ test.describe("Locations Module - Phase 9.2", () => {
     });
 
     test("should display brand cards or empty state", async ({ page }) => {
-      await page.goto("/dashboard/brands", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/brands", { waitUntil: "domcontentloaded" });
 
       // Wait for data to load
       await page.waitForTimeout(2000);
@@ -91,14 +91,14 @@ test.describe("Locations Module - Phase 9.2", () => {
   test.describe("Location Components", () => {
     test("should render rating badge correctly", async ({ page }) => {
       // Navigate to any page that might show ratings
-      await page.goto("/dashboard/brands", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/brands", { waitUntil: "domcontentloaded" });
 
       // Page should load without errors
       await expect(page.locator("body")).toBeVisible();
     });
 
     test("should handle location card interactions", async ({ page }) => {
-      await page.goto("/dashboard/brands", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/brands", { waitUntil: "domcontentloaded" });
 
       // Wait for potential brand cards
       await page.waitForTimeout(2000);
@@ -214,7 +214,7 @@ test.describe("Locations Module - Phase 9.2", () => {
   test.describe("Responsive Design", () => {
     test("should display brands page on mobile viewport", async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto("/dashboard/brands", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/brands", { waitUntil: "domcontentloaded" });
 
       // Page should load
       await expect(page.locator("body")).toBeVisible();
@@ -223,7 +223,7 @@ test.describe("Locations Module - Phase 9.2", () => {
 
     test("should display brands page on tablet viewport", async ({ page }) => {
       await page.setViewportSize({ width: 768, height: 1024 });
-      await page.goto("/dashboard/brands", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/brands", { waitUntil: "domcontentloaded" });
 
       // Page should load
       await expect(page.locator("body")).toBeVisible();
@@ -255,7 +255,7 @@ test.describe("Locations Module - Phase 9.2", () => {
         });
       });
 
-      await page.goto("/dashboard/brands", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/brands", { waitUntil: "domcontentloaded" });
 
       // Page should still be visible even with API error
       await expect(page.locator("body")).toBeVisible();

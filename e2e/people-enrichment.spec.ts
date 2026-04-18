@@ -232,14 +232,14 @@ test.describe("People Enrichment Module - Phase 9.3", () => {
 
   test.describe("People Dashboard UI", () => {
     test("should display people/leadership page", async ({ page }) => {
-      await page.goto("/dashboard/people", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/people", { waitUntil: "domcontentloaded" });
 
       // Should show APEX branding
       await expect(page.getByText("APEX", { exact: true })).toBeVisible();
     });
 
     test("should display page header", async ({ page }) => {
-      await page.goto("/dashboard/people", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/people", { waitUntil: "domcontentloaded" });
 
       // Should show some form of people/leadership header
       const hasHeader = await page.getByRole("heading").first().isVisible().catch(() => false);
@@ -248,7 +248,7 @@ test.describe("People Enrichment Module - Phase 9.3", () => {
 
     test("should be responsive on mobile viewport", async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto("/dashboard/people", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/people", { waitUntil: "domcontentloaded" });
 
       // Page should load without errors
       await expect(page.locator("body")).toBeVisible();
@@ -256,7 +256,7 @@ test.describe("People Enrichment Module - Phase 9.3", () => {
 
     test("should be responsive on tablet viewport", async ({ page }) => {
       await page.setViewportSize({ width: 768, height: 1024 });
-      await page.goto("/dashboard/people", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/people", { waitUntil: "domcontentloaded" });
 
       await expect(page.locator("body")).toBeVisible();
     });
@@ -265,7 +265,7 @@ test.describe("People Enrichment Module - Phase 9.3", () => {
   test.describe("Influence Calculator", () => {
     test("should calculate influence score correctly", async ({ page }) => {
       // Navigate to any page to ensure the app is running
-      await page.goto("/dashboard", { waitUntil: "networkidle" });
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
 
       // Execute influence calculation in page context
       const result = await page.evaluate(async () => {
@@ -292,7 +292,7 @@ test.describe("People Enrichment Module - Phase 9.3", () => {
         });
       });
 
-      await page.goto("/dashboard/people", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/people", { waitUntil: "domcontentloaded" });
 
       // Page should still be visible even with API error
       await expect(page.locator("body")).toBeVisible();
