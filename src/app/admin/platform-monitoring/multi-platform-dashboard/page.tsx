@@ -23,177 +23,6 @@ import { canAccessFeature } from "@/lib/permissions/feature-gates";
 import { usePlatformDashboard } from "@/hooks/usePlatformDashboard";
 import type { PlatformMetrics } from "@/hooks/usePlatformDashboard";
 
-// Mock data for demonstration (fallback only)
-const MOCK_TIER_1_PLATFORMS = [
-  {
-    name: "openai_search",
-    displayName: "OpenAI Search",
-    icon: "🔍",
-    metrics: { visibility: 92, position: 2, confidence: 95, trend: "up" as const },
-  },
-  {
-    name: "bing_copilot",
-    displayName: "Bing Copilot",
-    icon: "🦾",
-    metrics: { visibility: 87, position: 3, confidence: 88, trend: "stable" as const },
-  },
-  {
-    name: "notebooklm",
-    displayName: "NotebookLM",
-    icon: "📔",
-    metrics: { visibility: 78, position: 4, confidence: 82, trend: "down" as const },
-  },
-  {
-    name: "cohere",
-    displayName: "Cohere",
-    icon: "🤖",
-    metrics: { visibility: 85, position: 2, confidence: 90, trend: "up" as const },
-  },
-  {
-    name: "janus",
-    displayName: "Janus (Claude API)",
-    icon: "🧠",
-    metrics: { visibility: 95, position: 1, confidence: 98, trend: "up" as const },
-  },
-];
-
-const MOCK_TIER_2_PLATFORMS = [
-  {
-    name: "mistral",
-    displayName: "Mistral",
-    icon: "🌪️",
-    metrics: { visibility: 76, position: 5, confidence: 85, trend: "up" as const },
-  },
-  {
-    name: "llama",
-    displayName: "Llama",
-    icon: "🦙",
-    metrics: { visibility: 71, position: 6, confidence: 80, trend: "stable" as const },
-  },
-  {
-    name: "yandexgpt",
-    displayName: "YandexGPT",
-    icon: "🌍",
-    metrics: { visibility: 65, position: 7, confidence: 75, trend: "down" as const },
-  },
-  {
-    name: "kimi",
-    displayName: "Kimi",
-    icon: "🌙",
-    metrics: { visibility: 72, position: 4, confidence: 83, trend: "up" as const },
-  },
-  {
-    name: "qwen",
-    displayName: "Qwen",
-    icon: "🌟",
-    metrics: { visibility: 68, position: 8, confidence: 78, trend: "down" as const },
-  },
-];
-
-const REGIONAL_DATA = [
-  {
-    region: "Western Markets",
-    icon: "🌎",
-    platforms: ["ChatGPT", "Claude", "Gemini", "Perplexity"],
-    coverage: 95,
-    tier: "tier_1" as const,
-  },
-  {
-    region: "Eastern Europe & Russia",
-    icon: "🌍",
-    platforms: ["YandexGPT", "Claude", "Copilot"],
-    coverage: 85,
-    tier: "tier_2" as const,
-  },
-  {
-    region: "China & Asia-Pacific",
-    icon: "🌏",
-    platforms: ["Kimi", "Qwen", "Llama", "Claude"],
-    coverage: 88,
-    tier: "both" as const,
-  },
-  {
-    region: "Enterprise & Research",
-    icon: "🏢",
-    platforms: ["Mistral", "Llama", "Cohere", "NotebookLM"],
-    coverage: 92,
-    tier: "both" as const,
-  },
-];
-
-const PLATFORM_PERFORMANCE = [
-  {
-    id: "1",
-    platform: "openai_search",
-    displayName: "OpenAI Search",
-    tier: "tier_1" as const,
-    visibility: 92,
-    position: 2,
-    confidence: 95,
-    citations: 324,
-    trend: "up" as const,
-    trendPercent: 8,
-    lastUpdated: new Date(),
-    status: "active" as const,
-  },
-  {
-    id: "2",
-    platform: "janus",
-    displayName: "Janus (Claude API)",
-    tier: "tier_1" as const,
-    visibility: 95,
-    position: 1,
-    confidence: 98,
-    citations: 456,
-    trend: "up" as const,
-    trendPercent: 12,
-    lastUpdated: new Date(),
-    status: "active" as const,
-  },
-  {
-    id: "3",
-    platform: "bing_copilot",
-    displayName: "Bing Copilot",
-    tier: "tier_1" as const,
-    visibility: 87,
-    position: 3,
-    confidence: 88,
-    citations: 298,
-    trend: "stable" as const,
-    trendPercent: 0,
-    lastUpdated: new Date(),
-    status: "active" as const,
-  },
-  {
-    id: "4",
-    platform: "kimi",
-    displayName: "Kimi",
-    tier: "tier_2" as const,
-    visibility: 72,
-    position: 4,
-    confidence: 83,
-    citations: 187,
-    trend: "up" as const,
-    trendPercent: 5,
-    lastUpdated: new Date(),
-    status: "active" as const,
-  },
-  {
-    id: "5",
-    platform: "mistral",
-    displayName: "Mistral",
-    tier: "tier_2" as const,
-    visibility: 76,
-    position: 5,
-    confidence: 85,
-    citations: 156,
-    trend: "up" as const,
-    trendPercent: 3,
-    lastUpdated: new Date(),
-    status: "active" as const,
-  },
-];
-
 export default function MultiPlatformDashboard() {
   const [selectedTier, setSelectedTier] = useState<"all" | "tier_1" | "tier_2">("all");
   const [canAccessTier2, setCanAccessTier2] = useState(false);
@@ -459,11 +288,12 @@ export default function MultiPlatformDashboard() {
         />
       </div>
 
-      {/* Regional Coverage */}
-      {regionCoverage.length > 0 ? (
+      {/* Regional Coverage — only render when real data exists.
+          Previously this fell back to a hardcoded REGIONAL_DATA constant,
+          which shipped a plausible-looking map when no monitoring had
+          actually run. */}
+      {regionCoverage.length > 0 && (
         <RegionalCoverageMap regions={regionCoverage} title="Regional Market Coverage" />
-      ) : (
-        <RegionalCoverageMap regions={REGIONAL_DATA} title="Regional Market Coverage" />
       )}
 
       {/* Performance Table */}
