@@ -73,10 +73,13 @@ Two systemic bugs that masked as UI-drift were fixed in a single commit (f98dd75
 - Most specs used `waitUntil: "networkidle"` on page navigation. The app holds long-lived realtime connections + auth refreshes, so networkidle never settled and tests timed out after 30s before even querying selectors. Swapped to `domcontentloaded` across 8 specs.
 - The E2E org was on the `starter` plan — `/dashboard/competitive` paywalls behind `professional`, so 28 competitive tests timed out on an upgrade card they weren't written for. Bumped the seed org to `professional`.
 
-**Broad-suite result (12 specs, 271 tests — competitor-tracking.spec.ts deleted as dead code pointing at /test-competitor-manager):**
+**Broad-suite result (12 specs, 276 tests — competitor-tracking.spec.ts deleted as dead code pointing at /test-competitor-manager):**
 - **263 passed** (up from 39 at session start)
-- **3 persistent flakes** under parallel load — pass on serial / single-test retry. Playwright config set to `retries: 1` locally, `retries: 2` in CI so these shake out.
+- **0 persistent failures**
+- **8 flakes that pass on retry=1** — parallel-load races against the realtime SSE channel. `retries: 1` locally, `retries: 2` in CI is the guard rail.
 - **5 skipped** — require seeded drag-and-drop state not covered by the generic brand fixture
+
+**Final sort (9bbf217):** dev-only E2E_DISABLE_RATE_LIMIT env flag (src/lib/api/api-rate-limiter.ts) so parallel test bursts don't poison unrelated tests with 429s. LIVE/OFFLINE badge tolerance in monitor spec. Serial mode on the Mentions describe to stop five tests racing the same sentiment-aggregate endpoint. Unauth override for the people-enrichment "should require authentication" contract test.
 
 **Per-spec rewrites that landed this session:**
 - `notifications.spec.ts` — 31/31 green (cf7de65) — hydration waits, retry-budget, response shape
