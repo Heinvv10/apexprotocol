@@ -54,6 +54,15 @@ The pattern is narrow in practice. Treating this as closed unless a new finding 
 
 Audit scope: **complete**. Phase 7 white-label system ships via `NEXT_PUBLIC_BRAND_PRESET` env swap, demonstrated end-to-end with the Solstice preset.
 
+## E2E infrastructure
+
+Phase 3's manual Clerk sign-in-token replay is now a Playwright `globalSetup` (`e2e/.auth/auth.setup.ts`). Every spec starts authenticated; the prior `APEX_TEST_STORAGE_STATE=<path>` env gate is retired.
+
+- `auth.spec.ts` (12 tests) — updated for current Clerk UI
+- `smoke-core-flows.spec.ts` (5 tests) — 4 pass, 1 gracefully skipped when no brand seeded
+- `onboarding.spec.ts` (3 tests) — rewritten for the current 5-step wizard
+- `monitor.spec.ts` / `competitive.spec.ts` / `premium-gates.spec.ts` / `notifications.spec.ts` — 33 tests pass clean on the auth session
+
 ## Post-merge verification
 
 - `bun run build` — clean, no errors. Every refactored route (sign-in, dashboard/*, admin/*, blog, careers, support, changelog, docs/api, onboarding, not-found) prerenders statically or as server-rendered. Confirms Phase 6 `<BrandHeader />`, Phase 7 brand-preset resolution, Phase 3 Neon pool driver swap, and the marketing-stub wrap all survive SSR.
