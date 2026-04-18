@@ -1,4 +1,44 @@
-# Plan 2: Database driver swap (Neon → pg) — Apex codebase
+# Plan 2: Database driver swap (Neon → pg) — Apex codebase  (✅ COMPLETE 2026-04-18)
+
+## Verified state (2026-04-18 21:52 SAST)
+
+- **Imports clean:** Grep across `src/`, `tests/`, `e2e/`, `scripts/` returns zero matches for `@neondatabase/serverless`, `drizzle-orm/neon-*`, `neonConfig`, `NeonDatabase`, `NeonHttpDatabase`, `NeonQueryFunction`
+- **Dependencies clean:** `@neondatabase/serverless`, `ws`, `@types/ws` removed from `package.json` and `bun.lock`
+- **TypeScript:** 0 errors in production code (`src/`, `tests/`, `e2e/`, `scripts/` excluding `*.test.ts` mocks). Net error count: 586 → 419 (167 fewer overall after removing `@ts-expect-error` in rls.ts and aligning types). Remaining 419 are pre-existing test-mock-vs-real-type drift in `route.test.ts` files plus `.next/types/validator.ts` autogen — none introduced by this plan.
+- **Vitest:** Same pass/fail profile as pre-swap (10 pre-existing failures: 5 ai-insights schema-mock issue, 4 integration network timeouts to Neon IPs, 1 browser-query timeout). Zero new test failures.
+- **Live integration:** All 7 `src/lib/db/rls.test.ts` tests pass against `postgresql://postgres.apexgeo:***@localhost:7783/apexgeo` — including the two that prove SET LOCAL works inside `executeWithContext` AND doesn't leak outside the transaction.
+
+## Files changed (8 work commits)
+
+| Commit | What |
+|---|---|
+| `1db48be` | `test(db)`: smoke test for db module public API surface |
+| `fdfecb5` | `feat(db)`: swap @neondatabase/serverless → pg driver |
+| `98f67c4` | `feat(db)`: rewrite RLS to use pg transactions for proper SET LOCAL |
+| `6486958` | `refactor(auth)`: swap NeonDatabase type for NodePgDatabase in api-key-auth |
+| `5ea56a1` | `test(integration)`: swap Neon test-DB infra for pg Pool |
+| `24161c4` | `test(e2e)`: swap Neon Pool + ws for plain pg in Playwright auth fixture |
+| `c0a7c13` | `refactor(scripts)`: migrate all 26 dev/migration scripts from Neon to shared db |
+| `39fe6d1` | `chore(deps)`: remove @neondatabase/serverless, ws, @types/ws |
+
+## What this unblocks for Plan 3
+
+The Apex codebase now talks standard libpq. To switch any environment from Neon to apexgeo-supabase, the only change is `DATABASE_URL` (and SSL settings if the target Postgres uses self-signed certs — set `DATABASE_SSL=false` to disable, otherwise defaults to `rejectUnauthorized: false`).
+
+Production-ready connection string for `apex-app` once it joins `apexgeo_network` (Plan 5):
+```
+DATABASE_URL=postgresql://postgres.apexgeo:<POSTGRES_PASSWORD>@apexgeo-supabase-pooler:6543/apexgeo
+```
+
+Plan 3 (Auth swap: Clerk → Supabase Auth) can begin assuming the data layer is migration-ready.
+
+## Latent bug fixed (bonus)
+
+The pre-existing `executeWithContext` ran each `set_config(..., is_local=true)` over `neon-http`. Each call was an independent HTTP request, so SET LOCAL never persisted into the callback's queries — RLS context was effectively unset for every multi-tenant query routed through this helper. The new implementation uses `db.transaction()` so all queries execute on the same client with the LOCAL setting active. The integration test in `rls.test.ts` proves it. This was masked by `// @ts-expect-error - Type mismatch but functionally correct` in the original code.
+
+---
+
+## Original plan (for reference)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
