@@ -14,49 +14,62 @@ test.describe("Monitor Module", () => {
       await expect(navLinks.first()).toBeVisible();
     });
 
-    test("should display Live Query Analysis section", async ({ page }) => {
+    test("should display platform score cards", async ({ page }) => {
       await page.goto("/dashboard/monitor");
+      await page.waitForLoadState("load");
 
-      // Should show Live Query Analysis heading
-      await expect(page.getByRole("heading", { name: /live query analysis/i })).toBeVisible();
+      // Current UI shows 7 platform score cards (not a Live Query Analysis section)
+      await expect(page.getByText("ChatGPT").first()).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText("Claude").first()).toBeVisible();
+      await expect(page.getByText("Gemini").first()).toBeVisible();
 
-      // Should show Smart Table badge
-      await expect(page.getByText(/smart table/i)).toBeVisible();
+      // Each card shows a score out of 100
+      await expect(page.getByText(/\/100/).first()).toBeVisible();
     });
 
-    test("should display filter sidebar", async ({ page }) => {
+    test("should display LIVE indicator and empty monitoring state", async ({ page }) => {
       await page.goto("/dashboard/monitor");
+      await page.waitForLoadState("load");
 
-      // Should show filter groups
-      await expect(page.getByText(/tracked topics/i)).toBeVisible();
-      await expect(page.getByText(/entity types/i)).toBeVisible();
-      await expect(page.getByText(/ai engines/i)).toBeVisible();
+      // Current UI shows a LIVE badge in the header, not filter sidebar groups
+      await expect(page.getByText("LIVE")).toBeVisible({ timeout: 5000 });
+
+      // With no monitoring configured the empty state card appears
+      await expect(page.getByText(/No Monitoring Configured Yet/i)).toBeVisible({ timeout: 5000 });
     });
 
-    test("should display query table with mock data", async ({ page }) => {
+    test("should display all seven platform score cards", async ({ page }) => {
       await page.goto("/dashboard/monitor");
+      await page.waitForLoadState("load");
 
-      // Should show table headers or query content
-      // Mock data includes "Best enterprise AEO platform", "Apex pricing model", etc.
-      const tableContent = page.locator("table, [role='table'], [class*='table']");
-      await expect(tableContent.first()).toBeVisible({ timeout: 10000 });
+      // Current UI has platform cards instead of a query table
+      const platformNames = ["ChatGPT", "Claude", "Gemini", "Perplexity", "Grok", "DeepSeek", "Copilot"];
+      for (const name of platformNames) {
+        await expect(page.getByText(name).first()).toBeVisible({ timeout: 5000 });
+      }
+
+      // Each card shows a Stable trend label
+      await expect(page.getByText("Stable").first()).toBeVisible();
     });
 
-    test("should show AI status indicator", async ({ page }) => {
+    test("should show LIVE status indicator in header", async ({ page }) => {
       await page.goto("/dashboard/monitor");
+      await page.waitForLoadState("load");
 
-      // Should show AI Status
-      await expect(page.getByText(/ai status/i)).toBeVisible();
-      await expect(page.getByText(/active/i)).toBeVisible();
+      // Header contains "APEX Monitor" text and a LIVE badge (not "AI Status")
+      await expect(page.getByText("LIVE")).toBeVisible({ timeout: 5000 });
+      // APEX brand in the header
+      await expect(page.getByText("APEX", { exact: true })).toBeVisible();
     });
   });
 
   test.describe("Mentions Page", () => {
     test("should display mentions page with header", async ({ page }) => {
       await page.goto("/dashboard/monitor/mentions");
+      await page.waitForLoadState("load");
 
       // Should show Brand Mentions heading
-      await expect(page.getByRole("heading", { name: /brand mentions/i })).toBeVisible();
+      await expect(page.getByRole("heading", { name: /brand mentions/i })).toBeVisible({ timeout: 5000 });
 
       // Should show description
       await expect(page.getByText(/track how your brand is mentioned/i)).toBeVisible();
@@ -64,45 +77,56 @@ test.describe("Monitor Module", () => {
 
     test("should display sentiment stats cards", async ({ page }) => {
       await page.goto("/dashboard/monitor/mentions");
+      await page.waitForLoadState("load");
 
-      // Should show sentiment indicators (use first() since there may be multiple)
-      await expect(page.getByText(/positive/i).first()).toBeVisible();
-      await expect(page.getByText(/neutral/i).first()).toBeVisible();
-      await expect(page.getByText(/negative/i).first()).toBeVisible();
+      // Stats section uses card-tertiary cards with "Total Mentions", "Positive", "Neutral", "Negative" labels
+      await expect(page.getByText("Total Mentions")).toBeVisible({ timeout: 5000 });
+      // Sentiment labels appear as stat card labels (p.text-xs)
+      await expect(page.getByText("Positive").first()).toBeVisible();
+      await expect(page.getByText("Neutral").first()).toBeVisible();
+      await expect(page.getByText("Negative").first()).toBeVisible();
     });
 
     test("should display mention cards with platform info", async ({ page }) => {
       await page.goto("/dashboard/monitor/mentions");
+      await page.waitForLoadState("load");
 
-      // Should show mentions list - look for common mention text
-      await expect(page.getByText(/apex/i).first()).toBeVisible({ timeout: 10000 });
+      // Brand name should appear somewhere on the page
+      await expect(page.getByText(/apex/i).first()).toBeVisible({ timeout: 5000 });
 
-      // Should show platform names
-      const mentionArea = page.locator('[class*="card"], [class*="mention"]');
-      await expect(mentionArea.first()).toBeVisible();
+      // Platform filter buttons confirm platform coverage is visible
+      await expect(page.getByRole("button", { name: "ChatGPT" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Claude" })).toBeVisible();
     });
 
     test("should have filter controls", async ({ page }) => {
       await page.goto("/dashboard/monitor/mentions");
+      await page.waitForLoadState("load");
 
-      // Look for filter-related elements
-      const filters = page.locator('[class*="filter"], button, select');
-      await expect(filters.first()).toBeVisible();
+      // Filters section: date range buttons and sentiment filter buttons exist
+      await expect(page.getByRole("button", { name: "24 hours" })).toBeVisible({ timeout: 5000 });
+      await expect(page.getByRole("button", { name: "7 days" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Positive" }).first()).toBeVisible();
     });
 
     test("should have back navigation to monitor", async ({ page }) => {
       await page.goto("/dashboard/monitor/mentions");
+      await page.waitForLoadState("load");
 
       // Should have back button (button with ArrowLeft icon)
       const backButton = page.locator("button").filter({ has: page.locator("svg") }).first();
-      await expect(backButton).toBeVisible();
+      await expect(backButton).toBeVisible({ timeout: 5000 });
     });
 
-    test("should display platform breakdown section", async ({ page }) => {
+    test("should display platform filter buttons in sidebar", async ({ page }) => {
       await page.goto("/dashboard/monitor/mentions");
+      await page.waitForLoadState("load");
 
-      // Should show platform breakdown
-      await expect(page.getByText(/mentions by platform/i)).toBeVisible({ timeout: 10000 });
+      // Current UI shows platform filter buttons (not a "Mentions by Platform" chart section)
+      await expect(page.getByText("Platforms", { exact: true })).toBeVisible({ timeout: 5000 });
+      await expect(page.getByRole("button", { name: "ChatGPT" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Gemini" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Perplexity" })).toBeVisible();
     });
   });
 
