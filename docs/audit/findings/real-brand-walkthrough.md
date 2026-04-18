@@ -59,15 +59,18 @@ Platform score cards (ChatGPT, Claude, Gemini, …) showed "0/100 Stable" for ev
 
 ## What stays non-functional until real infra lands
 
-### Recommendations engine — needs ANTHROPIC_API_KEY
+### Recommendations engine — AI-powered path is separate from auto-persisted
 
-`/api/recommendations/generate` calls Anthropic's API. No `ANTHROPIC_API_KEY` in the dev `.env.local`, so the endpoint returns 500 with a 401 from Anthropic. The `/dashboard/recommendations` page correctly shows "No Recommendations Yet". The audit's embedded "Quick Wins" (shown on the results page) work independently and render real issue-based suggestions.
+Two code paths now exist:
 
-**Not slop** — the page shows an honest empty state with a "Run First Audit" CTA. Just needs real keys in prod.
+1. **Auto-persisted (new, 2026-04-18)** — every completed audit writes its issues into the `recommendations` table via `audit-postprocess.persistRecommendationsFromIssues`. Severity → priority/effort/impact mapping. Idempotent per audit. No API keys required. Backfill script: `scripts/backfill-audit-recommendations.ts`.
+2. **AI-generated** — `/api/recommendations/generate` calls Anthropic to synthesize higher-quality suggestions. Production `.env.production` has `ANTHROPIC_API_KEY` set; dev `.env.local` does not. The endpoint works in prod, returns 500 in dev.
 
-### AI Insights engine — needs API keys + real AI-platform queries
+`/dashboard/recommendations` now shows the 21 auto-persisted recommendations for Capitec/Takealot/Discovery. The AI path enhances them when keys are available.
 
-`/api/ai-insights/analyze` was exercised in Phase 3 with a 7-platform query. Platform cards all returned "No data available" because the external AI calls to OpenAI/Anthropic/Perplexity/etc. didn't have credentials. Honest empty state renders.
+### AI Insights engine — keys confirmed in production
+
+`/api/ai-insights/analyze` uses OpenAI / Anthropic / Gemini / Perplexity / xAI / DeepSeek. All six keys are set in `.env.production`, none in `.env.local`. The honest empty state renders on the dev box; the prod deploy will actually query platforms.
 
 ### Performance module — not implemented
 

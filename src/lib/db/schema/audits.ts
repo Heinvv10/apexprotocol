@@ -134,6 +134,44 @@ export interface AuditMetadata {
   // Content chunking score (0-100)
   contentChunkingScore?: number;
   contentChunkingBreakdown?: ContentChunkingBreakdown;
+  // Content analysis snapshot the analyzer produces per-audit. Persisted
+  // so the AI Readiness hook can render real Optimization / Suitability
+  // tiles instead of NaN.
+  contentAnalysis?: {
+    averageWordCount: number;
+    averageReadability: number;
+    headingHierarchyValid: boolean;
+    faqSchemaFound: boolean;
+    hasStructuredContent: boolean;
+  };
+  // AI readiness score synthesised post-audit from the category scores.
+  // Weighted toward the factors that matter most for LLM citation
+  // (schema + structure).
+  aiReadiness?: {
+    score: number;
+    factors: {
+      schema: number;
+      structure: number;
+      clarity: number;
+      metadata: number;
+      accessibility: number;
+    };
+  };
+  // Performance measurements captured during the crawl. Only populated
+  // when the crawler had measurable timings.
+  performance?: {
+    firstContentfulPaint?: number;
+    largestContentfulPaint?: number;
+    totalBlockingTime?: number;
+    cumulativeLayoutShift?: number;
+    speedIndex?: number;
+    responseTime?: number;
+    dnsLookup?: number;
+    tcpConnection?: number;
+    requestTime?: number;
+    domProcessing?: number;
+    resourcesDownload?: number;
+  };
 }
 
 // Relations

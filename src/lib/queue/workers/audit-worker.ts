@@ -14,6 +14,10 @@ import {
   checkContentChunking,
 } from "../../audit/checks";
 import type { AuditIssue, AuditMetadata } from "../../db/schema/audits";
+import {
+  persistRecommendationsFromIssues,
+  computeAiReadinessScore,
+} from "./audit-postprocess";
 
 // Worker configuration
 const WORKER_CONFIG = {
@@ -129,50 +133,75 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
 
     // Update audit in database
     if (existingAudit) {
+      const finalCategoryScores = [
+        {
+          category: "structure",
+          score: analysis.readability.breakdown.structure.score,
+          maxScore: analysis.readability.breakdown.structure.maxScore,
+          issues: analysis.issues.filter((i) => i.category === "structure").length,
+        },
+        {
+          category: "schema",
+          score: analysis.readability.breakdown.schema.score,
+          maxScore: analysis.readability.breakdown.schema.maxScore,
+          issues: analysis.issues.filter((i) => i.category === "schema").length,
+        },
+        {
+          category: "clarity",
+          score: analysis.readability.breakdown.clarity.score,
+          maxScore: analysis.readability.breakdown.clarity.maxScore,
+          issues: analysis.issues.filter((i) => i.category === "content").length,
+        },
+        {
+          category: "metadata",
+          score: analysis.readability.breakdown.metadata.score,
+          maxScore: analysis.readability.breakdown.metadata.maxScore,
+          issues: analysis.issues.filter((i) => i.category === "metadata").length,
+        },
+        {
+          category: "accessibility",
+          score: analysis.readability.breakdown.accessibility.score,
+          maxScore: analysis.readability.breakdown.accessibility.maxScore,
+          issues: analysis.issues.filter((i) => i.category === "accessibility").length,
+        },
+      ];
+
+      // Compute AI-readiness score from the category scores the engine
+      // just produced. This gives AIReadinessDeepDive real data instead
+      // of the phantom metadata.aiReadiness.score that never existed.
+      const aiReadiness = computeAiReadinessScore({
+        categoryScores: finalCategoryScores,
+      });
+
+      // NOTE on performance metrics: the current `CrawlPage` type (worker
+      // path) doesn't carry per-page timing data. Real FCP/LCP/TBT/CLS
+      // require a headless-browser pass (Puppeteer/Playwright) which the
+      // audit pipeline doesn't run yet. Rather than ship estimated numbers
+      // that look like Lighthouse output, we leave metadata.performance
+      // undefined and PerformanceDeepDive renders an honest "not captured"
+      // empty state.
+
+      const finalMetadata = {
+        timing: {
+          totalDuration: Date.now() - startTime,
+          fetchTime: crawlResult.duration,
+          analysisTime: Date.now() - startTime - crawlResult.duration,
+        },
+        pagesAnalyzed: crawlResult.pages.length,
+        grade: analysis.readability.grade,
+        contentChunkingScore: (chunkingResult as Record<string, unknown>).score,
+        contentChunkingBreakdown: (chunkingResult as Record<string, unknown>).breakdown,
+        contentAnalysis: analysis.contentAnalysis,
+        aiReadiness,
+      } as AuditMetadata;
+
       await db
         .update(audits)
         .set({
           status: crawlResult.success ? "completed" : "failed",
           completedAt: new Date(),
           overallScore: analysis.readability.overall,
-          categoryScores: [
-            {
-              category: "structure",
-              score: analysis.readability.breakdown.structure.score,
-              maxScore: analysis.readability.breakdown.structure.maxScore,
-              issues: analysis.issues.filter((i) => i.category === "structure")
-                .length,
-            },
-            {
-              category: "schema",
-              score: analysis.readability.breakdown.schema.score,
-              maxScore: analysis.readability.breakdown.schema.maxScore,
-              issues: analysis.issues.filter((i) => i.category === "schema")
-                .length,
-            },
-            {
-              category: "clarity",
-              score: analysis.readability.breakdown.clarity.score,
-              maxScore: analysis.readability.breakdown.clarity.maxScore,
-              issues: analysis.issues.filter((i) => i.category === "content")
-                .length,
-            },
-            {
-              category: "metadata",
-              score: analysis.readability.breakdown.metadata.score,
-              maxScore: analysis.readability.breakdown.metadata.maxScore,
-              issues: analysis.issues.filter((i) => i.category === "metadata")
-                .length,
-            },
-            {
-              category: "accessibility",
-              score: analysis.readability.breakdown.accessibility.score,
-              maxScore: analysis.readability.breakdown.accessibility.maxScore,
-              issues: analysis.issues.filter(
-                (i) => i.category === "accessibility"
-              ).length,
-            },
-          ],
+          categoryScores: finalCategoryScores,
           issues: allIssues,
           issueCount: allIssues.length,
           criticalCount: allIssues.filter((i) => i.severity === "critical").length,
@@ -180,21 +209,32 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
           mediumCount: allIssues.filter((i) => i.severity === "medium").length,
           lowCount: allIssues.filter((i) => i.severity === "low").length,
           recommendations: analysis.recommendations,
-          metadata: {
-            timing: {
-              totalDuration: Date.now() - startTime,
-              fetchTime: crawlResult.duration,
-              analysisTime: Date.now() - startTime - crawlResult.duration,
-            },
-            pagesAnalyzed: crawlResult.pages.length,
-            grade: analysis.readability.grade,
-            contentChunkingScore: (chunkingResult as Record<string, unknown>).score,
-            contentChunkingBreakdown: (chunkingResult as Record<string, unknown>).breakdown,
-          } as AuditMetadata,
+          metadata: finalMetadata,
           errorMessage:
             result.errors.length > 0 ? result.errors.join("; ") : null,
         })
         .where(eq(audits.id, existingAudit.id));
+
+      // Persist each detected issue as a tracked recommendation row so
+      // /dashboard/recommendations stops showing "No recommendations yet"
+      // for a brand that's actually had an audit run against it.
+      if (crawlResult.success && allIssues.length > 0) {
+        try {
+          await persistRecommendationsFromIssues({
+            auditId: existingAudit.id,
+            brandId: existingAudit.brandId,
+            issues: allIssues,
+          });
+        } catch (err) {
+          // Don't fail the audit if recommendation persistence has a
+          // hiccup (FK race, schema drift). Audit completes; the
+          // recommendations backfill can be re-run separately.
+          console.error(
+            "[audit-worker] failed to persist recommendations:",
+            err
+          );
+        }
+      }
     }
 
     result.success = crawlResult.success;

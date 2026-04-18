@@ -59,8 +59,24 @@ export function useAIReadiness(audit: Audit | null): AIReadinessData | null {
     if (!aiReadiness || typeof aiReadiness.score !== "number") {
       return null;
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const contentAnalysis = ((metadata.contentAnalysis as any) ?? {}) as any;
+
+    // contentAnalysis drives the Optimization/Suitability tiles. When the
+    // worker doesn't persist it (older audits), default every field to 0 /
+    // false so `Math.round(undefined * x)` doesn't cascade to NaN tiles.
+    const ca = (metadata.contentAnalysis as {
+      averageWordCount?: number;
+      averageReadability?: number;
+      headingHierarchyValid?: boolean;
+      faqSchemaFound?: boolean;
+      hasStructuredContent?: boolean;
+    } | undefined) ?? {};
+    const contentAnalysis = {
+      averageWordCount: ca.averageWordCount ?? 0,
+      averageReadability: ca.averageReadability ?? 0,
+      headingHierarchyValid: ca.headingHierarchyValid ?? false,
+      faqSchemaFound: ca.faqSchemaFound ?? false,
+      hasStructuredContent: ca.hasStructuredContent ?? false,
+    };
 
     // Platform visibility data (simulated from audit metadata)
     const platformVisibility = [

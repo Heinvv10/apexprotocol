@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { brands } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { brands, organizations } from "@/lib/db/schema";
+import { eq, and, count } from "drizzle-orm";
 import { z } from "zod";
 import { getOrganizationId } from "@/lib/auth/clerk";
 
@@ -112,6 +112,33 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const validatedData = brandSchema.parse(body);
+
+    // Enforce the org's brand_limit. Previously the POST ignored the cap
+    // and quietly let tenants exceed it — the Starter org "Apex Audit"
+    // had 11/5 brands by the time this check was added.
+    const [limits] = await db
+      .select({ brandLimit: organizations.brandLimit })
+      .from(organizations)
+      .where(eq(organizations.id, orgId))
+      .limit(1);
+
+    const [{ currentCount }] = await db
+      .select({ currentCount: count() })
+      .from(brands)
+      .where(and(eq(brands.organizationId, orgId), eq(brands.isActive, true)));
+
+    const cap = limits?.brandLimit ?? 1;
+    if (currentCount >= cap) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Brand limit reached",
+          message: `Your plan allows ${cap} brand${cap === 1 ? "" : "s"}. You currently have ${currentCount}. Upgrade your plan or archive an existing brand.`,
+          meta: { currentCount, brandLimit: cap },
+        },
+        { status: 403 }
+      );
+    }
 
     const newBrand = await db
       .insert(brands)

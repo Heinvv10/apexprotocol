@@ -80,7 +80,7 @@ export function AIPlatformVisibility({ platforms }: AIPlatformVisibilityProps) {
       <div className="grid grid-cols-3 gap-3">
         <div className="card-tertiary p-3 text-center">
           <div className="text-2xl font-bold text-success">{visibleCount}</div>
-          <div className="text-xs text-muted-foreground mt-1">Platforms</div>
+          <div className="text-xs text-muted-foreground mt-1">Fully Visible</div>
         </div>
         <div className="card-tertiary p-3 text-center">
           <div className="text-2xl font-bold text-primary">{averageScore}</div>
