@@ -31,7 +31,9 @@ test.describe("Authentication Flow", () => {
       } else {
         // In production mode with Clerk, verify Clerk UI is loaded
         // Clerk forms have specific class patterns
-        await expect(page.locator('[class*="cl-"]')).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('[class*="cl-"]').first()).toBeVisible({
+          timeout: 10000,
+        });
       }
     });
 
@@ -56,9 +58,12 @@ test.describe("Authentication Flow", () => {
       // Page should load without errors
       await expect(page).toHaveURL(/\/sign-up/);
 
-      // Should show sign up heading
-      const heading = page.getByRole("heading", { name: /sign up/i });
-      await expect(heading).toBeVisible();
+      // Clerk uses "Create your account" as the <SignUp> heading; our
+      // dev-mode fallback uses "Sign up". Either is acceptable.
+      const heading = page.getByRole("heading", {
+        name: /sign ?up|create your account/i,
+      });
+      await expect(heading.first()).toBeVisible();
     });
 
     test("should show dev mode fallback when Clerk not configured", async ({ page }) => {
@@ -74,7 +79,9 @@ test.describe("Authentication Flow", () => {
         await expect(devModeLink).toHaveAttribute("href", "/dashboard");
       } else {
         // In production mode with Clerk
-        await expect(page.locator('[class*="cl-"]')).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('[class*="cl-"]').first()).toBeVisible({
+          timeout: 10000,
+        });
       }
     });
 
