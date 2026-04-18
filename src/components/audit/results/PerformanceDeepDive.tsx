@@ -17,11 +17,21 @@ export function PerformanceDeepDive({ audit }: PerformanceDeepDiveProps) {
   const metrics = usePerformanceMetrics(audit);
   const coreWebVitals = generateCoreWebVitals(audit);
 
+  // The audit engine doesn't currently run real Lighthouse / Web Vitals
+  // measurement. When `audit.metadata.performance` is absent, usePerformanceMetrics
+  // returns null — render an honest empty state instead of forever-spinning.
   if (!metrics) {
     return (
-      <div className="text-center py-12">
-        <Loader2 className="h-8 w-8 text-primary animate-spin mx-auto mb-4" />
-        <p className="text-muted-foreground">Loading performance analysis...</p>
+      <div className="card-secondary p-6 text-center">
+        <AlertCircle className="h-6 w-6 text-muted-foreground mx-auto mb-3" />
+        <h3 className="font-semibold text-foreground mb-1">
+          Performance metrics not captured
+        </h3>
+        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+          This audit didn&apos;t include Core Web Vitals or Lighthouse timing.
+          Re-run with the performance module enabled to see FCP, LCP, CLS, TBT,
+          and waterfall data.
+        </p>
       </div>
     );
   }

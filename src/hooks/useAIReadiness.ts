@@ -49,9 +49,18 @@ export function useAIReadiness(audit: Audit | null): AIReadinessData | null {
   return useMemo((): AIReadinessData | null => {
     if (!audit) return null;
 
-    const metadata = (audit.metadata as any) || {};
-    const aiReadiness = metadata.aiReadiness || {};
-    const contentAnalysis = metadata.contentAnalysis || {};
+    // The AI Readiness module (platform visibility, citation potential,
+    // LLM suitability) needs metadata.aiReadiness.score to be populated by
+    // the audit engine. When it isn't, every derived number below becomes
+    // NaN and the UI shows "NaN / NaN / NaN / NaN" tiles. Return null so
+    // the caller can render an honest empty state.
+    const metadata = (audit.metadata as Record<string, unknown> | undefined) ?? {};
+    const aiReadiness = metadata.aiReadiness as { score?: number } | undefined;
+    if (!aiReadiness || typeof aiReadiness.score !== "number") {
+      return null;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const contentAnalysis = ((metadata.contentAnalysis as any) ?? {}) as any;
 
     // Platform visibility data (simulated from audit metadata)
     const platformVisibility = [

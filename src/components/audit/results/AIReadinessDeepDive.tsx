@@ -18,13 +18,23 @@ interface AIReadinessDeepDiveProps {
 export function AIReadinessDeepDive({ audit }: AIReadinessDeepDiveProps) {
   const aiData = useAIReadiness(audit);
 
+  // The audit engine doesn't yet populate metadata.aiReadiness.score,
+  // so useAIReadiness returns null. Render an honest empty state rather
+  // than NaN-filled tiles.
   if (!aiData) {
     return (
-      <div className="text-center py-12">
+      <div className="card-secondary p-6 text-center">
         <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-muted/50 flex items-center justify-center">
           <Brain className="h-6 w-6 text-muted-foreground" />
         </div>
-        <p className="text-muted-foreground">Loading AI readiness analysis...</p>
+        <h3 className="font-semibold text-foreground mb-1">
+          AI readiness analysis not captured
+        </h3>
+        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+          This audit didn&apos;t include platform-visibility or LLM-suitability
+          scoring. Re-run with the AI Readiness module enabled to see citation
+          potential and per-platform visibility.
+        </p>
       </div>
     );
   }

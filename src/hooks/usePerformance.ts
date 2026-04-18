@@ -34,15 +34,25 @@ export function usePerformanceMetrics(audit: Audit | null): PerformanceMetrics |
   return useMemo((): PerformanceMetrics | null => {
     if (!audit) return null;
 
-    // Get performance data from audit metadata
-    const metadata = (audit.metadata as any) || {};
-    const performance = metadata.performance || {};
+    // Only compute perf metrics if the audit engine actually captured them.
+    // Prior behaviour was to default to {fcp:3000, lcp:4000, tbt:200, cls:0.1}
+    // when missing — which rendered as real-looking numbers on every audit
+    // that didn't run a real Lighthouse pass. That's slop. Return null so
+    // the caller can show an honest "Performance metrics not captured" card.
+    const metadata = (audit.metadata as Record<string, unknown> | undefined) ?? {};
+    const performance = (metadata.performance as Record<string, unknown> | undefined) ?? null;
+    if (
+      !performance ||
+      typeof performance.firstContentfulPaint !== "number" ||
+      typeof performance.largestContentfulPaint !== "number"
+    ) {
+      return null;
+    }
 
-    // Calculate overall score (0-100)
-    const fcp = performance.firstContentfulPaint || 3000;
-    const lcp = performance.largestContentfulPaint || 4000;
-    const tbt = performance.totalBlockingTime || 200;
-    const cls = performance.cumulativeLayoutShift || 0.1;
+    const fcp = performance.firstContentfulPaint as number;
+    const lcp = performance.largestContentfulPaint as number;
+    const tbt = (performance.totalBlockingTime as number | undefined) ?? 0;
+    const cls = (performance.cumulativeLayoutShift as number | undefined) ?? 0;
 
     // Score calculation (simplified Google Lighthouse approach)
     let score = 100;
@@ -81,38 +91,18 @@ export function usePerformanceMetrics(audit: Audit | null): PerformanceMetrics |
         ? "poor"
         : "failing";
 
-    // Load phases breakdown
+    // Load phases — only populated when the engine captured real timings.
+    // Omit synthetic defaults; the UI shows an empty state when loadPhases
+    // is empty (see PerformanceWaterfall).
+    const toNumber = (v: unknown): number =>
+      typeof v === "number" ? v : 0;
     const loadPhases = [
-      {
-        name: "DNS Lookup",
-        duration: performance.dnsLookup || 50,
-        color: "hsl(var(--primary))",
-      },
-      {
-        name: "TCP Connection",
-        duration: performance.tcpConnection || 100,
-        color: "hsl(var(--warning))",
-      },
-      {
-        name: "Request Time",
-        duration: performance.requestTime || 200,
-        color: "hsl(var(--error))",
-      },
-      {
-        name: "Response Time",
-        duration: performance.responseTime || 800,
-        color: "hsl(var(--success))",
-      },
-      {
-        name: "DOM Processing",
-        duration: performance.domProcessing || 500,
-        color: "hsl(var(--muted-foreground))",
-      },
-      {
-        name: "Resources Download",
-        duration: performance.resourcesDownload || 1000,
-        color: "hsl(var(--primary) / 0.5)",
-      },
+      { name: "DNS Lookup", duration: toNumber(performance.dnsLookup), color: "hsl(var(--primary))" },
+      { name: "TCP Connection", duration: toNumber(performance.tcpConnection), color: "hsl(var(--warning))" },
+      { name: "Request Time", duration: toNumber(performance.requestTime), color: "hsl(var(--error))" },
+      { name: "Response Time", duration: toNumber(performance.responseTime), color: "hsl(var(--success))" },
+      { name: "DOM Processing", duration: toNumber(performance.domProcessing), color: "hsl(var(--muted-foreground))" },
+      { name: "Resources Download", duration: toNumber(performance.resourcesDownload), color: "hsl(var(--primary) / 0.5)" },
     ];
 
     const totalLoadTime = loadPhases.reduce((sum, phase) => sum + phase.duration, 0);
@@ -134,7 +124,7 @@ export function usePerformanceMetrics(audit: Audit | null): PerformanceMetrics |
       largestContentfulPaint: lcp,
       totalBlockingTime: tbt,
       cumulativeLayoutShift: cls,
-      speedIndex: performance.speedIndex || 3500,
+      speedIndex: typeof performance.speedIndex === "number" ? (performance.speedIndex as number) : 0,
       loadPhases,
       recommendations,
     };

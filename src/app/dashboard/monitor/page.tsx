@@ -292,7 +292,11 @@ function PlatformScoreCards({ platformScores }: { platformScores: PlatformVisibi
             platform={platform.name}
             emoji={platform.emoji}
             scores={recentScores}
-            trend={hasData ? score.trend : "stable"}
+            // "stable" implies a measurement happened. When hasData is
+            // false the card is in its pre-monitoring state — pass
+            // "empty" so the child shows a neutral "—" instead of
+            // fabricating a trend direction.
+            trend={hasData ? score.trend : "empty"}
           />
         );
       })}

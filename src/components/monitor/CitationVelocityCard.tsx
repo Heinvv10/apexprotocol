@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 
-export type VelocityTrend = "up" | "stable" | "down";
+export type VelocityTrend = "up" | "stable" | "down" | "empty";
 
 export interface CitationVelocityCardProps {
   platform: string;
@@ -189,6 +189,7 @@ export function CitationVelocityCard({
           {trend === "up" && "Trending up"}
           {trend === "down" && "Trending down"}
           {trend === "stable" && "Stable"}
+          {trend === "empty" && "No data"}
         </span>
       </div>
     </Card>

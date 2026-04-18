@@ -20,33 +20,60 @@ function getScoreColor(score: number): string {
   return "text-error";
 }
 
+// The audit engine scores these 5 categories; the UI previously read
+// phantom `audit.technicalScore / contentScore / aiReadinessScore`
+// fields that aren't populated, producing three 0s and an unrelated
+// "Performance" value that was actually the overall score.
+const CATEGORY_META: Record<
+  string,
+  { displayName: string; icon: string; description: string }
+> = {
+  structure: {
+    displayName: "Content Structure",
+    icon: "🧱",
+    description: "H1-H6 hierarchy and scannable sections",
+  },
+  schema: {
+    displayName: "Schema Markup",
+    icon: "⚙️",
+    description: "FAQPage / Article / Product JSON-LD",
+  },
+  clarity: {
+    displayName: "Content Clarity",
+    icon: "📝",
+    description: "Readability and paragraph length",
+  },
+  metadata: {
+    displayName: "Metadata",
+    icon: "🏷️",
+    description: "Titles, descriptions, canonical tags",
+  },
+  accessibility: {
+    displayName: "Accessibility",
+    icon: "♿",
+    description: "Alt text, semantic HTML, ARIA",
+  },
+};
+
 export function CategoryScoresGrid({ audit }: CategoryScoresGridProps) {
-  const categories: CategoryScore[] = [
-    {
-      name: "Technical SEO",
-      score: audit.technicalScore || 0,
-      icon: "⚙️",
-      description: "Schema, meta tags, crawlability"
-    },
-    {
-      name: "Performance",
-      score: audit.overallScore || 0,
-      icon: "⚡",
-      description: "Web Vitals and load times"
-    },
-    {
-      name: "Content Quality",
-      score: audit.contentScore || 0,
-      icon: "📝",
-      description: "Readability and structure"
-    },
-    {
-      name: "AI Readiness",
-      score: audit.aiReadinessScore || 0,
-      icon: "🤖",
-      description: "Citation potential and relevance"
-    }
-  ];
+  const engineScores = audit.categoryScores ?? [];
+  const categories: CategoryScore[] =
+    engineScores.length > 0
+      ? engineScores.map((c) => {
+          const meta =
+            CATEGORY_META[c.category] ?? {
+              displayName: c.category,
+              icon: "📊",
+              description: "",
+            };
+          return {
+            name: meta.displayName,
+            score: c.score,
+            icon: meta.icon,
+            description: meta.description,
+          };
+        })
+      : [];
 
   return (
     <div className="space-y-4">
