@@ -1,12 +1,18 @@
 /**
- * Row-Level Security (RLS) helpers for multi-tenant data isolation
+ * Row-Level Security (RLS) helpers for multi-tenant data isolation.
  *
- * This module provides utilities for implementing PostgreSQL RLS policies
- * that ensure complete data isolation between organizations.
+ * Uses the shared pg pool + Drizzle transactions so RLS context is
+ * properly scoped to the queries that need it: each transaction is a
+ * single Postgres client connection, so set_config(..., true) — i.e.
+ * SET LOCAL — applies for the duration of that transaction and resets
+ * automatically on commit.
  */
 
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { sql } from "drizzle-orm";
+import type { ExtractTablesWithRelations } from "drizzle-orm";
+import type { NodePgDatabase, NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
+import type { PgTransaction } from "drizzle-orm/pg-core";
+import { getDb } from "./index";
 import * as schema from "./schema";
 
 // RLS context configuration type
@@ -16,46 +22,42 @@ export interface RLSContext {
   role: "admin" | "editor" | "viewer";
 }
 
+type Tx = PgTransaction<
+  NodePgQueryResultHKT,
+  typeof schema,
+  ExtractTablesWithRelations<typeof schema>
+>;
+
 /**
- * Creates a database connection with RLS context set
- * This ensures all queries are automatically filtered by organization
+ * Creates a "secure DB" handle bound to a tenant context. The actual
+ * RLS settings are applied per-call via executeWithContext, which wraps
+ * the caller's queries in a transaction with set_config(..., is_local=true).
+ * That is the only correct way to make session vars stick across multiple
+ * statements on a pooled pg.Client.
  */
 export function createSecureDb(context: RLSContext) {
-  const connectionString = process.env.DATABASE_URL;
+  const db: NodePgDatabase<typeof schema> = getDb();
 
-  if (!connectionString) {
-    throw new Error("DATABASE_URL not configured");
-  }
-
-  // Create a new connection with RLS context parameters
-  // Neon supports session parameters via connection options
-  const sql = neon(connectionString, {
-    // These will be available in the database session
-    // for RLS policy checks
-  });
-
-  const db = drizzle(sql, { schema });
-
-  // Return a wrapped database with context-aware operations
   return {
-    ...db,
+    db,
     context,
 
     /**
-     * Execute raw SQL with RLS context set
+     * Run `callback` inside a transaction with the RLS context applied.
+     * The `tx` parameter exposes the same drizzle query API
+     * (select/insert/update/delete/execute). All queries inside `callback`
+     * see the set_config values; queries on `db` outside this method do not.
      */
-    async executeWithContext<T>(
-      callback: (
-        db: typeof import("drizzle-orm/neon-http").drizzle
-      ) => Promise<T>
-    ): Promise<T> {
-      // Set the RLS context variables before executing
-      await sql`SELECT set_config('app.current_organization_id', ${context.organizationId}, true)`;
-      await sql`SELECT set_config('app.current_user_id', ${context.userId}, true)`;
-      await sql`SELECT set_config('app.current_role', ${context.role}, true)`;
-
-      // @ts-expect-error - Type mismatch but functionally correct
-      return callback(db);
+    async executeWithContext<T>(callback: (tx: Tx) => Promise<T>): Promise<T> {
+      return db.transaction(async (tx) => {
+        await tx.execute(sql`
+          SELECT
+            set_config('app.current_organization_id', ${context.organizationId}, true),
+            set_config('app.current_user_id', ${context.userId}, true),
+            set_config('app.current_role', ${context.role}, true)
+        `);
+        return callback(tx);
+      });
     },
   };
 }
