@@ -1,35 +1,44 @@
-import { Pool, neonConfig } from "@neondatabase/serverless";
+import { Pool, type PoolConfig } from "pg";
 import {
   drizzle,
-  type NeonDatabase,
-} from "drizzle-orm/neon-serverless";
-import ws from "ws";
+  type NodePgDatabase,
+} from "drizzle-orm/node-postgres";
 import * as schema from "./schema";
-
-neonConfig.webSocketConstructor = ws;
 
 const isDatabaseConfigured = () => {
   const url = process.env.DATABASE_URL;
   return !!url && url !== "postgresql://placeholder";
 };
 
-let _db: NeonDatabase<typeof schema> | null = null;
+let _db: NodePgDatabase<typeof schema> | null = null;
 let _pool: Pool | null = null;
 
-function getDatabase(): NeonDatabase<typeof schema> {
+function buildPoolConfig(): PoolConfig {
+  return {
+    connectionString: process.env.DATABASE_URL,
+    max: Number(process.env.DATABASE_POOL_MAX ?? 10),
+    idleTimeoutMillis: 30_000,
+    ssl:
+      process.env.DATABASE_SSL === "false"
+        ? false
+        : { rejectUnauthorized: false },
+  };
+}
+
+function getDatabase(): NodePgDatabase<typeof schema> {
   if (!_db) {
     if (!isDatabaseConfigured()) {
       throw new Error(
         "Database not configured. Please set DATABASE_URL environment variable."
       );
     }
-    _pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    _pool = new Pool(buildPoolConfig());
     _db = drizzle(_pool, { schema });
   }
   return _db;
 }
 
-export const db = new Proxy({} as NeonDatabase<typeof schema>, {
+export const db = new Proxy({} as NodePgDatabase<typeof schema>, {
   get(_target, prop) {
     const database = getDatabase();
     const value = database[prop as keyof typeof database];
@@ -40,7 +49,7 @@ export const db = new Proxy({} as NeonDatabase<typeof schema>, {
   },
 });
 
-export function getDb(): NeonDatabase<typeof schema> {
+export function getDb(): NodePgDatabase<typeof schema> {
   return getDatabase();
 }
 
@@ -48,4 +57,4 @@ export { schema };
 
 export * from "./rls";
 
-export type Database = NeonDatabase<typeof schema>;
+export type Database = NodePgDatabase<typeof schema>;
