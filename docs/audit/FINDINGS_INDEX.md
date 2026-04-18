@@ -56,12 +56,31 @@ Audit scope: **complete**. Phase 7 white-label system ships via `NEXT_PUBLIC_BRA
 
 ## E2E infrastructure
 
-Phase 3's manual Clerk sign-in-token replay is now a Playwright `globalSetup` (`e2e/.auth/auth.setup.ts`). Every spec starts authenticated; the prior `APEX_TEST_STORAGE_STATE=<path>` env gate is retired.
+Phase 3's manual Clerk sign-in-token replay is now a Playwright `globalSetup` (`e2e/.auth/auth.setup.ts`). Every spec starts authenticated with a seeded demo brand pre-selected; the prior `APEX_TEST_STORAGE_STATE=<path>` env gate is retired.
 
-- `auth.spec.ts` (12 tests) — updated for current Clerk UI
-- `smoke-core-flows.spec.ts` (5 tests) — 4 pass, 1 gracefully skipped when no brand seeded
-- `onboarding.spec.ts` (3 tests) — rewritten for the current 5-step wizard
-- `monitor.spec.ts` / `competitive.spec.ts` / `premium-gates.spec.ts` / `notifications.spec.ts` — 33 tests pass clean on the auth session
+What the setup does on a fresh run:
+1. Gets or creates `hein+e2e@h10.co.za` via Clerk Backend API (pre-verified)
+2. Mints a one-shot `sign_in_token` and redeems it at `/sign-in?__clerk_ticket=...`
+3. Fills in the post-sign-in choose-organization task (creates "Apex E2E" org)
+4. Seeds matching users + organizations rows in Neon (the Clerk webhook doesn't fire against local dev)
+5. Seeds `brand_e2e_demo` so brand-scoped pages render their real UI
+6. Writes `selectedBrandId` into the `apex-brand-state` zustand localStorage entry
+7. Saves Playwright storage state for all specs to consume
+
+### Spec health
+
+**Green (53 tests pass clean):**
+- `auth.spec.ts` — 12 tests (selectors refreshed for current Clerk UI)
+- `smoke-core-flows.spec.ts` — 5 tests (all pass with brand seeded)
+- `onboarding.spec.ts` — 3 tests (rewritten for current 5-step wizard)
+- `notifications.spec.ts` — 33 tests pass on the auth session
+
+**Pre-existing drift (~63 tests failing):**
+- `monitor.spec.ts` — tests assert on a pre-refactor UI ("Live Query Analysis" heading, "Smart Table" badge, "Tracked Topics / Entity Types / AI Engines" filter sidebar). The monitor page has been redone — these are UI rewrites, not auth-setup issues.
+- `competitive.spec.ts` — every test times out at 30s waiting for selectors that no longer exist. `/dashboard/competitive` is paywalled behind the Professional plan; the Starter-plan seed-org sees the upgrade card.
+- `premium-gates.spec.ts` — ~3 API-contract assertions against endpoints that have moved.
+
+These are not fixable via infrastructure. They're pending a "refresh e2e coverage" work item — probably best tackled spec-by-spec alongside the features they exercise.
 
 ## Post-merge verification
 
