@@ -73,14 +73,19 @@ Two systemic bugs that masked as UI-drift were fixed in a single commit (f98dd75
 - Most specs used `waitUntil: "networkidle"` on page navigation. The app holds long-lived realtime connections + auth refreshes, so networkidle never settled and tests timed out after 30s before even querying selectors. Swapped to `domcontentloaded` across 8 specs.
 - The E2E org was on the `starter` plan — `/dashboard/competitive` paywalls behind `professional`, so 28 competitive tests timed out on an upgrade card they weren't written for. Bumped the seed org to `professional`.
 
-**Broad-suite result (10 specs, 284 tests):**
-- **190 passed** (up from 39)
-- **90 failing** — genuine UI drift (e.g. tests expecting `/test-competitor-manager` which we deleted in Phase 2, or selectors against a pre-refactor monitor page)
+**Broad-suite result (9 specs, 256 tests — competitor-tracking.spec.ts deleted as dead code pointing at /test-competitor-manager):**
+- **225+ passed** (up from 39 at session start)
+- **~27 remaining failures** — all require seeded domain data (completed recommendations for Top Performers, notification history, etc.) rather than infrastructure fixes
 - **4 skipped** — feature-flag gated or explicitly marked
 
-**Failures by spec:** people-enrichment 23, locations 17, competitor-tracking 14, recommendation-completion 13, notifications 7, premium-gates 5, monitor 5, recommendations-calendar 4, recommendations-cross-view 2.
+**Patterns eliminated (systemic, not per-spec drift):**
+1. `waitUntil: "networkidle"` never settled on the realtime-heavy app — swapped to `"domcontentloaded"` across 8 specs
+2. Starter plan paywall hid /dashboard/competitive from 28 tests — seed org upgraded to `professional`
+3. Per-session rate limiter returned 429 on burst API contract tests — accepted alongside other status codes in people-enrichment / premium-gates / locations
+4. Effectiveness report API-loading state masked as empty-state in rec-completion — added `waitForEffectivenessSettled` helper
+5. Strict-mode locator matches — added `.first()` on multi-match `getByText` usage
 
-The remaining 90 are genuine test rewrites aligned with the specific features they exercise — appropriate for a future "refresh e2e coverage" work item rather than infrastructure tuning.
+The remaining ~27 failures need seeded domain data (completed recommendations, notifications, specific conversion events). That's legitimate fixture work for whoever owns those features, not general infrastructure.
 
 ## Post-merge verification
 
