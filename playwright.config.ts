@@ -9,7 +9,10 @@ export default defineConfig({
   testMatch: ["e2e/**/*.spec.ts", "tests/e2e/**/*.spec.ts"],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  // 1 retry locally, 2 in CI. Covers the occasional rate-limiter hit
+  // or Upstash-SSE reconnect that races a page.goto. Deterministic
+  // product bugs still fail after retries; genuine flakes don't.
+  retries: process.env.CI ? 2 : 1,
   workers: process.env.CI ? 1 : undefined,
   reporter: "html",
   // Mint a Clerk sign-in token + seed the DB before any specs run.

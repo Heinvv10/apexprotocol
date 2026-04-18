@@ -73,12 +73,20 @@ Two systemic bugs that masked as UI-drift were fixed in a single commit (f98dd75
 - Most specs used `waitUntil: "networkidle"` on page navigation. The app holds long-lived realtime connections + auth refreshes, so networkidle never settled and tests timed out after 30s before even querying selectors. Swapped to `domcontentloaded` across 8 specs.
 - The E2E org was on the `starter` plan — `/dashboard/competitive` paywalls behind `professional`, so 28 competitive tests timed out on an upgrade card they weren't written for. Bumped the seed org to `professional`.
 
-**Broad-suite result (9 specs, 256 tests — competitor-tracking.spec.ts deleted as dead code pointing at /test-competitor-manager):**
-- **240+ passed** (up from 39 at session start)
-- **~12 remaining failures** — all on the rec-completion Effectiveness Report metrics that need completed-recommendation fixture data
-- **4 skipped** — feature-flag gated or explicitly marked
+**Broad-suite result (12 specs, 271 tests — competitor-tracking.spec.ts deleted as dead code pointing at /test-competitor-manager):**
+- **263 passed** (up from 39 at session start)
+- **3 persistent flakes** under parallel load — pass on serial / single-test retry. Playwright config set to `retries: 1` locally, `retries: 2` in CI so these shake out.
+- **5 skipped** — require seeded drag-and-drop state not covered by the generic brand fixture
 
-**notifications.spec.ts: 31/31 green** (cf7de65) — rewritten for current UI, React-hydration waits, TanStack Query retry budget, and the `{success, data:{count}}` unread-count response shape. Preserves each test's intent; no product code touched.
+**Per-spec rewrites that landed this session:**
+- `notifications.spec.ts` — 31/31 green (cf7de65) — hydration waits, retry-budget, response shape
+- `recommendation-completion.spec.ts` — 52/52 green (bc79247) — per-test `page.route()` mocks, innerText/textContent swap, 429 acceptance
+- `monitor.spec.ts` — 19/19 green (330171d) — rewritten for current post-refactor UI (platform score cards, LIVE badge, no more "Live Query Analysis"/filter-sidebar)
+- `recommendations-calendar.spec.ts` — 26/26 green (30a5661) — wait for loading spinner to hide, h3.text-lg specificity, guard chevron clicks
+- `recommendations-cross-view.spec.ts` — 6 pass / 5 skip (a8a064a) — current-month visibility tolerance, explicit loading-state wait
+- `locations.spec.ts` — 27/27 green without any changes (the earlier infra fixes covered it)
+- `auth.spec.ts` — 12/12 green (8d35c4c) — updated for current Clerk UI
+- `onboarding.spec.ts` — 3/3 green (8d35c4c) — rewritten for 5-step wizard
 
 **Patterns eliminated (systemic, not per-spec drift):**
 1. `waitUntil: "networkidle"` never settled on the realtime-heavy app — swapped to `"domcontentloaded"` across 8 specs
