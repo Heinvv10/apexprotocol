@@ -400,12 +400,12 @@ export default function EngagementPage() {
                 placeholder="Search mentions, authors, or content..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-[#0a0f1a] border-white/10"
+                className="pl-10 bg-background border-white/10"
               />
             </div>
           </div>
           <Select value={sentimentFilter} onValueChange={setSentimentFilter}>
-            <SelectTrigger className="w-full md:w-[180px] bg-[#0a0f1a] border-white/10">
+            <SelectTrigger className="w-full md:w-[180px] bg-background border-white/10">
               <SelectValue placeholder="Sentiment" />
             </SelectTrigger>
             <SelectContent>
@@ -416,7 +416,7 @@ export default function EngagementPage() {
             </SelectContent>
           </Select>
           <Select value={platformFilter} onValueChange={setPlatformFilter}>
-            <SelectTrigger className="w-full md:w-[180px] bg-[#0a0f1a] border-white/10">
+            <SelectTrigger className="w-full md:w-[180px] bg-background border-white/10">
               <SelectValue placeholder="Platform" />
             </SelectTrigger>
             <SelectContent>
@@ -429,7 +429,7 @@ export default function EngagementPage() {
             </SelectContent>
           </Select>
           <Select value={leadFilter} onValueChange={setLeadFilter}>
-            <SelectTrigger className="w-full md:w-[180px] bg-[#0a0f1a] border-white/10">
+            <SelectTrigger className="w-full md:w-[180px] bg-background border-white/10">
               <SelectValue placeholder="Lead Status" />
             </SelectTrigger>
             <SelectContent>

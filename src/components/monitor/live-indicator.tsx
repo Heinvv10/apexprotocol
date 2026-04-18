@@ -55,7 +55,7 @@ export function LiveIndicator({
         "inline-flex items-center rounded-full transition-all duration-300",
         sizes.container,
         isConnected
-          ? "bg-[#00E5CC]/10 border border-[#00E5CC]/30"
+          ? "bg-primary/10 border border-primary/30"
           : "bg-slate-500/10 border border-slate-500/30",
         className
       )}
@@ -69,7 +69,7 @@ export function LiveIndicator({
         {isConnected && (
           <span
             className={cn(
-              "absolute rounded-full bg-[#00E5CC]/30 animate-ping",
+              "absolute rounded-full bg-primary/30 animate-ping",
               sizes.ring
             )}
             style={{ animationDuration: "1.5s" }}
@@ -81,7 +81,7 @@ export function LiveIndicator({
           className={cn(
             "relative rounded-full transition-colors duration-300",
             sizes.dot,
-            isConnected ? "bg-[#00E5CC]" : "bg-slate-500"
+            isConnected ? "bg-primary" : "bg-slate-500"
           )}
         />
       </div>
@@ -92,7 +92,7 @@ export function LiveIndicator({
           className={cn(
             "font-semibold uppercase tracking-wider transition-colors duration-300",
             sizes.text,
-            isConnected ? "text-[#00E5CC]" : "text-slate-400"
+            isConnected ? "text-primary" : "text-slate-400"
           )}
         >
           {isConnected ? "LIVE" : "OFFLINE"}
@@ -121,14 +121,14 @@ export function LiveDot({
       {/* Apex-cyan #00E5CC for connected state */}
       {isConnected && (
         <span
-          className="absolute w-full h-full rounded-full bg-[#00E5CC]/40 animate-ping"
+          className="absolute w-full h-full rounded-full bg-primary/40 animate-ping"
           style={{ animationDuration: "1.5s" }}
         />
       )}
       <span
         className={cn(
           "relative w-2 h-2 rounded-full transition-colors duration-300",
-          isConnected ? "bg-[#00E5CC]" : "bg-slate-500"
+          isConnected ? "bg-primary" : "bg-slate-500"
         )}
       />
     </span>

@@ -61,7 +61,7 @@ function getConfidenceTheme(percentage: number): {
     };
   }
   return {
-    color: "#EF4444", // Red
+    color: "hsl(var(--color-error))", // Red
     bgColor: "rgba(239, 68, 68, 0.1)",
     label: "Low Confidence",
   };

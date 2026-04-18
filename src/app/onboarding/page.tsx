@@ -424,7 +424,7 @@ function BrandStep({
           <SelectTrigger className="w-full h-12 px-4 rounded-lg bg-background border border-border/50 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
             <SelectValue placeholder="Select industry" />
           </SelectTrigger>
-          <SelectContent className="bg-[#0d1224] border border-border/50 shadow-xl z-50">
+          <SelectContent className="bg-surface border border-border/50 shadow-xl z-50">
             {industries.map((ind) => (
               <SelectItem
                 key={ind}

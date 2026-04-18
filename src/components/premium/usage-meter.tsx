@@ -97,7 +97,7 @@ export function UsageMeter({
       <div
         className={cn(
           "rounded-xl border p-4",
-          "bg-[#141930]/50 border-white/5",
+          "bg-card/50 border-white/5",
           className
         )}
       >

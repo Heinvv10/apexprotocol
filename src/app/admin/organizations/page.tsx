@@ -123,14 +123,14 @@ export default function AdminOrganizationsPage() {
             placeholder="Search organizations..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red-500/50"
+            className="w-full pl-10 pr-4 py-2.5 bg-card border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red-500/50"
           />
         </div>
 
         <select
           value={planFilter}
           onChange={(e) => setPlanFilter(e.target.value)}
-          className="px-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-red-500/50"
+          className="px-4 py-2.5 bg-card border border-gray-800 rounded-lg text-white focus:outline-none focus:border-red-500/50"
         >
           <option value="all">All Plans</option>
           <option value="starter">Starter</option>
@@ -141,7 +141,7 @@ export default function AdminOrganizationsPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-red-500/50"
+          className="px-4 py-2.5 bg-card border border-gray-800 rounded-lg text-white focus:outline-none focus:border-red-500/50"
         >
           <option value="all">All Status</option>
           <option value="active">Active</option>
@@ -150,7 +150,7 @@ export default function AdminOrganizationsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-[#141930] border border-gray-800 rounded-lg overflow-hidden">
+      <div className="bg-card border border-gray-800 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -179,7 +179,7 @@ export default function AdminOrganizationsPage() {
                 </tr>
               ) : (
                 organizations.map((org) => (
-                  <tr key={org.id} className="border-b border-gray-800 hover:bg-[#0a0f1a] transition-colors">
+                  <tr key={org.id} className="border-b border-gray-800 hover:bg-background transition-colors">
                     <td className="px-6 py-4">
                       <div>
                         <div className="font-semibold text-white">{org.name}</div>
@@ -231,7 +231,7 @@ export default function AdminOrganizationsPage() {
                         </button>
 
                         {actionMenuOpen === org.id && (
-                          <div className="absolute right-0 top-full mt-1 w-48 bg-[#0a0f1a] border border-gray-800 rounded-lg shadow-lg z-10">
+                          <div className="absolute right-0 top-full mt-1 w-48 bg-background border border-gray-800 rounded-lg shadow-lg z-10">
                             <button
                               onClick={() => {
                                 setSelectedOrg(org);
@@ -296,7 +296,7 @@ export default function AdminOrganizationsPage() {
               <button
                 onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
                 disabled={pagination.page === 1}
-                className="px-4 py-2 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition-colors"
+                className="px-4 py-2 bg-background border border-gray-800 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition-colors"
               >
                 Previous
               </button>
@@ -306,7 +306,7 @@ export default function AdminOrganizationsPage() {
               <button
                 onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
                 disabled={pagination.page === pagination.totalPages}
-                className="px-4 py-2 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition-colors"
+                className="px-4 py-2 bg-background border border-gray-800 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition-colors"
               >
                 Next
               </button>
@@ -322,7 +322,7 @@ export default function AdminOrganizationsPage() {
           onClick={() => setSelectedOrg(null)}
         >
           <div
-            className="bg-[#141930] border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4"
+            className="bg-card border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
@@ -343,11 +343,11 @@ export default function AdminOrganizationsPage() {
 
             {/* Organization Details Grid */}
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="p-4 bg-[#0a0f1a] rounded-lg border border-gray-800">
+              <div className="p-4 bg-background rounded-lg border border-gray-800">
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Slug</p>
                 <p className="text-sm text-white font-mono">{selectedOrg.slug}</p>
               </div>
-              <div className="p-4 bg-[#0a0f1a] rounded-lg border border-gray-800">
+              <div className="p-4 bg-background rounded-lg border border-gray-800">
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Status</p>
                 <div className="flex items-center gap-2">
                   {selectedOrg.isActive ? (
@@ -360,25 +360,25 @@ export default function AdminOrganizationsPage() {
                   </span>
                 </div>
               </div>
-              <div className="p-4 bg-[#0a0f1a] rounded-lg border border-gray-800">
+              <div className="p-4 bg-background rounded-lg border border-gray-800">
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Users</p>
                 <p className="text-sm text-white">
                   <span className="text-cyan-400 font-semibold">{selectedOrg.userCount}</span>
                   <span className="text-gray-500"> / {selectedOrg.userLimit} max</span>
                 </p>
               </div>
-              <div className="p-4 bg-[#0a0f1a] rounded-lg border border-gray-800">
+              <div className="p-4 bg-background rounded-lg border border-gray-800">
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Brands</p>
                 <p className="text-sm text-white">
                   <span className="text-cyan-400 font-semibold">{selectedOrg.brandCount}</span>
                   <span className="text-gray-500"> / {selectedOrg.brandLimit} max</span>
                 </p>
               </div>
-              <div className="p-4 bg-[#0a0f1a] rounded-lg border border-gray-800">
+              <div className="p-4 bg-background rounded-lg border border-gray-800">
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Created</p>
                 <p className="text-sm text-white">{formatTimestamp(selectedOrg.createdAt)}</p>
               </div>
-              <div className="p-4 bg-[#0a0f1a] rounded-lg border border-gray-800">
+              <div className="p-4 bg-background rounded-lg border border-gray-800">
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Last Updated</p>
                 <p className="text-sm text-white">{formatTimestamp(selectedOrg.updatedAt)}</p>
               </div>
@@ -395,7 +395,7 @@ export default function AdminOrganizationsPage() {
                     updateOrganization(selectedOrg.id, { plan: newPlan });
                     setSelectedOrg({ ...selectedOrg, plan: newPlan });
                   }}
-                  className="flex-1 px-3 py-2 bg-[#0a0f1a] border border-gray-700 rounded-lg text-white text-sm focus:border-cyan-500 focus:outline-none"
+                  className="flex-1 px-3 py-2 bg-background border border-gray-700 rounded-lg text-white text-sm focus:border-cyan-500 focus:outline-none"
                 >
                   <option value="starter">Starter Plan</option>
                   <option value="professional">Professional Plan</option>

@@ -319,7 +319,7 @@ export default function CompetitorTrackingPage() {
           <h1 className="text-3xl font-bold text-white">Competitor Tracking</h1>
           <p className="text-muted-foreground mt-1">Monitor competitor activity and market positioning</p>
         </div>
-        <Button className="bg-gradient-to-r from-[#00E5CC] to-[#8B5CF6] hover:opacity-90">
+        <Button className="bg-gradient-to-r from-primary to-accent-purple hover:opacity-90">
           <Plus className="h-4 w-4 mr-2" />
           Add Competitor
         </Button>
@@ -465,7 +465,7 @@ export default function CompetitorTrackingPage() {
                   placeholder="Search competitors..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-[#0a0f1a] border-white/10"
+                  className="pl-10 bg-background border-white/10"
                 />
               </div>
             </div>

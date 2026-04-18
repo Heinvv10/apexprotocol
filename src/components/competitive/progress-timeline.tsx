@@ -208,11 +208,11 @@ export function ProgressTimeline({
               {targetScore && (
                 <ReferenceLine
                   y={targetScore}
-                  stroke="#22C55E"
+                  stroke="hsl(var(--color-success))"
                   strokeDasharray="5 5"
                   label={{
                     value: `Target: ${targetScore}`,
-                    fill: "#22C55E",
+                    fill: "hsl(var(--color-success))",
                     fontSize: 10,
                     position: "insideTopRight",
                   }}
@@ -223,10 +223,10 @@ export function ProgressTimeline({
               <Line
                 type="monotone"
                 dataKey="unifiedScore"
-                stroke="#00E5CC"
+                stroke="hsl(var(--color-primary))"
                 strokeWidth={2}
-                dot={{ fill: "#00E5CC", strokeWidth: 0, r: 4 }}
-                activeDot={{ fill: "#00E5CC", strokeWidth: 0, r: 6 }}
+                dot={{ fill: "hsl(var(--color-primary))", strokeWidth: 0, r: 4 }}
+                activeDot={{ fill: "hsl(var(--color-primary))", strokeWidth: 0, r: 6 }}
               />
             </LineChart>
           </ResponsiveContainer>

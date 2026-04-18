@@ -443,11 +443,11 @@ export function AppearanceSection() {
         <h3 className="text-sm font-medium text-foreground mb-4">Accent Color</h3>
         <div className="flex gap-3">
           {[
-            { color: "#00E5CC", name: "Cyan" },
-            { color: "#8B5CF6", name: "Purple" },
-            { color: "#3B82F6", name: "Blue" },
-            { color: "#22C55E", name: "Green" },
-            { color: "#F59E0B", name: "Amber" },
+            { color: "hsl(var(--color-primary))", name: "Cyan" },
+            { color: "hsl(var(--color-accent-purple))", name: "Purple" },
+            { color: "hsl(var(--color-info))", name: "Blue" },
+            { color: "hsl(var(--color-success))", name: "Green" },
+            { color: "hsl(var(--color-warning))", name: "Amber" },
           ].map((accent) => (
             <button
               key={accent.color}

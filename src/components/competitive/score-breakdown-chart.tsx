@@ -112,8 +112,8 @@ export function ScoreBreakdownChart({
           <Radar
             name={brandName}
             dataKey={brandName}
-            stroke="#00E5CC"
-            fill="#00E5CC"
+            stroke="hsl(var(--color-primary))"
+            fill="hsl(var(--color-primary))"
             fillOpacity={0.3}
             strokeWidth={2}
           />
@@ -123,8 +123,8 @@ export function ScoreBreakdownChart({
             <Radar
               name={competitorName}
               dataKey={competitorName}
-              stroke="#8B5CF6"
-              fill="#8B5CF6"
+              stroke="hsl(var(--color-accent-purple))"
+              fill="hsl(var(--color-accent-purple))"
               fillOpacity={0.15}
               strokeWidth={2}
             />

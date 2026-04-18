@@ -293,7 +293,7 @@ const mockRecentPosts = [
   },
 ];
 
-const COLORS = ["#00E5CC", "#8B5CF6", "#F59E0B", "#EF4444"];
+const COLORS = ["hsl(var(--color-primary))", "hsl(var(--color-accent-purple))", "hsl(var(--color-warning))", "hsl(var(--color-error))"];
 
 export default function SocialMediaChannelDetailPage() {
   const router = useRouter();
@@ -669,7 +669,7 @@ export default function SocialMediaChannelDetailPage() {
                   <YAxis stroke="#64748b" fontSize={12} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#141930",
+                      backgroundColor: "hsl(var(--color-card))",
                       border: "1px solid #1e293b",
                       borderRadius: "8px",
                     }}
@@ -677,8 +677,8 @@ export default function SocialMediaChannelDetailPage() {
                   <Area
                     type="monotone"
                     dataKey="followers"
-                    stroke="#00E5CC"
-                    fill="#00E5CC"
+                    stroke="hsl(var(--color-primary))"
+                    fill="hsl(var(--color-primary))"
                     fillOpacity={0.2}
                     strokeWidth={2}
                   />
@@ -816,7 +816,7 @@ export default function SocialMediaChannelDetailPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-white">All Posts</h3>
-            <Button className="bg-gradient-to-r from-[#00E5CC] to-[#8B5CF6] hover:opacity-90">
+            <Button className="bg-gradient-to-r from-primary to-accent-purple hover:opacity-90">
               Create Post
             </Button>
           </div>
@@ -883,7 +883,7 @@ export default function SocialMediaChannelDetailPage() {
                     </Pie>
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#141930",
+                        backgroundColor: "hsl(var(--color-card))",
                         border: "1px solid #1e293b",
                         borderRadius: "8px",
                       }}
@@ -954,12 +954,12 @@ export default function SocialMediaChannelDetailPage() {
                     <YAxis stroke="#64748b" fontSize={12} />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#141930",
+                        backgroundColor: "hsl(var(--color-card))",
                         border: "1px solid #1e293b",
                         borderRadius: "8px",
                       }}
                     />
-                    <Bar dataKey="engagement" fill="#00E5CC" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="engagement" fill="hsl(var(--color-primary))" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

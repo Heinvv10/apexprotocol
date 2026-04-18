@@ -114,19 +114,19 @@ function getScoreTier(score: number): {
   } else if (score >= 60) {
     return {
       tier: "Good",
-      color: "#3B82F6", // blue
+      color: "hsl(var(--color-info))", // blue
       textColor: "text-blue-500",
     };
   } else if (score >= 40) {
     return {
       tier: "Fair",
-      color: "#F59E0B", // amber
+      color: "hsl(var(--color-warning))", // amber
       textColor: "text-amber-500",
     };
   } else if (score >= 20) {
     return {
       tier: "Poor",
-      color: "#EF4444", // red
+      color: "hsl(var(--color-error))", // red
       textColor: "text-red-500",
     };
   } else {

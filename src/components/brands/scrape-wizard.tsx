@@ -18,13 +18,13 @@ import type { ScrapedBrandData } from "@/app/api/brands/scrape/route";
 
 // Design system colors (consistent with brand-detail-view)
 const DESIGN = {
-  primaryCyan: "#00E5CC",
-  accentPurple: "#8B5CF6",
-  successGreen: "#22C55E",
-  warningYellow: "#F59E0B",
-  errorRed: "#EF4444",
-  infoBlue: "#3B82F6",
-  bgDeep: "#02030A",
+  primaryCyan: "hsl(var(--color-primary))",
+  accentPurple: "hsl(var(--color-accent-purple))",
+  successGreen: "hsl(var(--color-success))",
+  warningYellow: "hsl(var(--color-warning))",
+  errorRed: "hsl(var(--color-error))",
+  infoBlue: "hsl(var(--color-info))",
+  bgDeep: "hsl(var(--color-surface-deep))",
   bgElevated: "#0A0D1A",
   bgCard: "#0F1225",
   textPrimary: "#FFFFFF",
@@ -191,7 +191,7 @@ function ChooseStep({
       <div className="text-center">
         <div
           className="inline-flex p-3 rounded-xl mb-4"
-          style={{ backgroundColor: `${DESIGN.primaryCyan}20` }}
+          style={{ backgroundColor: `hsl(var(--color-primary) / 0.13)` }}
         >
           <Sparkles className="h-8 w-8" style={{ color: DESIGN.primaryCyan }} />
         </div>
@@ -209,13 +209,13 @@ function ChooseStep({
           onClick={onAuto}
           className="flex items-start gap-4 p-4 rounded-xl text-left transition-all hover:scale-[1.02]"
           style={{
-            backgroundColor: `${DESIGN.primaryCyan}10`,
-            border: `1px solid ${DESIGN.primaryCyan}40`,
+            backgroundColor: `hsl(var(--color-primary) / 0.06)`,
+            border: `1px solid hsl(var(--color-primary) / 0.25)`,
           }}
         >
           <div
             className="p-3 rounded-xl shrink-0"
-            style={{ backgroundColor: `${DESIGN.primaryCyan}20` }}
+            style={{ backgroundColor: `hsl(var(--color-primary) / 0.13)` }}
           >
             <Sparkles className="h-5 w-5" style={{ color: DESIGN.primaryCyan }} />
           </div>
@@ -225,7 +225,7 @@ function ChooseStep({
               <span
                 className="text-xs px-2 py-0.5 rounded-full"
                 style={{
-                  backgroundColor: `${DESIGN.primaryCyan}20`,
+                  backgroundColor: `hsl(var(--color-primary) / 0.13)`,
                   color: DESIGN.primaryCyan,
                 }}
               >
@@ -287,7 +287,7 @@ function UrlStep({
       <div className="text-center">
         <div
           className="inline-flex p-3 rounded-xl mb-4"
-          style={{ backgroundColor: `${DESIGN.infoBlue}20` }}
+          style={{ backgroundColor: `hsl(var(--color-info) / 0.13)` }}
         >
           <Globe className="h-8 w-8" style={{ color: DESIGN.infoBlue }} />
         </div>
@@ -378,7 +378,7 @@ function LoadingStep({
         <div className="text-center">
           <div
             className="inline-flex p-3 rounded-xl mb-4"
-            style={{ backgroundColor: `${DESIGN.errorRed}20` }}
+            style={{ backgroundColor: `hsl(var(--color-error) / 0.13)` }}
           >
             <AlertCircle className="h-8 w-8" style={{ color: DESIGN.errorRed }} />
           </div>
@@ -424,7 +424,7 @@ function LoadingStep({
       <div className="text-center">
         <div
           className="inline-flex p-3 rounded-xl mb-4"
-          style={{ backgroundColor: `${DESIGN.primaryCyan}20` }}
+          style={{ backgroundColor: `hsl(var(--color-primary) / 0.13)` }}
         >
           <Loader2 className="h-8 w-8 animate-spin" style={{ color: DESIGN.primaryCyan }} />
         </div>
@@ -494,7 +494,7 @@ function PreviewStep({
       <div className="text-center mb-4">
         <div
           className="inline-flex p-3 rounded-xl mb-4"
-          style={{ backgroundColor: `${DESIGN.successGreen}20` }}
+          style={{ backgroundColor: `hsl(var(--color-success) / 0.13)` }}
         >
           <Check className="h-8 w-8" style={{ color: DESIGN.successGreen }} />
         </div>
@@ -599,7 +599,7 @@ function PreviewStep({
                 <span
                   key={keyword}
                   className="text-xs px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: `${DESIGN.primaryCyan}20`, color: DESIGN.primaryCyan }}
+                  style={{ backgroundColor: `hsl(var(--color-primary) / 0.13)`, color: DESIGN.primaryCyan }}
                 >
                   {keyword}
                 </span>
@@ -622,7 +622,7 @@ function PreviewStep({
                 <span
                   key={keyword}
                   className="text-xs px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: `${DESIGN.infoBlue}20`, color: DESIGN.infoBlue }}
+                  style={{ backgroundColor: `hsl(var(--color-info) / 0.13)`, color: DESIGN.infoBlue }}
                 >
                   {keyword}
                 </span>
@@ -640,7 +640,7 @@ function PreviewStep({
                 <span
                   key={keyword}
                   className="text-xs px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: `${DESIGN.successGreen}20`, color: DESIGN.successGreen }}
+                  style={{ backgroundColor: `hsl(var(--color-success) / 0.13)`, color: DESIGN.successGreen }}
                 >
                   {keyword}
                 </span>
@@ -660,7 +660,7 @@ function PreviewStep({
                 <div
                   key={competitor.name}
                   className="text-xs p-2 rounded"
-                  style={{ backgroundColor: `${DESIGN.accentPurple}10` }}
+                  style={{ backgroundColor: `hsl(var(--color-accent-purple) / 0.06)` }}
                 >
                   <span className="font-medium" style={{ color: DESIGN.textSecondary }}>{competitor.name}</span>
                   <span className="ml-2" style={{ color: DESIGN.textMuted }}>- {competitor.reason}</span>

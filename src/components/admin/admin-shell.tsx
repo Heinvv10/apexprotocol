@@ -13,7 +13,7 @@ export function AdminShell({ children, title }: AdminShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "#0a0f1a" }}>
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "hsl(var(--color-background))" }}>
       {/* Sidebar */}
       <AdminSidebar
         collapsed={sidebarCollapsed}
@@ -26,7 +26,7 @@ export function AdminShell({ children, title }: AdminShellProps) {
         <AdminHeader title={title} />
 
         {/* Page Content - IMPROVED DENSITY */}
-        <main className="flex-1 overflow-y-auto" style={{ backgroundColor: "#0a0f1a" }}>
+        <main className="flex-1 overflow-y-auto" style={{ backgroundColor: "hsl(var(--color-background))" }}>
           <div className="container mx-auto p-4 max-w-[1800px]">
             {children}
           </div>

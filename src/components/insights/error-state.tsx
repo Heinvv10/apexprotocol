@@ -341,7 +341,7 @@ function PlatformStatusCard({ platform, status, error }: PlatformStatusCardProps
       <div
         className="absolute bottom-0 left-0 right-0 h-0.5 rounded-b-lg"
         style={{
-          backgroundColor: isSuccess ? "#10B981" : "#EF4444",
+          backgroundColor: isSuccess ? "#10B981" : "hsl(var(--color-error))",
         }}
       />
     </div>

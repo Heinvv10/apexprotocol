@@ -360,12 +360,12 @@ export default function AdminAuditLogsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0f1a] p-8 space-y-6">
+    <div className="min-h-screen bg-background p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <Shield className="w-8 h-8 text-[#00E5CC]" />
+            <Shield className="w-8 h-8 text-primary" />
             System Audit Logs
           </h1>
           <p className="text-gray-400 mt-1">
@@ -376,7 +376,7 @@ export default function AdminAuditLogsPage() {
           <button
             onClick={() => mutate()}
             disabled={isLoading}
-            className="px-4 py-2 bg-[#141930] border border-gray-800 rounded-lg text-white hover:border-[#00E5CC]/50 transition-colors flex items-center gap-2 disabled:opacity-50"
+            className="px-4 py-2 bg-card border border-gray-800 rounded-lg text-white hover:border-primary/50 transition-colors flex items-center gap-2 disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
             Refresh
@@ -384,7 +384,7 @@ export default function AdminAuditLogsPage() {
           <button
             onClick={verifyIntegrity}
             disabled={verifying}
-            className="px-4 py-2 bg-[#00E5CC]/10 border border-[#00E5CC]/30 rounded-lg text-[#00E5CC] hover:bg-[#00E5CC]/20 transition-colors flex items-center gap-2 disabled:opacity-50"
+            className="px-4 py-2 bg-primary/10 border border-primary/30 rounded-lg text-primary hover:bg-primary/20 transition-colors flex items-center gap-2 disabled:opacity-50"
           >
             {verifying ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -396,7 +396,7 @@ export default function AdminAuditLogsPage() {
           <button
             onClick={() => exportLogs("csv")}
             disabled={exporting}
-            className="px-4 py-2 bg-[#141930] border border-gray-800 rounded-lg text-white hover:border-[#00E5CC]/50 transition-colors flex items-center gap-2 disabled:opacity-50"
+            className="px-4 py-2 bg-card border border-gray-800 rounded-lg text-white hover:border-primary/50 transition-colors flex items-center gap-2 disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
             Export CSV
@@ -404,7 +404,7 @@ export default function AdminAuditLogsPage() {
           <button
             onClick={() => exportLogs("json")}
             disabled={exporting}
-            className="px-4 py-2 bg-[#141930] border border-gray-800 rounded-lg text-white hover:border-[#00E5CC]/50 transition-colors flex items-center gap-2 disabled:opacity-50"
+            className="px-4 py-2 bg-card border border-gray-800 rounded-lg text-white hover:border-primary/50 transition-colors flex items-center gap-2 disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
             Export JSON
@@ -429,23 +429,23 @@ export default function AdminAuditLogsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-[#141930] border border-gray-800 rounded-lg p-4">
+        <div className="bg-card border border-gray-800 rounded-lg p-4">
           <div className="text-gray-400 text-sm">Total Logs</div>
           <div className="text-2xl font-bold text-white mt-1">
             {pagination.total.toLocaleString()}
           </div>
         </div>
-        <div className="bg-[#141930] border border-gray-800 rounded-lg p-4">
+        <div className="bg-card border border-gray-800 rounded-lg p-4">
           <div className="text-gray-400 text-sm">This Page</div>
           <div className="text-2xl font-bold text-white mt-1">{logs.length}</div>
         </div>
-        <div className="bg-[#141930] border border-gray-800 rounded-lg p-4">
+        <div className="bg-card border border-gray-800 rounded-lg p-4">
           <div className="text-gray-400 text-sm">Current Page</div>
           <div className="text-2xl font-bold text-white mt-1">
             {pagination.page} / {pagination.totalPages}
           </div>
         </div>
-        <div className="bg-[#141930] border border-gray-800 rounded-lg p-4">
+        <div className="bg-card border border-gray-800 rounded-lg p-4">
           <div className="text-gray-400 text-sm">Filters Active</div>
           <div className="text-2xl font-bold text-white mt-1">
             {[
@@ -470,14 +470,14 @@ export default function AdminAuditLogsPage() {
               placeholder="Search logs..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#00E5CC]/50"
+              className="w-full pl-10 pr-4 py-2.5 bg-card border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary/50"
             />
           </div>
 
           <select
             value={actionFilter}
             onChange={(e) => setActionFilter(e.target.value)}
-            className="px-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#00E5CC]/50"
+            className="px-4 py-2.5 bg-card border border-gray-800 rounded-lg text-white focus:outline-none focus:border-primary/50"
           >
             <option value="all">All Actions</option>
             <option value="create">Create</option>
@@ -491,7 +491,7 @@ export default function AdminAuditLogsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#00E5CC]/50"
+            className="px-4 py-2.5 bg-card border border-gray-800 rounded-lg text-white focus:outline-none focus:border-primary/50"
           >
             <option value="all">All Status</option>
             <option value="success">Success</option>
@@ -502,7 +502,7 @@ export default function AdminAuditLogsPage() {
           <select
             value={targetTypeFilter}
             onChange={(e) => setTargetTypeFilter(e.target.value)}
-            className="px-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#00E5CC]/50"
+            className="px-4 py-2.5 bg-card border border-gray-800 rounded-lg text-white focus:outline-none focus:border-primary/50"
           >
             <option value="all">All Targets</option>
             <option value="user">User</option>
@@ -522,7 +522,7 @@ export default function AdminAuditLogsPage() {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="px-3 py-2 bg-[#141930] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#00E5CC]/50"
+              className="px-3 py-2 bg-card border border-gray-800 rounded-lg text-white focus:outline-none focus:border-primary/50"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -531,7 +531,7 @@ export default function AdminAuditLogsPage() {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="px-3 py-2 bg-[#141930] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#00E5CC]/50"
+              className="px-3 py-2 bg-card border border-gray-800 rounded-lg text-white focus:outline-none focus:border-primary/50"
             />
           </div>
           {(startDate || endDate) && (
@@ -549,7 +549,7 @@ export default function AdminAuditLogsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-[#141930] border border-gray-800 rounded-lg overflow-hidden">
+      <div className="bg-card border border-gray-800 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -594,7 +594,7 @@ export default function AdminAuditLogsPage() {
                 logs.map((log) => (
                   <tr
                     key={log.id}
-                    className="border-b border-gray-800 hover:bg-[#0a0f1a] transition-colors cursor-pointer"
+                    className="border-b border-gray-800 hover:bg-background transition-colors cursor-pointer"
                     onClick={() => fetchLogDetails(log.id)}
                   >
                     <td className="px-6 py-4">
@@ -650,7 +650,7 @@ export default function AdminAuditLogsPage() {
                           e.stopPropagation();
                           fetchLogDetails(log.id);
                         }}
-                        className="text-[#00E5CC] hover:text-[#00E5CC]/80 transition-colors"
+                        className="text-primary hover:text-primary/80 transition-colors"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
@@ -675,7 +675,7 @@ export default function AdminAuditLogsPage() {
             <button
               onClick={() => setCurrentPage(currentPage - 1)}
               disabled={pagination.page === 1}
-              className="px-4 py-2 bg-[#141930] border border-gray-800 rounded-lg text-white hover:border-[#00E5CC]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-card border border-gray-800 rounded-lg text-white hover:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Previous
             </button>
@@ -685,7 +685,7 @@ export default function AdminAuditLogsPage() {
             <button
               onClick={() => setCurrentPage(currentPage + 1)}
               disabled={pagination.page === pagination.totalPages}
-              className="px-4 py-2 bg-[#141930] border border-gray-800 rounded-lg text-white hover:border-[#00E5CC]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-card border border-gray-800 rounded-lg text-white hover:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
             </button>
@@ -700,11 +700,11 @@ export default function AdminAuditLogsPage() {
           onClick={() => setSelectedLog(null)}
         >
           <div
-            className="bg-[#141930] border border-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto"
+            className="bg-card border border-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="sticky top-0 bg-[#141930] border-b border-gray-800 p-6 flex items-center justify-between">
+            <div className="sticky top-0 bg-card border-b border-gray-800 p-6 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-white">Audit Log Details</h2>
                 <div className="text-sm text-gray-400 mt-1">
@@ -787,7 +787,7 @@ export default function AdminAuditLogsPage() {
               {selectedLog.changes && (
                 <div>
                   <label className="text-sm text-gray-400">Changes</label>
-                  <div className="bg-[#0a0f1a] border border-gray-800 rounded-lg p-4 mt-2">
+                  <div className="bg-background border border-gray-800 rounded-lg p-4 mt-2">
                     <pre className="text-sm text-white overflow-x-auto">
                       {JSON.stringify(selectedLog.changes, null, 2)}
                     </pre>
@@ -854,11 +854,11 @@ export default function AdminAuditLogsPage() {
                   <label className="text-sm text-gray-400">
                     Related Logs ({selectedLog.relatedLogs.length})
                   </label>
-                  <div className="bg-[#0a0f1a] border border-gray-800 rounded-lg mt-2 overflow-hidden">
+                  <div className="bg-background border border-gray-800 rounded-lg mt-2 overflow-hidden">
                     {selectedLog.relatedLogs.map((relatedLog) => (
                       <div
                         key={relatedLog.id}
-                        className="border-b border-gray-800 last:border-0 p-4 hover:bg-[#141930] transition-colors cursor-pointer"
+                        className="border-b border-gray-800 last:border-0 p-4 hover:bg-card transition-colors cursor-pointer"
                         onClick={() => fetchLogDetails(relatedLog.id)}
                       >
                         <div className="flex items-center justify-between">
@@ -905,13 +905,13 @@ export default function AdminAuditLogsPage() {
           onClick={() => setShowVerificationModal(false)}
         >
           <div
-            className="bg-[#141930] border border-gray-800 rounded-lg max-w-lg w-full"
+            className="bg-card border border-gray-800 rounded-lg max-w-lg w-full"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
             <div className="border-b border-gray-800 p-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <ShieldCheck className="w-6 h-6 text-[#00E5CC]" />
+                <ShieldCheck className="w-6 h-6 text-primary" />
                 <h2 className="text-xl font-bold text-white">Hash Chain Verification</h2>
               </div>
               <button
@@ -926,7 +926,7 @@ export default function AdminAuditLogsPage() {
             <div className="p-6">
               {verifying ? (
                 <div className="flex flex-col items-center justify-center py-8 space-y-4">
-                  <Loader2 className="w-12 h-12 text-[#00E5CC] animate-spin" />
+                  <Loader2 className="w-12 h-12 text-primary animate-spin" />
                   <div className="text-white">Verifying hash chain integrity...</div>
                   <div className="text-sm text-gray-400">
                     This may take a few moments for large audit logs
@@ -967,19 +967,19 @@ export default function AdminAuditLogsPage() {
 
                   {/* Stats Grid */}
                   <div className="grid grid-cols-3 gap-4">
-                    <div className="bg-[#0a0f1a] border border-gray-800 rounded-lg p-4">
+                    <div className="bg-background border border-gray-800 rounded-lg p-4">
                       <div className="text-gray-400 text-xs">Total Logs</div>
                       <div className="text-xl font-bold text-white mt-1">
                         {verificationResult.totalLogs.toLocaleString()}
                       </div>
                     </div>
-                    <div className="bg-[#0a0f1a] border border-gray-800 rounded-lg p-4">
+                    <div className="bg-background border border-gray-800 rounded-lg p-4">
                       <div className="text-gray-400 text-xs">Verified</div>
                       <div className="text-xl font-bold text-white mt-1">
                         {verificationResult.logsVerified.toLocaleString()}
                       </div>
                     </div>
-                    <div className="bg-[#0a0f1a] border border-gray-800 rounded-lg p-4">
+                    <div className="bg-background border border-gray-800 rounded-lg p-4">
                       <div className="text-gray-400 text-xs">Time</div>
                       <div className="text-xl font-bold text-white mt-1">
                         {verificationResult.verificationTime}ms
@@ -1026,7 +1026,7 @@ export default function AdminAuditLogsPage() {
                   <div className="flex justify-end">
                     <button
                       onClick={() => setShowVerificationModal(false)}
-                      className="px-4 py-2 bg-[#00E5CC] text-black font-medium rounded-lg hover:bg-[#00E5CC]/90 transition-colors"
+                      className="px-4 py-2 bg-primary text-black font-medium rounded-lg hover:bg-primary/90 transition-colors"
                     >
                       Close
                     </button>

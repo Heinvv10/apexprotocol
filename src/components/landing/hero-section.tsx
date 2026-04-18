@@ -8,7 +8,7 @@ export function HeroSection() {
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
       {/* Aurora Background Effects */}
-      <div className="absolute inset-0 bg-[#0a0f1a]" />
+      <div className="absolute inset-0 bg-background" />
 
       {/* Aurora gradient orbs */}
       <div className="absolute top-0 left-1/4 w-[800px] h-[600px] bg-gradient-to-br from-primary/30 via-accent-purple/20 to-transparent rounded-full blur-[120px] animate-pulse" />

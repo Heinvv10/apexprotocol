@@ -50,9 +50,9 @@ function AnnotationDot({
   if (!cx || !cy || !payload?.annotation) return null;
 
   const iconColor = {
-    recommendation: "#00E5CC",
+    recommendation: "hsl(var(--color-primary))",
     milestone: "#FFB020",
-    improvement: "#8B5CF6",
+    improvement: "hsl(var(--color-accent-purple))",
   }[payload.annotation.type];
 
   return (
@@ -140,9 +140,9 @@ export function GeoScoreTrend({
   // Get score color based on value
   const getScoreColor = (score: number): string => {
     if (score >= 80) return "#17CA29"; // Excellent - green
-    if (score >= 60) return "#00E5CC"; // Good - cyan
+    if (score >= 60) return "hsl(var(--color-primary))"; // Good - cyan
     if (score >= 40) return "#FFB020"; // Average - yellow
-    return "#EF4444"; // Poor - red
+    return "hsl(var(--color-error))"; // Poor - red
   };
 
   const lineColor = getScoreColor(stats.currentScore);
@@ -272,8 +272,8 @@ export function GeoScoreTrend({
             <defs>
               {/* Gradient for line */}
               <linearGradient id="scoreLineGradient" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#8B5CF6" />
-                <stop offset="100%" stopColor="#00E5CC" />
+                <stop offset="0%" stopColor="hsl(var(--color-accent-purple))" />
+                <stop offset="100%" stopColor="hsl(var(--color-primary))" />
               </linearGradient>
               {/* Gradient for area under line */}
               <linearGradient id="scoreAreaGradient" x1="0" y1="0" x2="0" y2="1">
@@ -341,7 +341,7 @@ export function GeoScoreTrend({
                     cx={cx}
                     cy={cy}
                     r={4}
-                    fill="#00E5CC"
+                    fill="hsl(var(--color-primary))"
                     stroke="#0A0D1A"
                     strokeWidth={2}
                   />
@@ -349,7 +349,7 @@ export function GeoScoreTrend({
               }}
               activeDot={{
                 r: 8,
-                fill: "#00E5CC",
+                fill: "hsl(var(--color-primary))",
                 stroke: "#0A0D1A",
                 strokeWidth: 2,
               }}
@@ -363,11 +363,11 @@ export function GeoScoreTrend({
       {showAnnotations && (
         <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-border">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#00E5CC]" />
+            <div className="w-3 h-3 rounded-full bg-primary" />
             <span className="text-xs text-muted-foreground">Recommendation</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#8B5CF6]" />
+            <div className="w-3 h-3 rounded-full bg-accent-purple" />
             <span className="text-xs text-muted-foreground">Improvement</span>
           </div>
           <div className="flex items-center gap-2">

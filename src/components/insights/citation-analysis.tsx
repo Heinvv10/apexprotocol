@@ -73,21 +73,21 @@ const CITATION_TYPES: CitationTypeConfig[] = [
     label: "Paraphrase",
     icon: <MessageSquare className="w-4 h-4" />,
     description: "Platform paraphrased brand content",
-    color: "#3B82F6", // blue
+    color: "hsl(var(--color-info))", // blue
   },
   {
     type: "link",
     label: "Link",
     icon: <LinkIcon className="w-4 h-4" />,
     description: "Platform provided a link to brand content",
-    color: "#F59E0B", // amber
+    color: "hsl(var(--color-warning))", // amber
   },
   {
     type: "reference",
     label: "Reference",
     icon: <FileText className="w-4 h-4" />,
     description: "Platform mentioned brand without specific citation",
-    color: "#8B5CF6", // purple
+    color: "hsl(var(--color-accent-purple))", // purple
   },
 ];
 

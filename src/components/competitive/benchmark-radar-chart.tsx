@@ -30,9 +30,9 @@ interface BenchmarkRadarChartProps {
 
 // Color palette for competitors
 const COMPETITOR_COLORS = [
-  "#8B5CF6", // Purple
-  "#F59E0B", // Amber
-  "#EC4899", // Pink
+  "hsl(var(--color-accent-purple))", // Purple
+  "hsl(var(--color-warning))", // Amber
+  "hsl(var(--color-accent-pink))", // Pink
   "#06B6D4", // Cyan
   "#10B981", // Emerald
 ];
@@ -218,8 +218,8 @@ export function BenchmarkRadarChart({ brandId, brandName, className }: Benchmark
               <Radar
                 name={brandName}
                 dataKey={brandName}
-                stroke="#00E5CC"
-                fill="#00E5CC"
+                stroke="hsl(var(--color-primary))"
+                fill="hsl(var(--color-primary))"
                 fillOpacity={0.3}
                 strokeWidth={2}
               />

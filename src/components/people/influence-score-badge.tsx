@@ -30,7 +30,7 @@ import {
 const TIER_CONFIG = {
   thought_leader: {
     label: "Thought Leader",
-    color: "#8B5CF6", // Purple
+    color: "hsl(var(--color-accent-purple))", // Purple
     bgColor: "bg-purple-500/10",
     borderColor: "border-purple-500/20",
     textColor: "text-purple-500",
@@ -39,7 +39,7 @@ const TIER_CONFIG = {
   },
   influential: {
     label: "Influential",
-    color: "#00E5CC", // Cyan
+    color: "hsl(var(--color-primary))", // Cyan
     bgColor: "bg-cyan-500/10",
     borderColor: "border-cyan-500/20",
     textColor: "text-cyan-500",
@@ -48,7 +48,7 @@ const TIER_CONFIG = {
   },
   established: {
     label: "Established",
-    color: "#22C55E", // Green
+    color: "hsl(var(--color-success))", // Green
     bgColor: "bg-green-500/10",
     borderColor: "border-green-500/20",
     textColor: "text-green-500",
@@ -57,7 +57,7 @@ const TIER_CONFIG = {
   },
   emerging: {
     label: "Emerging",
-    color: "#F59E0B", // Warning/Yellow
+    color: "hsl(var(--color-warning))", // Warning/Yellow
     bgColor: "bg-amber-500/10",
     borderColor: "border-amber-500/20",
     textColor: "text-amber-500",

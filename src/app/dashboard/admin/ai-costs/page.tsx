@@ -41,7 +41,7 @@ interface CostSummary {
   };
 }
 
-const COLORS = ['#00E5CC', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981'];
+const COLORS = ['hsl(var(--color-primary))', 'hsl(var(--color-accent-purple))', 'hsl(var(--color-accent-pink))', 'hsl(var(--color-warning))', '#10B981'];
 
 export default function AICostsDashboard() {
   const [costData, setCostData] = React.useState<CostSummary | null>(null);
@@ -286,10 +286,10 @@ export default function AICostsDashboard() {
                   <XAxis dataKey="name" stroke="#888" />
                   <YAxis stroke="#888" />
                   <Tooltip
-                    contentStyle={{ backgroundColor: "#141930", border: "1px solid #1a1a2e" }}
+                    contentStyle={{ backgroundColor: "hsl(var(--color-card))", border: "1px solid #1a1a2e" }}
                     formatter={(value) => `$${Number(value).toFixed(2)}`}
                   />
-                  <Bar dataKey="cost" fill="#00E5CC" />
+                  <Bar dataKey="cost" fill="hsl(var(--color-primary))" />
                 </BarChart>
               </ResponsiveContainer>
             </div>

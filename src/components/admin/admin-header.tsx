@@ -61,7 +61,7 @@ export function AdminHeader({ title = "Admin Dashboard" }: AdminHeaderProps) {
     <header
       className="sticky top-0 z-40 flex items-center justify-between h-16 px-6"
       style={{
-        backgroundColor: "#0d1224",
+        backgroundColor: "hsl(var(--color-surface))",
         borderBottom: "1px solid rgba(239, 68, 68, 0.15)",
       }}
     >
@@ -72,7 +72,7 @@ export function AdminHeader({ title = "Admin Dashboard" }: AdminHeaderProps) {
             className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded"
             style={{
               backgroundColor: "rgba(239, 68, 68, 0.15)",
-              color: "#EF4444",
+              color: "hsl(var(--color-error))",
               border: "1px solid rgba(239, 68, 68, 0.3)",
             }}
           >
@@ -128,7 +128,7 @@ export function AdminHeader({ title = "Admin Dashboard" }: AdminHeaderProps) {
                   className="flex items-center justify-center h-7 w-7 rounded-full"
                   style={{
                     backgroundColor: "rgba(239, 68, 68, 0.15)",
-                    color: "#EF4444",
+                    color: "hsl(var(--color-error))",
                   }}
                 >
                   <User className="h-4 w-4" />
@@ -165,7 +165,7 @@ export function AdminHeader({ title = "Admin Dashboard" }: AdminHeaderProps) {
               className="flex items-center justify-center h-7 w-7 rounded-full"
               style={{
                 backgroundColor: "rgba(239, 68, 68, 0.15)",
-                color: "#EF4444",
+                color: "hsl(var(--color-error))",
               }}
             >
               <User className="h-4 w-4" />

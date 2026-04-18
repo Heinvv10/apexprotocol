@@ -132,7 +132,7 @@ export function UpgradePrompt({
     <div
       className={cn(
         "relative overflow-hidden rounded-xl",
-        "bg-gradient-to-br from-[#141930] to-[#0d1224]",
+        "bg-gradient-to-br from-card to-surface",
         "border border-primary/20",
         "p-6",
         className

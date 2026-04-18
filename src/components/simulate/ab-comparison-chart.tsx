@@ -83,8 +83,8 @@ export function ABComparisonChart({ results, winner }: ABComparisonChartProps) {
               }}
             />
             <Legend wrapperStyle={{ fontSize: "12px" }} />
-            <Bar dataKey="Variant A" fill="#00E5CC" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Variant B" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="Variant A" fill="hsl(var(--color-primary))" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="Variant B" fill="hsl(var(--color-accent-purple))" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

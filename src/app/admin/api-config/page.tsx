@@ -383,14 +383,14 @@ export default function AdminApiConfigPage() {
             placeholder="Search integrations..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
+            className="w-full pl-10 pr-4 py-2.5 bg-card border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
           />
         </div>
 
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
+          className="px-4 py-2.5 bg-card border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
         >
           <option value="all">All Status</option>
           <option value="configured">Configured</option>
@@ -402,7 +402,7 @@ export default function AdminApiConfigPage() {
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="px-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
+          className="px-4 py-2.5 bg-card border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
         >
           <option value="all">All Categories</option>
           {categories.map((cat) => (
@@ -414,7 +414,7 @@ export default function AdminApiConfigPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-[#141930] border border-gray-800 rounded-lg overflow-hidden">
+      <div className="bg-card border border-gray-800 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -443,7 +443,7 @@ export default function AdminApiConfigPage() {
                 </tr>
               ) : (
                 filteredIntegrations.map((integration) => (
-                  <tr key={integration.id} className="border-b border-gray-800 hover:bg-[#0a0f1a] transition-colors">
+                  <tr key={integration.id} className="border-b border-gray-800 hover:bg-background transition-colors">
                     <td className="px-6 py-4">
                       <div className="font-semibold text-white">{integration.serviceName}</div>
                       {integration.description && (
@@ -498,7 +498,7 @@ export default function AdminApiConfigPage() {
                         </button>
 
                         {actionMenuOpen === integration.id && (
-                          <div className="absolute right-0 top-full mt-1 w-56 bg-[#0a0f1a] border border-gray-800 rounded-lg shadow-lg z-10">
+                          <div className="absolute right-0 top-full mt-1 w-56 bg-background border border-gray-800 rounded-lg shadow-lg z-10">
                             <button
                               onClick={() => {
                                 setConfigureIntegration(integration);
@@ -561,7 +561,7 @@ export default function AdminApiConfigPage() {
           }}
         >
           <div
-            className="bg-[#141930] border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+            className="bg-card border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -585,7 +585,7 @@ export default function AdminApiConfigPage() {
                   value={formData.apiKey}
                   onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
                   placeholder="sk-ant-api03-..."
-                  className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
+                  className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
                 />
               </div>
 
@@ -596,7 +596,7 @@ export default function AdminApiConfigPage() {
                   value={formData.endpoint}
                   onChange={(e) => setFormData({ ...formData, endpoint: e.target.value })}
                   placeholder="https://api.anthropic.com/v1"
-                  className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
+                  className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
                 />
               </div>
 
@@ -608,7 +608,7 @@ export default function AdminApiConfigPage() {
                     value={formData.model}
                     onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                     placeholder="claude-3-5-sonnet-20241022"
-                    className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
+                    className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
                   />
                 </div>
 
@@ -619,7 +619,7 @@ export default function AdminApiConfigPage() {
                     value={formData.maxTokens}
                     onChange={(e) => setFormData({ ...formData, maxTokens: e.target.value })}
                     placeholder="4096"
-                    className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
+                    className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
                   />
                 </div>
               </div>
@@ -674,7 +674,7 @@ export default function AdminApiConfigPage() {
           onClick={() => setSelectedIntegration(null)}
         >
           <div
-            className="bg-[#141930] border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+            className="bg-card border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -749,7 +749,7 @@ export default function AdminApiConfigPage() {
           onClick={() => setDeleteIntegration(null)}
         >
           <div
-            className="bg-[#141930] border border-gray-800 rounded-lg p-6 max-w-md w-full mx-4"
+            className="bg-card border border-gray-800 rounded-lg p-6 max-w-md w-full mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-2xl font-bold text-white mb-4">Delete Integration</h2>

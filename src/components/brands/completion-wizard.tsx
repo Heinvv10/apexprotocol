@@ -35,15 +35,15 @@ import type { Brand } from "@/stores";
 
 // Design system colors (from APEX_DESIGN_SYSTEM.md)
 const DESIGN = {
-  primaryCyan: "#00E5CC",
-  cyanBright: "#00FFE0",
-  accentPurple: "#8B5CF6",
-  accentPink: "#EC4899",
-  successGreen: "#22C55E",
-  warningYellow: "#F59E0B",
-  errorRed: "#EF4444",
-  infoBlue: "#3B82F6",
-  bgDeep: "#02030A",
+  primaryCyan: "hsl(var(--color-primary))",
+  cyanBright: "hsl(var(--color-primary-bright))",
+  accentPurple: "hsl(var(--color-accent-purple))",
+  accentPink: "hsl(var(--color-accent-pink))",
+  successGreen: "hsl(var(--color-success))",
+  warningYellow: "hsl(var(--color-warning))",
+  errorRed: "hsl(var(--color-error))",
+  infoBlue: "hsl(var(--color-info))",
+  bgDeep: "hsl(var(--color-surface-deep))",
   bgBase: "#060812",
   bgElevated: "#0A0D1A",
   bgCard: "#0F1225",
@@ -51,7 +51,7 @@ const DESIGN = {
   textPrimary: "#FFFFFF",
   textSecondary: "#94A3B8",
   textMuted: "#64748B",
-  textAccent: "#00E5CC",
+  textAccent: "hsl(var(--color-primary))",
   borderSubtle: "rgba(255, 255, 255, 0.05)",
   borderDefault: "rgba(255, 255, 255, 0.08)",
   borderAccent: "rgba(0, 229, 204, 0.3)",
@@ -148,9 +148,9 @@ function ScrapedBadge() {
     <span
       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
       style={{
-        backgroundColor: `${DESIGN.primaryCyan}20`,
+        backgroundColor: `hsl(var(--color-primary) / 0.13)`,
         color: DESIGN.primaryCyan,
-        border: `1px solid ${DESIGN.primaryCyan}40`,
+        border: `1px solid hsl(var(--color-primary) / 0.25)`,
       }}
     >
       <Zap className="w-3 h-3" />
@@ -429,7 +429,7 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
       {/* Overlay */}
       <div
         className="absolute inset-0 backdrop-blur-sm"
-        style={{ backgroundColor: `${DESIGN.bgDeep}E6` }}
+        style={{ backgroundColor: `hsl(var(--color-surface-deep) / 0.9)` }}
         onClick={onClose}
       />
 
@@ -438,8 +438,8 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
         className="relative max-w-2xl w-full rounded-2xl overflow-hidden backdrop-blur-xl flex flex-col max-h-[90vh]"
         style={{
           backgroundColor: `${DESIGN.bgCard}B3`,
-          border: `1px solid ${DESIGN.primaryCyan}33`,
-          boxShadow: `0 0 40px ${DESIGN.primaryCyan}15, 0 25px 50px -12px rgba(0, 0, 0, 0.5)`,
+          border: `1px solid hsl(var(--color-primary) / 0.2)`,
+          boxShadow: `0 0 40px hsl(var(--color-primary) / 0.08), 0 25px 50px -12px rgba(0, 0, 0, 0.5)`,
         }}
       >
         {/* Header */}
@@ -448,7 +448,7 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
           <div className="p-8 text-center">
             <div
               className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
-              style={{ backgroundColor: `${DESIGN.primaryCyan}20` }}
+              style={{ backgroundColor: `hsl(var(--color-primary) / 0.13)` }}
             >
               <Sparkles className="w-8 h-8" style={{ color: DESIGN.primaryCyan }} />
             </div>
@@ -463,8 +463,8 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
             <div
               className="p-4 rounded-xl mb-6"
               style={{
-                backgroundColor: `${DESIGN.successGreen}15`,
-                border: `1px solid ${DESIGN.successGreen}40`,
+                backgroundColor: `hsl(var(--color-success) / 0.08)`,
+                border: `1px solid hsl(var(--color-success) / 0.25)`,
               }}
             >
               <div className="flex items-center gap-2 mb-3">
@@ -493,8 +493,8 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
             <div
               className="p-4 rounded-xl mb-6"
               style={{
-                backgroundColor: `${DESIGN.warningYellow}15`,
-                border: `1px solid ${DESIGN.warningYellow}40`,
+                backgroundColor: `hsl(var(--color-warning) / 0.08)`,
+                border: `1px solid hsl(var(--color-warning) / 0.25)`,
               }}
             >
               <div className="flex items-start gap-3">
@@ -561,7 +561,7 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
                 <div className="flex items-center gap-3 mb-3">
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: `${currentStepData.iconColor}20` }}
+                    style={{ backgroundColor: currentStepData.iconColor.startsWith("hsl(") ? currentStepData.iconColor.replace(/\)$/, " / 0.13)") : `${currentStepData.iconColor}20` }}
                   >
                     <currentStepData.icon className="w-5 h-5" style={{ color: currentStepData.iconColor }} />
                   </div>
@@ -574,9 +574,9 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
                         <span
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
                           style={{
-                            backgroundColor: `${DESIGN.successGreen}20`,
+                            backgroundColor: `hsl(var(--color-success) / 0.13)`,
                             color: DESIGN.successGreen,
-                            border: `1px solid ${DESIGN.successGreen}40`,
+                            border: `1px solid hsl(var(--color-success) / 0.25)`,
                           }}
                         >
                           <Check className="w-3 h-3" />
@@ -593,8 +593,8 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
                   <div
                     className="p-3 rounded-lg flex items-start gap-2 text-sm"
                     style={{
-                      backgroundColor: `${DESIGN.infoBlue}15`,
-                      border: `1px solid ${DESIGN.infoBlue}40`,
+                      backgroundColor: `hsl(var(--color-info) / 0.08)`,
+                      border: `1px solid hsl(var(--color-info) / 0.25)`,
                     }}
                   >
                     <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: DESIGN.infoBlue }} />
@@ -659,7 +659,7 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
                             key={kw}
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm"
                             style={{
-                              backgroundColor: `${DESIGN.primaryCyan}20`,
+                              backgroundColor: `hsl(var(--color-primary) / 0.13)`,
                               color: DESIGN.primaryCyan,
                             }}
                           >

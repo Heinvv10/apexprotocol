@@ -64,20 +64,20 @@ const AI_PLATFORMS = [
 // Design system colors (from UI_DESIGN_SYSTEM.md - consistent with brand-detail-view)
 const DESIGN = {
   // Primary brand colors
-  primaryCyan: "#00E5CC",
-  cyanBright: "#00FFE0",
+  primaryCyan: "hsl(var(--color-primary))",
+  cyanBright: "hsl(var(--color-primary-bright))",
   cyanMuted: "#00B8A3",
-  accentPurple: "#8B5CF6",
-  purpleLight: "#A78BFA",
-  accentPink: "#EC4899",
-  accentBlue: "#3B82F6",
+  accentPurple: "hsl(var(--color-accent-purple))",
+  purpleLight: "hsl(var(--color-accent-purple-light))",
+  accentPink: "hsl(var(--color-accent-pink))",
+  accentBlue: "hsl(var(--color-info))",
   // Semantic colors
-  successGreen: "#22C55E",
-  warningYellow: "#F59E0B",
-  errorRed: "#EF4444",
-  infoBlue: "#3B82F6",
+  successGreen: "hsl(var(--color-success))",
+  warningYellow: "hsl(var(--color-warning))",
+  errorRed: "hsl(var(--color-error))",
+  infoBlue: "hsl(var(--color-info))",
   // Backgrounds
-  bgDeep: "#02030A",
+  bgDeep: "hsl(var(--color-surface-deep))",
   bgBase: "#060812",
   bgElevated: "#0A0D1A",
   bgCard: "#0F1225",
@@ -87,8 +87,8 @@ const DESIGN = {
   textPrimary: "#FFFFFF",
   textSecondary: "#94A3B8",
   textMuted: "#64748B",
-  textAccent: "#00E5CC",
-  textLink: "#60A5FA",
+  textAccent: "hsl(var(--color-primary))",
+  textLink: "hsl(var(--color-link))",
   // Borders
   borderSubtle: "rgba(255, 255, 255, 0.05)",
   borderDefault: "rgba(255, 255, 255, 0.08)",
@@ -154,8 +154,8 @@ function DecorativeStar() {
         />
         <defs>
           <linearGradient id="starGradientBrands" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#00E5CC" stopOpacity="0.6"/>
-            <stop offset="1" stopColor="#8B5CF6" stopOpacity="0.3"/>
+            <stop stopColor="hsl(var(--color-primary))" stopOpacity="0.6"/>
+            <stop offset="1" stopColor="hsl(var(--color-accent-purple))" stopOpacity="0.3"/>
           </linearGradient>
         </defs>
       </svg>
@@ -859,7 +859,7 @@ function BrandsPageContent() {
           {/* Overlay */}
           <div
             className="absolute inset-0 backdrop-blur-sm"
-            style={{ backgroundColor: `${DESIGN.bgDeep}E6` }}
+            style={{ backgroundColor: `hsl(var(--color-surface-deep) / 0.9)` }}
             onClick={() => setDeleteConfirm(null)}
           />
           {/* Modal - translucent glass effect */}
@@ -867,8 +867,8 @@ function BrandsPageContent() {
             className="relative max-w-md w-full rounded-2xl overflow-hidden backdrop-blur-xl"
             style={{
               backgroundColor: `${DESIGN.bgCard}80`, // 50% opacity for glass effect
-              border: `1px solid ${DESIGN.errorRed}33`,
-              boxShadow: `0 0 40px ${DESIGN.errorRed}15, 0 25px 50px -12px rgba(0, 0, 0, 0.5)`,
+              border: `1px solid hsl(var(--color-error) / 0.2)`,
+              boxShadow: `0 0 40px hsl(var(--color-error) / 0.08), 0 25px 50px -12px rgba(0, 0, 0, 0.5)`,
             }}
           >
             {/* Header */}
@@ -882,7 +882,7 @@ function BrandsPageContent() {
               <div className="flex items-center gap-4">
                 <div
                   className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: `${DESIGN.errorRed}20` }}
+                  style={{ backgroundColor: `hsl(var(--color-error) / 0.13)` }}
                 >
                   <AlertTriangle className="h-6 w-6" style={{ color: DESIGN.errorRed }} />
                 </div>
@@ -933,7 +933,7 @@ function BrandsPageContent() {
           {/* Overlay */}
           <div
             className="absolute inset-0 backdrop-blur-sm"
-            style={{ backgroundColor: `${DESIGN.bgDeep}E6` }}
+            style={{ backgroundColor: `hsl(var(--color-surface-deep) / 0.9)` }}
             onClick={closeModal}
           />
           {/* Modal - translucent glass effect matching brand-detail-view */}
@@ -944,8 +944,8 @@ function BrandsPageContent() {
             )}
             style={{
               backgroundColor: `${DESIGN.bgCard}80`, // 50% opacity for glass effect
-              border: `1px solid ${DESIGN.primaryCyan}33`,
-              boxShadow: `0 0 40px ${DESIGN.primaryCyan}15, 0 25px 50px -12px rgba(0, 0, 0, 0.5)`,
+              border: `1px solid hsl(var(--color-primary) / 0.2)`,
+              boxShadow: `0 0 40px hsl(var(--color-primary) / 0.08), 0 25px 50px -12px rgba(0, 0, 0, 0.5)`,
             }}
           >
             {/* Show wizard for new brands */}
@@ -980,7 +980,7 @@ function BrandsPageContent() {
                     <div
                       className="flex items-center justify-center h-14 w-14 rounded-xl text-lg font-bold shrink-0 overflow-hidden"
                       style={{
-                        backgroundColor: editingBrand?.visual?.primaryColor || `${DESIGN.primaryCyan}20`,
+                        backgroundColor: editingBrand?.visual?.primaryColor || `hsl(var(--color-primary) / 0.13)`,
                         color: editingBrand ? DESIGN.bgDeep : DESIGN.primaryCyan,
                         border: editingBrand ? `2px solid ${DESIGN.borderAccent}` : 'none',
                       }}
@@ -1023,8 +1023,8 @@ function BrandsPageContent() {
                     <div
                       className="mb-6 p-4 rounded-xl flex items-center gap-3"
                       style={{
-                        backgroundColor: `${DESIGN.errorRed}15`,
-                        border: `1px solid ${DESIGN.errorRed}40`,
+                        backgroundColor: `hsl(var(--color-error) / 0.08)`,
+                        border: `1px solid hsl(var(--color-error) / 0.25)`,
                       }}
                     >
                       <AlertTriangle className="h-5 w-5 shrink-0" style={{ color: DESIGN.errorRed }} />
@@ -1402,7 +1402,7 @@ function BrandsPageContent() {
                           disabled={isRescanning || isSubmitting}
                           className="gap-2"
                           style={{
-                            borderColor: `${DESIGN.accentPurple}50`,
+                            borderColor: `hsl(var(--color-accent-purple) / 0.31)`,
                             color: DESIGN.accentPurple,
                           }}
                         >

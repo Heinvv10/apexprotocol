@@ -261,7 +261,7 @@ export function AdminSidebar({ collapsed = false, onCollapsedChange }: AdminSide
           collapsed ? "w-[68px]" : "w-[240px]"
         )}
         style={{
-          backgroundColor: "#0d1224",
+          backgroundColor: "hsl(var(--color-surface))",
           borderColor: "rgba(239, 68, 68, 0.15)",
         }}
       >
@@ -273,7 +273,7 @@ export function AdminSidebar({ collapsed = false, onCollapsedChange }: AdminSide
           <Link href="/admin" className="flex items-center gap-3">
             <div
               className="flex items-center justify-center w-8 h-8 rounded-lg"
-              style={{ background: "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)" }}
+              style={{ background: "linear-gradient(135deg, hsl(var(--color-error)) 0%, #DC2626 100%)" }}
             >
               <Shield className="h-5 w-5 text-white" />
             </div>

@@ -336,7 +336,7 @@ export default function CompetitorVisibilityPage() {
                 </span>
                 <span className="text-white font-bold">{item.value}%</span>
               </div>
-              <div className="w-full bg-[#0a0f1a] rounded-full h-3">
+              <div className="w-full bg-background rounded-full h-3">
                 <div
                   className={`h-3 rounded-full bg-gradient-to-r ${item.color} transition-all duration-500`}
                   style={{ width: `${item.value}%` }}
@@ -349,7 +349,7 @@ export default function CompetitorVisibilityPage() {
 
       {/* Tabs */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
-        <TabsList className="bg-[#141930] border border-white/10">
+        <TabsList className="bg-card border border-white/10">
           <TabsTrigger value="overview">Competitors</TabsTrigger>
           <TabsTrigger value="gaps">Competitive Gaps</TabsTrigger>
           <TabsTrigger value="wins">Our Wins</TabsTrigger>
@@ -361,7 +361,7 @@ export default function CompetitorVisibilityPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-white">Tracked Competitors</h2>
               <Select value={selectedCompetitor} onValueChange={setSelectedCompetitor}>
-                <SelectTrigger className="w-48 bg-[#0a0f1a] border-white/10">
+                <SelectTrigger className="w-48 bg-background border-white/10">
                   <SelectValue placeholder="All competitorData" />
                 </SelectTrigger>
                 <SelectContent>

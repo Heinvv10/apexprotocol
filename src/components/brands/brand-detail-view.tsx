@@ -36,20 +36,20 @@ const AI_PLATFORMS = [
 // Design system colors (from UI_DESIGN_SYSTEM.md - the authoritative source)
 const DESIGN = {
   // Primary brand colors
-  primaryCyan: "#00E5CC",
-  cyanBright: "#00FFE0",
+  primaryCyan: "hsl(var(--color-primary))",
+  cyanBright: "hsl(var(--color-primary-bright))",
   cyanMuted: "#00B8A3",
-  accentPurple: "#8B5CF6",
-  purpleLight: "#A78BFA",
-  accentPink: "#EC4899",
-  accentBlue: "#3B82F6",
+  accentPurple: "hsl(var(--color-accent-purple))",
+  purpleLight: "hsl(var(--color-accent-purple-light))",
+  accentPink: "hsl(var(--color-accent-pink))",
+  accentBlue: "hsl(var(--color-info))",
   // Semantic colors
-  successGreen: "#22C55E",
-  warningYellow: "#F59E0B",
-  errorRed: "#EF4444",
-  infoBlue: "#3B82F6",
+  successGreen: "hsl(var(--color-success))",
+  warningYellow: "hsl(var(--color-warning))",
+  errorRed: "hsl(var(--color-error))",
+  infoBlue: "hsl(var(--color-info))",
   // Backgrounds (from UI_DESIGN_SYSTEM.md)
-  bgDeep: "#02030A",
+  bgDeep: "hsl(var(--color-surface-deep))",
   bgBase: "#060812",
   bgElevated: "#0A0D1A",
   bgCard: "#0F1225",
@@ -59,8 +59,8 @@ const DESIGN = {
   textPrimary: "#FFFFFF",
   textSecondary: "#94A3B8",
   textMuted: "#64748B",
-  textAccent: "#00E5CC",
-  textLink: "#60A5FA",
+  textAccent: "hsl(var(--color-primary))",
+  textLink: "hsl(var(--color-link))",
   // Borders (rgba-based per UI_DESIGN_SYSTEM.md)
   borderSubtle: "rgba(255, 255, 255, 0.05)",
   borderDefault: "rgba(255, 255, 255, 0.08)",
@@ -103,9 +103,9 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
               key={index}
               className="px-2.5 py-1.5 rounded-md text-xs font-medium"
               style={{
-                backgroundColor: `${color}20`,
+                backgroundColor: color.startsWith("hsl(") ? color.replace(/\)$/, " / 0.13)") : `${color}20`,
                 color: color,
-                border: `1px solid ${color}40`,
+                border: `1px solid ${color.startsWith("hsl(") ? color.replace(/\)$/, " / 0.25)") : `${color}40`}`,
               }}
             >
               {keyword}
@@ -263,7 +263,7 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
       >
         <div
           className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0"
-          style={{ backgroundColor: `${DESIGN.primaryCyan}20` }}
+          style={{ backgroundColor: `hsl(var(--color-primary) / 0.13)` }}
         >
           <Award className="h-6 w-6" style={{ color: DESIGN.primaryCyan }} />
         </div>
@@ -301,7 +301,7 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
       {/* Overlay - using deep space navy with opacity per design system */}
       <div
         className="absolute inset-0 backdrop-blur-sm"
-        style={{ backgroundColor: `${DESIGN.bgDeep}E6` }}
+        style={{ backgroundColor: `hsl(var(--color-surface-deep) / 0.9)` }}
         onClick={onClose}
       />
       {/* Modal - translucent glass effect */}
@@ -309,8 +309,8 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
         className="relative max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col rounded-2xl backdrop-blur-xl"
         style={{
           backgroundColor: `${DESIGN.bgCard}80`, // 50% opacity for glass effect
-          border: `1px solid ${DESIGN.primaryCyan}33`,
-          boxShadow: `0 0 40px ${DESIGN.primaryCyan}15, 0 25px 50px -12px rgba(0, 0, 0, 0.5)`,
+          border: `1px solid hsl(var(--color-primary) / 0.2)`,
+          boxShadow: `0 0 40px hsl(var(--color-primary) / 0.08), 0 25px 50px -12px rgba(0, 0, 0, 0.5)`,
         }}
       >
         {/* Header */}
@@ -362,7 +362,7 @@ export function BrandDetailView({ brand, onClose, onEdit }: BrandDetailViewProps
                   <span
                     className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium"
                     style={{
-                      backgroundColor: `${DESIGN.primaryCyan}20`,
+                      backgroundColor: `hsl(var(--color-primary) / 0.13)`,
                       color: DESIGN.primaryCyan,
                     }}
                   >

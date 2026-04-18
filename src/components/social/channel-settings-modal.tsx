@@ -440,7 +440,7 @@ export function ChannelSettingsModal({
             {needsReconnect ? (
               <Button
                 onClick={handleReconnect}
-                className="bg-gradient-to-r from-[#00E5CC] to-[#8B5CF6] hover:opacity-90"
+                className="bg-gradient-to-r from-primary to-accent-purple hover:opacity-90"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Reconnect Account

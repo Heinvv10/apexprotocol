@@ -519,14 +519,14 @@ export default function AdminApiKeysPage() {
             placeholder="Search API keys..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
+            className="w-full pl-10 pr-4 py-2.5 bg-card border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
           />
         </div>
 
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="px-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
+          className="px-4 py-2.5 bg-card border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
         >
           <option value="all">All Types</option>
           {API_KEY_TYPES.map((type) => (
@@ -539,7 +539,7 @@ export default function AdminApiKeysPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
+          className="px-4 py-2.5 bg-card border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
         >
           <option value="all">All Status</option>
           <option value="active">Active</option>
@@ -548,7 +548,7 @@ export default function AdminApiKeysPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-[#141930] border border-gray-800 rounded-lg overflow-hidden">
+      <div className="bg-card border border-gray-800 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -578,7 +578,7 @@ export default function AdminApiKeysPage() {
                 </tr>
               ) : (
                 filteredApiKeys.map((key) => (
-                  <tr key={key.id} className="border-b border-gray-800 hover:bg-[#0a0f1a] transition-colors">
+                  <tr key={key.id} className="border-b border-gray-800 hover:bg-background transition-colors">
                     <td className="px-6 py-4">
                       <div>
                         <div className="font-semibold text-white">{key.name}</div>
@@ -634,7 +634,7 @@ export default function AdminApiKeysPage() {
                         </button>
 
                         {actionMenuOpen === key.id && (
-                          <div className="absolute right-0 top-full mt-1 w-56 bg-[#0a0f1a] border border-gray-800 rounded-lg shadow-lg z-10">
+                          <div className="absolute right-0 top-full mt-1 w-56 bg-background border border-gray-800 rounded-lg shadow-lg z-10">
                             <button
                               onClick={() => {
                                 setSelectedKey(key);
@@ -696,7 +696,7 @@ export default function AdminApiKeysPage() {
           onClick={() => setSelectedKey(null)}
         >
           <div
-            className="bg-[#141930] border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+            className="bg-card border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -775,7 +775,7 @@ export default function AdminApiKeysPage() {
           }}
         >
           <div
-            className="bg-[#141930] border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+            className="bg-card border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -805,7 +805,7 @@ export default function AdminApiKeysPage() {
                 <select
                   value={formData.organizationId}
                   onChange={(e) => setFormData({ ...formData, organizationId: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
+                  className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
                 >
                   <option value="">Select organization...</option>
                   {organizations.map((org) => (
@@ -826,7 +826,7 @@ export default function AdminApiKeysPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="e.g., Production OpenAI Key"
-                    className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
+                    className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
                   />
                 </div>
                 <div>
@@ -836,7 +836,7 @@ export default function AdminApiKeysPage() {
                     value={formData.displayName}
                     onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
                     placeholder="Optional friendly name"
-                    className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
+                    className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
                   />
                 </div>
               </div>
@@ -850,7 +850,7 @@ export default function AdminApiKeysPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, type: e.target.value as (typeof API_KEY_TYPES)[number] })
                   }
-                  className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
+                  className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
                 >
                   {API_KEY_TYPES.map((type) => (
                     <option key={type} value={type}>
@@ -869,7 +869,7 @@ export default function AdminApiKeysPage() {
                   value={formData.apiKey}
                   onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
                   placeholder="sk-..."
-                  className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 font-mono"
+                  className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 font-mono"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   The key will be encrypted before storage and cannot be retrieved later.
@@ -882,7 +882,7 @@ export default function AdminApiKeysPage() {
                   type="date"
                   value={formData.expiresAt}
                   onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
+                  className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
                 />
               </div>
 
@@ -920,7 +920,7 @@ export default function AdminApiKeysPage() {
           }}
         >
           <div
-            className="bg-[#141930] border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+            className="bg-card border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -951,7 +951,7 @@ export default function AdminApiKeysPage() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
+                    className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
                   />
                 </div>
                 <div>
@@ -960,7 +960,7 @@ export default function AdminApiKeysPage() {
                     type="text"
                     value={formData.displayName}
                     onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
+                    className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
                   />
                 </div>
               </div>
@@ -972,7 +972,7 @@ export default function AdminApiKeysPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, type: e.target.value as (typeof API_KEY_TYPES)[number] })
                   }
-                  className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
+                  className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
                 >
                   {API_KEY_TYPES.map((type) => (
                     <option key={type} value={type}>
@@ -991,7 +991,7 @@ export default function AdminApiKeysPage() {
                   value={formData.apiKey}
                   onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
                   placeholder="Leave blank to keep current key"
-                  className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 font-mono"
+                  className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 font-mono"
                 />
               </div>
 
@@ -1001,7 +1001,7 @@ export default function AdminApiKeysPage() {
                   type="date"
                   value={formData.expiresAt}
                   onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
+                  className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
                 />
               </div>
 
@@ -1040,7 +1040,7 @@ export default function AdminApiKeysPage() {
           }}
         >
           <div
-            className="bg-[#141930] border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4"
+            className="bg-card border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -1080,7 +1080,7 @@ export default function AdminApiKeysPage() {
                   value={rotationData.newApiKey}
                   onChange={(e) => setRotationData({ ...rotationData, newApiKey: e.target.value })}
                   placeholder="Enter new API key"
-                  className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 font-mono"
+                  className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 font-mono"
                 />
               </div>
 
@@ -1096,7 +1096,7 @@ export default function AdminApiKeysPage() {
                   onChange={(e) =>
                     setRotationData({ ...rotationData, gracePeriodMinutes: parseInt(e.target.value) || 0 })
                   }
-                  className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
+                  className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white focus:outline-none focus:border-cyan-500/50"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Set to 0 for immediate rotation. Max: 10080 minutes (7 days).
@@ -1110,7 +1110,7 @@ export default function AdminApiKeysPage() {
                   value={rotationData.reason}
                   onChange={(e) => setRotationData({ ...rotationData, reason: e.target.value })}
                   placeholder="e.g., Scheduled rotation, key compromise"
-                  className="w-full px-4 py-2.5 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
+                  className="w-full px-4 py-2.5 bg-background border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50"
                 />
               </div>
 
@@ -1150,7 +1150,7 @@ export default function AdminApiKeysPage() {
           }}
         >
           <div
-            className="bg-[#141930] border border-gray-800 rounded-lg p-6 max-w-md w-full mx-4"
+            className="bg-card border border-gray-800 rounded-lg p-6 max-w-md w-full mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-2xl font-bold text-white mb-4">Delete API Key</h2>

@@ -181,7 +181,7 @@ export default function AdminUsersPage() {
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="px-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-red-500/50"
+          className="px-4 py-2.5 bg-card border border-gray-800 rounded-lg text-white focus:outline-none focus:border-red-500/50"
         >
           <option value="all">All Roles</option>
           <option value="super-admin">Super Admin</option>
@@ -192,7 +192,7 @@ export default function AdminUsersPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2.5 bg-[#141930] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-red-500/50"
+          className="px-4 py-2.5 bg-card border border-gray-800 rounded-lg text-white focus:outline-none focus:border-red-500/50"
         >
           <option value="all">All Status</option>
           <option value="active">Active</option>
@@ -201,7 +201,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-[#141930] border border-gray-800 rounded-lg overflow-hidden">
+      <div className="bg-card border border-gray-800 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -230,7 +230,7 @@ export default function AdminUsersPage() {
                 </tr>
               ) : (
                 users.map((user) => (
-                  <tr key={user.id} className="border-b border-gray-800 hover:bg-[#0a0f1a] transition-colors">
+                  <tr key={user.id} className="border-b border-gray-800 hover:bg-background transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className="font-semibold text-white">{user.name}</div>
@@ -280,7 +280,7 @@ export default function AdminUsersPage() {
                         </button>
 
                         {actionMenuOpen === user.id && (
-                          <div className="absolute right-0 top-full mt-1 w-56 bg-[#0a0f1a] border border-gray-800 rounded-lg shadow-lg z-10">
+                          <div className="absolute right-0 top-full mt-1 w-56 bg-background border border-gray-800 rounded-lg shadow-lg z-10">
                             <button
                               onClick={() => {
                                 setSelectedUser(user);
@@ -359,7 +359,7 @@ export default function AdminUsersPage() {
               <button
                 onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
                 disabled={pagination.page === 1}
-                className="px-4 py-2 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition-colors"
+                className="px-4 py-2 bg-background border border-gray-800 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition-colors"
               >
                 Previous
               </button>
@@ -369,7 +369,7 @@ export default function AdminUsersPage() {
               <button
                 onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
                 disabled={pagination.page === pagination.totalPages}
-                className="px-4 py-2 bg-[#0a0f1a] border border-gray-800 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition-colors"
+                className="px-4 py-2 bg-background border border-gray-800 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition-colors"
               >
                 Next
               </button>
@@ -385,7 +385,7 @@ export default function AdminUsersPage() {
           onClick={() => setSelectedUser(null)}
         >
           <div
-            className="bg-[#141930] border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4"
+            className="bg-card border border-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">

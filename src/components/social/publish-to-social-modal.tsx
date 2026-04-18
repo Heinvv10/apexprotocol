@@ -410,7 +410,7 @@ export function PublishToSocialModal({
               <Button
                 onClick={handlePublish}
                 disabled={!canPublish || publishing}
-                className="bg-gradient-to-r from-[#00E5CC] to-[#8B5CF6] hover:opacity-90"
+                className="bg-gradient-to-r from-primary to-accent-purple hover:opacity-90"
               >
                 {publishing ? (
                   <>

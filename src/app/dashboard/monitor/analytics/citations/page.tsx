@@ -333,8 +333,8 @@ export default function CitationsPage() {
               >
                 <defs>
                   <linearGradient id="citationGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00E5CC" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#00E5CC" stopOpacity={0} />
+                    <stop offset="5%" stopColor="hsl(var(--color-primary))" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="hsl(var(--color-primary))" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid
@@ -371,7 +371,7 @@ export default function CitationsPage() {
                 <Area
                   type="monotone"
                   dataKey="citations"
-                  stroke="#00E5CC"
+                  stroke="hsl(var(--color-primary))"
                   strokeWidth={2}
                   fill="url(#citationGradient)"
                 />

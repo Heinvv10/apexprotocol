@@ -57,10 +57,10 @@ const sizeConfig = {
 };
 
 function getScoreColor(score: number): string {
-  if (score >= 80) return "#22C55E"; // Green
-  if (score >= 60) return "#00E5CC"; // Cyan
-  if (score >= 40) return "#F59E0B"; // Amber
-  return "#EF4444"; // Red
+  if (score >= 80) return "hsl(var(--color-success))"; // Green
+  if (score >= 60) return "hsl(var(--color-primary))"; // Cyan
+  if (score >= 40) return "hsl(var(--color-warning))"; // Amber
+  return "hsl(var(--color-error))"; // Red
 }
 
 function getGradeFromScore(score: number): string {
@@ -154,9 +154,9 @@ export function UnifiedScoreGauge({
 
   // Score breakdown components
   const components = [
-    { label: "SEO", score: seoScore, icon: Search, color: "#3B82F6", weight: "40%" },
-    { label: "GEO", score: geoScore, icon: Bot, color: "#00E5CC", weight: "35%" },
-    { label: "AEO", score: aeoScore, icon: MessageSquare, color: "#8B5CF6", weight: "25%" },
+    { label: "SEO", score: seoScore, icon: Search, color: "hsl(var(--color-info))", weight: "40%" },
+    { label: "GEO", score: geoScore, icon: Bot, color: "hsl(var(--color-primary))", weight: "35%" },
+    { label: "AEO", score: aeoScore, icon: MessageSquare, color: "hsl(var(--color-accent-purple))", weight: "25%" },
   ];
 
   return (
@@ -260,7 +260,7 @@ export function UnifiedScoreGauge({
                   <div className="flex flex-col items-center gap-1 cursor-help">
                     <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center"
-                      style={{ backgroundColor: `${comp.color}20` }}
+                      style={{ backgroundColor: comp.color.replace(/\)$/, " / 0.13)") }}
                     >
                       <comp.icon className="w-4 h-4" style={{ color: comp.color }} />
                     </div>
@@ -304,7 +304,7 @@ export function UnifiedScoreBadge({
         "inline-flex items-center gap-2 px-3 py-1.5 rounded-full",
         className
       )}
-      style={{ backgroundColor: `${color}15`, border: `1px solid ${color}30` }}
+      style={{ backgroundColor: color.replace(/\)$/, " / 0.08)"), border: `1px solid ${color.replace(/\)$/, " / 0.19)")}` }}
     >
       <span className="font-bold" style={{ color }}>
         {overall}

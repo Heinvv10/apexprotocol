@@ -325,7 +325,7 @@ export default function AlgorithmMonitoringPage() {
         </div>
         <div className="flex items-center gap-2">
           <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[140px] bg-[#0a0f1a] border-white/10">
+            <SelectTrigger className="w-[140px] bg-background border-white/10">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

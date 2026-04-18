@@ -427,8 +427,8 @@ function DecorativeStar() {
         />
         <defs>
           <linearGradient id="starGradientSettings" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#00E5CC" stopOpacity="0.6"/>
-            <stop offset="1" stopColor="#8B5CF6" stopOpacity="0.3"/>
+            <stop stopColor="hsl(var(--color-primary))" stopOpacity="0.6"/>
+            <stop offset="1" stopColor="hsl(var(--color-accent-purple))" stopOpacity="0.3"/>
           </linearGradient>
         </defs>
       </svg>
@@ -478,8 +478,8 @@ export default function SettingsClient() {
     name: "",
     branding: {
       themeId: "apexgeo-default",
-      primaryColor: "#00E5CC",
-      accentColor: "#8B5CF6",
+      primaryColor: "hsl(var(--color-primary))",
+      accentColor: "hsl(var(--color-accent-purple))",
       logoUrl: null,
       logoDarkUrl: null,
       faviconUrl: null,

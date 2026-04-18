@@ -59,17 +59,17 @@ const PRIORITY_CONFIG: Record<
 > = {
   1: {
     label: "Critical",
-    color: "#EF4444",
+    color: "hsl(var(--color-error))",
     textColor: "text-red-500",
   },
   2: {
     label: "High",
-    color: "#F59E0B",
+    color: "hsl(var(--color-warning))",
     textColor: "text-amber-500",
   },
   3: {
     label: "Medium",
-    color: "#3B82F6",
+    color: "hsl(var(--color-info))",
     textColor: "text-blue-500",
   },
   4: {
@@ -95,7 +95,7 @@ const IMPACT_CONFIG: Record<
   },
   medium: {
     label: "Medium Impact",
-    color: "#3B82F6",
+    color: "hsl(var(--color-info))",
     icon: <Target className="w-3 h-3" />,
   },
   low: {
@@ -116,12 +116,12 @@ const DIFFICULTY_CONFIG: Record<
   },
   moderate: {
     label: "Moderate",
-    color: "#F59E0B",
+    color: "hsl(var(--color-warning))",
     icon: <Target className="w-3 h-3" />,
   },
   hard: {
     label: "Hard",
-    color: "#EF4444",
+    color: "hsl(var(--color-error))",
     icon: <Clock className="w-3 h-3" />,
   },
 };

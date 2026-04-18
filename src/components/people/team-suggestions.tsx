@@ -98,10 +98,10 @@ function CompletenessRing({
   const progress = (score / 100) * circumference;
 
   const getColor = (s: number) => {
-    if (s >= 80) return "#22C55E"; // success
-    if (s >= 60) return "#00E5CC"; // primary
-    if (s >= 40) return "#F59E0B"; // warning
-    return "#EF4444"; // error
+    if (s >= 80) return "hsl(var(--color-success))"; // success
+    if (s >= 60) return "hsl(var(--color-primary))"; // primary
+    if (s >= 40) return "hsl(var(--color-warning))"; // warning
+    return "hsl(var(--color-error))"; // error
   };
 
   const getGrade = (s: number) => {

@@ -212,7 +212,7 @@ function CustomerChannelsPageInner() {
         </div>
         <Button
           onClick={() => setConnectModalOpen(true)}
-          className="bg-gradient-to-r from-[#00E5CC] to-[#8B5CF6] hover:opacity-90"
+          className="bg-gradient-to-r from-primary to-accent-purple hover:opacity-90"
         >
           <Plus className="h-4 w-4 mr-2" />
           Connect Channel
@@ -377,7 +377,7 @@ function CustomerChannelsPageInner() {
                         account.connectionStatus === "error") && (
                         <Button
                           size="sm"
-                          className="flex-1 bg-gradient-to-r from-[#00E5CC] to-[#8B5CF6] hover:opacity-90"
+                          className="flex-1 bg-gradient-to-r from-primary to-accent-purple hover:opacity-90"
                           onClick={() => handleReconnect(account.platform)}
                         >
                           <RefreshCw className="h-3 w-3 mr-1" />

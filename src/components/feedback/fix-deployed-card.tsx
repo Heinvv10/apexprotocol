@@ -111,7 +111,7 @@ export function FixDeployedCard({
           <div className="absolute top-2 right-2">
             <Code2 className="w-4 h-4 text-muted-foreground" />
           </div>
-          <pre className="bg-[#0a0f1a] rounded-lg p-4 text-xs font-mono text-muted-foreground overflow-x-auto border border-border/50">
+          <pre className="bg-background rounded-lg p-4 text-xs font-mono text-muted-foreground overflow-x-auto border border-border/50">
             <code>{schemaJSON}</code>
           </pre>
         </div>

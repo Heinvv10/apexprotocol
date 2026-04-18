@@ -55,13 +55,13 @@ function getTrendColor(trend: VelocityTrend): {
     case "up":
       return {
         text: "text-success",
-        stroke: "#22C55E",
+        stroke: "hsl(var(--color-success))",
         bg: "bg-success/10",
       };
     case "down":
       return {
         text: "text-error",
-        stroke: "#EF4444",
+        stroke: "hsl(var(--color-error))",
         bg: "bg-error/10",
       };
     default:

@@ -41,10 +41,10 @@ interface ScoreTrendProps {
 
 // Component colors
 const SCORE_COLORS = {
-  unified: "#00E5CC",
-  seo: "#3B82F6",
-  geo: "#00E5CC",
-  aeo: "#8B5CF6",
+  unified: "hsl(var(--color-primary))",
+  seo: "hsl(var(--color-info))",
+  geo: "hsl(var(--color-primary))",
+  aeo: "hsl(var(--color-accent-purple))",
 };
 
 // Custom tooltip
@@ -260,9 +260,9 @@ export function ScoreTrend({
             <defs>
               {/* Gradients for each line */}
               <linearGradient id="unifiedGradient" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#8B5CF6" />
-                <stop offset="50%" stopColor="#00E5CC" />
-                <stop offset="100%" stopColor="#22C55E" />
+                <stop offset="0%" stopColor="hsl(var(--color-accent-purple))" />
+                <stop offset="50%" stopColor="hsl(var(--color-primary))" />
+                <stop offset="100%" stopColor="hsl(var(--color-success))" />
               </linearGradient>
             </defs>
 
@@ -299,7 +299,7 @@ export function ScoreTrend({
             {targetScore && (
               <ReferenceLine
                 y={targetScore}
-                stroke="#F59E0B"
+                stroke="hsl(var(--color-warning))"
                 strokeDasharray="5 5"
                 strokeWidth={2}
               />
@@ -346,13 +346,13 @@ export function ScoreTrend({
               strokeWidth={3}
               dot={{
                 r: 4,
-                fill: "#00E5CC",
+                fill: "hsl(var(--color-primary))",
                 stroke: "#0A0D1A",
                 strokeWidth: 2,
               }}
               activeDot={{
                 r: 8,
-                fill: "#00E5CC",
+                fill: "hsl(var(--color-primary))",
                 stroke: "#0A0D1A",
                 strokeWidth: 2,
               }}
@@ -426,7 +426,7 @@ export function ScoreSparkline({
 
   const lastValue = data[data.length - 1];
   const firstValue = data[0];
-  const trend = lastValue >= firstValue ? "#22C55E" : "#EF4444";
+  const trend = lastValue >= firstValue ? "hsl(var(--color-success))" : "hsl(var(--color-error))";
 
   return (
     <svg

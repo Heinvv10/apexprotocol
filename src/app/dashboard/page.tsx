@@ -137,8 +137,8 @@ function ProgressRing({ progress, size = 120 }: { progress: number; size?: numbe
         />
         <defs>
           <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#00E5CC" />
-            <stop offset="100%" stopColor="#8B5CF6" />
+            <stop offset="0%" stopColor="hsl(var(--color-primary))" />
+            <stop offset="100%" stopColor="hsl(var(--color-accent-purple))" />
           </linearGradient>
         </defs>
       </svg>
@@ -259,7 +259,7 @@ function EmptyStateDashboard() {
                   className="h-full rounded-full transition-all duration-1000 ease-out"
                   style={{
                     width: `${progress}%`,
-                    background: 'linear-gradient(90deg, #00E5CC 0%, #8B5CF6 100%)',
+                    background: 'linear-gradient(90deg, hsl(var(--color-primary)) 0%, hsl(var(--color-accent-purple)) 100%)',
                     boxShadow: '0 0 20px rgba(0, 229, 204, 0.5)',
                   }}
                 />

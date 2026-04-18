@@ -462,7 +462,7 @@ function ChecklistItemRow({
     <div
       className={cn(
         "p-4 border border-white/10 rounded-lg transition-colors",
-        checked ? "bg-green-500/5 border-green-500/20" : "bg-[#141930]/50"
+        checked ? "bg-green-500/5 border-green-500/20" : "bg-card/50"
       )}
     >
       <div className="flex items-start gap-3">
@@ -506,7 +506,7 @@ function ChecklistItemRow({
                   {item.aiPlatformImpact.map((platform) => (
                     <span
                       key={platform}
-                      className="px-1.5 py-0.5 text-xs bg-[#00E5CC]/10 text-[#00E5CC] rounded"
+                      className="px-1.5 py-0.5 text-xs bg-primary/10 text-primary rounded"
                     >
                       {platform}
                     </span>
@@ -519,7 +519,7 @@ function ChecklistItemRow({
                   href={item.resourceLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-[#00E5CC] hover:underline"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                 >
                   <ExternalLink className="h-3 w-3" />
                   Documentation
@@ -559,7 +559,7 @@ function CategorySection({
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <span className="text-lg font-mono text-[#00E5CC]">{config.icon}</span>
+          <span className="text-lg font-mono text-primary">{config.icon}</span>
           <div>
             <h3 className="text-lg font-semibold text-white">{config.label}</h3>
             <p className="text-sm text-gray-400">{config.description}</p>
@@ -571,7 +571,7 @@ function CategorySection({
           </span>
           <div className="w-24 h-1.5 bg-white/10 rounded-full mt-1">
             <div
-              className="h-full bg-[#00E5CC] rounded-full transition-all"
+              className="h-full bg-primary rounded-full transition-all"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -730,7 +730,7 @@ export function DeveloperChecklist({
         </div>
 
         {/* Overall Progress */}
-        <div className="bg-[#141930] border border-white/10 rounded-lg p-4">
+        <div className="bg-card border border-white/10 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-300">
               Overall Progress
@@ -741,7 +741,7 @@ export function DeveloperChecklist({
           </div>
           <div className="w-full h-2 bg-white/10 rounded-full">
             <div
-              className="h-full bg-gradient-to-r from-[#00E5CC] to-[#8B5CF6] rounded-full transition-all"
+              className="h-full bg-gradient-to-r from-primary to-accent-purple rounded-full transition-all"
               style={{ width: `${overallProgress}%` }}
             />
           </div>
@@ -766,7 +766,7 @@ export function DeveloperChecklist({
               className={cn(
                 "px-3 py-1 text-xs rounded-full border transition-colors",
                 filterPriority === p
-                  ? "bg-[#00E5CC]/20 text-[#00E5CC] border-[#00E5CC]/30"
+                  ? "bg-primary/20 text-primary border-primary/30"
                   : "bg-transparent text-gray-400 border-white/10 hover:border-white/20"
               )}
             >
@@ -780,7 +780,7 @@ export function DeveloperChecklist({
             type="checkbox"
             checked={showDetails}
             onChange={(e) => setShowDetails(e.target.checked)}
-            className="rounded border-white/20 bg-transparent text-[#00E5CC]"
+            className="rounded border-white/20 bg-transparent text-primary"
           />
           <span className="text-sm text-gray-400">Show code snippets</span>
         </label>
@@ -814,7 +814,7 @@ export function DeveloperChecklist({
             href="https://validator.schema.org/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#00E5CC] hover:underline"
+            className="text-primary hover:underline"
           >
             validator.schema.org
           </a>

@@ -56,23 +56,23 @@ export interface CompetitorTrendChartProps {
 
 // Color palette for competitor lines
 const COMPETITOR_COLORS = [
-  "#8B5CF6", // Purple
-  "#F59E0B", // Amber
-  "#EC4899", // Pink
+  "hsl(var(--color-accent-purple))", // Purple
+  "hsl(var(--color-warning))", // Amber
+  "hsl(var(--color-accent-pink))", // Pink
   "#06B6D4", // Cyan
   "#10B981", // Emerald
   "#F97316", // Orange
   "#6366F1", // Indigo
   "#14B8A6", // Teal
-  "#EF4444", // Red
-  "#8B5CF6", // Purple (repeat for >9 competitors)
+  "hsl(var(--color-error))", // Red
+  "hsl(var(--color-accent-purple))", // Purple (repeat for >9 competitors)
 ];
 
 // Metric display configuration
 const METRIC_CONFIG: Record<MetricType, { label: string; color: string; formatter?: (value: number) => string }> = {
   geoScore: {
     label: "GEO Score",
-    color: "#8B5CF6",
+    color: "hsl(var(--color-accent-purple))",
     formatter: (value) => Math.round(value).toString(),
   },
   aiMentionCount: {
@@ -87,7 +87,7 @@ const METRIC_CONFIG: Record<MetricType, { label: string; color: string; formatte
   },
   socialFollowers: {
     label: "Social Followers",
-    color: "#F59E0B",
+    color: "hsl(var(--color-warning))",
     formatter: (value) => {
       if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
       if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
@@ -96,7 +96,7 @@ const METRIC_CONFIG: Record<MetricType, { label: string; color: string; formatte
   },
   contentPageCount: {
     label: "Content Pages",
-    color: "#EC4899",
+    color: "hsl(var(--color-accent-pink))",
     formatter: (value) => Math.round(value).toString(),
   },
 };

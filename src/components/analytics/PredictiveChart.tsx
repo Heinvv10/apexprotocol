@@ -259,14 +259,14 @@ export function PredictiveChart({
             <defs>
               {/* Gradient for historical line */}
               <linearGradient id="historicalGradient" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#8B5CF6" />
-                <stop offset="100%" stopColor="#00E5CC" />
+                <stop offset="0%" stopColor="hsl(var(--color-accent-purple))" />
+                <stop offset="100%" stopColor="hsl(var(--color-primary))" />
               </linearGradient>
 
               {/* Gradient for predicted line */}
               <linearGradient id="predictedGradient" x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0%" stopColor="#FFB020" />
-                <stop offset="100%" stopColor="#EF4444" />
+                <stop offset="100%" stopColor="hsl(var(--color-error))" />
               </linearGradient>
 
               {/* Gradient for confidence band */}
@@ -334,13 +334,13 @@ export function PredictiveChart({
               strokeWidth={3}
               dot={{
                 r: 4,
-                fill: "#00E5CC",
+                fill: "hsl(var(--color-primary))",
                 stroke: "#0A0D1A",
                 strokeWidth: 2,
               }}
               activeDot={{
                 r: 8,
-                fill: "#00E5CC",
+                fill: "hsl(var(--color-primary))",
                 stroke: "#0A0D1A",
                 strokeWidth: 2,
               }}

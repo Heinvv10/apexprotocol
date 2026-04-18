@@ -313,7 +313,7 @@ export default function GenerateContentForm() {
         <div className="card-primary space-y-4">
           <h3 className="text-lg font-semibold text-foreground">Generated Content:</h3>
           <div className="prose prose-invert max-w-none">
-            <pre className="whitespace-pre-wrap text-sm text-secondary-foreground leading-relaxed bg-[#0a0f1a] p-4 rounded-lg border border-white/5">
+            <pre className="whitespace-pre-wrap text-sm text-secondary-foreground leading-relaxed bg-background p-4 rounded-lg border border-white/5">
               {generatedContent}
             </pre>
           </div>

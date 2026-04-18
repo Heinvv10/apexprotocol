@@ -58,15 +58,15 @@ export function ClerkProvider({ children }: ClerkProviderProps) {
           // Clerk's variables API does not accept CSS custom properties, so
           // we mirror the palette values here. Keep in sync with
           // src/styles/themes/brand/apex.css on rebrand.
-          colorPrimary: "#00E5CC",        // --palette-cyan-500 — Apex primary
-          colorBackground: "#0d1224",     // --palette-neutral-850 — surface base
+          colorPrimary: "hsl(var(--color-primary))",        // --palette-cyan-500 — Apex primary
+          colorBackground: "hsl(var(--color-surface))",     // --palette-neutral-850 — surface base
           colorInputBackground: "#101828",// --palette-neutral-650 — input surface
           colorInputText: "#FFFFFF",      // --color-foreground
           colorText: "#FFFFFF",           // --color-foreground
           colorTextSecondary: "#94A3B8",  // --color-text-secondary
-          colorDanger: "#EF4444",         // --color-error
-          colorSuccess: "#22C55E",        // --color-success
-          colorWarning: "#F59E0B",        // --color-warning
+          colorDanger: "hsl(var(--color-error))",         // --color-error
+          colorSuccess: "hsl(var(--color-success))",        // --color-success
+          colorWarning: "hsl(var(--color-warning))",        // --color-warning
           borderRadius: "0.75rem",         // --radius base
         },
         elements: {

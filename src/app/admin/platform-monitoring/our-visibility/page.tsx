@@ -329,7 +329,7 @@ export default function OurVisibilityPage() {
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="flex-1 bg-[#0a0f1a] rounded-full h-2">
+                  <div className="flex-1 bg-background rounded-full h-2">
                     <div
                       className={`h-2 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500`}
                       style={{ width: `${(stat.mentions / totalMentions) * 100}%` }}
@@ -364,7 +364,7 @@ export default function OurVisibilityPage() {
         <h2 className="text-xl font-semibold text-white mb-4">Most Cited Pages</h2>
         <div className="space-y-3">
           {topCitedPages.map((page, index) => (
-            <div key={page.page} className="flex items-center gap-4 p-3 bg-[#0a0f1a] rounded-lg">
+            <div key={page.page} className="flex items-center gap-4 p-3 bg-background rounded-lg">
               <div className="text-2xl font-bold text-gray-500 w-8">#{index + 1}</div>
               <div className="flex-1">
                 <div className="text-white font-medium mb-1">{page.page}</div>
@@ -407,11 +407,11 @@ export default function OurVisibilityPage() {
               placeholder="Search mentions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-[#0a0f1a] border-white/10 pl-10"
+              className="bg-background border-white/10 pl-10"
             />
           </div>
           <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
-            <SelectTrigger className="bg-[#0a0f1a] border-white/10">
+            <SelectTrigger className="bg-background border-white/10">
               <SelectValue placeholder="All platforms" />
             </SelectTrigger>
             <SelectContent>
@@ -426,7 +426,7 @@ export default function OurVisibilityPage() {
             </SelectContent>
           </Select>
           <Select value={sentimentFilter} onValueChange={setSentimentFilter}>
-            <SelectTrigger className="bg-[#0a0f1a] border-white/10">
+            <SelectTrigger className="bg-background border-white/10">
               <SelectValue placeholder="All sentiments" />
             </SelectTrigger>
             <SelectContent>
@@ -475,7 +475,7 @@ export default function OurVisibilityPage() {
                 <span className="text-cyan-400 hover:underline cursor-pointer">{mention.ourPage}</span>
               </div>
 
-              <div className="p-3 bg-[#0a0f1a] rounded-lg border border-white/5">
+              <div className="p-3 bg-background rounded-lg border border-white/5">
                 <span className="text-gray-400 text-sm">Citation: </span>
                 <p className="text-gray-300 text-sm mt-1">{mention.context}</p>
               </div>
