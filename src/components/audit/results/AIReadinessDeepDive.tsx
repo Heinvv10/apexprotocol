@@ -66,7 +66,7 @@ export function AIReadinessDeepDive({ audit }: AIReadinessDeepDiveProps) {
               <h2 className="text-2xl font-bold">AI Readiness Analysis</h2>
             </div>
             <p className="text-sm text-muted-foreground">
-              Comprehensive analysis of your content's visibility and suitability for AI models and LLMs
+              Comprehensive analysis of your content&apos;s visibility and suitability for AI models and LLMs
             </p>
           </div>
           <Link href="https://www.apex.ai/ai-readiness-guide" target="_blank">
@@ -112,7 +112,7 @@ export function AIReadinessDeepDive({ audit }: AIReadinessDeepDiveProps) {
           <AlertCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
           <div className="text-sm">
             <p className="text-muted-foreground">
-              Your content's AI readiness score of{" "}
+              Your content&apos;s AI readiness score of{" "}
               <strong className="text-foreground">
                 {aiData.citationPotential.overallScore}
               </strong>{" "}

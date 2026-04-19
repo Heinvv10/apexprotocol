@@ -456,7 +456,7 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
               {brand.name} Created!
             </h2>
             <p className="text-sm mb-6" style={{ color: DESIGN.textSecondary }}>
-              Let's complete your brand profile for full Apex functionality
+              Let&apos;s complete your brand profile for full Apex functionality
             </p>
 
             {/* What was auto-filled */}
@@ -501,7 +501,7 @@ export function CompletionWizard({ brand, onComplete, onClose }: CompletionWizar
                 <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" style={{ color: DESIGN.warningYellow }} />
                 <div className="text-left">
                   <h3 className="font-semibold mb-1" style={{ color: DESIGN.warningYellow }}>
-                    Some dashboards won't work yet
+                    Some dashboards won&apos;t work yet
                   </h3>
                   <p className="text-sm" style={{ color: DESIGN.textSecondary }}>
                     Complete these steps to unlock Monitor, Competitive, Social, and People dashboards.

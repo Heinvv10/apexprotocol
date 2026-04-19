@@ -348,7 +348,7 @@ export default function PortfolioSettingsPage() {
           <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
           <h2 className="text-lg font-semibold mb-2">Portfolio Not Found</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            The portfolio you're trying to edit doesn't exist or you don't have access to it.
+            The portfolio you&apos;re trying to edit doesn&apos;t exist or you don&apos;t have access to it.
           </p>
           <Button
             onClick={() => router.push("/dashboard/portfolios")}
@@ -638,7 +638,7 @@ export default function PortfolioSettingsPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Portfolio?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete "{portfolio.name}"
+                  This action cannot be undone. This will permanently delete &quot;{portfolio.name}&quot;
                   and remove all brand associations. The brands themselves will not be deleted.
                 </AlertDialogDescription>
               </AlertDialogHeader>
@@ -672,7 +672,7 @@ export default function PortfolioSettingsPage() {
               <ul className="text-sm text-muted-foreground space-y-1">
                 <li>• Changes to portfolio name will affect how it appears across the dashboard</li>
                 <li>• Adding brands will immediately include them in portfolio analytics</li>
-                <li>• Removing brands will exclude them from portfolio metrics but won't delete the brand</li>
+                <li>• Removing brands will exclude them from portfolio metrics but won&apos;t delete the brand</li>
                 <li>• Deleting a portfolio only removes brand associations, not the brands themselves</li>
               </ul>
             </div>

@@ -51,7 +51,7 @@ export function CoreWebVitalsCard({ vitals }: CoreWebVitalsCardProps) {
       <div>
         <h3 className="font-semibold text-lg mb-1">Core Web Vitals</h3>
         <p className="text-sm text-muted-foreground">
-          Google's metrics measuring real-world user experience
+          Google&apos;s metrics measuring real-world user experience
         </p>
       </div>
 
@@ -142,7 +142,7 @@ export function CoreWebVitalsCard({ vitals }: CoreWebVitalsCardProps) {
 
       <div className="text-xs text-muted-foreground p-3 bg-muted/20 rounded">
         <p>
-          💡 <strong>Tip:</strong> All three metrics must be in the "Good" range
+          💡 <strong>Tip:</strong> All three metrics must be in the &quot;Good&quot; range
           to achieve a passing Core Web Vitals assessment.
         </p>
       </div>

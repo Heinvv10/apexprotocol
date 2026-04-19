@@ -24,6 +24,7 @@
  */
 
 import { AIPlatform, PlatformError, PlatformErrorType } from "./types";
+import { logger } from "@/lib/logger";
 
 // ============================================================================
 // Configuration
@@ -440,7 +441,7 @@ export async function withRetry<T>(
 
       // Log retry attempt (only in development)
       if (process.env.NODE_ENV === "development") {
-        console.log(
+        logger.info(
           `[${platform}] Retrying after error (attempt ${attempt + 1}/${maxAttempts}): ${platformError.message}. ` +
           `Waiting ${delayMs}ms...`
         );
@@ -551,7 +552,7 @@ export interface BatchResult<T> {
  *   'chatgpt',
  *   2 // Max 2 concurrent operations
  * );
- * console.log(`${results.successCount}/${results.total} succeeded`);
+ * logger.info(`${results.successCount}/${results.total} succeeded`);
  * ```
  */
 export async function executeBatch<T>(

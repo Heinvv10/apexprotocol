@@ -10,6 +10,7 @@
 import { Anthropic } from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { logger } from "@/lib/logger";
 
 // ============================================================================
 // Types
@@ -544,7 +545,7 @@ export async function queryPerplexity(
 
       // Log detailed error info
       if (attempt === 0) {
-        console.debug(`Perplexity query attempt 1/3 - Error: ${errorMsg} (${statusCode})`);
+        logger.debug(`Perplexity query attempt 1/3 - Error: ${errorMsg} (${statusCode})`);
       }
 
       // Handle specific errors with retry logic
@@ -552,7 +553,7 @@ export async function queryPerplexity(
         // Authentication error - could be expired token
         if (attempt < MAX_RETRIES - 1) {
           const delay = INITIAL_DELAY * Math.pow(2, attempt);
-          console.debug(
+          logger.debug(
             `Perplexity 401 Auth error - Retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`
           );
           await new Promise((resolve) => setTimeout(resolve, delay));
@@ -567,7 +568,7 @@ export async function queryPerplexity(
         // Rate limit - backoff and retry
         if (attempt < MAX_RETRIES - 1) {
           const delay = INITIAL_DELAY * Math.pow(2, attempt + 1); // Longer delay for rate limit
-          console.debug(
+          logger.debug(
             `Perplexity 429 Rate limit - Backing off for ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`
           );
           await new Promise((resolve) => setTimeout(resolve, delay));
@@ -582,7 +583,7 @@ export async function queryPerplexity(
         // Server error - retry with backoff
         if (attempt < MAX_RETRIES - 1) {
           const delay = INITIAL_DELAY * Math.pow(2, attempt);
-          console.debug(
+          logger.debug(
             `Perplexity ${statusCode} Server error - Retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`
           );
           await new Promise((resolve) => setTimeout(resolve, delay));

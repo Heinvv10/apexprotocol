@@ -204,7 +204,7 @@ export const NotificationDigest: React.FC<NotificationDigestProps> = ({
                   ðŸŽ‰ No new notifications during this period!
                 </Text>
                 <Text style={emptyStateSubtext}>
-                  You're all caught up. Check back later for updates.
+                  You&apos;re all caught up. Check back later for updates.
                 </Text>
               </Section>
             )}
@@ -226,7 +226,7 @@ export const NotificationDigest: React.FC<NotificationDigestProps> = ({
               Apex GEO Platform | Powered by AI
             </Text>
             <Text style={footerText}>
-              You're receiving this {frequency} digest because you subscribed to notification emails.
+              You&apos;re receiving this {frequency} digest because you subscribed to notification emails.
             </Text>
             {unsubscribeUrl && (
               <Link href={unsubscribeUrl} style={footerLink}>

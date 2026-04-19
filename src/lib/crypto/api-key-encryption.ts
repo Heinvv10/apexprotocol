@@ -9,6 +9,7 @@
  */
 
 import { createCipheriv, createDecipheriv, randomBytes, createHash } from "crypto";
+import { logger } from "@/lib/logger";
 
 // Constants
 const ALGORITHM = "aes-256-gcm";
@@ -84,7 +85,7 @@ function getEncryptionKey(): Buffer {
 
   throw new Error(
     "ENCRYPTION_KEY environment variable is required in production. " +
-      'Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"'
+      'Generate one with: node -e "logger.info(require(\'crypto\').randomBytes(32).toString(\'hex\'))"'
   );
 }
 

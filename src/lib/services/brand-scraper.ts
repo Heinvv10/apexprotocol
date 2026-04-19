@@ -156,7 +156,7 @@ export async function scrapeBrandFromUrl(
   await onProgress?.(80, "Extracting social links...");
 
   // Step 5: Extract social links directly from HTML (80-85%)
-  let extractedSocialLinks: Record<string, string> = {};
+  const extractedSocialLinks: Record<string, string> = {};
   if (page.rawHtml) {
     try {
       const $ = cheerio.load(page.rawHtml);

@@ -268,7 +268,7 @@ export function ScoreComparisonTable({
         </div>
         <div className="flex items-center gap-2">
           <TrendingDown className="w-3 h-3 text-error" />
-          <span>You're ahead</span>
+          <span>You&apos;re ahead</span>
         </div>
       </div>
     </div>

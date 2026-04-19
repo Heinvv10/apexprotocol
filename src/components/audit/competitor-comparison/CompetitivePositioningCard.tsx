@@ -88,7 +88,7 @@ export function CompetitivePositioningCard({
         </div>
         <Progress value={percentilRank} className="h-3" />
         <p className="text-xs text-muted-foreground">
-          You're performing better than{" "}
+          You&apos;re performing better than{" "}
           <strong>
             {percentilRank}% of {totalCompetitors}
           </strong>{" "}

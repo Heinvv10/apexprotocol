@@ -8,6 +8,7 @@ import { getOrganizationId, getUserId } from "@/lib/auth/supabase-server";
 import { z } from "zod";
 import { getRedisClient, cacheSet } from "@/lib/redis";
 import { createId } from "@paralleldrive/cuid2";
+import { logger } from "@/lib/logger";
 
 // Request validation schema
 const scrapeRequestSchema = z.object({
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest) {
         const orchestratorResult = await scrapeBrandWithFallbacks(normalizedUrl, {
           onProgress: async (progress, message) => {
             currentProgress = progress;
-            console.log(`[Scrape ${jobId}] ${progress}% - ${message}`);
+            logger.info(`[Scrape ${jobId}] ${progress}% - ${message}`);
           },
         });
 

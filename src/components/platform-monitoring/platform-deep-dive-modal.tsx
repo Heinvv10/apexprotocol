@@ -69,10 +69,9 @@ export function PlatformDeepDiveModal({
   platform,
   allPlatforms,
 }: PlatformDeepDiveModalProps) {
-  if (!platform) return null;
-
-  // Calculate comparisons
+  // Calculate comparisons — hooks must run before any early return
   const comparisons = useMemo(() => {
+    if (!platform) return null;
     const avgVisibility =
       allPlatforms.reduce((sum, p) => sum + p.visibility, 0) /
       allPlatforms.length;
@@ -103,6 +102,7 @@ export function PlatformDeepDiveModal({
 
   // Analyze strengths and weaknesses
   const analysis = useMemo(() => {
+    if (!platform) return null;
     const strengths: string[] = [];
     const opportunities: string[] = [];
 
@@ -129,6 +129,9 @@ export function PlatformDeepDiveModal({
 
     return { strengths, opportunities };
   }, [platform]);
+
+  // Early return safe now — all hooks have run.
+  if (!platform || !comparisons || !analysis) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

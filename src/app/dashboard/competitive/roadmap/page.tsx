@@ -153,7 +153,7 @@ function EmptyRoadmapState({ onGenerate }: { onGenerate: () => void }) {
         <div className="space-y-2">
           <h2 className="text-xl font-semibold text-foreground">Start Your Improvement Journey</h2>
           <p className="text-muted-foreground">
-            Generate a personalized roadmap to improve your brand's visibility and beat competitors.
+            Generate a personalized roadmap to improve your brand&apos;s visibility and beat competitors.
           </p>
         </div>
         <div className="flex flex-col gap-3">

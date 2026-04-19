@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 /**
  * Brand Monitoring Sub-Agent
  * Comprehensive brand monitoring system for tracking mentions, sentiment,
@@ -205,7 +206,7 @@ export {
  *
  * await agent.initialize();
  * const result = await agent.monitor();
- * console.log(result.insights);
+ * logger.info(result.insights);
  * ```
  */
 

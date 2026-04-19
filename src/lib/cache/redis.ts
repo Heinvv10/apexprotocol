@@ -55,14 +55,17 @@ class InMemoryRedis {
 
   pipeline() {
     const commands: Array<() => Promise<unknown>> = [];
-    const self = this;
+    // Capture the outer Redis instance via an arrow-function bound closure
+    // on each command push — avoids `this` aliasing entirely.
+    const incrCmd = (key: string) => this.incr(key);
+    const expireCmd = (key: string, seconds: number) => this.expire(key, seconds);
     return {
       incr(key: string) {
-        commands.push(() => self.incr(key));
+        commands.push(() => incrCmd(key));
         return this;
       },
       expire(key: string, seconds: number) {
-        commands.push(() => self.expire(key, seconds));
+        commands.push(() => expireCmd(key, seconds));
         return this;
       },
       async exec() {

@@ -163,7 +163,7 @@ export function RoadmapGenerator({
           {step === 1 && (
             <div className="space-y-4">
               <h4 className="text-sm font-medium text-foreground">
-                What's your goal?
+                What&apos;s your goal?
               </h4>
               <div className="space-y-2">
                 {TARGET_OPTIONS.map((option) => {

@@ -22,6 +22,7 @@ import {
   captureCompetitorSnapshots,
   cleanupOldSnapshots,
 } from "@/lib/competitive/snapshot-service";
+import { logger } from "@/lib/logger";
 
 // Verify cron authorization
 function verifyCronAuth(request: NextRequest): boolean {
@@ -61,12 +62,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    console.log("[Cron] Starting competitive snapshot capture...");
+    logger.info("[Cron] Starting competitive snapshot capture...");
 
     // Capture snapshots for all brands
     const result = await captureAllBrandSnapshots();
 
-    console.log(`[Cron] Completed: ${result.totalSnapshots} snapshots for ${result.totalBrands} brands`);
+    logger.info(`[Cron] Completed: ${result.totalSnapshots} snapshots for ${result.totalBrands} brands`);
 
     // Clean up old snapshots (90 day retention)
     const cleaned = await cleanupOldSnapshots(90);
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     // If brandId provided, snapshot just that brand
     if (brandId) {
-      console.log(`[Cron] Manual snapshot trigger for brand ${brandId}`);
+      logger.info(`[Cron] Manual snapshot trigger for brand ${brandId}`);
 
       const result = await captureCompetitorSnapshots(brandId);
 
@@ -132,7 +133,7 @@ export async function POST(request: NextRequest) {
 
     // If cleanupDays provided, run cleanup
     if (cleanupDays !== undefined) {
-      console.log(`[Cron] Running cleanup for snapshots older than ${cleanupDays} days`);
+      logger.info(`[Cron] Running cleanup for snapshots older than ${cleanupDays} days`);
 
       const cleaned = await cleanupOldSnapshots(cleanupDays);
 

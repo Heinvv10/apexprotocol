@@ -400,6 +400,23 @@ export function CitationAnalysis({ className }: CitationAnalysisProps) {
   );
   const hasData = totalCitations > 0;
 
+  // Calculate overall citation type distribution — must run before any
+  // early return so hook call order stays stable across renders.
+  const overallStats = React.useMemo(() => {
+    const combined: { [K in CitationType]: number } = {
+      direct_quote: 0,
+      paraphrase: 0,
+      link: 0,
+      reference: 0,
+    };
+    platformStats.forEach((stat) => {
+      Object.entries(stat.byType).forEach(([type, count]) => {
+        combined[type as CitationType] += count;
+      });
+    });
+    return combined;
+  }, [platformStats]);
+
   // Empty state
   if (!hasData) {
     return (
@@ -430,24 +447,6 @@ export function CitationAnalysis({ className }: CitationAnalysisProps) {
       </div>
     );
   }
-
-  // Calculate overall citation type distribution
-  const overallStats = React.useMemo(() => {
-    const combined: { [K in CitationType]: number } = {
-      direct_quote: 0,
-      paraphrase: 0,
-      link: 0,
-      reference: 0,
-    };
-
-    platformStats.forEach((stat) => {
-      Object.entries(stat.byType).forEach(([type, count]) => {
-        combined[type as CitationType] += count;
-      });
-    });
-
-    return combined;
-  }, [platformStats]);
 
   return (
     <div className={cn("card-primary p-6", className)}>

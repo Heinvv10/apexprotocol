@@ -10,6 +10,7 @@ import type {
   BrandPerson,
   PersonSocialProfiles,
 } from "@/lib/db/schema";
+import { logger } from "@/lib/logger";
 
 // ============================================================================
 // Types
@@ -197,12 +198,12 @@ async function fetchLinkedInMetrics(url: string): Promise<ProfileMetrics | null>
     if (clearbitApiKey) {
       // Note: Clearbit uses email-based lookup, not LinkedIn URL
       // This is a simplified example - real implementation would need email
-      console.log(`[LinkedIn] No direct API access for ${handle}, would need email for Clearbit`);
+      logger.info(`[LinkedIn] No direct API access for ${handle}, would need email for Clearbit`);
     }
 
     // Fallback: Return null to indicate metrics unavailable via API
     // The caller should use cached/manual data
-    console.log(`[LinkedIn] No enrichment service configured for profile: ${handle}`);
+    logger.info(`[LinkedIn] No enrichment service configured for profile: ${handle}`);
     return null;
   } catch (error) {
     console.error("LinkedIn metrics fetch error:", error);
@@ -223,7 +224,7 @@ async function fetchTwitterMetrics(url: string): Promise<ProfileMetrics | null> 
   const bearerToken = process.env.TWITTER_BEARER_TOKEN;
 
   if (!bearerToken) {
-    console.log("[Twitter] Bearer token not configured, skipping metrics fetch");
+    logger.info("[Twitter] Bearer token not configured, skipping metrics fetch");
     return null;
   }
 
@@ -248,7 +249,7 @@ async function fetchTwitterMetrics(url: string): Promise<ProfileMetrics | null> 
       } else if (response.status === 429) {
         console.error("[Twitter] Rate limited");
       } else if (response.status === 404) {
-        console.log(`[Twitter] User not found: ${handle}`);
+        logger.info(`[Twitter] User not found: ${handle}`);
       }
       return null;
     }
@@ -285,7 +286,7 @@ async function fetchInstagramMetrics(url: string): Promise<ProfileMetrics | null
   const instagramAccessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
 
   if (!instagramAccessToken) {
-    console.log("[Instagram] Access token not configured");
+    logger.info("[Instagram] Access token not configured");
     return null;
   }
 

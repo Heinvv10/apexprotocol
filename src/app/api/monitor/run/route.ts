@@ -4,6 +4,7 @@ import { runGEOMonitoringForBrand } from "@/lib/services/geo-monitor";
 import { db } from "@/lib/db";
 import { brands } from "@/lib/db/schema/brands";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/monitor/run
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Run monitoring
-    console.log(`[API] Running GEO monitoring for brand: ${brand.name}`);
+    logger.info(`[API] Running GEO monitoring for brand: ${brand.name}`);
     const result = await runGEOMonitoringForBrand(brandId);
 
     return NextResponse.json({

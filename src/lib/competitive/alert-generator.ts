@@ -14,6 +14,7 @@ import {
 } from "@/lib/db/schema";
 import { eq, and, desc, gte } from "drizzle-orm";
 import type { SOVSnapshot } from "./share-of-voice";
+import { logger } from "@/lib/logger";
 
 // Alert thresholds
 const THRESHOLDS = {
@@ -240,7 +241,7 @@ export async function generateCompetitiveAlerts(
     }
   }
 
-  console.log(`[Alert Generator] Generated ${alerts.length} alerts for brand ${brandId}`);
+  logger.info(`[Alert Generator] Generated ${alerts.length} alerts for brand ${brandId}`);
 
   return alerts;
 }

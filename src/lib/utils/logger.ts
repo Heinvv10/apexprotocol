@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 /**
  * Logger Utility
  *
@@ -83,7 +84,7 @@ export class Logger {
         message,
         data,
       };
-      console.debug(this.formatContext(context));
+      logger.debug(this.formatContext(context));
     }
   }
 
@@ -96,7 +97,7 @@ export class Logger {
         message,
         data,
       };
-      console.log(this.formatContext(context));
+      logger.info(this.formatContext(context));
     }
   }
 

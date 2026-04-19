@@ -16,6 +16,7 @@ import { db } from "@/lib/db";
 import { brands } from "@/lib/db/schema/brands";
 import { brandPeople } from "@/lib/db/schema/people";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 // ============================================================================
 // Types
@@ -78,13 +79,13 @@ function extractCompanyDomain(brand: typeof brands.$inferSelect): string | null 
 async function findLinkedInCompanyPage(
   brand: typeof brands.$inferSelect
 ): Promise<string | null> {
-  console.log(`[LinkedIn] Finding company page for: ${brand.name}`);
+  logger.info(`[LinkedIn] Finding company page for: ${brand.name}`);
 
   // 1. First check if brand already has LinkedIn URL from website scraping
   if (brand.socialLinks && typeof brand.socialLinks === "object") {
     const linkedinUrl = (brand.socialLinks as Record<string, unknown>).linkedin;
     if (linkedinUrl && typeof linkedinUrl === "string") {
-      console.log(`  ✅ Found LinkedIn URL from brand data: ${linkedinUrl}`);
+      logger.info(`  ✅ Found LinkedIn URL from brand data: ${linkedinUrl}`);
       // Ensure it points to /people page for employee extraction
       if (!linkedinUrl.includes("/people")) {
         const baseUrl = linkedinUrl.replace(/\/$/, "");
@@ -96,7 +97,7 @@ async function findLinkedInCompanyPage(
 
   // 2. Construct probable LinkedIn company URL from domain
   if (!brand.domain) {
-    console.log("  ⚠️ No domain found for brand");
+    logger.info("  ⚠️ No domain found for brand");
     return null;
   }
 
@@ -105,11 +106,11 @@ async function findLinkedInCompanyPage(
 
   if (companyName) {
     const probableUrl = `https://www.linkedin.com/company/${companyName}/people`;
-    console.log(`  📌 Using constructed URL: ${probableUrl}`);
+    logger.info(`  📌 Using constructed URL: ${probableUrl}`);
     return probableUrl;
   }
 
-  console.log("  ⚠️ Could not construct LinkedIn URL from domain");
+  logger.info("  ⚠️ Could not construct LinkedIn URL from domain");
   return null;
 }
 
@@ -123,8 +124,8 @@ async function scrapeLinkedInCompanyEmployees(
   companyPageUrl: string,
   limit: number = 50
 ): Promise<LinkedInPerson[]> {
-  console.log(`[LinkedIn] Scraping employees from: ${companyPageUrl}`);
-  console.log(`  Limit: ${limit} people`);
+  logger.info(`[LinkedIn] Scraping employees from: ${companyPageUrl}`);
+  logger.info(`  Limit: ${limit} people`);
 
   let browser: any = null;
 
@@ -152,33 +153,33 @@ async function scrapeLinkedInCompanyEmployees(
 
     try {
       // Navigate to company people page with longer timeout
-      console.log(`  Navigating to ${companyPageUrl}...`);
+      logger.info(`  Navigating to ${companyPageUrl}...`);
       const response = await page.goto(companyPageUrl, {
         waitUntil: "domcontentloaded",
         timeout: 30000
       });
 
       if (!response || !response.ok()) {
-        console.log(`  ⚠️ Page returned status: ${response?.status() || 'unknown'}`);
+        logger.info(`  ⚠️ Page returned status: ${response?.status() || 'unknown'}`);
         await browser.close();
         return [];
       }
 
       // Random delay to appear human (1-3s)
       const delay = 1000 + Math.random() * 2000;
-      console.log(`  Waiting ${Math.round(delay)}ms before extraction...`);
+      logger.info(`  Waiting ${Math.round(delay)}ms before extraction...`);
       await page.waitForTimeout(delay);
 
       // Check if we hit a login wall or CAPTCHA
       const bodyText = await page.textContent('body').catch(() => '');
       if (bodyText.toLowerCase().includes('sign in') && bodyText.toLowerCase().includes('join now')) {
-        console.log(`  ⚠️ Hit LinkedIn login wall - cannot access public people data`);
+        logger.info(`  ⚠️ Hit LinkedIn login wall - cannot access public people data`);
         await browser.close();
         return [];
       }
 
       // Extract people cards from the page
-      console.log(`  Extracting employee data...`);
+      logger.info(`  Extracting employee data...`);
       const employees = await page.evaluate(() => {
         const people: Array<{
           fullName: string;
@@ -312,7 +313,7 @@ async function scrapeLinkedInCompanyEmployees(
         return people;
       });
 
-      console.log(`  ✅ Found ${employees.length} employee(s) via Playwright scraping`);
+      logger.info(`  ✅ Found ${employees.length} employee(s) via Playwright scraping`);
 
       // Close browser
       await browser.close();
@@ -380,32 +381,32 @@ export async function extractLinkedInPeople(
 
     result.brandName = brand.name;
 
-    console.log(`[LinkedIn] Starting people extraction for ${brand.name}`);
+    logger.info(`[LinkedIn] Starting people extraction for ${brand.name}`);
 
     // Extract company domain
     const domain = extractCompanyDomain(brand);
     if (!domain) {
       result.errors.push("Could not extract company domain from brand");
-      console.log("  ⚠️ No domain found");
+      logger.info("  ⚠️ No domain found");
       return result;
     }
 
-    console.log(`  Domain: ${domain}`);
+    logger.info(`  Domain: ${domain}`);
 
     // Find LinkedIn company page
     const companyPageUrl = await findLinkedInCompanyPage(brand);
     if (!companyPageUrl) {
       result.errors.push("Could not find LinkedIn company page");
-      console.log("  ⚠️ No LinkedIn company page found");
+      logger.info("  ⚠️ No LinkedIn company page found");
       return result;
     }
 
-    console.log(`  Company page: ${companyPageUrl}`);
+    logger.info(`  Company page: ${companyPageUrl}`);
 
     // Scrape employees
     const employees = await scrapeLinkedInCompanyEmployees(companyPageUrl, 50);
 
-    console.log(`  Found ${employees.length} employee(s)`);
+    logger.info(`  Found ${employees.length} employee(s)`);
 
     // Save to database
     for (const employee of employees) {
@@ -416,7 +417,7 @@ export async function extractLinkedInPeople(
         });
 
         if (existing) {
-          console.log(`  Skipping ${employee.fullName} (already exists)`);
+          logger.info(`  Skipping ${employee.fullName} (already exists)`);
           continue;
         }
 
@@ -431,7 +432,7 @@ export async function extractLinkedInPeople(
         });
 
         result.peopleExtracted++;
-        console.log(`  ✅ Added ${employee.fullName}`);
+        logger.info(`  ✅ Added ${employee.fullName}`);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         result.errors.push(`Failed to save ${employee.fullName}: ${errorMessage}`);
@@ -440,9 +441,9 @@ export async function extractLinkedInPeople(
     }
 
     result.success = true;
-    console.log(`[LinkedIn] Extraction completed for ${brand.name}`);
-    console.log(`  People extracted: ${result.peopleExtracted}`);
-    console.log(`  Errors: ${result.errors.length}`);
+    logger.info(`[LinkedIn] Extraction completed for ${brand.name}`);
+    logger.info(`  People extracted: ${result.peopleExtracted}`);
+    logger.info(`  Errors: ${result.errors.length}`);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     result.errors.push(`Unexpected error: ${errorMessage}`);
@@ -462,7 +463,7 @@ export async function enrichPersonProfile(personId: string): Promise<{
   updatedFields: string[];
   error?: string;
 }> {
-  console.log(`[LinkedIn] Enriching person profile: ${personId}`);
+  logger.info(`[LinkedIn] Enriching person profile: ${personId}`);
 
   const rapidApiKey = process.env.RAPIDAPI_KEY;
 
@@ -581,9 +582,9 @@ export async function enrichPersonProfile(personId: string): Promise<{
         })
         .where(eq(brandPeople.id, personId));
 
-      console.log(`  ✅ Updated ${updatedFields.length} field(s) for ${person.name}`);
+      logger.info(`  ✅ Updated ${updatedFields.length} field(s) for ${person.name}`);
     } else {
-      console.log(`  📌 No new data to update for ${person.name}`);
+      logger.info(`  📌 No new data to update for ${person.name}`);
     }
 
     return {

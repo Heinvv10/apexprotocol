@@ -272,7 +272,7 @@ export function MetricExplanationCard({ metric, className }: MetricExplanationCa
 
       <div className="bg-muted/30 rounded-md p-3">
         <p className="text-xs text-muted-foreground font-medium mb-1">
-          How it's calculated:
+          How it&apos;s calculated:
         </p>
         <p className="text-xs text-foreground/70">
           {definition.formula}

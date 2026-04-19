@@ -15,6 +15,7 @@ import { brands } from "@/lib/db/schema/brands";
 import { users } from "@/lib/db/schema/users";
 import { eq, desc, and, gte } from "drizzle-orm";
 import { onPredictedScoreDrop } from "@/lib/notifications/triggers";
+import { logger } from "@/lib/logger";
 
 // Verify cron secret for security
 async function verifyCronSecret(): Promise<boolean> {
@@ -88,7 +89,7 @@ async function processBrandPredictions(brandId: string): Promise<{
     const currentScore = await getLatestGeoScore(brandId);
 
     if (currentScore === null) {
-      console.log(`[CheckPredictions] No GEO score found for brand ${brandId}`);
+      logger.info(`[CheckPredictions] No GEO score found for brand ${brandId}`);
       return results;
     }
 
@@ -108,7 +109,7 @@ async function processBrandPredictions(brandId: string): Promise<{
     results.checked = brandPredictions.length;
 
     if (brandPredictions.length === 0) {
-      console.log(`[CheckPredictions] No active predictions for brand ${brandId}`);
+      logger.info(`[CheckPredictions] No active predictions for brand ${brandId}`);
       return results;
     }
 
@@ -116,7 +117,7 @@ async function processBrandPredictions(brandId: string): Promise<{
     const brandUsers = await getBrandUsers(brandId);
 
     if (brandUsers.length === 0) {
-      console.log(`[CheckPredictions] No users found for brand ${brandId}`);
+      logger.info(`[CheckPredictions] No users found for brand ${brandId}`);
       return results;
     }
 
@@ -174,7 +175,7 @@ export async function GET() {
     // Get unique brand IDs
     const brandIds = Array.from(new Set(activePredictions.map(p => p.brandId)));
 
-    console.log(`[CheckPredictions] Processing ${brandIds.length} brands with ${activePredictions.length} active predictions`);
+    logger.info(`[CheckPredictions] Processing ${brandIds.length} brands with ${activePredictions.length} active predictions`);
 
     // Process each brand
     const results = await Promise.all(
@@ -191,7 +192,7 @@ export async function GET() {
       durationMs: Date.now() - startTime,
     };
 
-    console.log(`[CheckPredictions] Completed:`, summary);
+    logger.info(`[CheckPredictions] Completed:`, summary);
 
     return NextResponse.json({
       success: true,

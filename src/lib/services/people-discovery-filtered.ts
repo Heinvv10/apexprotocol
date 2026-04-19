@@ -8,6 +8,7 @@
 import { discoverPeopleFromWebsite, convertToDbPeople, type DiscoveredPerson } from "@/lib/people";
 import { db } from "@/lib/db";
 import { brandPeople } from "@/lib/db/schema";
+import { logger } from "@/lib/logger";
 
 /**
  * Discover and save only management-level people from a brand's website
@@ -33,7 +34,7 @@ export async function discoverManagementPeople(
 }> {
   const baseUrl = domain.startsWith("http") ? domain : `https://${domain}`;
 
-  console.log(`[People Discovery] Crawling ${baseUrl} for management...`);
+  logger.info(`[People Discovery] Crawling ${baseUrl} for management...`);
 
   // Discover all people from website
   const result = await discoverPeopleFromWebsite({
@@ -45,7 +46,7 @@ export async function discoverManagementPeople(
   const totalFound = result.people.length;
 
   if (totalFound === 0) {
-    console.log(`[People Discovery] No people found on ${domain}`);
+    logger.info(`[People Discovery] No people found on ${domain}`);
     return { saved: 0, totalFound: 0, filtered: 0 };
   }
 
@@ -53,7 +54,7 @@ export async function discoverManagementPeople(
   const managementPeople = filterManagementOnly(result.people);
   const filtered = totalFound - managementPeople.length;
 
-  console.log(
+  logger.info(
     `[People Discovery] Found ${totalFound} people, keeping ${managementPeople.length} management (filtered ${filtered})`
   );
 
@@ -61,7 +62,7 @@ export async function discoverManagementPeople(
   if (managementPeople.length > 0) {
     const peopleToInsert = convertToDbPeople(managementPeople, brandId);
     await db.insert(brandPeople).values(peopleToInsert);
-    console.log(`[People Discovery] ✅ Saved ${managementPeople.length} management people`);
+    logger.info(`[People Discovery] ✅ Saved ${managementPeople.length} management people`);
   }
 
   return {

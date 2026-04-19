@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 /**
  * Database Error Handler Utility (F137)
  * Provides consistent error handling and logging for all GraphQL resolver database operations
@@ -332,6 +333,6 @@ export function logDatabaseOperation(
   details?: Record<string, unknown>
 ): void {
   if (process.env.NODE_ENV === "development") {
-    console.log(`[DB] ${operation}`, details ? JSON.stringify(details) : "");
+    logger.info(`[DB] ${operation}`, details ? JSON.stringify(details) : "");
   }
 }

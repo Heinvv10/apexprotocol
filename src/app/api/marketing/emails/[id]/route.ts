@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrganizationId } from '@/lib/auth';
+import { logger } from "@/lib/logger";
 
 // Mock email lists data (same as parent route for consistency)
 const mockEmailLists = [
@@ -216,7 +217,7 @@ export async function GET(
       });
     } catch (listmonkError) {
       // ListMonk not available, return mock data
-      console.log('ListMonk unavailable, using mock data:', listmonkError);
+      logger.info('ListMonk unavailable, using mock data:', listmonkError);
 
       // Find the list by ID in mock data
       const list = mockEmailLists.find((l) => l.id === id);

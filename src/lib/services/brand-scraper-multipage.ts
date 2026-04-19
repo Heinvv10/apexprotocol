@@ -9,6 +9,7 @@ import { analyzeBrandFromWebsite, type BrandAnalysisInput, type BrandLocationInf
 import { extractBestLogo, type LogoCandidate } from "@/lib/services/logo-extractor";
 import { extractSocialPatterns, type SocialLink } from "@/lib/crawling/social-discovery";
 import type { ScrapedBrandData } from "@/app/api/brands/scrape/route";
+import { logger } from "@/lib/logger";
 
 // Progress callback type
 type ProgressCallback = (progress: number, message: string) => void;
@@ -398,7 +399,9 @@ export async function scrapeMultiPageBrand(
   if (!aiAnalysis.locations || aiAnalysis.locations.length === 0) {
     const textLocations = extractLocationsFromText(mergedData.bodyText || '');
     if (textLocations.length > 0) {
-      console.log();
+      logger.info("brand-scraper: fell back to text-based location extraction", {
+        count: textLocations.length,
+      });
       aiAnalysis.locations = textLocations;
     }
   }

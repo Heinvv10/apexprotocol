@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { brands } from "@/lib/db/schema/brands";
 import { populateLocations } from "@/lib/services/brand-post-create";
 import { getOrganizationId } from "@/lib/auth/supabase-server";
+import { logger } from "@/lib/logger";
 
 export async function POST(_request: NextRequest) {
   try {
@@ -17,14 +18,14 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log("\n🔄 Starting Backfill Migration\n");
+    logger.info("\n🔄 Starting Backfill Migration\n");
 
     // Get all brands
     const allBrands = await db.query.brands.findMany({
       orderBy: (brands, { desc }) => [desc(brands.createdAt)],
     });
 
-    console.log(`Found ${allBrands.length} brands to check`);
+    logger.info(`Found ${allBrands.length} brands to check`);
 
     let locationsBackfilled = 0;
     let totalLocationRecords = 0;
@@ -56,13 +57,13 @@ export async function POST(_request: NextRequest) {
               brandName: brand.name,
               locationsMigrated: count,
             });
-            console.log(`✅ ${brand.name}: Migrated ${count} location(s)`);
+            logger.info(`✅ ${brand.name}: Migrated ${count} location(s)`);
           } else {
             results.push({
               brandName: brand.name,
               locationsMigrated: 0,
             });
-            console.log(`ℹ️  ${brand.name}: Locations already migrated`);
+            logger.info(`ℹ️  ${brand.name}: Locations already migrated`);
           }
         } catch (error) {
           const errorMsg = `Failed to migrate locations for ${brand.name}: ${error instanceof Error ? error.message : String(error)}`;

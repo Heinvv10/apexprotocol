@@ -230,7 +230,7 @@ function RoadmapPageInner() {
             </li>
             <li>
               <strong className="text-foreground">Prioritize by effort</strong> -
-              Start with "easy" difficulty tasks to build momentum
+              Start with &quot;easy&quot; difficulty tasks to build momentum
             </li>
             <li>
               <strong className="text-foreground">Assign team members</strong> -

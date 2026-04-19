@@ -36,7 +36,7 @@ export function IssueFixModal({ issue, actionType, auditUrl, isOpen, onClose }: 
             <div>
               <h3 className="font-semibold mb-2">Generate Fix with AI</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                We'll use AI to generate a fix for this issue and guide you through implementation.
+                We&apos;ll use AI to generate a fix for this issue and guide you through implementation.
               </p>
             </div>
 
@@ -57,7 +57,7 @@ export function IssueFixModal({ issue, actionType, auditUrl, isOpen, onClose }: 
 
             <div className="bg-primary/5 border border-primary/20 p-3 rounded-lg">
               <p className="text-xs text-muted-foreground">
-                💡 <strong>Next step:</strong> Click "Generate with AI" to open the content creation tool with this issue's context pre-filled.
+                💡 <strong>Next step:</strong> Click &quot;Generate with AI&quot; to open the content creation tool with this issue&apos;s context pre-filled.
               </p>
             </div>
 

@@ -184,7 +184,7 @@ export default function BrandDetailPage() {
           <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
           <h2 className="text-lg font-semibold mb-2">Brand Not Found</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            The brand you're looking for doesn't exist or you don't have access to it.
+            The brand you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.
           </p>
           <Button
             onClick={() => router.push("/dashboard/brands")}
@@ -358,7 +358,7 @@ export default function BrandDetailPage() {
           <CardHeader>
             <CardTitle className="text-lg font-semibold">Performance Breakdown</CardTitle>
             <CardDescription>
-              Detailed analysis of your brand's GEO score components
+              Detailed analysis of your brand&apos;s GEO score components
             </CardDescription>
           </CardHeader>
           <CardContent>

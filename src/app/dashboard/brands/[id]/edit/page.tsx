@@ -315,7 +315,7 @@ export default function EditBrandPage() {
           <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
           <h2 className="text-lg font-semibold mb-2">Brand Not Found</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            The brand you're trying to edit doesn't exist or you don't have access to it.
+            The brand you&apos;re trying to edit doesn&apos;t exist or you don&apos;t have access to it.
           </p>
           <Button
             onClick={() => router.push("/dashboard/brands")}
@@ -399,7 +399,7 @@ export default function EditBrandPage() {
                       />
                     </FormControl>
                     <FormDescription>
-                      Your brand's website domain (without https://) — logo will be auto-fetched on change
+                      Your brand&apos;s website domain (without https://) — logo will be auto-fetched on change
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -539,7 +539,7 @@ export default function EditBrandPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete Brand?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete "{brand.name}"
+                        This action cannot be undone. This will permanently delete &quot;{brand.name}&quot;
                         and remove all associated data including mentions, content, and analytics.
                       </AlertDialogDescription>
                     </AlertDialogHeader>

@@ -72,7 +72,7 @@ export function AIPlatformVisibility({ platforms }: AIPlatformVisibilityProps) {
           <h3 className="font-semibold text-lg">AI Platform Visibility</h3>
         </div>
         <p className="text-sm text-muted-foreground">
-          Your content's presence and suitability across major AI platforms
+          Your content&apos;s presence and suitability across major AI platforms
         </p>
       </div>
 

@@ -31,6 +31,7 @@ import { CitationParser } from "./citation-parser";
 import { VisibilityScorer } from "./visibility-scorer";
 import { ContentTypeAnalyzer } from "./content-type-analyzer";
 import { RecommendationEngine } from "./recommendation-engine";
+import { logger } from "@/lib/logger";
 
 /**
  * Configuration for the analysis engine
@@ -143,15 +144,15 @@ export class AnalysisEngine {
    *   query: "What are the best project management tools?",
    *   brandContext: "Acme Corp is a project management software company known for innovative features"
    * });
-   * console.log(`Average visibility: ${analysis.aggregate.avgVisibilityScore}/100`);
-   * console.log(`Best platform: ${analysis.aggregate.bestPlatform}`);
+   * logger.info(`Average visibility: ${analysis.aggregate.avgVisibilityScore}/100`);
+   * logger.info(`Best platform: ${analysis.aggregate.bestPlatform}`);
    * ```
    */
   async analyze(request: AnalysisRequest): Promise<MultiPlatformAnalysis> {
     const startTime = Date.now();
 
     if (this.options.debug) {
-      console.log(
+      logger.info(
         `[AnalysisEngine] Starting multi-platform analysis for query: "${request.query}"`
       );
     }
@@ -209,7 +210,7 @@ export class AnalysisEngine {
 
       if (this.options.debug) {
         const duration = Date.now() - startTime;
-        console.log(
+        logger.info(
           `[AnalysisEngine] Analysis completed in ${duration}ms - Status: ${analysis.status}, Platforms: ${successCount}/${this.options.platforms.length}`
         );
       }
@@ -247,7 +248,7 @@ export class AnalysisEngine {
    *   "What are the best project management tools?",
    *   "Acme Corp is a project management software company"
    * );
-   * console.log(`ChatGPT visibility: ${analysis.visibilityScore.total}/100`);
+   * logger.info(`ChatGPT visibility: ${analysis.visibilityScore.total}/100`);
    * ```
    */
   async analyzePlatform(
@@ -259,7 +260,7 @@ export class AnalysisEngine {
     const startTime = Date.now();
 
     if (this.options.debug) {
-      console.log(`[AnalysisEngine] Analyzing platform: ${platform}`);
+      logger.info(`[AnalysisEngine] Analyzing platform: ${platform}`);
     }
 
     try {
@@ -282,7 +283,7 @@ export class AnalysisEngine {
 
       if (this.options.debug) {
         const duration = Date.now() - startTime;
-        console.log(
+        logger.info(
           `[AnalysisEngine] Platform ${platform} analyzed in ${duration}ms - Score: ${analysis.visibilityScore.total}/100`
         );
       }
@@ -638,7 +639,7 @@ export async function analyzeSinglePlatform(
  * @example
  * ```typescript
  * const comparison = getVisibilityComparison(analysis);
- * console.log(`Best platform: ${comparison[0].platform} (${comparison[0].score}/100)`);
+ * logger.info(`Best platform: ${comparison[0].platform} (${comparison[0].score}/100)`);
  * ```
  */
 export function getVisibilityComparison(
@@ -664,7 +665,7 @@ export function getVisibilityComparison(
  * ```typescript
  * const topRecommendations = getTopRecommendations(analysis, 5);
  * topRecommendations.forEach(rec => {
- *   console.log(`[${rec.platform}] ${rec.recommendation.title}`);
+ *   logger.info(`[${rec.platform}] ${rec.recommendation.title}`);
  * });
  * ```
  */
@@ -716,9 +717,9 @@ export function getTopRecommendations(
  * @example
  * ```typescript
  * const summary = getAnalysisSummary(analysis);
- * console.log(`Status: ${summary.status}`);
- * console.log(`Average Score: ${summary.avgScore}/100`);
- * console.log(`Best Platform: ${summary.bestPlatform}`);
+ * logger.info(`Status: ${summary.status}`);
+ * logger.info(`Average Score: ${summary.avgScore}/100`);
+ * logger.info(`Best Platform: ${summary.bestPlatform}`);
  * ```
  */
 export function getAnalysisSummary(analysis: MultiPlatformAnalysis): {

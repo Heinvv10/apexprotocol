@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 /**
  * AI Platform Algorithm Insights - Core Type Definitions
  *
@@ -394,7 +395,7 @@ export interface PlatformAdapter {
    *   "What are the best project management tools?",
    *   "Acme Corp is a project management software company"
    * );
-   * console.log(`Citations found: ${response.citations.length}`);
+   * logger.info(`Citations found: ${response.citations.length}`);
    * ```
    */
   analyze(

@@ -2,18 +2,19 @@
 
 import { PostComposer } from "@/components/admin/post-composer";
 import { useRouter } from "next/navigation";
+import { logger } from "@/lib/logger";
 
 export default function ComposePage() {
   const router = useRouter();
 
   const handleSave = (draft: any) => {
-    console.log("Draft saved:", draft);
+    logger.info("Draft saved:", draft);
     // TODO: Save draft to database
     alert("Draft saved successfully!");
   };
 
   const handlePublish = (post: any) => {
-    console.log("Post published:", post);
+    logger.info("Post published:", post);
     // TODO: Publish post via API
     if (post.status === "scheduled") {
       alert(`Post scheduled for ${post.scheduledDate} at ${post.scheduledTime}!`);

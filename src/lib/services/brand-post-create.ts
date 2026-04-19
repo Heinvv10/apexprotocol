@@ -20,6 +20,7 @@ import { eq, and } from "drizzle-orm";
 import type { Brand } from "@/stores";
 import { runGEOMonitoringForBrand } from "./geo-monitor";
 import { discoverManagementPeople } from "./people-discovery-filtered";
+import { logger } from "@/lib/logger";
 
 // ============================================================================
 // Types
@@ -174,7 +175,7 @@ export async function populateSocialProfiles(
       });
 
       if (existing) {
-        console.log(`Social account for ${platform} already exists, skipping`);
+        logger.info(`Social account for ${platform} already exists, skipping`);
         continue;
       }
 
@@ -194,7 +195,7 @@ export async function populateSocialProfiles(
       });
 
       createdCount++;
-      console.log(`Created social account for ${platform}: ${url}`);
+      logger.info(`Created social account for ${platform}: ${url}`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       errors.push(`Failed to create social account for ${url}: ${errorMessage}`);
@@ -236,7 +237,7 @@ export async function populateCompetitors(
       });
 
       if (existing) {
-        console.log(`Competitor ${competitor.name} already exists, skipping`);
+        logger.info(`Competitor ${competitor.name} already exists, skipping`);
         continue;
       }
 
@@ -267,7 +268,7 @@ export async function populateCompetitors(
       });
 
       createdCount++;
-      console.log(`Created competitor record for ${competitor.name}`);
+      logger.info(`Created competitor record for ${competitor.name}`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       errors.push(`Failed to create competitor ${competitor.name}: ${errorMessage}`);
@@ -321,7 +322,7 @@ export async function populateLocations(
       });
 
       if (existing) {
-        console.log(`Location in ${location.city || location.address} already exists, skipping`);
+        logger.info(`Location in ${location.city || location.address} already exists, skipping`);
         continue;
       }
 
@@ -346,7 +347,7 @@ export async function populateLocations(
       });
 
       createdCount++;
-      console.log(`Created location record for ${location.city || location.address}`);
+      logger.info(`Created location record for ${location.city || location.address}`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       errors.push(`Failed to create location ${location.city || location.address}: ${errorMessage}`);
@@ -379,7 +380,7 @@ export async function ensureDefaultPortfolio(
     });
 
     if (existingPortfolioBrand) {
-      console.log(`Brand ${brandId} already in portfolio ${existingPortfolioBrand.portfolioId}`);
+      logger.info(`Brand ${brandId} already in portfolio ${existingPortfolioBrand.portfolioId}`);
       return {
         created: false,
         portfolioId: existingPortfolioBrand.portfolioId,
@@ -404,7 +405,7 @@ export async function ensureDefaultPortfolio(
       }).returning();
 
       defaultPortfolio = newPortfolio;
-      console.log(`Created default portfolio for organization ${organizationId}`);
+      logger.info(`Created default portfolio for organization ${organizationId}`);
     }
 
     // Add brand to portfolio
@@ -415,7 +416,7 @@ export async function ensureDefaultPortfolio(
       isHighlighted: false,
     });
 
-    console.log(`Added brand ${brandId} to portfolio ${defaultPortfolio.id}`);
+    logger.info(`Added brand ${brandId} to portfolio ${defaultPortfolio.id}`);
 
     return {
       created: true,
@@ -460,60 +461,60 @@ export async function populateBrandData(brandId: string): Promise<BrandPopulatio
       return result;
     }
 
-    console.log(`Starting data population for brand: ${brand.name} (${brandId})`);
+    logger.info(`Starting data population for brand: ${brand.name} (${brandId})`);
 
     // 1. Populate social profiles
     if (brand.socialLinks && Object.keys(brand.socialLinks).length > 0) {
-      console.log(`Populating social profiles from ${Object.keys(brand.socialLinks).length} links...`);
+      logger.info(`Populating social profiles from ${Object.keys(brand.socialLinks).length} links...`);
       result.socialProfilesCreated = await populateSocialProfiles(
         brandId,
         brand.socialLinks as Record<string, string>
       );
-      console.log(`✅ Created ${result.socialProfilesCreated} social profile(s)`);
+      logger.info(`✅ Created ${result.socialProfilesCreated} social profile(s)`);
     } else {
-      console.log("No social links found, skipping social profile creation");
+      logger.info("No social links found, skipping social profile creation");
     }
 
     // 2. Populate competitors
     if (brand.competitors && Array.isArray(brand.competitors) && brand.competitors.length > 0) {
-      console.log(`Populating ${brand.competitors.length} competitor(s)...`);
+      logger.info(`Populating ${brand.competitors.length} competitor(s)...`);
       result.competitorsCreated = await populateCompetitors(
         brandId,
         brand.competitors as Array<{ name: string; url?: string; reason: string }>
       );
-      console.log(`✅ Created ${result.competitorsCreated} competitor record(s)`);
+      logger.info(`✅ Created ${result.competitorsCreated} competitor record(s)`);
     } else {
-      console.log("No competitors found, skipping competitor creation");
+      logger.info("No competitors found, skipping competitor creation");
     }
 
     // 2.5. Populate locations from brands.locations JSONB field
     if (brand.locations && Array.isArray(brand.locations) && brand.locations.length > 0) {
-      console.log(`Populating ${brand.locations.length} location(s) from scraped data...`);
+      logger.info(`Populating ${brand.locations.length} location(s) from scraped data...`);
       result.locationsCreated = await populateLocations(
         brandId,
         brand.locations as Array<{ type: string; address?: string; city?: string; state?: string; country?: string; postalCode?: string; phone?: string; email?: string }>
       );
-      console.log(`✅ Created ${result.locationsCreated} location record(s)`);
+      logger.info(`✅ Created ${result.locationsCreated} location record(s)`);
     } else {
-      console.log("No locations found in scraped data, skipping location creation");
+      logger.info("No locations found in scraped data, skipping location creation");
     }
 
     // 2.6. Discover management-level people from website
     if (brand.domain) {
-      console.log(`Discovering people from ${brand.domain}...`);
+      logger.info(`Discovering people from ${brand.domain}...`);
       const discoveryResult = await discoverManagementPeople(brandId, brand.domain);
       result.peopleDiscovered = discoveryResult.saved;
 
       // 2.7. LinkedIn enrichment if fewer than 5 people found
       if (result.peopleDiscovered < 5) {
-        console.log(`Only ${result.peopleDiscovered} people found from website, enriching from LinkedIn...`);
+        logger.info(`Only ${result.peopleDiscovered} people found from website, enriching from LinkedIn...`);
         try {
           const { extractLinkedInPeople } = await import("./linkedin-scraper");
           const linkedinResult = await extractLinkedInPeople(brandId);
 
           if (linkedinResult.success && linkedinResult.peopleExtracted > 0) {
             result.peopleDiscovered += linkedinResult.peopleExtracted;
-            console.log(`✅ Added ${linkedinResult.peopleExtracted} people from LinkedIn (total: ${result.peopleDiscovered})`);
+            logger.info(`✅ Added ${linkedinResult.peopleExtracted} people from LinkedIn (total: ${result.peopleDiscovered})`);
           } else if (linkedinResult.errors.length > 0) {
             result.errors.push(`LinkedIn enrichment failed: ${linkedinResult.errors.join(', ')}`);
             console.warn(`LinkedIn enrichment failed: ${linkedinResult.errors.join(', ')}`);
@@ -524,22 +525,22 @@ export async function populateBrandData(brandId: string): Promise<BrandPopulatio
           console.error("LinkedIn enrichment error:", error);
         }
       } else {
-        console.log(`Found ${result.peopleDiscovered} people from website, skipping LinkedIn enrichment`);
+        logger.info(`Found ${result.peopleDiscovered} people from website, skipping LinkedIn enrichment`);
       }
     } else {
-      console.log("No domain found, skipping people discovery");
+      logger.info("No domain found, skipping people discovery");
     }
 
     // 3. Create default portfolio
-    console.log("Ensuring default portfolio...");
+    logger.info("Ensuring default portfolio...");
     const portfolioResult = await ensureDefaultPortfolio(brand.organizationId, brandId);
     result.portfolioCreated = portfolioResult.created;
     result.portfolioId = portfolioResult.portfolioId;
-    console.log(`✅ Portfolio ${portfolioResult.created ? "created" : "exists"}: ${portfolioResult.portfolioId}`);
+    logger.info(`✅ Portfolio ${portfolioResult.created ? "created" : "exists"}: ${portfolioResult.portfolioId}`);
 
     // 4. Engine Room data collection (GEO monitoring with real AI platform queries)
     if (brand.monitoringEnabled) {
-      console.log(`Starting Engine Room data collection for ${brand.monitoringPlatforms?.length || 0} platform(s)...`);
+      logger.info(`Starting Engine Room data collection for ${brand.monitoringPlatforms?.length || 0} platform(s)...`);
 
       try {
         const monitoringResult = await runGEOMonitoringForBrand(brandId);
@@ -551,18 +552,18 @@ export async function populateBrandData(brandId: string): Promise<BrandPopulatio
           console.warn(`Engine Room collection completed with ${monitoringResult.errors.length} error(s)`);
         }
 
-        console.log(`✅ Engine Room data collected: ${monitoringResult.mentionsCollected} mentions across ${monitoringResult.platformsQueried} queries`);
+        logger.info(`✅ Engine Room data collected: ${monitoringResult.mentionsCollected} mentions across ${monitoringResult.platformsQueried} queries`);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         result.errors.push(`Engine Room collection failed: ${errorMessage}`);
         console.error("Engine Room collection error:", error);
       }
     } else {
-      console.log("GEO monitoring not enabled, skipping Engine Room data collection");
+      logger.info("GEO monitoring not enabled, skipping Engine Room data collection");
     }
 
     result.success = true;
-    console.log(`✅ Brand data population completed successfully for ${brand.name}`);
+    logger.info(`✅ Brand data population completed successfully for ${brand.name}`);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     result.errors.push(`Unexpected error: ${errorMessage}`);

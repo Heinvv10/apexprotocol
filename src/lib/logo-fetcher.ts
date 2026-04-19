@@ -10,6 +10,7 @@
 import { createId } from '@paralleldrive/cuid2';
 import { assertSafeUrl } from '@/lib/security/ssrf-protection';
 import { uploadAsset } from '@/lib/storage/supabase-storage';
+import { logger } from "@/lib/logger";
 
 export interface LogoResult {
   success: boolean;
@@ -30,7 +31,7 @@ export async function fetchBrandLogo(domain: string): Promise<LogoResult> {
     .replace(/\/$/, '')
     .toLowerCase();
 
-  console.log(`[LogoFetcher] Fetching logo for: ${cleanDomain}`);
+  logger.info(`[LogoFetcher] Fetching logo for: ${cleanDomain}`);
 
   // Try each source in order
   const sources = [
@@ -46,7 +47,7 @@ export async function fetchBrandLogo(domain: string): Promise<LogoResult> {
         return result;
       }
     } catch (err) {
-      console.log(`[LogoFetcher] Source failed:`, err);
+      logger.info(`[LogoFetcher] Source failed:`, err);
     }
   }
 
@@ -61,7 +62,7 @@ export async function fetchBrandLogo(domain: string): Promise<LogoResult> {
  */
 async function tryCleart(domain: string): Promise<LogoResult> {
   const url = `https://logo.clearbit.com/${domain}`;
-  console.log(`[LogoFetcher] Trying Clearbit: ${url}`);
+  logger.info(`[LogoFetcher] Trying Clearbit: ${url}`);
 
   const response = await fetch(url, { 
     method: 'HEAD',
@@ -98,7 +99,7 @@ async function tryCleart(domain: string): Promise<LogoResult> {
 async function tryWebsiteScrape(domain: string): Promise<LogoResult> {
   const url = `https://${domain}`;
   assertSafeUrl(url);
-  console.log(`[LogoFetcher] Trying website scrape: ${url}`);
+  logger.info(`[LogoFetcher] Trying website scrape: ${url}`);
 
   const response = await fetch(url, {
     signal: AbortSignal.timeout(10000),
@@ -129,7 +130,7 @@ async function tryWebsiteScrape(domain: string): Promise<LogoResult> {
   for (const logoUrl of logoUrls) {
     try {
       const absoluteUrl = new URL(logoUrl!, url).href;
-      console.log(`[LogoFetcher] Found potential logo: ${absoluteUrl}`);
+      logger.info(`[LogoFetcher] Found potential logo: ${absoluteUrl}`);
 
       const imgResponse = await fetch(absoluteUrl, {
         signal: AbortSignal.timeout(10000),
@@ -149,7 +150,7 @@ async function tryWebsiteScrape(domain: string): Promise<LogoResult> {
         
         // Skip tiny images (likely tracking pixels)
         if (buffer.length < 500) {
-          console.log(`[LogoFetcher] Skipping tiny image (${buffer.length} bytes)`);
+          logger.info(`[LogoFetcher] Skipping tiny image (${buffer.length} bytes)`);
           continue;
         }
 
@@ -163,7 +164,7 @@ async function tryWebsiteScrape(domain: string): Promise<LogoResult> {
         };
       }
     } catch (err) {
-      console.log(`[LogoFetcher] Failed to fetch logo URL:`, err);
+      logger.info(`[LogoFetcher] Failed to fetch logo URL:`, err);
     }
   }
 
@@ -175,7 +176,7 @@ async function tryWebsiteScrape(domain: string): Promise<LogoResult> {
  */
 async function tryGoogleFavicon(domain: string): Promise<LogoResult> {
   const url = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-  console.log(`[LogoFetcher] Trying Google Favicon: ${url}`);
+  logger.info(`[LogoFetcher] Trying Google Favicon: ${url}`);
 
   const response = await fetch(url, {
     signal: AbortSignal.timeout(5000),
@@ -217,7 +218,7 @@ async function saveLogoFile(buffer: Buffer, domain: string, ext: string): Promis
     ico: 'image/x-icon', webp: 'image/webp',
   };
   const url = await uploadAsset(buffer, key, mimeMap[safeExt] ?? 'image/png');
-  console.log(`[LogoFetcher] Uploaded logo to Storage: ${key}`);
+  logger.info(`[LogoFetcher] Uploaded logo to Storage: ${key}`);
   return url;
 }
 

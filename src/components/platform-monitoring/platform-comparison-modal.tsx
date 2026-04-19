@@ -94,9 +94,8 @@ export function PlatformComparisonModal({
   platform2,
   allPlatforms,
 }: PlatformComparisonModalProps) {
-  if (!platform1 || !platform2) return null;
-
   const analysis = useMemo(() => {
+    if (!platform1 || !platform2) return null;
     let p1Score = 0;
     let p2Score = 0;
 
@@ -128,6 +127,9 @@ export function PlatformComparisonModal({
       winner: p1Score > p2Score ? "platform1" : p2Score > p1Score ? "platform2" : "tie",
     };
   }, [platform1, platform2]);
+
+  // Early return is safe here — happens after every hook has run.
+  if (!analysis || !platform1 || !platform2) return null;
 
   const winner =
     analysis.winner === "platform1"

@@ -279,7 +279,7 @@ export function LinkedInTeamDiscovery({
             <div className="flex items-start gap-3 p-4 bg-muted/30 border border-border/50 rounded-lg">
               <AlertCircle className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
               <p className="text-sm text-muted-foreground">
-                No LinkedIn team members extracted yet. Click "Extract Team from LinkedIn" to discover your team.
+                No LinkedIn team members extracted yet. Click &quot;Extract Team from LinkedIn&quot; to discover your team.
               </p>
             </div>
           )}
@@ -288,7 +288,7 @@ export function LinkedInTeamDiscovery({
           <div className="flex items-start gap-3 p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
             <Linkedin className="h-4 w-4 mt-0.5 text-blue-500 flex-shrink-0" />
             <p className="text-sm text-muted-foreground">
-              This feature uses RapidAPI LinkedIn Data Scraper to extract verified employee data from your company's LinkedIn page.
+              This feature uses RapidAPI LinkedIn Data Scraper to extract verified employee data from your company&apos;s LinkedIn page.
             </p>
           </div>
         </CardContent>

@@ -121,7 +121,7 @@ export default function PortfolioDetailPage() {
           <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
           <h2 className="text-lg font-semibold mb-2">Portfolio Not Found</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            The portfolio you're looking for doesn't exist or you don't have access to it.
+            The portfolio you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.
           </p>
           <Button
             onClick={() => router.push("/dashboard/portfolios")}

@@ -12,6 +12,7 @@ import { brands, brandPeople, peopleEnrichment } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { extractLinkedInPeople, enrichPersonProfile } from "@/lib/services/linkedin-scraper";
+import { logger } from "@/lib/logger";
 
 // ============================================================================
 // Validation
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
     // Action: Extract LinkedIn people for the brand
     // ========================================================================
     if (action === "extract") {
-      console.log(`[LinkedIn] Extracting people for brand: ${brand.name}`);
+      logger.info(`[LinkedIn] Extracting people for brand: ${brand.name}`);
 
       const result = await extractLinkedInPeople(brandId);
 
@@ -180,7 +181,7 @@ export async function POST(request: NextRequest) {
     // Action: Enrich all LinkedIn people
     // ========================================================================
     if (action === "enrich-all") {
-      console.log(`[LinkedIn] Enriching all people for brand: ${brand.name}`);
+      logger.info(`[LinkedIn] Enriching all people for brand: ${brand.name}`);
 
       // Get all LinkedIn-discovered people for this brand
       const peopleToEnrich = await db
@@ -259,7 +260,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log(`[LinkedIn] Enriching person: ${personId}`);
+      logger.info(`[LinkedIn] Enriching person: ${personId}`);
 
       // Verify person exists and belongs to this brand
       const person = await db.query.brandPeople.findFirst({

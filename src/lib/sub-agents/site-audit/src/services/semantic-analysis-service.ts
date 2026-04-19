@@ -552,7 +552,7 @@ export class SemanticAnalysisService extends EventEmitter {
     const urlMatches = content.matchAll(/https?:\/\/[^\s<>"']+/g);
     for (const match of urlMatches) {
       // Remove trailing punctuation like periods and commas
-      let url = match[0].replace(/[.,;:!?)\]]+$/, '');
+      const url = match[0].replace(/[.,;:!?)\]]+$/, '');
       urls.push(url);
     }
 

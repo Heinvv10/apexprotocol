@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrganizationId } from '@/lib/auth';
 import { z } from 'zod';
+import { logger } from "@/lib/logger";
 
 // Validation schemas
 const createSequenceSchema = z.object({
@@ -311,7 +312,7 @@ export async function GET(request: NextRequest) {
       });
     } catch (mauticError) {
       // Mautic not available, return mock data
-      console.log('Mautic unavailable, using mock data:', mauticError);
+      logger.info('Mautic unavailable, using mock data:', mauticError);
 
       return NextResponse.json({
         data: mockSequences,

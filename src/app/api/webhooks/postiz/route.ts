@@ -12,6 +12,7 @@ import {
 } from '@/lib/db/schema/marketing';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from "@/lib/logger";
 
 /**
  * Handle post.published event
@@ -291,7 +292,7 @@ export async function POST(request: NextRequest) {
         await handleShareReceived(orgId, body);
         break;
       default:
-        console.log(`Unhandled Postiz event type: ${eventType}`);
+        logger.info(`Unhandled Postiz event type: ${eventType}`);
     }
 
     return NextResponse.json({

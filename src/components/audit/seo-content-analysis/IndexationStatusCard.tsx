@@ -82,7 +82,7 @@ export function IndexationStatusCard({
       {/* Reasons for non-indexation */}
       {reasonsForNonIndexation.length > 0 && (
         <div className="space-y-3">
-          <h4 className="text-sm font-medium">Why Pages Aren't Indexed</h4>
+          <h4 className="text-sm font-medium">Why Pages Aren&apos;t Indexed</h4>
           {reasonsForNonIndexation.map((reason, idx) => (
             <div key={idx} className="card-tertiary p-4 border rounded-lg">
               <div className="flex items-start gap-3">

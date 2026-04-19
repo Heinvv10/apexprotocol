@@ -43,7 +43,7 @@ function computeWordDiff(original: string, suggested: string): DiffPart[] {
 
   // Simple approach: find common prefix and suffix
   let i = 0;
-  let j = 0;
+  const j = 0;
 
   // Add common prefix
   while (
@@ -191,16 +191,17 @@ export function PreviewDiff({
   const originalText = suggestion?.originalText || originalTextProp || "";
   const suggestedText = suggestion?.suggestedText || suggestedTextProp || "";
 
-  // Validate we have both texts
-  if (!originalText || !suggestedText) {
-    return null;
-  }
-
-  // Compute diff only when expanded and mode is inline
+  // Compute diff only when expanded and mode is inline. Must run before
+  // any early return so hook-call order stays stable across renders.
   const diffs = React.useMemo(() => {
     if (!isExpanded || mode !== "inline") return [];
     return computeWordDiff(originalText, suggestedText);
   }, [isExpanded, mode, originalText, suggestedText]);
+
+  // Validate we have both texts
+  if (!originalText || !suggestedText) {
+    return null;
+  }
 
   // Check if there are any changes
   const hasChanges = originalText !== suggestedText;
@@ -274,16 +275,17 @@ export function PreviewDiffCard({
   const originalText = suggestion?.originalText || originalTextProp || "";
   const suggestedText = suggestion?.suggestedText || suggestedTextProp || "";
 
-  // Validate we have both texts
-  if (!originalText || !suggestedText) {
-    return null;
-  }
-
-  // Compute diff only when mode is inline
+  // Compute diff only when mode is inline. Must run before any early
+  // return so hook-call order stays stable across renders.
   const diffs = React.useMemo(() => {
     if (mode !== "inline") return [];
     return computeWordDiff(originalText, suggestedText);
   }, [mode, originalText, suggestedText]);
+
+  // Validate we have both texts
+  if (!originalText || !suggestedText) {
+    return null;
+  }
 
   // Check if there are any changes
   const hasChanges = originalText !== suggestedText;

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAPIKeys, useCreateAPIKey, useRevokeAPIKey, useNotificationPreferences, useUpdateNotificationPreferences, useIntegrations } from "@/hooks/useSettings";
 import { formatDate } from "@/lib/utils/formatters";
+import { logger } from "@/lib/logger";
 
 // Fetch API usage stats
 interface ApiUsageStats {
@@ -472,13 +473,13 @@ export function IntegrationsSection() {
   const handleConnect = (integrationId: string) => {
     // Navigate to integration-specific configuration
     // This could open a modal or navigate to a dedicated page
-    console.log("Connect integration:", integrationId);
+    logger.info("Connect integration:", integrationId);
     // TODO: Implement integration-specific OAuth flows
   };
 
   const handleDisconnect = (integrationId: string) => {
     // Disconnect integration
-    console.log("Disconnect integration:", integrationId);
+    logger.info("Disconnect integration:", integrationId);
     // TODO: Call specific disconnect endpoint
   };
 

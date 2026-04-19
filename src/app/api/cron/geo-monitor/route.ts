@@ -16,6 +16,7 @@ import { runGEOMonitoringForBrand } from "@/lib/services/geo-monitor";
 import { calculateSOV, storeDailySOV } from "@/lib/competitive/share-of-voice";
 import { generateCompetitiveAlerts } from "@/lib/competitive/alert-generator";
 import { createId } from "@paralleldrive/cuid2";
+import { logger } from "@/lib/logger";
 
 /**
  * Calculate and record GEO score for a brand
@@ -155,7 +156,7 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const targetBrandId = url.searchParams.get("brandId");
 
-    console.log("[GEO Cron] Starting scheduled monitoring run" + (targetBrandId ? ` (targeting brand: ${targetBrandId})` : ""));
+    logger.info("[GEO Cron] Starting scheduled monitoring run" + (targetBrandId ? ` (targeting brand: ${targetBrandId})` : ""));
 
     // Get all brands with monitoring enabled (or just the target brand)
     const activeBrands = await db.query.brands.findMany({
@@ -164,7 +165,7 @@ export async function GET(request: Request) {
         : eq(brands.monitoringEnabled, true),
     });
 
-    console.log(`[GEO Cron] Found ${activeBrands.length} brands with monitoring enabled`);
+    logger.info(`[GEO Cron] Found ${activeBrands.length} brands with monitoring enabled`);
 
     for (const brand of activeBrands) {
       try {
@@ -192,7 +193,7 @@ export async function GET(request: Request) {
         const scoreResult = await recordGeoScore(brand.id);
         if (scoreResult.recorded) {
           results.scoresRecorded++;
-          console.log(`[GEO Cron] Recorded score ${scoreResult.score} for ${brand.name}`);
+          logger.info(`[GEO Cron] Recorded score ${scoreResult.score} for ${brand.name}`);
         }
 
         // Calculate and store Share of Voice
@@ -227,7 +228,7 @@ export async function GET(request: Request) {
           .where(eq(monitoringJobs.id, job.id));
 
         results.brandsProcessed++;
-        console.log(`[GEO Cron] Completed ${brand.name}: ${monitorResult.mentionsCollected} mentions`);
+        logger.info(`[GEO Cron] Completed ${brand.name}: ${monitorResult.mentionsCollected} mentions`);
 
       } catch (brandError) {
         const errorMessage = brandError instanceof Error ? brandError.message : String(brandError);
@@ -238,7 +239,7 @@ export async function GET(request: Request) {
 
     results.duration = Date.now() - startTime;
 
-    console.log("[GEO Cron] Completed:", results);
+    logger.info("[GEO Cron] Completed:", results);
 
     return NextResponse.json(results);
 

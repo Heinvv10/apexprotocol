@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 /**
  * Shopify direct-publish (FR-CRE-017).
  *
@@ -14,7 +15,6 @@
  *   3. This module turns (title, markdownBody, blogHandle?) into a blog article
  */
 
-import { logger } from "@/lib/logger";
 
 export interface ShopifyCredentials {
   shopDomain: string; // e.g. "mystore.myshopify.com"

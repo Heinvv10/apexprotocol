@@ -32,6 +32,7 @@ import { useQuery } from "@tanstack/react-query";
 // Phase 9.4 - Premium Gating
 import { FeatureGate, UsageMeter, PremiumBadge } from "@/components/premium";
 import { useCurrentPlan } from "@/hooks/use-subscription";
+import { logger } from "@/lib/logger";
 
 // Types
 interface PeopleSummary {
@@ -686,7 +687,7 @@ export default function PeoplePage() {
           brandId={brandId}
           onAddPerson={() => {
             // TODO: Open add person modal
-            console.log("Add person clicked");
+            logger.info("Add person clicked");
           }}
           onDiscoverTeam={() => {
             // Navigate to team discovery

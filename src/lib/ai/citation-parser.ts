@@ -12,6 +12,7 @@ import type {
   ParsedCitation,
   ContentType,
 } from "./types";
+import { logger } from "@/lib/logger";
 
 /**
  * Configuration for citation parsing
@@ -62,7 +63,7 @@ export class CitationParser {
    * ```typescript
    * const parser = new CitationParser({ brandName: "Acme Corp" });
    * const citations = parser.parse(responseContent);
-   * console.log(`Found ${citations.length} citations`);
+   * logger.info(`Found ${citations.length} citations`);
    * ```
    */
   parse(content: string, platform?: string): ParsedCitation[] {
@@ -88,7 +89,7 @@ export class CitationParser {
     );
 
     if (this.options.debug) {
-      console.log(
+      logger.info(
         `[CitationParser${platform ? ` - ${platform}` : ""}] Extracted ${
           scoredCitations.length
         } citations`
@@ -665,7 +666,7 @@ export class CitationParser {
  * @example
  * ```typescript
  * const citations = parseCitations(responseContent, { brandName: "Acme Corp" });
- * console.log(`Found ${citations.length} citations`);
+ * logger.info(`Found ${citations.length} citations`);
  * ```
  */
 export function parseCitations(

@@ -87,7 +87,7 @@ export default function ScheduledAuditsPage() {
         <div className="space-y-1">
           <p className="font-medium text-sm">Continuous Monitoring</p>
           <p className="text-sm text-muted-foreground">
-            Set up automated audits to monitor your site's health over time. Get insights into improvements and regressions with trend tracking.
+            Set up automated audits to monitor your site&apos;s health over time. Get insights into improvements and regressions with trend tracking.
           </p>
         </div>
       </div>
@@ -169,7 +169,7 @@ export default function ScheduledAuditsPage() {
           <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
           <h3 className="font-semibold mb-1">No Audits Yet</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Create a schedule to start tracking your site's health over time.
+            Create a schedule to start tracking your site&apos;s health over time.
           </p>
           <Button
             onClick={() => {

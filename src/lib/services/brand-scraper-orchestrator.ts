@@ -14,6 +14,7 @@ import { extractLinkedInPeople } from "@/lib/services/linkedin-scraper";
 import { retry, isNetworkError, isRateLimitError, RetryError } from "@/lib/utils/retry";
 import type { ScrapedBrandData } from "@/app/api/brands/scrape/route";
 import type { BrandLocationInfo, BrandPersonnelInfo } from "@/lib/ai/prompts/brand-analysis";
+import { logger } from "@/lib/logger";
 
 // ============================================================================
 // Types
@@ -277,7 +278,7 @@ export async function scrapeBrandWithFallbacks(
         backoffMultiplier: 1.5,
         shouldRetry: (error) => isNetworkError(error) || isRateLimitError(error),
         onRetry: (info) => {
-          console.log(
+          logger.info(
             `[Orchestrator] Website scraping retry ${info.attempt}/${info.maxAttempts} after ${info.delayMs}ms`
           );
         },
@@ -320,7 +321,7 @@ export async function scrapeBrandWithFallbacks(
           backoffMultiplier: 2,
           shouldRetry: (error) => isRateLimitError(error),
           onRetry: (info) => {
-            console.log(
+            logger.info(
               `[Orchestrator] LinkedIn retry ${info.attempt}/${info.maxAttempts} after ${info.delayMs}ms`
             );
           },

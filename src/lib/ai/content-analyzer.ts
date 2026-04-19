@@ -4,6 +4,7 @@
  */
 
 import { sendMessage, GPT_MODELS, DEFAULT_MODELS } from "./openai";
+import { logger } from "@/lib/logger";
 
 /**
  * Suggestion types for content optimization
@@ -221,9 +222,9 @@ function parseAnalysisResponse(
  * @example
  * ```typescript
  * const result = await analyzeContent(editorContent);
- * console.log(`Overall score: ${result.overallScore}/100`);
+ * logger.info(`Overall score: ${result.overallScore}/100`);
  * result.suggestions.forEach(s => {
- *   console.log(`${s.type}: ${s.description}`);
+ *   logger.info(`${s.type}: ${s.description}`);
  * });
  * ```
  */

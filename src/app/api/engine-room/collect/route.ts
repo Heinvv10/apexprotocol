@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getOrganizationId } from "@/lib/auth/supabase-server";
 import { runGEOMonitoringForBrand } from "@/lib/services/geo-monitor";
+import { logger } from "@/lib/logger";
 
 // Validation schema
 const requestSchema = z.object({
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { brandId } = requestSchema.parse(body);
 
-    console.log(`[Engine Room] Starting data collection for brand: ${brandId}`);
+    logger.info(`[Engine Room] Starting data collection for brand: ${brandId}`);
 
     // Run GEO monitoring (which now includes real AI platform queries)
     const result = await runGEOMonitoringForBrand(brandId);

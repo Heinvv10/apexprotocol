@@ -10,6 +10,7 @@ import { eq } from "drizzle-orm";
 import { scrapeMultiPageBrand } from "@/lib/services/brand-scraper-multipage";
 import { populateLocations } from "@/lib/services/brand-post-create";
 import { getOrganizationId } from "@/lib/auth/supabase-server";
+import { logger } from "@/lib/logger";
 
 interface EnrichmentResult {
   brandName: string;
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log("\n🔄 Starting Brand Enrichment\n");
+    logger.info("\n🔄 Starting Brand Enrichment\n");
 
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
       limit: limit || undefined,
     });
 
-    console.log(`Found ${allBrands.length} brands to enrich`);
+    logger.info(`Found ${allBrands.length} brands to enrich`);
 
     const results: EnrichmentResult[] = [];
     let successCount = 0;
@@ -56,11 +57,11 @@ export async function POST(request: NextRequest) {
       const brand = allBrands[i];
       const progress = `[${i + 1}/${allBrands.length}]`;
 
-      console.log(`\n${progress} Processing: ${brand.name} (${brand.domain || "no domain"})`);
+      logger.info(`\n${progress} Processing: ${brand.name} (${brand.domain || "no domain"})`);
 
       // Skip if no domain
       if (!brand.domain) {
-        console.log(`  Skipped - no domain`);
+        logger.info(`  Skipped - no domain`);
         skippedCount++;
         results.push({
           brandName: brand.name,
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
       const hasPeople = brand.personnel && Array.isArray(brand.personnel ?? []) && brand.personnel?.length > 0;
 
       if (hasLocations && hasPeople) {
-        console.log(`  Already has data - locations: ${brand.locations?.length}, people: ${brand.personnel?.length}`);
+        logger.info(`  Already has data - locations: ${brand.locations?.length}, people: ${brand.personnel?.length}`);
 
         // Still migrate locations if not in table
         let locationsMigrated = 0;
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
           );
 
           if (locationsMigrated > 0) {
-            console.log(`  Migrated ${locationsMigrated} location(s) to table`);
+            logger.info(`  Migrated ${locationsMigrated} location(s) to table`);
           }
         } catch (error) {
           console.error(`  Migration error:`, error);
@@ -119,19 +120,19 @@ export async function POST(request: NextRequest) {
 
       // Scrape the brand's website (multi-page: homepage + about + contact + history)
       try {
-        console.log(`  Scraping https://${brand.domain} (multi-page)...`);
+        logger.info(`  Scraping https://${brand.domain} (multi-page)...`);
 
         const scrapedData = await scrapeMultiPageBrand(
           `https://${brand.domain}`,
           (progress, message) => {
-            console.log(`    ${progress}% - ${message}`);
+            logger.info(`    ${progress}% - ${message}`);
           }
         );
 
         const locationsFound = scrapedData.locations?.length || 0;
         const peopleFound = scrapedData.personnel?.length || 0;
 
-        console.log(`  Found: ${locationsFound} location(s), ${peopleFound} people`);
+        logger.info(`  Found: ${locationsFound} location(s), ${peopleFound} people`);
 
         // Update brand with new data
         const updateData: any = {
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest) {
             .set(updateData)
             .where(eq(brands.id, brand.id));
 
-          console.log(`  Updated brand with scraped data`);
+          logger.info(`  Updated brand with scraped data`);
         }
 
         // Migrate locations to table
@@ -175,7 +176,7 @@ export async function POST(request: NextRequest) {
             );
 
             if (locationsMigrated > 0) {
-              console.log(`  Migrated ${locationsMigrated} location(s) to table`);
+              logger.info(`  Migrated ${locationsMigrated} location(s) to table`);
             }
           } catch (error) {
             console.error(`  Migration error:`, error);

@@ -33,6 +33,7 @@ import {
   type EnrichedRecommendation,
 } from "./step-generator";
 import type { BrandSchemaData } from "../reports/schema-generator";
+import { logger } from "@/lib/logger";
 
 /**
  * Configuration for recommendation generation
@@ -91,9 +92,9 @@ export class RecommendationEngine {
    * ```typescript
    * const engine = new RecommendationEngine({ brandName: "Acme Corp" });
    * const recommendations = engine.generateFromAnalysis(platformAnalysis);
-   * console.log(`Generated ${recommendations.length} recommendations`);
+   * logger.info(`Generated ${recommendations.length} recommendations`);
    * recommendations.forEach(rec => {
-   *   console.log(`${rec.priority}: ${rec.title}`);
+   *   logger.info(`${rec.priority}: ${rec.title}`);
    * });
    * ```
    */
@@ -148,13 +149,13 @@ export class RecommendationEngine {
     };
 
     if (this.options.debug) {
-      console.log(
+      logger.info(
         `[RecommendationEngine - ${platform}] Generating recommendations...`
       );
-      console.log(
+      logger.info(
         `  Visibility: ${visibilityScore.total}/100 | Mentions: ${mentionCount} | Citations: ${citationCount}`
       );
-      console.log(
+      logger.info(
         `  Best content type: ${bestContentType || "none"} | Worst: ${worstContentType || "none"}`
       );
     }
@@ -184,11 +185,11 @@ export class RecommendationEngine {
     }
 
     if (this.options.debug) {
-      console.log(
+      logger.info(
         `[RecommendationEngine - ${platform}] Generated ${recommendations.length} recommendations`
       );
       recommendations.forEach((rec, i) => {
-        console.log(
+        logger.info(
           `  ${i + 1}. [P${rec.priority}] ${rec.title} (${rec.impact} impact, ${rec.difficulty} difficulty)`
         );
       });
@@ -282,7 +283,7 @@ export class RecommendationEngine {
    *   perplexityAnalysis
    * ]);
    * allRecommendations.forEach((recs, platform) => {
-   *   console.log(`${platform}: ${recs.length} recommendations`);
+   *   logger.info(`${platform}: ${recs.length} recommendations`);
    * });
    * ```
    */
@@ -364,8 +365,8 @@ export class RecommendationEngine {
    *   { name: "Acme Corp", url: "https://acme.com", description: "..." }
    * );
    * enrichedRecs.forEach(rec => {
-   *   console.log(`${rec.title}: ${rec.steps.length} steps`);
-   *   console.log(`Expected score impact: +${rec.expectedScoreImpact} points`);
+   *   logger.info(`${rec.title}: ${rec.steps.length} steps`);
+   *   logger.info(`Expected score impact: +${rec.expectedScoreImpact} points`);
    * });
    * ```
    */
@@ -394,11 +395,11 @@ export class RecommendationEngine {
     const enrichedRecs = enrichRecommendations(templates, brandData);
 
     if (this.options.debug) {
-      console.log(
+      logger.info(
         `[RecommendationEngine - ${analysis.platform}] Generated ${enrichedRecs.length} enriched recommendations`
       );
       enrichedRecs.forEach((rec, i) => {
-        console.log(
+        logger.info(
           `  ${i + 1}. ${rec.title}: ${rec.steps.length} steps, +${rec.expectedScoreImpact} expected points`
         );
       });
@@ -519,7 +520,7 @@ export function batchGenerateRecommendations(
  * @example
  * ```typescript
  * const summary = getRecommendationSummary(recommendations);
- * console.log(`Total: ${summary.total}, High Priority: ${summary.highPriorityCount}, Quick Wins: ${summary.quickWinsCount}`);
+ * logger.info(`Total: ${summary.total}, High Priority: ${summary.highPriorityCount}, Quick Wins: ${summary.quickWinsCount}`);
  * ```
  */
 export function getRecommendationSummary(recommendations: Recommendation[]): {
@@ -603,7 +604,7 @@ export function filterByDifficulty(
  * @example
  * ```typescript
  * const quickWins = getQuickWins(recommendations);
- * console.log(`Found ${quickWins.length} quick win opportunities`);
+ * logger.info(`Found ${quickWins.length} quick win opportunities`);
  * ```
  */
 export function getQuickWins(recommendations: Recommendation[]): Recommendation[] {

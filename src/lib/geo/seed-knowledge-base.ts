@@ -14,6 +14,7 @@ import {
   type NewGeoBestPractice,
   type NewSchemaTemplate,
 } from "@/lib/db/schema/geo-knowledge-base";
+import { logger } from "@/lib/logger";
 
 // ============================================================================
 // Best Practices Seed Data
@@ -596,15 +597,15 @@ export async function seedKnowledgeBase(): Promise<{
   bestPractices: { inserted: number; errors: number };
   schemaTemplates: { inserted: number; errors: number };
 }> {
-  console.log("Seeding GEO knowledge base...");
+  logger.info("Seeding GEO knowledge base...");
 
   const bestPracticesResult = await seedBestPractices();
-  console.log(
+  logger.info(
     `Best practices: ${bestPracticesResult.inserted} inserted, ${bestPracticesResult.errors} errors`
   );
 
   const schemaTemplatesResult = await seedSchemaTemplates();
-  console.log(
+  logger.info(
     `Schema templates: ${schemaTemplatesResult.inserted} inserted, ${schemaTemplatesResult.errors} errors`
   );
 

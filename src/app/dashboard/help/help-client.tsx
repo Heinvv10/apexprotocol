@@ -361,7 +361,7 @@ export function HelpClient() {
           </div>
           <h3 className="text-lg font-semibold text-white mb-2">No results found</h3>
           <p className="text-gray-400 mb-6">
-            We couldn't find any help articles matching "{searchQuery}"
+            We couldn&apos;t find any help articles matching &quot;{searchQuery}&quot;
           </p>
           <Button onClick={() => setSearchQuery("")} variant="outline">
             Clear Search

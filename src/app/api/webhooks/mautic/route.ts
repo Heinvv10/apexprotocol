@@ -14,6 +14,7 @@ import {
 } from '@/lib/db/schema/marketing';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from "@/lib/logger";
 
 /**
  * Verify Mautic webhook signature
@@ -299,7 +300,7 @@ export async function POST(request: NextRequest) {
           await handleEmailClick(orgId, event);
           break;
         default:
-          console.log(`Unhandled Mautic event type: ${eventType}`);
+          logger.info(`Unhandled Mautic event type: ${eventType}`);
       }
     }
 

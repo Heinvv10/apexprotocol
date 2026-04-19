@@ -209,7 +209,7 @@ export function HeadToHeadComparison({
               {headToHead.overallWinner === "brand" ? (
                 <span className="text-sm font-medium text-success flex items-center gap-1">
                   <Trophy className="w-4 h-4" />
-                  You're winning!
+                  You&apos;re winning!
                 </span>
               ) : headToHead.overallWinner === "competitor" ? (
                 <span className="text-sm font-medium text-error flex items-center gap-1">

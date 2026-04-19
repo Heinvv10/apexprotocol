@@ -15,6 +15,7 @@ import { brandPeople, peopleAiMentions, peopleScores, brands } from "@/lib/db/sc
 import { eq, and, desc, asc, sql, gte } from "drizzle-orm";
 import { z } from "zod";
 import { calculatePPOScore, type PPOScoreInput } from "@/lib/scoring/people-score";
+import { logger } from "@/lib/logger";
 
 // ============================================================================
 // Validation Schemas
@@ -438,7 +439,7 @@ async function triggerBackgroundEnrichment(personId: string, linkedinUrl: string
     if (!response.ok) {
       console.error("[Auto-Enrichment] Enrichment request failed:", response.status);
     } else {
-      console.log("[Auto-Enrichment] Successfully triggered enrichment for person:", personId);
+      logger.info("[Auto-Enrichment] Successfully triggered enrichment for person:", personId);
     }
   } catch (error) {
     console.error("[Auto-Enrichment] Error triggering enrichment:", error);

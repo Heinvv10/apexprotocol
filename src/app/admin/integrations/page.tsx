@@ -15,6 +15,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { logger } from "@/lib/logger";
 
 // Types
 interface LinkedInOAuthStatus {
@@ -144,7 +145,7 @@ function LinkedInOAuthCard({ status }: { status: LinkedInOAuthStatus }) {
 
             {!status.isConnected && (
               <div className="text-sm text-muted-foreground">
-                Not connected. Click "Connect LinkedIn" to enable automatic people enrichment.
+                Not connected. Click &quot;Connect LinkedIn&quot; to enable automatic people enrichment.
               </div>
             )}
           </div>
@@ -207,7 +208,7 @@ function IntegrationsContent() {
 
     if (oauthSuccess === "linkedin_connected") {
       // Show success message (you can use a toast notification here)
-      console.log("LinkedIn connected successfully!");
+      logger.info("LinkedIn connected successfully!");
     }
 
     if (oauthError) {

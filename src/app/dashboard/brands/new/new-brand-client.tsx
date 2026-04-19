@@ -288,7 +288,7 @@ export default function NewBrandClient() {
                 <div>
                   <p className="font-medium text-foreground">Brand Limit Reached</p>
                   <p className="text-sm text-muted-foreground">
-                    You've reached the limit of {brandLimit} brand(s) for your {meta?.plan || "current"} plan.
+                    You&apos;ve reached the limit of {brandLimit} brand(s) for your {meta?.plan || "current"} plan.
                     Upgrade to add more brands.
                   </p>
                 </div>
@@ -349,7 +349,7 @@ export default function NewBrandClient() {
               <div>
                 <p className="font-medium text-foreground">Brand Limit Reached</p>
                 <p className="text-sm text-muted-foreground">
-                  You've reached the limit of {brandLimit} brand(s) for your {meta?.plan || "current"} plan.
+                  You&apos;ve reached the limit of {brandLimit} brand(s) for your {meta?.plan || "current"} plan.
                   Upgrade to add more brands.
                 </p>
               </div>
@@ -420,7 +420,7 @@ export default function NewBrandClient() {
                       />
                     </FormControl>
                     <FormDescription>
-                      Your brand's website domain (without https://) — logo will be auto-fetched
+                      Your brand&apos;s website domain (without https://) — logo will be auto-fetched
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

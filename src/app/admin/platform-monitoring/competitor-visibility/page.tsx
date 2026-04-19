@@ -455,7 +455,7 @@ export default function CompetitorVisibilityPage() {
           <div className="card-secondary">
             <h2 className="text-xl font-semibold text-white mb-4">Competitive Gaps</h2>
             <p className="text-gray-400 text-sm mb-4">
-              Queries where competitorData rank but we don't appear
+              Queries where competitorData rank but we don&apos;t appear
             </p>
 
             <div className="space-y-3">

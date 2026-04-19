@@ -12,6 +12,7 @@ import { organizations } from "@/lib/db/schema/organizations";
 import { brands } from "@/lib/db/schema/brands";
 import { eq, sql } from "drizzle-orm";
 import { requireSuperAdmin } from "@/lib/auth/super-admin";
+import { logger } from "@/lib/logger";
 
 const PLATFORM_ORG_ID = "platform";
 const PLATFORM_BRAND_ID = "platform";
@@ -41,7 +42,7 @@ export async function POST() {
         )
         ON CONFLICT (id) DO NOTHING
       `);
-      console.log("Created platform organization");
+      logger.info("Created platform organization");
     }
 
     // Step 2: Check/create platform brand
@@ -67,7 +68,7 @@ export async function POST() {
         )
         ON CONFLICT (id) DO NOTHING
       `);
-      console.log("Created platform brand");
+      logger.info("Created platform brand");
     }
 
     // Verify creation

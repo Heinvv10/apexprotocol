@@ -203,10 +203,10 @@ export function sanitizeString(
 
   // Remove control characters (except newlines/tabs if allowed)
   if (allowNewlines) {
-    // eslint-disable-next-line no-control-regex
+     
     sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
   } else {
-    // eslint-disable-next-line no-control-regex
+     
     sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, "");
   }
 

@@ -13,6 +13,7 @@ import {
 } from '@/lib/db/schema/marketing';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from "@/lib/logger";
 
 /**
  * Handle subscriber_confirmed event
@@ -73,7 +74,7 @@ async function handleCampaignStarted(
   event: any
 ) {
   // Log campaign start - could update campaign status in campaigns table
-  console.log(`Campaign started: ${event.campaign.name} for list: ${event.list.name}`);
+  logger.info(`Campaign started: ${event.campaign.name} for list: ${event.list.name}`);
 }
 
 /**
@@ -257,7 +258,7 @@ export async function POST(request: NextRequest) {
         await handleMessageBounced(orgId, body.data);
         break;
       default:
-        console.log(`Unhandled ListMonk event type: ${eventType}`);
+        logger.info(`Unhandled ListMonk event type: ${eventType}`);
     }
 
     return NextResponse.json({

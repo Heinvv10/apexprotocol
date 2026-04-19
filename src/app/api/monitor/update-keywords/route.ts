@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { brands } from "@/lib/db/schema/brands";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/monitor/update-keywords
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update GEO keywords
-    console.log(`[API] Updating GEO keywords for ${brand.name}: ${keywords.length} keywords`);
+    logger.info(`[API] Updating GEO keywords for ${brand.name}: ${keywords.length} keywords`);
     await db
       .update(brands)
       .set({

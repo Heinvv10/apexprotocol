@@ -12,6 +12,7 @@ import type {
   PlatformResponse,
   AIPlatform,
 } from "./types";
+import { logger } from "@/lib/logger";
 
 /**
  * Configuration for content type analysis
@@ -112,7 +113,7 @@ export class ContentTypeAnalyzer {
    * ```typescript
    * const analyzer = new ContentTypeAnalyzer();
    * const result = analyzer.analyze(citations, "chatgpt");
-   * console.log(`Best performer: ${result.bestPerformer}`);
+   * logger.info(`Best performer: ${result.bestPerformer}`);
    * ```
    */
   analyze(
@@ -148,7 +149,7 @@ export class ContentTypeAnalyzer {
     const insights = this.generateInsights(metrics, bestPerformer, worstPerformer);
 
     if (this.options.debug) {
-      console.log(
+      logger.info(
         `[ContentTypeAnalyzer${platform ? ` - ${platform}` : ""}] Analyzed ${
           filteredCitations.length
         } citations across ${metrics.length} content types`
@@ -659,7 +660,7 @@ export class ContentTypeAnalyzer {
  * @example
  * ```typescript
  * const result = analyzeContentTypes(citations);
- * console.log(`Best performer: ${result.bestPerformer}`);
+ * logger.info(`Best performer: ${result.bestPerformer}`);
  * ```
  */
 export function analyzeContentTypes(
@@ -707,7 +708,7 @@ export function analyzeContentTypesFromResponse(
  *   perplexityAdapter.analyze(query, brandContext),
  * ]);
  * const comparison = compareContentTypesAcrossPlatforms(responses);
- * console.log(`Top performers: ${comparison.topPerformers.join(', ')}`);
+ * logger.info(`Top performers: ${comparison.topPerformers.join(', ')}`);
  * ```
  */
 export function compareContentTypesAcrossPlatforms(

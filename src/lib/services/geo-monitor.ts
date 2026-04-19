@@ -11,6 +11,7 @@ import { brands } from "@/lib/db/schema/brands";
 import { brandMentions, type BrandMention } from "@/lib/db/schema/mentions";
 import { eq } from "drizzle-orm";
 import { queryAIPlatform, type AIPlatformMention } from "./ai-platform-query";
+import { logger } from "@/lib/logger";
 
 // ============================================================================
 // Types
@@ -61,7 +62,7 @@ export async function runGEOMonitoringForBrand(
 
     // Check if monitoring is enabled
     if (!brand.monitoringEnabled) {
-      console.log(`GEO monitoring disabled for ${brand.name}, skipping`);
+      logger.info(`GEO monitoring disabled for ${brand.name}, skipping`);
       return result;
     }
 
@@ -79,9 +80,9 @@ export async function runGEOMonitoringForBrand(
       return result;
     }
 
-    console.log(`[GEO Monitor] Starting monitoring for ${brand.name}`);
-    console.log(`  Platforms: ${platforms.join(", ")}`);
-    console.log(`  Keywords: ${keywords.length} keyword(s)`);
+    logger.info(`[GEO Monitor] Starting monitoring for ${brand.name}`);
+    logger.info(`  Platforms: ${platforms.join(", ")}`);
+    logger.info(`  Keywords: ${keywords.length} keyword(s)`);
 
     // Query each platform with each keyword
     for (const platform of platforms) {
@@ -106,7 +107,7 @@ export async function runGEOMonitoringForBrand(
             });
 
             result.mentionsCollected++;
-            console.log(`  ✅ Found mention on ${platform} for "${keyword}"`);
+            logger.info(`  ✅ Found mention on ${platform} for "${keyword}"`);
           }
 
           result.platformsQueried++;
@@ -118,10 +119,10 @@ export async function runGEOMonitoringForBrand(
       }
     }
 
-    console.log(`[GEO Monitor] Completed for ${brand.name}:`);
-    console.log(`  Platforms queried: ${result.platformsQueried}`);
-    console.log(`  Mentions collected: ${result.mentionsCollected}`);
-    console.log(`  Errors: ${result.errors.length}`);
+    logger.info(`[GEO Monitor] Completed for ${brand.name}:`);
+    logger.info(`  Platforms queried: ${result.platformsQueried}`);
+    logger.info(`  Mentions collected: ${result.mentionsCollected}`);
+    logger.info(`  Errors: ${result.errors.length}`);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     result.errors.push(`Unexpected error: ${errorMessage}`);
@@ -138,14 +139,14 @@ export async function runGEOMonitoringForBrand(
  */
 export async function runGEOMonitoringForAllBrands(): Promise<GEOMonitoringResult[]> {
   try {
-    console.log("[GEO Monitor] Starting global monitoring run");
+    logger.info("[GEO Monitor] Starting global monitoring run");
 
     // Get all brands with monitoring enabled
     const activeBrands = await db.query.brands.findMany({
       where: eq(brands.monitoringEnabled, true),
     });
 
-    console.log(`Found ${activeBrands.length} brand(s) with monitoring enabled`);
+    logger.info(`Found ${activeBrands.length} brand(s) with monitoring enabled`);
 
     const results: GEOMonitoringResult[] = [];
 
@@ -157,10 +158,10 @@ export async function runGEOMonitoringForAllBrands(): Promise<GEOMonitoringResul
     const totalMentions = results.reduce((sum, r) => sum + r.mentionsCollected, 0);
     const totalErrors = results.reduce((sum, r) => sum + r.errors.length, 0);
 
-    console.log("[GEO Monitor] Global monitoring completed:");
-    console.log(`  Brands monitored: ${results.length}`);
-    console.log(`  Total mentions: ${totalMentions}`);
-    console.log(`  Total errors: ${totalErrors}`);
+    logger.info("[GEO Monitor] Global monitoring completed:");
+    logger.info(`  Brands monitored: ${results.length}`);
+    logger.info(`  Total mentions: ${totalMentions}`);
+    logger.info(`  Total errors: ${totalErrors}`);
 
     return results;
   } catch (error) {

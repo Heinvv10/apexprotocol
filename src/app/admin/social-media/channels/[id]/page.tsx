@@ -379,7 +379,7 @@ export default function SocialMediaChannelDetailPage() {
           <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-white mb-2">Channel Not Found</h3>
           <p className="text-muted-foreground mb-4">
-            The social media channel you're looking for doesn't exist or has been removed.
+            The social media channel you&apos;re looking for doesn&apos;t exist or has been removed.
           </p>
           <Button onClick={() => router.push("/admin/social-media/channels")}>
             <ArrowLeft className="h-4 w-4 mr-2" />

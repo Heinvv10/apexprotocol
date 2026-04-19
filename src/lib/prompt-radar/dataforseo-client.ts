@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 /**
  * DataForSEO AI Optimization API client for Prompt Radar v1.
  *
@@ -11,7 +12,6 @@
  * speculative wrapping.
  */
 
-import { logger } from "@/lib/logger";
 
 const DFS_BASE = "https://api.dataforseo.com/v3";
 

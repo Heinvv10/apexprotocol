@@ -14,6 +14,7 @@ import { db } from "@/lib/db";
 import { createId } from "@paralleldrive/cuid2";
 import { AlertData, ChannelConfig, alertChannels } from "@/lib/db/schema/alert-rules";
 import { eq, sql } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 // Notification priority colors
 const PRIORITY_COLORS = {
@@ -119,7 +120,7 @@ async function sendInAppNotification(params: SendAlertParams): Promise<void> {
     )
   `);
 
-  console.log(`[AlertDelivery] In-app notification created for org ${organizationId}`);
+  logger.info(`[AlertDelivery] In-app notification created for org ${organizationId}`);
 }
 
 /**
@@ -155,7 +156,7 @@ async function sendEmailNotification(params: SendAlertParams): Promise<void> {
       throw new Error(`Email send failed: ${error}`);
     }
 
-    console.log(`[AlertDelivery] Email sent to ${channelConfig.email}`);
+    logger.info(`[AlertDelivery] Email sent to ${channelConfig.email}`);
   } else {
     console.warn("[AlertDelivery] Email provider not configured, skipping email");
   }
@@ -291,7 +292,7 @@ async function sendSlackNotification(params: SendAlertParams): Promise<void> {
     throw new Error(`Slack webhook failed: ${response.statusText}`);
   }
 
-  console.log(`[AlertDelivery] Slack notification sent`);
+  logger.info(`[AlertDelivery] Slack notification sent`);
 }
 
 /**
@@ -340,7 +341,7 @@ async function sendWebhookNotification(params: SendAlertParams): Promise<void> {
     throw new Error(`Webhook failed: ${response.status} ${response.statusText}`);
   }
 
-  console.log(`[AlertDelivery] Webhook sent to ${channelConfig.webhook.url}`);
+  logger.info(`[AlertDelivery] Webhook sent to ${channelConfig.webhook.url}`);
 }
 
 /**

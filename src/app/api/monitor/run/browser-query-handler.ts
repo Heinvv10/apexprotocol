@@ -304,7 +304,7 @@ async function updatePlatformHealth(
 ): Promise<void> {
   try {
     // Get or create health record
-    let health = await db.query.browserPlatformHealth.findFirst({
+    const health = await db.query.browserPlatformHealth.findFirst({
       where: (table, { eq }) => eq(table.platformName, platformName),
     });
 

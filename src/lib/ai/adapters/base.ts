@@ -24,6 +24,7 @@ import type {
   CitationPattern,
   ParsedCitation,
 } from '../types';
+import { logger } from "@/lib/logger";
 
 // Re-export for backward compatibility
 export type {
@@ -87,7 +88,7 @@ export interface PlatformAdapter {
    *   "What are the best project management tools?",
    *   "Acme Corp is a project management software company"
    * );
-   * console.log(`Visibility score: ${response.citations.length}`);
+   * logger.info(`Visibility score: ${response.citations.length}`);
    * ```
    */
   analyze(query: string, brandContext: string, options?: AnalysisOptions): Promise<PlatformResponse>;

@@ -9,6 +9,7 @@ import {
   usePlatformErrors,
 } from "@/stores/insights-store";
 import type { AIPlatform } from "@/lib/ai/types";
+import { logger } from "@/lib/logger";
 
 // ============================================================================
 // Types
@@ -57,7 +58,7 @@ const PLATFORMS: PlatformConfig[] = [
  *
  * @example
  * ```tsx
- * <PlatformGrid onPlatformClick={(platform) => console.log('Clicked:', platform)} />
+ * <PlatformGrid onPlatformClick={(platform) => logger.info('Clicked:', platform)} />
  * ```
  */
 export function PlatformGrid({ className, onPlatformClick }: PlatformGridProps) {

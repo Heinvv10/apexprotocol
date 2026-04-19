@@ -434,7 +434,7 @@ export default function CompetitorTrackingPage() {
             <div>
               <p className="text-sm font-medium text-cyan-400 mb-1">Insight</p>
               <p className="text-sm text-white">
-                You're 2.1% ahead of AnswerEngine Insights. Focus on video content to close gap with GEO Masters.
+                You&apos;re 2.1% ahead of AnswerEngine Insights. Focus on video content to close gap with GEO Masters.
               </p>
             </div>
           </div>

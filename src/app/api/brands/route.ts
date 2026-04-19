@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getOrganizationId } from "@/lib/auth/supabase-server";
+import { logger } from "@/lib/logger";
 
 // Check if database is configured
 const isDatabaseConfigured = () => {
@@ -179,7 +180,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Log incoming data for debugging
-    console.log("[BrandCreate] Incoming confidence:", JSON.stringify(body.confidence, null, 2));
+    logger.info("[BrandCreate] Incoming confidence:", JSON.stringify(body.confidence, null, 2));
 
     // Pre-process confidence perField to ensure numbers
     if (body.confidence?.perField) {

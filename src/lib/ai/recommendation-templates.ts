@@ -9,6 +9,7 @@
  */
 
 import type { Recommendation, AIPlatform, ContentType } from "./types";
+import { logger } from "@/lib/logger";
 
 /**
  * Template ID type for recommendation categorization
@@ -727,7 +728,7 @@ export function templateToRecommendation(
  *   prominence: 12,
  *   bestContentType: 'documentation'
  * });
- * console.log(`Generated ${recommendations.length} recommendations`);
+ * logger.info(`Generated ${recommendations.length} recommendations`);
  * ```
  */
 export function generateRecommendations(

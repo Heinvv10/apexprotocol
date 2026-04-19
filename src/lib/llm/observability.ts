@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 /**
  * Langfuse observability wrapper for every LLM call in Apex.
  *
@@ -18,7 +19,6 @@
  * - Redacts PII and secrets via logger.ts rules before emitting.
  */
 
-import { logger } from "@/lib/logger";
 
 interface TraceMeta {
   name: string;

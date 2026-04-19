@@ -485,7 +485,7 @@ class TrendDetectionServiceImpl extends EventEmitter implements TrendDetectionSe
     for (const input of inputs) {
       // Volume anomaly
       const volumeDeviation = Math.abs(input.mentionCount - avgVolume);
-      let volumeZScore = stdVolume > 0 ? volumeDeviation / stdVolume : 0;
+      const volumeZScore = stdVolume > 0 ? volumeDeviation / stdVolume : 0;
 
       // Ratio-based anomaly: compare to median/minimum baseline for small samples
       const sortedVolumes = Array.from(volumes).sort((a, b) => a - b);
@@ -498,7 +498,7 @@ class TrendDetectionServiceImpl extends EventEmitter implements TrendDetectionSe
       const isModerateRatioAnomaly = baselineRatio >= 3 && inputs.length <= 5;
 
       // Effective severity based on both z-score and ratio
-      let isAnomaly = volumeZScore >= this.config.anomalyThreshold || isHighRatioAnomaly || isModerateRatioAnomaly;
+      const isAnomaly = volumeZScore >= this.config.anomalyThreshold || isHighRatioAnomaly || isModerateRatioAnomaly;
       let severity: 'low' | 'medium' | 'high';
 
       if (isHighRatioAnomaly || volumeZScore >= 3) {

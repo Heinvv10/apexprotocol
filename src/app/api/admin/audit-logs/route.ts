@@ -252,8 +252,8 @@ export async function POST(request: NextRequest) {
     };
 
     // Generate integrity hash
-    const crypto = require("crypto");
-    const hash = crypto.createHash("sha256");
+    const { createHash } = await import("node:crypto");
+    const hash = createHash("sha256");
     hash.update(JSON.stringify(logData));
     const integrityHash = `sha256:${hash.digest("hex")}`;
 

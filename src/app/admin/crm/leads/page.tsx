@@ -138,7 +138,7 @@ export default function LeadsPage() {
 
   // Filter and search logic
   const filteredLeads = useMemo(() => {
-    let filtered = allLeads.filter((lead: any) => {
+    const filtered = allLeads.filter((lead: any) => {
       const matchesSearch =
         searchTerm === "" ||
         lead.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||

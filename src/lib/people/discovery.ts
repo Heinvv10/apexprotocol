@@ -19,6 +19,7 @@ import type {
   PersonExtractionMetadata,
 } from "@/lib/db/schema";
 import { routeMessage } from "@/lib/ai/router";
+import { logger } from "@/lib/logger";
 
 // ============================================================================
 // Types
@@ -146,7 +147,7 @@ const ROLE_KEYWORDS: Record<string, string[]> = {
  *   brandId: "brand_123",
  *   useAiRefinement: false,
  * });
- * console.log(result.people);
+ * logger.info(result.people);
  */
 export async function discoverPeopleFromWebsite(
   options: DiscoveryOptions

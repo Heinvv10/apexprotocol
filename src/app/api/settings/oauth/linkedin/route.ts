@@ -15,6 +15,7 @@ import { systemSettings } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { encryptToken, decryptToken } from "@/lib/oauth";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 const GLOBAL_LINKEDIN_KEY = "global_linkedin_oauth";
 
@@ -111,11 +112,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    console.log("[LinkedIn OAuth POST] Received body:", JSON.stringify(body, null, 2));
+    logger.info("[LinkedIn OAuth POST] Received body:", JSON.stringify(body, null, 2));
     const validation = linkedinTokenSchema.safeParse(body);
 
     if (!validation.success) {
-      console.log("[LinkedIn OAuth POST] Validation failed:", JSON.stringify(validation.error.format(), null, 2));
+      logger.info("[LinkedIn OAuth POST] Validation failed:", JSON.stringify(validation.error.format(), null, 2));
       return NextResponse.json(
         { error: "Invalid token data", details: validation.error.format() },
         { status: 400 }

@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getOrganizationId } from "@/lib/auth/supabase-server";
+import { logger } from "@/lib/logger";
 
 // Mock leads data for development/fallback
 const mockLeads = [
@@ -305,7 +306,7 @@ export async function GET(
       });
     } catch (mauticError) {
       // Mautic not available, return mock data
-      console.log("Mautic unavailable, using mock data:", mauticError);
+      logger.info("Mautic unavailable, using mock data:", mauticError);
 
       const lead = mockLeads.find((l) => l.id === id);
 
@@ -369,7 +370,7 @@ export async function PUT(
       });
     } catch (mauticError) {
       // Mautic not available, return mock update
-      console.log("Mautic unavailable, simulating update:", mauticError);
+      logger.info("Mautic unavailable, simulating update:", mauticError);
 
       const lead = mockLeads.find((l) => l.id === id);
       if (!lead) {
@@ -415,7 +416,7 @@ export async function DELETE(
       });
     } catch (mauticError) {
       // Mautic not available, simulate delete
-      console.log("Mautic unavailable, simulating delete:", mauticError);
+      logger.info("Mautic unavailable, simulating delete:", mauticError);
 
       return NextResponse.json({
         data: { id, deleted: true },

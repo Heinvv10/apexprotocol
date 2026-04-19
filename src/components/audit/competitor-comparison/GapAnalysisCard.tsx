@@ -115,7 +115,7 @@ export function GapAnalysisCard({ gaps }: GapAnalysisCardProps) {
                 <div className="bg-success/5 border border-success/20 rounded p-2 flex gap-2">
                   <span className="text-success flex-shrink-0 text-sm">✓</span>
                   <span className="text-xs text-muted-foreground">
-                    You're performing <strong className="text-success">{Math.abs(gap.gap)} points</strong> above
+                    You&apos;re performing <strong className="text-success">{Math.abs(gap.gap)} points</strong> above
                     industry average in this dimension
                   </span>
                 </div>
@@ -123,7 +123,7 @@ export function GapAnalysisCard({ gaps }: GapAnalysisCardProps) {
                 <div className="bg-error/5 border border-error/20 rounded p-2 flex gap-2">
                   <AlertCircle className="h-3 w-3 text-error flex-shrink-0 mt-0.5" />
                   <span className="text-xs text-muted-foreground">
-                    You're <strong className="text-error">{Math.abs(gap.gap)} points</strong> below
+                    You&apos;re <strong className="text-error">{Math.abs(gap.gap)} points</strong> below
                     industry average - opportunity to improve
                   </span>
                 </div>

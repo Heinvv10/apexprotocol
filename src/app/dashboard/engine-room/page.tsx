@@ -10,6 +10,7 @@ import {
 } from "@/components/engine-room";
 import { useEngineRoom } from "@/hooks/useEngineRoom";
 import { useSelectedBrand } from "@/stores";
+import { logger } from "@/lib/logger";
 
 // Types for engine room data
 export interface Platform {
@@ -234,7 +235,7 @@ export default function EngineRoomPage() {
   const toggleFilter = (groupId: string, optionId: string) => {
     // Handle time range changes
     if (groupId === 'timeRange') {
-      console.log(`[Engine Room] Time range changed: ${selectedTimeRange} → ${optionId}`);
+      logger.info(`[Engine Room] Time range changed: ${selectedTimeRange} → ${optionId}`);
       setSelectedTimeRange(optionId as '7d' | '30d' | '90d');
 
       // Update filter state to show only the selected time range as checked
@@ -261,13 +262,13 @@ export default function EngineRoomPage() {
           [optionId]: !prev[groupId]?.[optionId],
         },
       };
-      console.log(`[Engine Room] Filter toggled: ${groupId}/${optionId} = ${newState[groupId][optionId]}`);
+      logger.info(`[Engine Room] Filter toggled: ${groupId}/${optionId} = ${newState[groupId][optionId]}`);
       return newState;
     });
   };
 
   const toggleMetric = (metricId: string) => {
-    console.log(`[Engine Room] Metric changed: ${activeMetric} → ${metricId}`);
+    logger.info(`[Engine Room] Metric changed: ${activeMetric} → ${metricId}`);
     setActiveMetric(metricId);
   };
 
@@ -275,7 +276,7 @@ export default function EngineRoomPage() {
   const filteredRadarData = React.useMemo(() => {
     if (!radarData || radarData.length === 0) return [];
 
-    console.log(`[Engine Room] Filtering radar data for metric: ${activeMetric}`);
+    logger.info(`[Engine Room] Filtering radar data for metric: ${activeMetric}`);
 
     if (activeMetric === 'visibility') {
       // Show metrics related to brand visibility
@@ -311,7 +312,7 @@ export default function EngineRoomPage() {
 
     // If positive sentiment is unchecked, hide all bubbles (they're from positive responses)
     if (sentimentFilters['positive'] === false) {
-      console.log('[Engine Room] Hiding perception bubbles (positive sentiment unchecked)');
+      logger.info('[Engine Room] Hiding perception bubbles (positive sentiment unchecked)');
       return [];
     }
 

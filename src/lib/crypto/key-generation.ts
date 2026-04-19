@@ -18,7 +18,8 @@ let nodeCreateHash: (algorithm: string) => any;
 
 if (!isEdgeRuntime) {
   try {
-    const nodeCrypto = require("crypto");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- node:crypto imported lazily only when NOT in edge runtime; dynamic import would force async/await refactor of callers
+    const nodeCrypto = require("node:crypto") as typeof import("node:crypto");
     nodeRandomBytes = nodeCrypto.randomBytes;
     nodeCreateHash = nodeCrypto.createHash;
   } catch {

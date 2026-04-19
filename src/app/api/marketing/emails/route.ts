@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrganizationId } from '@/lib/auth';
 import { z } from 'zod';
+import { logger } from "@/lib/logger";
 
 // Validation schemas
 const createListSchema = z.object({
@@ -317,7 +318,7 @@ export async function GET(request: NextRequest) {
       });
     } catch (listmonkError) {
       // ListMonk not available, return mock data
-      console.log('ListMonk unavailable, using mock data:', listmonkError);
+      logger.info('ListMonk unavailable, using mock data:', listmonkError);
 
       return NextResponse.json({
         data: mockEmailLists,

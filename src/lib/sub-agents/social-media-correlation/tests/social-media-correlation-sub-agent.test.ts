@@ -188,7 +188,7 @@ const createMockSocialMediaCorrelationSubAgent = (config: Partial<SocialMediaCor
   };
 
   let currentConfig = { ...defaultConfig };
-  let status: SubAgentStatus = {
+  const status: SubAgentStatus = {
     status: 'idle',
     lastUpdate: null,
     mentionsProcessed: 0,
@@ -209,7 +209,7 @@ const createMockSocialMediaCorrelationSubAgent = (config: Partial<SocialMediaCor
   const alerts: Alert[] = [];
   let realTimeActive = false;
   let startTime = Date.now();
-  let updateInterval: NodeJS.Timeout | null = null;
+  const updateInterval: NodeJS.Timeout | null = null;
 
   const agent = new EventEmitter() as SocialMediaCorrelationSubAgent;
 

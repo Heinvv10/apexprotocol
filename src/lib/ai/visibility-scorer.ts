@@ -11,6 +11,7 @@ import type {
   ParsedCitation,
   PlatformResponse,
 } from "./types";
+import { logger } from "@/lib/logger";
 
 /**
  * Configuration for visibility scoring
@@ -56,7 +57,7 @@ export class VisibilityScorer {
    * ```typescript
    * const scorer = new VisibilityScorer({ brandName: "Acme Corp" });
    * const score = scorer.calculate(responseContent, citations);
-   * console.log(`Visibility Score: ${score.total}/100`);
+   * logger.info(`Visibility Score: ${score.total}/100`);
    * ```
    */
   calculate(
@@ -94,7 +95,7 @@ export class VisibilityScorer {
     );
 
     if (this.options.debug) {
-      console.log(
+      logger.info(
         `[VisibilityScorer${platform ? ` - ${platform}` : ""}] Score: ${totalScore}/100 (Mentions: ${mentionCountScore}, Quality: ${citationQualityScore}, Prominence: ${prominenceScore})`
       );
     }
@@ -262,7 +263,7 @@ export class VisibilityScorer {
     if (citationCount === 0) return 0;
 
     // Base score from citation count (0-15 points)
-    let countScore = Math.min(citationCount * 3, 15);
+    const countScore = Math.min(citationCount * 3, 15);
 
     // Relevance multiplier based on average relevance score
     let relevanceMultiplier = 1.0;
@@ -472,7 +473,7 @@ export class VisibilityScorer {
  *   citations,
  *   { brandName: "Acme Corp" }
  * );
- * console.log(`Score: ${score.total}/100`);
+ * logger.info(`Score: ${score.total}/100`);
  * ```
  */
 export function calculateVisibilityScore(
