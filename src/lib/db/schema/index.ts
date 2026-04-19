@@ -716,3 +716,13 @@ export {
   type BrowserPlatformHealth,
   type NewBrowserPlatformHealth,
 } from "./browser-sessions";
+
+// Brand voice v0.5 — style-descriptor extraction + injection (FR-CRE-002)
+export {
+  brandVoiceSamples,
+  brandVoiceSamplesRelations,
+  brandVoiceSourceTypeEnum,
+  type BrandVoiceSample,
+  type NewBrandVoiceSample,
+  type BrandVoiceDescriptor,
+} from "./brand-voice";
