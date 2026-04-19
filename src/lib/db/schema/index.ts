@@ -735,3 +735,26 @@ export {
   type ZapierSubscription,
   type NewZapierSubscription,
 } from "./zapier-subscriptions";
+
+// Apex Agents v1 — run history + approval queue (FR-AGT-004/005)
+export {
+  agentRuns,
+  agentRunsRelations,
+  agentKindEnum,
+  agentRunStatusEnum,
+  type AgentRun,
+  type NewAgentRun,
+} from "./agent-runs";
+
+// Versioned dashboards with rollback (premium marker #5, SOC 2 prereq)
+export {
+  dashboards,
+  dashboardVersions,
+  dashboardsRelations,
+  dashboardVersionsRelations,
+  type Dashboard,
+  type NewDashboard,
+  type DashboardVersion,
+  type NewDashboardVersion,
+  type DashboardConfig,
+} from "./dashboard-versions";
