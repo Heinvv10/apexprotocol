@@ -41,6 +41,10 @@ const publicRoutes = [
   "/api/brands(.*)",
   "/api/monitor/trigger-by-domain",
   "/api/monitor/update-keywords",
+  // Public API v1 — health + spec are open, actual endpoints auth via API key
+  "/api/v1/health",
+  "/api/v1/openapi.json",
+  "/api/docs",
   "/_next(.*)",
   "/static(.*)",
   "/favicon.ico",
@@ -66,6 +70,9 @@ const apiKeyAuthRoutes = [
   "/api/integrations(.*)",
   "/api/ai-insights(.*)",
   "/api/simulations(.*)",
+  // Public v1 API — all endpoints except /health and /openapi.json
+  "/api/v1/brands(.*)",
+  "/api/v1/audits(.*)",
 ];
 
 const superAdminRoutes = ["/admin(.*)", "/api/admin(.*)"];
