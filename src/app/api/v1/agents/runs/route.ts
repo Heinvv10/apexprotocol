@@ -22,7 +22,7 @@ import { dispatchAgent } from "@/lib/agents/runner";
 const DispatchSchema = z.object({
   kind: z.enum(["visibility_gap_brief", "competitor_audit", "content_refresh"]),
   brand_id: z.string().min(1),
-  params: z.record(z.unknown()).optional(),
+  params: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const POST = withApiErrorHandling(async (request: NextRequest) => {

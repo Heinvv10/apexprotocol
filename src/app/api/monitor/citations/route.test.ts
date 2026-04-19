@@ -9,7 +9,7 @@ import { NextRequest } from "next/server";
 import { GET } from "./route";
 
 // Mock Clerk auth via lib/auth
-vi.mock("@/lib/auth/clerk", () => ({
+vi.mock("@/lib/auth/supabase-server", () => ({
   getOrganizationId: vi.fn(),
 }));
 
