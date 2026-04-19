@@ -135,6 +135,7 @@ export interface AlertConditions {
 export interface ChannelConfig {
   email?: { to: string[]; subject?: string };
   slack?: { webhookUrl: string; channel?: string };
+  teams?: { webhookUrl: string };
   whatsapp?: { phoneNumbers: string[] };
   webhook?: { url: string; headers?: Record<string, string>; secret?: string };
   in_app?: { userId?: string };

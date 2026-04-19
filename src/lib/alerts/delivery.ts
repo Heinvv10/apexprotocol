@@ -32,7 +32,14 @@ const PRIORITY_EMOJI = {
 
 export interface SendAlertParams {
   historyId: string;
-  channelType: "email" | "slack" | "whatsapp" | "webhook" | "in_app" | "sms";
+  channelType:
+    | "email"
+    | "slack"
+    | "teams"
+    | "whatsapp"
+    | "webhook"
+    | "in_app"
+    | "sms";
   channelConfig?: ChannelConfig;
   title: string;
   message: string;
@@ -56,6 +63,9 @@ export async function sendAlertNotification(params: SendAlertParams): Promise<vo
       break;
     case "slack":
       await sendSlackNotification(params);
+      break;
+    case "teams":
+      await sendTeamsNotification(params);
       break;
     case "webhook":
       await sendWebhookNotification(params);
@@ -148,6 +158,80 @@ async function sendEmailNotification(params: SendAlertParams): Promise<void> {
     console.log(`[AlertDelivery] Email sent to ${channelConfig.email}`);
   } else {
     console.warn("[AlertDelivery] Email provider not configured, skipping email");
+  }
+}
+
+/**
+ * Send Microsoft Teams notification (Adaptive Card via incoming webhook).
+ */
+async function sendTeamsNotification(params: SendAlertParams): Promise<void> {
+  const { title, message, priority, data, channelConfig } = params;
+
+  if (!channelConfig?.teams?.webhookUrl) {
+    throw new Error("Teams webhook URL not configured");
+  }
+
+  const color = PRIORITY_COLORS[priority];
+
+  const card = {
+    type: "message",
+    attachments: [
+      {
+        contentType: "application/vnd.microsoft.card.adaptive",
+        content: {
+          $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+          type: "AdaptiveCard",
+          version: "1.5",
+          body: [
+            {
+              type: "Container",
+              style: priority === "critical" ? "attention" : undefined,
+              items: [
+                {
+                  type: "TextBlock",
+                  size: "large",
+                  weight: "bolder",
+                  text: `${PRIORITY_EMOJI[priority]} ${title}`,
+                  color:
+                    priority === "critical"
+                      ? "attention"
+                      : priority === "high"
+                        ? "warning"
+                        : "default",
+                },
+              ],
+            },
+            {
+              type: "TextBlock",
+              wrap: true,
+              text: message,
+            },
+            {
+              type: "FactSet",
+              facts: [
+                { title: "Platform", value: data.platform ?? "N/A" },
+                { title: "Brand", value: data.brandName ?? "N/A" },
+                { title: "Priority", value: priority.toUpperCase() },
+              ],
+            },
+          ],
+          msteams: { width: "Full" },
+        },
+      },
+    ],
+    themeColor: color.replace("#", ""),
+  };
+
+  const response = await fetch(channelConfig.teams.webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(card),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Teams webhook failed: ${response.status} ${response.statusText}`,
+    );
   }
 }
 
