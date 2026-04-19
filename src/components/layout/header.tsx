@@ -28,36 +28,20 @@ interface HeaderProps {
 export function Header({ title = "Dashboard" }: HeaderProps) {
   const [mounted, setMounted] = React.useState(false);
   const router = useRouter();
+  const supabase = createBrowserClient();
+  const user = useAuthStore((s) => s.user);
 
-  // Safely use Clerk hooks - they may not be available if Clerk is not configured
-  let clerkData: { signOut?: () => Promise<void>; openUserProfile?: () => void; user?: any } = {};
-  try {
-    const supabase = createBrowserClient();
-    const user = useAuthStore((s) => s.user);
-  const isLoaded = true;
-  const isSignedIn = !!user;
-    clerkData = { signOut: supabase.auth.signOut, openUserProfile: () => { window.location.href = "/settings"; }, user };
-  } catch (error) {
-    // Clerk not configured - gracefully handle
-    console.warn("Clerk not configured");
-  }
-
-  // Prevent hydration mismatch for dropdowns
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
   const handleSignOut = async () => {
-    if (clerkData.signOut) {
-      await clerkData.signOut();
-    }
+    await supabase.auth.signOut();
     router.push("/sign-in");
   };
 
   const handleProfile = () => {
-    if (clerkData.openUserProfile) {
-      clerkData.openUserProfile();
-    }
+    router.push("/dashboard/settings");
   };
 
   return (
@@ -109,7 +93,7 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
-                {clerkData.user?.firstName ? `${clerkData.user.firstName} ${clerkData.user.lastName || ""}`.trim() : "My Account"}
+                {user?.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : "My Account"}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleProfile} className="cursor-pointer">

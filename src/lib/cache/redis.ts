@@ -1,5 +1,4 @@
 import IORedis from "ioredis";
-import { Ratelimit } from "@upstash/ratelimit";
 
 // Check if Redis is configured
 const isRedisConfigured = () => {
@@ -87,7 +86,7 @@ function getRedis(): IORedis | InMemoryRedis {
       _redisInstance = new IORedis(process.env.REDIS_URL || "redis://localhost:6379");
     } else {
       if (!_usingFallback) {
-        console.warn("[Cache/Redis] Using in-memory fallback. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for production.");
+        console.warn("[Cache/Redis] Using in-memory fallback. Set REDIS_URL for production.");
         _usingFallback = true;
       }
       _redisInstance = new InMemoryRedis();
@@ -108,56 +107,20 @@ export const redis = new Proxy({} as IORedis, {
   },
 });
 
-// Mock rate limiter for in-memory fallback
+// Mock rate limiter for in-process rate limiting
 class MockRatelimit {
   async limit(_identifier: string) {
     return { success: true, remaining: 999, reset: Date.now() + 60000, limit: 1000 };
   }
 }
 
-// Create rate limiter (real or mock based on Redis availability)
-function createRatelimit(limiter: ReturnType<typeof Ratelimit.slidingWindow>, prefix: string): Ratelimit | MockRatelimit {
-  if (isRedisConfigured()) {
-    const instance = getRedis();
-    if (instance instanceof IORedis) {
-      return new Ratelimit({
-        redis: instance,
-        limiter,
-        analytics: true,
-        prefix,
-      });
-    }
-  }
-  return new MockRatelimit();
-}
-
-// Lazy-initialized rate limiters
-let _rateLimitsInstance: {
-  api: Ratelimit | MockRatelimit;
-  ai: Ratelimit | MockRatelimit;
-  auth: Ratelimit | MockRatelimit;
-  webhook: Ratelimit | MockRatelimit;
-} | null = null;
-
-// Rate limiters for different use cases (lazy initialized)
-export const rateLimits = new Proxy({} as {
-  api: Ratelimit | MockRatelimit;
-  ai: Ratelimit | MockRatelimit;
-  auth: Ratelimit | MockRatelimit;
-  webhook: Ratelimit | MockRatelimit;
-}, {
-  get(_target, prop: string) {
-    if (!_rateLimitsInstance) {
-      _rateLimitsInstance = {
-        api: createRatelimit(Ratelimit.slidingWindow(100, "1 m"), "ratelimit:api"),
-        ai: createRatelimit(Ratelimit.slidingWindow(50, "1 h"), "ratelimit:ai"),
-        auth: createRatelimit(Ratelimit.slidingWindow(10, "15 m"), "ratelimit:auth"),
-        webhook: createRatelimit(Ratelimit.slidingWindow(1000, "1 m"), "ratelimit:webhook"),
-      };
-    }
-    return _rateLimitsInstance[prop as keyof typeof _rateLimitsInstance];
-  },
-});
+// Rate limiters — always use in-process MockRatelimit (Upstash removed, ioredis-native ratelimit is future work)
+export const rateLimits = {
+  api: new MockRatelimit(),
+  ai: new MockRatelimit(),
+  auth: new MockRatelimit(),
+  webhook: new MockRatelimit(),
+};
 
 // Cache key prefixes
 export const CacheKeys = {
@@ -290,13 +253,12 @@ export async function incrementCounter(
   ttlSeconds?: number
 ): Promise<number> {
   try {
-    const pipeline = redis.pipeline();
-    pipeline.incr(key);
+    const instance = getRedis();
+    const count = await instance.incr(key);
     if (ttlSeconds) {
-      pipeline.expire(key, ttlSeconds);
+      await instance.expire(key, ttlSeconds);
     }
-    const results = await pipeline.exec();
-    return (results[0] as number) || 0;
+    return count;
   } catch (error) {
     console.error(`Counter increment error for key ${key}:`, error);
     return 0;
@@ -305,7 +267,7 @@ export async function incrementCounter(
 
 // Check rate limit
 export async function checkRateLimit(
-  limiter: Ratelimit,
+  limiter: MockRatelimit,
   identifier: string
 ): Promise<{ success: boolean; remaining: number; reset: number }> {
   const { success, remaining, reset } = await limiter.limit(identifier);

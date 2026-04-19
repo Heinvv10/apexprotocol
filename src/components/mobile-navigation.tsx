@@ -115,7 +115,8 @@ export function MobileSidebarDrawer({
   onClose: () => void;
 }) {
   const pathname = usePathname();
-  const { user, isLoaded: isUserLoaded } = useUser();
+  const user = useAuthStore((s) => s.user);
+  const isLoaded = useAuthStore((s) => s.isLoaded);
 
   // Close on route change
   React.useEffect(() => {
@@ -194,10 +195,10 @@ export function MobileSidebarDrawer({
           })}
         </nav>
 
-        {/* Footer - Integrated with Clerk */}
+        {/* Footer - User Profile */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
-          <Link href="/user-profile" className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-white/5 transition-colors focus-ring-primary" aria-label="View user profile">
-            {isUserLoaded && user ? (
+          <Link href="/dashboard/settings" className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-white/5 transition-colors focus-ring-primary" aria-label="View user profile">
+            {isLoaded && user ? (
               <>
                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
                   {user.imageUrl ? (

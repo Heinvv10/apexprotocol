@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { createBrowserClient } from "@/lib/auth/supabase-browser";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Copy, Eye, EyeOff, Upload, Trash2, Loader2, ExternalLink } from "lucide-react";
@@ -39,10 +39,11 @@ interface ProfileSectionProps {
   profile?: UserProfile;
 }
 
-// Profile Section - Wired to Clerk for user data
+// Profile Section - User profile management
 export function ProfileSection({ profile }: ProfileSectionProps) {
-  const { user, isLoaded: userLoaded } = useUser();
-  const { openUserProfile } = useClerk();
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const isLoaded = useAuthStore((s) => s.isLoaded);
   const { data: apiKeysData, isLoading: apiKeysLoading } = useAPIKeys();
 
   const [showApiKey, setShowApiKey] = React.useState(false);
@@ -67,13 +68,13 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Handle opening Clerk's profile management
+  // Handle opening profile management
   const handleManageProfile = () => {
-    openUserProfile();
+    router.push("/dashboard/settings");
   };
 
   // Loading state
-  if (!userLoaded && !profile) {
+  if (!isLoaded && !profile) {
     return (
       <div className="space-y-6">
         <div>
@@ -135,7 +136,7 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
           <h3 className="text-sm font-medium text-foreground">Personal Information</h3>
           <Button variant="ghost" size="sm" onClick={handleManageProfile} className="text-xs">
             <ExternalLink className="w-3 h-3 mr-1" />
-            Edit in Clerk
+            Edit Profile
           </Button>
         </div>
         <div className="grid gap-4 md:grid-cols-2">

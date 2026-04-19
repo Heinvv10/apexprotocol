@@ -3,100 +3,56 @@ import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { getSession, currentDbUser } from "@/lib/auth/supabase-server";
 
-// Check if Clerk is properly configured
-const CLERK_CONFIGURED =
-  !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "pk_test_placeholder";
-
-// Dev mode - super admin is enabled by default for testing
 const DEV_SUPER_ADMIN_ENABLED = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
 
 /**
- * Check if the current user is a super-admin
- * Uses hybrid approach: Clerk publicMetadata + Database flag
- *
- * Priority:
- * 1. Clerk publicMetadata.isSuperAdmin (fast, in JWT)
- * 2. Database users.isSuperAdmin (source of truth)
+ * Check if the current user is a super-admin.
+ * Uses database as source of truth.
  */
 export async function isSuperAdmin(): Promise<boolean> {
-  // Development mode fallback
-  if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
-    return DEV_SUPER_ADMIN_ENABLED;
+  if (process.env.NODE_ENV === "development" && DEV_SUPER_ADMIN_ENABLED) {
+    return true;
   }
 
   try {
-    // First check: Clerk metadata (fastest, in JWT claims)
-    const __session = await getSession();
-  const { sessionClaims, userId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
+    const session = await getSession();
+    if (!session?.userId) return false;
 
-    if (!userId) {
-      return false;
-    }
-
-    // Check Clerk publicMetadata - cast to proper type
-    const publicMetadata = sessionClaims?.publicMetadata as { isSuperAdmin?: boolean } | undefined;
-    const clerkSuperAdmin = publicMetadata?.isSuperAdmin === true;
-
-    if (clerkSuperAdmin) {
-      return true;
-    }
-
-    // Second check: Database (source of truth)
     const dbUser = await db
       .select({ isSuperAdmin: users.isSuperAdmin })
       .from(users)
-      .where(eq(users.clerkUserId, userId))
+      .where(eq(users.clerkUserId, session.userId))
       .limit(1);
 
     return dbUser[0]?.isSuperAdmin ?? false;
   } catch {
-    // In development, fall back to dev setting
-    if (process.env.NODE_ENV === "development") {
-      return DEV_SUPER_ADMIN_ENABLED;
-    }
     return false;
   }
 }
 
 /**
- * Require super-admin access - throws if not super-admin
- * Use this in API routes and server components
+ * Require super-admin access — throws if not super-admin.
  */
 export async function requireSuperAdmin(): Promise<{ userId: string }> {
-  // Development mode fallback
-  if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
-    if (!DEV_SUPER_ADMIN_ENABLED) {
-      throw new Error("Super admin access required. Set DEV_SUPER_ADMIN=true in .env");
-    }
+  if (process.env.NODE_ENV === "development" && DEV_SUPER_ADMIN_ENABLED) {
     return { userId: "dev-super-admin" };
   }
 
-  try {
-    const __session = await getSession();
-  const { userId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
-
-    if (!userId) {
-      throw new Error("Authentication required");
-    }
-
-    const isSuper = await isSuperAdmin();
-
-    if (!isSuper) {
-      throw new Error("Super admin access required");
-    }
-
-    return { userId };
-  } catch (error) {
-    if (process.env.NODE_ENV === "development" && DEV_SUPER_ADMIN_ENABLED) {
-      return { userId: "dev-super-admin" };
-    }
-    throw error;
+  const session = await getSession();
+  if (!session?.userId) {
+    throw new Error("Authentication required");
   }
+
+  const isSuper = await isSuperAdmin();
+  if (!isSuper) {
+    throw new Error("Super admin access required");
+  }
+
+  return { userId: session.userId };
 }
 
 /**
- * Get super-admin user details with validation
+ * Get super-admin user details with validation.
  */
 export async function getSuperAdminUser(): Promise<{
   userId: string;
@@ -104,31 +60,21 @@ export async function getSuperAdminUser(): Promise<{
   name: string | null;
   isSuperAdmin: true;
 } | null> {
-  // Development mode fallback
-  if (!CLERK_CONFIGURED && process.env.NODE_ENV === "development") {
-    if (DEV_SUPER_ADMIN_ENABLED) {
-      return {
-        userId: "dev-super-admin",
-        email: "superadmin@dev.local",
-        name: "Dev Super Admin",
-        isSuperAdmin: true,
-      };
-    }
-    return null;
+  if (process.env.NODE_ENV === "development" && DEV_SUPER_ADMIN_ENABLED) {
+    return {
+      userId: "dev-super-admin",
+      email: "superadmin@dev.local",
+      name: "Dev Super Admin",
+      isSuperAdmin: true,
+    };
   }
 
   try {
     const user = await currentDbUser();
-
-    if (!user) {
-      return null;
-    }
+    if (!user) return null;
 
     const isSuper = await isSuperAdmin();
-
-    if (!isSuper) {
-      return null;
-    }
+    if (!isSuper) return null;
 
     return {
       userId: user.id,
@@ -137,28 +83,19 @@ export async function getSuperAdminUser(): Promise<{
       isSuperAdmin: true,
     };
   } catch {
-    if (process.env.NODE_ENV === "development" && DEV_SUPER_ADMIN_ENABLED) {
-      return {
-        userId: "dev-super-admin",
-        email: "superadmin@dev.local",
-        name: "Dev Super Admin",
-        isSuperAdmin: true,
-      };
-    }
     return null;
   }
 }
 
 /**
- * Grant super-admin status to a user
- * Only callable by existing super-admins
+ * Grant super-admin status to a user.
+ * Only callable by existing super-admins.
  */
 export async function grantSuperAdmin(
   targetUserId: string,
   grantedByUserId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Verify the granting user is a super-admin
     const granter = await db
       .select({ isSuperAdmin: users.isSuperAdmin })
       .from(users)
@@ -169,7 +106,6 @@ export async function grantSuperAdmin(
       return { success: false, error: "Only super-admins can grant super-admin status" };
     }
 
-    // Update the target user
     await db
       .update(users)
       .set({
@@ -190,15 +126,14 @@ export async function grantSuperAdmin(
 }
 
 /**
- * Revoke super-admin status from a user
- * Only callable by existing super-admins
+ * Revoke super-admin status from a user.
+ * Only callable by existing super-admins.
  */
 export async function revokeSuperAdmin(
   targetUserId: string,
   revokedByUserId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Verify the revoking user is a super-admin
     const revoker = await db
       .select({ isSuperAdmin: users.isSuperAdmin })
       .from(users)
@@ -209,12 +144,10 @@ export async function revokeSuperAdmin(
       return { success: false, error: "Only super-admins can revoke super-admin status" };
     }
 
-    // Prevent self-revocation (safety measure)
     if (targetUserId === revokedByUserId) {
       return { success: false, error: "Cannot revoke your own super-admin status" };
     }
 
-    // Update the target user
     await db
       .update(users)
       .set({
@@ -235,20 +168,19 @@ export async function revokeSuperAdmin(
 }
 
 /**
- * List all super-admin users
- * Only callable by super-admins
+ * List all super-admin users.
  */
 export async function listSuperAdmins(): Promise<
   Array<{
     id: string;
-    clerkUserId: string;
+    clerkUserId: string | null;
     email: string;
     name: string | null;
     superAdminGrantedAt: Date | null;
     superAdminGrantedBy: string | null;
   }>
 > {
-  const superAdmins = await db
+  return db
     .select({
       id: users.id,
       clerkUserId: users.clerkUserId,
@@ -259,6 +191,4 @@ export async function listSuperAdmins(): Promise<
     })
     .from(users)
     .where(eq(users.isSuperAdmin, true));
-
-  return superAdmins;
 }

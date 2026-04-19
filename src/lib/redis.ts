@@ -157,6 +157,27 @@ class InMemoryRedis {
     return JSON.parse(existing);
   }
 
+  async setnx(key: string, value: string): Promise<number> {
+    if (await this.exists(key)) return 0;
+    await this.set(key, value);
+    return 1;
+  }
+
+  async hdel(key: string, ...fields: string[]): Promise<number> {
+    const existing = await this.get(key);
+    if (!existing) return 0;
+    const hash: Record<string, string> = JSON.parse(existing);
+    let removed = 0;
+    for (const field of fields) {
+      if (field in hash) {
+        delete hash[field];
+        removed++;
+      }
+    }
+    await this.set(key, JSON.stringify(hash));
+    return removed;
+  }
+
   async sadd(key: string, ...members: string[]): Promise<number> {
     const existing = await this.get(key);
     const set = new Set<string>(existing ? JSON.parse(existing) : []);
@@ -208,6 +229,13 @@ class InMemoryRedis {
       return slice.flatMap((z) => [z.member, String(z.score)]);
     }
     return slice.map((z) => z.member);
+  }
+
+  async zrangebyscore(key: string, min: number, max: number): Promise<string[]> {
+    const existing = await this.get(key);
+    if (!existing) return [];
+    const zset: Array<{ score: number; member: string }> = JSON.parse(existing);
+    return zset.filter((z) => z.score >= min && z.score <= max).map((z) => z.member);
   }
 
   async zrank(key: string, member: string): Promise<number | null> {

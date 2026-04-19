@@ -6,8 +6,6 @@
  * Falls back to allowing requests when Redis is unavailable.
  */
 
-import IORedis from "ioredis";
-import { Ratelimit } from "@upstash/ratelimit";
 
 // Rate limits per tier (requests per minute).
 // Tiers now represent route classes, not subscription plans. Dashboard fan-out
@@ -89,40 +87,6 @@ export function classifyRoute(pathname: string): ApiTier {
   return "starter";
 }
 
-// One Upstash limiter per tier (passing {rate} to limit() silently ignores it;
-// sliding-window limit is set at construction — separate instances per bucket).
-const upstashLimiters = new Map<ApiTier, Ratelimit>();
-let redisClient: Redis | null = null;
-
-function getRedis(): Redis | null {
-  if (redisClient) return redisClient;
-  const url = process.env.REDIS_URL;
-  if (!url) return null;
-  try {
-    redisClient = new IORedis(process.env.REDIS_URL || "redis://localhost:6379");
-    return redisClient;
-  } catch {
-    return null;
-  }
-}
-
-function getTierUpstashLimiter(tier: ApiTier): Ratelimit | null {
-  const existing = upstashLimiters.get(tier);
-  if (existing) return existing;
-  const redis = getRedis();
-  if (!redis) return null;
-  try {
-    const limiter = new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(RATE_LIMITS[tier].perMinute, "1 m"),
-      prefix: `apex:api:rl:${tier}`,
-    });
-    upstashLimiters.set(tier, limiter);
-    return limiter;
-  } catch {
-    return null;
-  }
-}
 
 // In-memory sliding-window fallback for single-instance deployments (no Upstash).
 // Tracks request timestamps per key, purges anything older than the window.
@@ -191,23 +155,6 @@ export async function checkApiRateLimit(
 
   const limits = RATE_LIMITS[tier] || RATE_LIMITS.starter;
   const key = `${tier}:${orgId}`;
-
-  const limiter = getTierUpstashLimiter(tier);
-  if (limiter) {
-    try {
-      const result = await limiter.limit(orgId);
-      return {
-        allowed: result.success,
-        limit: result.limit,
-        remaining: result.remaining,
-        resetMs: result.reset,
-      };
-    } catch {
-      // Upstash unavailable — fall through to in-memory
-    }
-  }
-
-  // Fallback: in-memory sliding window. Works for single-instance deployments.
   return checkMemoryLimit(key, limits.perMinute);
 }
 

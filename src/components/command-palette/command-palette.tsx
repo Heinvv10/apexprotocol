@@ -44,8 +44,14 @@ interface CommandPaletteProps {
 
 export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const router = useRouter();
-  const { signOut } = useClerk();
+  const supabase = createBrowserClient();
   const { theme, setTheme } = useTheme();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/sign-in");
+    onClose();
+  };
   const [query, setQuery] = React.useState("");
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -195,12 +201,10 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         subtitle: "Log out of your account",
         icon: LogOut,
         category: "Settings",
-        action: () => {
-          signOut({ redirectUrl: "/" });
-        },
+        action: handleSignOut,
       },
     ],
-    [router, onClose, signOut, theme, setTheme]
+    [router, onClose, theme, setTheme, handleSignOut]
   );
 
   // Filter commands by query

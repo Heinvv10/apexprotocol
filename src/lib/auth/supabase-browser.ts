@@ -7,8 +7,9 @@ import { createBrowserClient as createSsrBrowserClient } from "@supabase/ssr";
  * Use for sign-in/out, OAuth flows, Realtime subscriptions, Storage uploads.
  */
 export function createBrowserClient() {
-  return createSsrBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  // Use placeholder values during build-time SSR when env vars are not yet available.
+  // At runtime the real values from the container environment are always present.
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
+  return createSsrBrowserClient(url, key);
 }

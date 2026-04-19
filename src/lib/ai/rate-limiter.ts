@@ -78,9 +78,9 @@ export async function checkRateLimit(
 
   // Get current counts
   const [minuteCount, hourCount, dayCount] = await Promise.all([
-    redis.get<string>(minuteKey),
-    redis.get<string>(hourKey),
-    redis.get<string>(dayKey),
+    redis.get(minuteKey),
+    redis.get(hourKey),
+    redis.get(dayKey),
   ]);
 
   const minute = parseInt(String(minuteCount || "0"), 10);
@@ -172,7 +172,7 @@ export async function checkTokenLimit(
   const now = Date.now();
 
   const tokenKey = `ratelimit:${orgId}:tokens:${Math.floor(now / 86400000)}`;
-  const tokenCountRaw = await redis.get<string>(tokenKey);
+  const tokenCountRaw = await redis.get(tokenKey);
   const tokenCount = parseInt(String(tokenCountRaw || "0"), 10);
 
   if (tokenCount + estimatedTokens > limits.tokensPerDay) {
@@ -210,10 +210,10 @@ export async function getRateLimitStatus(
   const tokenKey = `ratelimit:${orgId}:tokens:${Math.floor(now / 86400000)}`;
 
   const [minuteCount, hourCount, dayCount, tokenCount] = await Promise.all([
-    redis.get<string>(minuteKey),
-    redis.get<string>(hourKey),
-    redis.get<string>(dayKey),
-    redis.get<string>(tokenKey),
+    redis.get(minuteKey),
+    redis.get(hourKey),
+    redis.get(dayKey),
+    redis.get(tokenKey),
   ]);
 
   return {

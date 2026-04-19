@@ -96,7 +96,7 @@ export async function processMonitorJob(job: Job): Promise<MonitorJobResult> {
           const orgId = (job.payload as { orgId?: string }).orgId;
 
           // Fetch organization members for notification distribution
-          let orgMembers: Array<{ userId?: string }> = [];
+          let orgMembers: Array<{ id?: string; authUserId?: string | null; clerkUserId?: string | null }> = [];
           if (orgId) {
             try {
               orgMembers = await getOrganizationMembers(orgId);
@@ -166,18 +166,18 @@ export async function processMonitorJob(job: Job): Promise<MonitorJobResult> {
             // Trigger notifications for all organization members
             if (orgId && orgMembers.length > 0) {
               for (const member of orgMembers) {
-                if (member.userId) {
+                if (member.authUserId || member.id) {
                   try {
                     await onMentionCreated({
                       mention: newMention,
-                      userId: member.userId,
+                      userId: (member.authUserId || member.id) as string,
                       organizationId: orgId,
                     });
                   } catch (notificationError) {
                     // Log error but don't fail the job
                     console.error(
                       "[MonitorWorker] Failed to create notification for user:",
-                      member.userId,
+                      (member.authUserId || member.id),
                       notificationError
                     );
                   }

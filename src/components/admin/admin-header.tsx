@@ -25,37 +25,29 @@ export function AdminHeader({ title = "Admin Dashboard" }: AdminHeaderProps) {
   const [mounted, setMounted] = React.useState(false);
   const router = useRouter();
   
-  // Safe Clerk hooks usage (handles when Clerk is not configured)
-  let signOut: (() => Promise<void>) | undefined;
-  let openUserProfile: (() => void) | undefined;
-  let user: any = null;
+  // Get user from auth store and Supabase client
+  const user = useAuthStore((s) => s.user);
+  const supabase = createBrowserClient();
 
-  try {
-    const supabase = createBrowserClient();
-    const userData = useUser();
-    signOut = supabase.auth.signOut;
-    openUserProfile = () => { window.location.href = "/settings"; };
-    user = userData.user;
-  } catch (error) {
-    // Clerk not configured - use dev mode defaults
-    console.warn("[AdminHeader] Clerk not configured, using dev mode");
-  }
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/sign-in");
+  };
+
+  const openUserProfile = () => {
+    router.push("/dashboard/settings");
+  };
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
   const handleSignOut = async () => {
-    if (signOut) {
-      await signOut();
-    }
-    router.push("/sign-in");
+    await signOut();
   };
 
   const handleProfile = () => {
-    if (openUserProfile) {
-      openUserProfile();
-    }
+    openUserProfile();
   };
 
   return (

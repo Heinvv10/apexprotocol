@@ -132,25 +132,17 @@ export class JobQueue {
     };
 
     // Store job data
-    await redis.set(
-      KEYS.job(this.config.name, jobId),
-      JSON.stringify(job),
-      { ex: 86400 * 7 } // 7 days TTL
-    );
+    await redis.setex(KEYS.job(this.config.name, jobId), 86400 * 7, JSON.stringify(job));
 
     // Add to appropriate queue based on delay
     if (options?.delay) {
       // Add to delayed queue with score = scheduledAt timestamp
-      await redis.zadd(KEYS.delayed(this.config.name), {
-        score: Date.now() + options.delay,
-        member: jobId,
-      });
+      await redis.zadd(KEYS.delayed(this.config.name), Date.now() + options.delay, jobId,
+      );
     } else {
       // Add to pending queue with priority as score
-      await redis.zadd(KEYS.pending(this.config.name), {
-        score: job.priority ?? 3,
-        member: jobId,
-      });
+      await redis.zadd(KEYS.pending(this.config.name), job.priority ?? 3, jobId,
+      );
     }
 
     // Update stats
@@ -189,10 +181,8 @@ export class JobQueue {
 
     // Move from pending to active
     await redis.zrem(KEYS.pending(this.config.name), jobId);
-    await redis.zadd(KEYS.active(this.config.name), {
-      score: Date.now(),
-      member: jobId,
-    });
+    await redis.zadd(KEYS.active(this.config.name), Date.now(), jobId,
+    );
 
     // Update job status
     const job = await this.getJob(jobId);
@@ -225,10 +215,8 @@ export class JobQueue {
       await this.updateJob(job);
 
       // Add to completed queue (limited history)
-      await redis.zadd(KEYS.completed(this.config.name), {
-        score: Date.now(),
-        member: jobId,
-      });
+      await redis.zadd(KEYS.completed(this.config.name), Date.now(), jobId,
+      );
 
       // Trim completed queue to last 1000
       await redis.zremrangebyrank(KEYS.completed(this.config.name), 0, -1001);
@@ -263,10 +251,8 @@ export class JobQueue {
       job.scheduledAt = new Date(Date.now() + delay).toISOString();
       await this.updateJob(job);
 
-      await redis.zadd(KEYS.delayed(this.config.name), {
-        score: Date.now() + delay,
-        member: jobId,
-      });
+      await redis.zadd(KEYS.delayed(this.config.name), Date.now() + delay, jobId,
+      );
 
       await this.incrementStat("retried");
     } else {
@@ -276,10 +262,8 @@ export class JobQueue {
       job.error = error;
       await this.updateJob(job);
 
-      await redis.zadd(KEYS.failed(this.config.name), {
-        score: Date.now(),
-        member: jobId,
-      });
+      await redis.zadd(KEYS.failed(this.config.name), Date.now(), jobId,
+      );
 
       // Trim failed queue to last 500
       await redis.zremrangebyrank(KEYS.failed(this.config.name), 0, -501);
@@ -305,11 +289,7 @@ export class JobQueue {
    */
   async updateJob(job: Job): Promise<void> {
     const redis = getRedisClient();
-    await redis.set(
-      KEYS.job(this.config.name, job.id),
-      JSON.stringify(job),
-      { ex: 86400 * 7 } // 7 days TTL
-    );
+    await redis.setex(KEYS.job(this.config.name, job.id), 86400 * 7, JSON.stringify(job));
   }
 
   /**
@@ -320,12 +300,7 @@ export class JobQueue {
     const now = Date.now();
 
     // Get delayed jobs that are ready
-    const readyJobs = await redis.zrange(
-      KEYS.delayed(this.config.name),
-      0,
-      now,
-      { byScore: true }
-    );
+    const readyJobs = await redis.zrangebyscore(KEYS.delayed(this.config.name), 0, now);
 
     if (!readyJobs || readyJobs.length === 0) {
       return;
@@ -336,10 +311,8 @@ export class JobQueue {
       const job = await this.getJob(jobId as string);
       if (job) {
         await redis.zrem(KEYS.delayed(this.config.name), jobId);
-        await redis.zadd(KEYS.pending(this.config.name), {
-          score: job.priority ?? 3,
-          member: jobId as string,
-        });
+        await redis.zadd(KEYS.pending(this.config.name), job.priority ?? 3, jobId as string,
+        );
         job.status = "pending";
         await this.updateJob(job);
       }
@@ -375,7 +348,7 @@ export class JobQueue {
       completed: completed ?? 0,
       failed: failed ?? 0,
       delayed: delayed ?? 0,
-      counters: (counters as Record<string, number>) ?? {},
+      counters: (counters as unknown as Record<string, number>) ?? {},
     };
   }
 
@@ -428,12 +401,7 @@ export class JobQueue {
     const cutoff = Date.now() - maxAge;
 
     // Get stale active jobs
-    const staleJobs = await redis.zrange(
-      KEYS.active(this.config.name),
-      0,
-      cutoff,
-      { byScore: true }
-    );
+    const staleJobs = await redis.zrangebyscore(KEYS.active(this.config.name), 0, cutoff);
 
     if (!staleJobs || staleJobs.length === 0) {
       return 0;
