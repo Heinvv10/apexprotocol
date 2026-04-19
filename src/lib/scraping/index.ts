@@ -30,6 +30,12 @@ export { PerplexityScraper, createPerplexityScraper } from "./perplexity-scraper
 export { GeminiScraper, createGeminiScraper } from "./gemini-scraper";
 export { GrokScraper, createGrokScraper } from "./grok-scraper";
 export { DeepSeekScraper, createDeepSeekScraper } from "./deepseek-scraper";
+export { AIOverviewsScraper, createAIOverviewsScraper } from "./ai-overviews-scraper";
+export { CopilotScraper, createCopilotScraper } from "./copilot-scraper";
+export {
+  ChatGPTSearchScraper,
+  createChatGPTSearchScraper,
+} from "./chatgpt-search-scraper";
 
 // Factory for creating scrapers
 import { ChatGPTScraper } from "./chatgpt-scraper";
@@ -38,6 +44,9 @@ import { PerplexityScraper } from "./perplexity-scraper";
 import { GeminiScraper } from "./gemini-scraper";
 import { GrokScraper } from "./grok-scraper";
 import { DeepSeekScraper } from "./deepseek-scraper";
+import { AIOverviewsScraper } from "./ai-overviews-scraper";
+import { CopilotScraper } from "./copilot-scraper";
+import { ChatGPTSearchScraper } from "./chatgpt-search-scraper";
 import type { BaseScraper, ScraperConfig, ScraperResult } from "./base-scraper";
 
 export type SupportedPlatform =
@@ -46,7 +55,10 @@ export type SupportedPlatform =
   | "gemini"
   | "perplexity"
   | "grok"
-  | "deepseek";
+  | "deepseek"
+  | "google_ai_overviews"
+  | "copilot"
+  | "openai_search";
 
 /**
  * Create a scraper for the specified AI platform
@@ -68,6 +80,12 @@ export function createScraper(
       return new GrokScraper(config);
     case "deepseek":
       return new DeepSeekScraper(config);
+    case "google_ai_overviews":
+      return new AIOverviewsScraper(config);
+    case "copilot":
+      return new CopilotScraper(config);
+    case "openai_search":
+      return new ChatGPTSearchScraper(config);
     default:
       throw new Error(`Unknown platform: ${platform}`);
   }
@@ -197,6 +215,9 @@ export async function checkPlatformAccess(): Promise<Map<SupportedPlatform, bool
     "gemini",
     "grok",
     "deepseek",
+    "google_ai_overviews",
+    "copilot",
+    "openai_search",
   ];
   const results = new Map<SupportedPlatform, boolean>();
 
