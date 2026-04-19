@@ -1,0 +1,54 @@
+# =====================================================================
+# Apex GEO/AEO Platform — Velo Server Compose (Plan 5)
+# Attaches to the existing apexgeo_network alongside apexgeo-supabase.
+# No nginx here — Cloudflare Tunnel handles TLS + routing.
+# =====================================================================
+
+name: apex-app
+
+services:
+  app:
+    image: apex-app:plan-5
+    container_name: apex-app
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    env_file:
+      - .env.velo
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://apex-redis:6379
+    networks:
+      - apexgeo_network
+    depends_on:
+      apex-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  apex-redis:
+    image: redis:7-alpine
+    container_name: apex-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - apex-redis-data:/data
+    networks:
+      - apexgeo_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  apexgeo_network:
+    external: true
+
+volumes:
+  apex-redis-data:
+    driver: local
