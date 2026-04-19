@@ -145,19 +145,23 @@ export function ProgressTimeline({ roadmap }: ProgressTimelineProps) {
                         Progress to Target
                       </span>
                       <span className="text-xs font-semibold text-foreground">
-                        {Math.round(
-                          ((phase.projectedScore - roadmap.currentUnifiedScore) /
-                            (roadmap.targetUnifiedScore - roadmap.currentUnifiedScore)) *
-                            100
+                        {Math.min(
+                          100,
+                          Math.round(
+                            ((phase.projectedScore - roadmap.currentUnifiedScore) /
+                              (roadmap.targetUnifiedScore - roadmap.currentUnifiedScore)) *
+                              100
+                          )
                         )}%
                       </span>
                     </div>
                     <Progress
-                      value={
+                      value={Math.min(
+                        100,
                         ((phase.projectedScore - roadmap.currentUnifiedScore) /
                           (roadmap.targetUnifiedScore - roadmap.currentUnifiedScore)) *
-                        100
-                      }
+                          100
+                      )}
                       className="h-2"
                     />
                   </div>

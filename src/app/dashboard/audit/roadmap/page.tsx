@@ -121,7 +121,7 @@ function RoadmapPageInner() {
             <div>
               <h1 className="font-semibold text-foreground">{roadmap.title}</h1>
               <p className="text-xs text-muted-foreground">
-                {roadmap.mode === "leader"
+                {roadmap.mode === "leader" || !roadmap.targetCompetitor
                   ? "Path to industry leadership"
                   : `Competitive strategy to beat ${roadmap.targetCompetitor}`}
               </p>
