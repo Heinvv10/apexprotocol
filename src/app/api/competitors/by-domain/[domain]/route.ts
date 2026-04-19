@@ -5,7 +5,7 @@ import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
 import { competitorSnapshots, brands } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";

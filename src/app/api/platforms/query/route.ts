@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
 import { brands } from "@/lib/db/schema/brands";
 import { eq } from "drizzle-orm";
@@ -19,7 +19,8 @@ import { queryAllPlatforms } from "@/lib/monitoring/multi-platform-query";
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const __session = await getSession();
+  const { userId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
 
     if (!userId) {
       return NextResponse.json(

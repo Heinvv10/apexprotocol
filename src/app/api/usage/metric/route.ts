@@ -5,7 +5,7 @@ import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { stripeBillingManager, SUBSCRIPTION_PLANS } from "@/lib/billing/stripe";
 import type { UsageMetric, UsageMetricType } from "@/hooks/useUsage";
 

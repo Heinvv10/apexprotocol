@@ -8,7 +8,7 @@ import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { parsePlatformQueryParams, isValidPlatform } from "@/lib/ai/validation";
 
 // Check if database is configured

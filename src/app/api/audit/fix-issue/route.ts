@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
 import { audits } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -32,7 +32,8 @@ interface FixIssueResponse {
  */
 export async function POST(req: NextRequest): Promise<NextResponse<FixIssueResponse>> {
   try {
-    const { userId, orgId } = await auth();
+    const __session = await getSession();
+  const { userId, orgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
 
     if (!userId || !orgId) {
       return NextResponse.json(

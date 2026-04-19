@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
 import { scheduledJobs, audits } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -21,7 +21,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
+    const __session = await getSession();
+  const { userId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
     const { id } = await params;
 
     if (!userId) {
@@ -77,7 +78,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
+    const __session = await getSession();
+  const { userId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
     const { id } = await params;
 
     if (!userId) {
@@ -197,7 +199,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
+    const __session = await getSession();
+  const { userId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
     const { id } = await params;
 
     if (!userId) {

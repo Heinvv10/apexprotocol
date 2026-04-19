@@ -32,7 +32,7 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
 
 describe("GET /api/admin/dashboard/activity", () => {

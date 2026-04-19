@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import {
   getBrandPlatformIntegrations,
   enablePlatformForBrand,
@@ -16,7 +16,8 @@ export async function GET(
   { params }: { params: Promise<{ brandId: string }> }
 ) {
   try {
-    const { userId } = await auth();
+    const __session = await getSession();
+  const { userId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
     const { brandId } = await params;
 
     if (!userId) {
@@ -60,7 +61,8 @@ export async function POST(
   { params }: { params: Promise<{ brandId: string }> }
 ) {
   try {
-    const { userId } = await auth();
+    const __session = await getSession();
+  const { userId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
     const { brandId } = await params;
 
     if (!userId) {

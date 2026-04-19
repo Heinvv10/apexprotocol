@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
 import { brands } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -22,7 +22,8 @@ import {
 // GET - Get insights for a brand
 export async function GET(request: NextRequest) {
   try {
-    const { orgId } = await auth();
+    const __session = await getSession();
+  const { orgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
     const isDev = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
 
     if (!isDev && !orgId) {
@@ -152,7 +153,8 @@ export async function GET(request: NextRequest) {
 // POST - Generate on-demand analysis
 export async function POST(request: NextRequest) {
   try {
-    const { orgId } = await auth();
+    const __session = await getSession();
+  const { orgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
     const isDev = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
 
     if (!isDev && !orgId) {

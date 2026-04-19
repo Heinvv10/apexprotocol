@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
 import { alertRules } from "@/lib/db/schema/alert-rules";
 import { eq, and, desc } from "drizzle-orm";
@@ -49,7 +49,8 @@ const createRuleSchema = z.object({
 // GET - List alert rules
 export async function GET(request: NextRequest) {
   try {
-    const { orgId } = await auth();
+    const __session = await getSession();
+  const { orgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
     const isDev = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
 
     if (!isDev && !orgId) {
@@ -80,7 +81,8 @@ export async function GET(request: NextRequest) {
 // POST - Create new alert rule
 export async function POST(request: NextRequest) {
   try {
-    const { orgId, userId } = await auth();
+    const __session = await getSession();
+  const { orgId, userId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
     const isDev = process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
 
     if (!isDev && !orgId) {

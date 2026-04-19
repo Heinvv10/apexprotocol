@@ -9,7 +9,7 @@ import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
 import { db } from "@/lib/db";
 import { systemAuditLogs } from "@/lib/db/schema";

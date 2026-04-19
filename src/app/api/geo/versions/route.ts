@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { z } from "zod";
 import {
   getVersionHistory,
@@ -58,7 +58,8 @@ const createVersionSchema = z.object({
  */
 export async function GET(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const __session = await getSession();
+  const { userId, orgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
 
     if (!userId || !orgId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -132,7 +133,8 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const __session = await getSession();
+  const { userId, orgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
 
     if (!userId || !orgId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -173,7 +175,8 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const __session = await getSession();
+  const { userId, orgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
 
     if (!userId || !orgId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

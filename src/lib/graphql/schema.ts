@@ -5,7 +5,7 @@
  */
 
 import { createSchema, createYoga, YogaInitialContext } from "graphql-yoga";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { eq, desc, and, sql, like, count } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import {
@@ -2201,7 +2201,8 @@ interface GraphQLContext extends YogaInitialContext {
 // Create context function
 async function createContext(): Promise<Partial<GraphQLContext>> {
   try {
-    const { userId, orgId } = await auth();
+    const __session = await getSession();
+  const { userId, orgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
     return {
       userId: userId || undefined,
       orgId: orgId || undefined,

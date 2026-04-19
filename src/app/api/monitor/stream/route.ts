@@ -4,7 +4,7 @@
  */
 
 import { NextRequest } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { getRedisClient } from "@/lib/redis";
 import { logger } from "@/lib/logger";
 
@@ -42,7 +42,8 @@ function formatSSE(message: SSEMessage): string {
  */
 export async function GET(request: NextRequest): Promise<Response> {
   // Authenticate via Clerk
-  const { userId, orgId } = await auth();
+  const __session = await getSession();
+  const { userId, orgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
 
   if (!userId) {
     return new Response(

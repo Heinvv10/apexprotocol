@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
 import { brandMentions, audits, brands, geoScoreHistory } from "@/lib/db/schema";
 import { eq, count, sql, desc } from "drizzle-orm";

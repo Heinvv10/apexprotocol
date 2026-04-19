@@ -1,0 +1,249 @@
+ID,Title,Pillar,Priority,Effort,Current_Apex_Status,Category_Leading,Parity_Gap,Competitors_With_It,Gap_Analysis_Ref,Sprint,Notes
+FR-MON-001,Query ChatGPT via OpenAI API,MONITOR,P0,S,Shipping,,,All Tier-1,GapAnalysis-§2.1,S1,Already live in src/lib/scraping/chatgpt-scraper.ts
+FR-MON-002,Query Claude via Anthropic API,MONITOR,P0,S,Shipping,,,All Tier-1,GapAnalysis-§2.1,S1,Already live in claude-scraper.ts
+FR-MON-003,Query Gemini via Google AI Studio,MONITOR,P0,S,Shipping,,,All Tier-1,GapAnalysis-§2.1,S1,Live
+FR-MON-004,Query Perplexity via API,MONITOR,P0,S,Shipping,,,All Tier-1,GapAnalysis-§2.1,S1,Live
+FR-MON-005,Query Grok via xAI API,MONITOR,P0,S,Partial,,,Profound Athena Goodie,GapAnalysis-§2.1,S1,Scraper exists; API key missing in .env.example
+FR-MON-006,Query DeepSeek single-turn,MONITOR,P0,S,Shipping,,,Profound Goodie,GapAnalysis-§2.1,S1,Live
+FR-MON-007,Query Microsoft Copilot,MONITOR,P1,M,Missing,,🎯,Profound Peec Athena Goodie Ahrefs,GapAnalysis-§2.1,S2,UI scrape required; consider Playwright
+FR-MON-008,Query Google AI Overviews via SerpAPI,MONITOR,P1,M,Partial,,🎯,Profound Peec Athena Goodie Semrush Ahrefs,GapAnalysis-§2.1,S2,SerpAPI or DataForSEO
+FR-MON-009,Query Google AI Mode,MONITOR,P1,M,Missing,,🎯,Profound Peec Athena Goodie Ahrefs,GapAnalysis-§2.1,S2,New surface as of 2025
+FR-MON-010,Query Meta AI,MONITOR,P2,M,Missing,,,Profound Athena Goodie,GapAnalysis-§2.1,S2,Defer if effort high
+FR-MON-011,Query Amazon Rufus,MONITOR,P3,L,Missing,,,Goodie,GapAnalysis-§2.1,S6+,Only Goodie has it; spike 1 week
+FR-MON-012,Query ChatGPT Search separately from base GPT,MONITOR,P1,M,Partial,,🎯,Profound Peec Athena Goodie,GapAnalysis-§2.1,S2,Different answer distribution than raw API
+FR-MON-013,Parallel fan-out across all LLMs,MONITOR,P0,S,Shipping,,,All Tier-1,GapAnalysis-§2.2,S1,multi-platform-query.ts
+FR-MON-014,N-runs averaging with variance reporting,MONITOR,P1,M,Missing,🏆,,None publicly,GapAnalysis-§2.2,S3,Be first to publish N; statistical rigor marketing
+FR-MON-015,Confidence intervals on every metric,MONITOR,P2,M,Missing,🏆,,None,GapAnalysis-§2.2,S3,Paired with FR-MON-014
+FR-MON-016,Geo-distributed scraping endpoints,MONITOR,P1,L,Missing,,🎯,Peec confirmed,GapAnalysis-§2.2,S3,Cloudflare Workers SA/EU/US/UK
+FR-MON-017,Residential proxy rotation,MONITOR,P1,M,Partial,,,Profound Peec Athena,GapAnalysis-§2.2,S3,Via Browserless today
+FR-MON-018,Browser session persistence per persona,MONITOR,P1,M,Partial,,,Profound Peec,GapAnalysis-§2.2,S3,For multi-turn tracking
+FR-MON-019,Rate-limit-aware scheduling,MONITOR,P1,S,Partial,,,All Tier-1,GapAnalysis-§2.2,S3,BullMQ infrastructure exists
+FR-MON-020,Prompt library versioning via Langfuse,MONITOR,P1,M,Missing,,,None transparently,GapAnalysis-§2.2,S3,Self-host Langfuse
+FR-MON-021,NER brand mention detection via Presidio,MONITOR,P0,M,Missing,,,Industry-standard,GapAnalysis-§2.3,S2,Prevent ambiguous-brand false positives
+FR-MON-022,Fuzzy entity resolution via Qdrant embeddings,MONITOR,P0,M,Missing,,,Industry-standard,GapAnalysis-§2.3,S2,MSFT = Microsoft collapse
+FR-MON-023,Competitor extraction from same prompt,MONITOR,P0,M,Partial,,🎯,All Tier-1,GapAnalysis-§2.3,S2,Share-of-voice foundation
+FR-MON-024,Citation URL extraction + domain quality,MONITOR,P1,S,Partial,,🎯,Profound Goodie,GapAnalysis-§2.3,S2,Store + score citations
+FR-MON-025,Sentiment analysis with reasoning quote,MONITOR,P1,S,Partial,,🎯,Profound Peec Athena Goodie,GapAnalysis-§2.3,S2,Goodie has crisis-monitoring
+FR-MON-026,Cross-platform consistency score,MONITOR,P2,M,Missing,🏆,,None,GapAnalysis-§2.3,S5,Novel metric
+FR-MON-027,Time-series storage of scores,MONITOR,P0,S,Shipping,,,All Tier-1,GapAnalysis-§2.5,S1,geo_scores table exists
+FR-MON-028,7/30/90-day trend views + YoY,MONITOR,P1,S,Partial,,,All Tier-1,GapAnalysis-§2.5,S2,UI work
+FR-MON-029,Anomaly detection,MONITOR,P1,M,Missing,,🎯,Profound,GapAnalysis-§2.5,S2,3σ threshold
+FR-MON-030,Alert delivery email/Slack/Teams/webhook/in-app,MONITOR,P1,S,Missing,,🎯,All Tier-1,GapAnalysis-§2.5,S2,5 channels
+FR-MON-031,Alert digest daily/weekly email,MONITOR,P1,S,Missing,,,All Tier-1,GapAnalysis-§2.5,S2,Opt-in
+FR-MON-032,AI crawler robots.txt detection,MONITOR,P0,S,Shipping,,,All Tier-1,GapAnalysis-§2.6,S1,ai-crawler-check.ts has 5 bots
+FR-MON-033,Server-side log ingestion for AI bot hits,MONITOR,P2,XL,Missing,,🎯,Profound,GapAnalysis-§2.6,S5,Profound Agent Analytics moat
+FR-MON-034,Real-time WebSocket answer-diff stream,MONITOR,P2,L,Missing,🏆,,None,GapAnalysis-§15.5,S5,Category-first
+FR-CRE-001,Dual-model content generation Claude+GPT streaming,CREATE,P0,S,Shipping,,,Jasper Writesonic,GapAnalysis-§3.1,S1,content-generator.ts live
+FR-CRE-002,Brand voice training from writing samples,CREATE,P0,L,Partial,,🎯,Jasper Athena,GapAnalysis-§3.1,S1,Jasper dominates here
+FR-CRE-003,Brand data integration (PDFs URLs docs),CREATE,P1,L,Missing,,🎯,Jasper Athena Writesonic,GapAnalysis-§3.1,S3,RAG pipeline
+FR-CRE-004,AEO-focused content brief,CREATE,P1,M,Partial,,,Writesonic Frase,GapAnalysis-§3.1,S3,
+FR-CRE-005,Outline generation,CREATE,P1,S,Partial,,,Frase Jasper Writesonic,GapAnalysis-§3.1,S3,
+FR-CRE-006,Full draft generation,CREATE,P0,S,Shipping,,,All specialists,GapAnalysis-§3.1,S1,
+FR-CRE-007,FAQ generator AEO schema-ready,CREATE,P1,S,Missing,,🎯,Writesonic Athena,GapAnalysis-§3.1,S3,schema.org/FAQPage validation
+FR-CRE-008,JSON-LD schema auto-insert,CREATE,P1,M,Missing,,🎯,Writesonic Athena,GapAnalysis-§3.1,S3,
+FR-CRE-009,llms.txt auto-generation,CREATE,P2,S,Missing,🏆,,None,GapAnalysis-§3.1,S3,Category-first
+FR-CRE-010,Q&A block formatting,CREATE,P1,S,Partial,,,Writesonic Athena,GapAnalysis-§3.1,S3,
+FR-CRE-011,Editorial Polish brand voice + cliche + burstiness,CREATE,P1,M,Missing,,,Surfer Writesonic,GapAnalysis-§15.1,S3,Never frame as detector bypass
+FR-CRE-012,Multi-language support (en fr es de pt sw zu af),CREATE,P2,M,Missing,,🎯,Jasper Writesonic Athena,GapAnalysis-§3.1,S6+,sw/zu/af for African market advantage
+FR-CRE-013,Citation/source suggestion with quality ranking,CREATE,P1,M,Missing,,🎯,Writesonic Athena,GapAnalysis-§3.1,S3,
+FR-CRE-014,MONITOR→CREATE loop,CREATE,P0,M,Partial,🏆,,None fully,GapAnalysis-§3.1,S3,Biggest bundle advantage
+FR-CRE-015,Content calendar + scheduling,CREATE,P2,M,Missing,,,Jasper Writesonic,GapAnalysis-§3.1,S6+,
+FR-CRE-016,Collaborative editing,CREATE,P2,L,Missing,,,Jasper Writesonic,GapAnalysis-§3.1,S6+,
+FR-CRE-017,Direct publish Shopify,CREATE,P1,L,Missing,,🎯,Athena only,GapAnalysis-§3.2,S3,Athena moat
+FR-CRE-018,Direct publish WordPress,CREATE,P1,M,Missing,,🎯,Partial Athena Writesonic,GapAnalysis-§3.2,S3,
+FR-CRE-019,Direct publish Webflow,CREATE,P2,M,Missing,,,None,GapAnalysis-§3.2,S6+,
+FR-CRE-020,Direct publish HubSpot CMS,CREATE,P2,M,Missing,,,None,GapAnalysis-§3.2,S6+,
+FR-CRE-021,Export Markdown HTML Google Docs,CREATE,P1,S,Partial,,,Most tools,GapAnalysis-§3.2,S3,
+FR-CRE-022,Plagiarism fact-check pass,CREATE,P2,M,Missing,,,Jasper Writesonic,GapAnalysis-§3.1,S6+,Copyleaks API
+FR-CRE-023,A/B test generator,CREATE,P3,M,Missing,,,None,GapAnalysis-§3.1,S6+,Defer
+FR-AUD-001,Core Web Vitals via Google PSI,AUDIT,P0,S,Shipping,🏆,,Writesonic only among GEO,GapAnalysis-§4.1,S1,Real PSI with honest fallback; ahead of market
+FR-AUD-002,Bulk site-wide Lighthouse via Unlighthouse,AUDIT,P1,M,Missing,🏆,,None,GapAnalysis-§4.1,S3,Beyond PSI 25k/day quota
+FR-AUD-003,Per-page CWV history,AUDIT,P1,M,Partial,🏆,,None,GapAnalysis-§4.1,S3,
+FR-AUD-004,CrUX field data integration,AUDIT,P1,S,Missing,,🎯,Writesonic,GapAnalysis-§4.1,S2,Real user metrics
+FR-AUD-005,Mobile vs desktop breakdown,AUDIT,P1,S,Partial,,,Writesonic,GapAnalysis-§4.1,S2,
+FR-AUD-006,JS rendering check for AI crawlers,AUDIT,P1,M,Missing,,🎯,Partial,GapAnalysis-§4.1,S3,User-agent spoofed check
+FR-AUD-007,AI readiness weighted score,AUDIT,P0,S,Shipping,🏆,,None with this formula,GapAnalysis-§4.2,S1,25+25+20+15+15 formula live
+FR-AUD-008,Schema.org validation per page,AUDIT,P1,M,Partial,,,Writesonic,GapAnalysis-§4.2,S3,schema-dts + testing tool
+FR-AUD-009,llms.txt detection + validation,AUDIT,P1,S,Partial,🏆,,None,GapAnalysis-§4.2,S3,Category advantage
+FR-AUD-010,robots.txt AI crawler rules with traffic share,AUDIT,P0,S,Shipping,🏆,,None,GapAnalysis-§4.2,S1,5 bots tracked with share %
+FR-AUD-011,Structured data completeness per page-type,AUDIT,P1,M,Missing,,,Writesonic,GapAnalysis-§4.2,S3,
+FR-AUD-012,E-E-A-T signals audit,AUDIT,P2,M,Missing,,🎯,Writesonic,GapAnalysis-§4.2,S5,
+FR-AUD-013,Content structure headings Q&A FAQ blocks,AUDIT,P1,M,Partial,,,Writesonic Athena,GapAnalysis-§4.2,S3,
+FR-AUD-014,Readability LLM clarity score,AUDIT,P1,M,Partial,,,Writesonic,GapAnalysis-§4.2,S3,Flesch-Kincaid + LLM clarity
+FR-AUD-015,Answer-quality score,AUDIT,P2,L,Missing,,🎯,Athena partial,GapAnalysis-§4.2,S5,Shadow LLM eval
+FR-AUD-016,Internal linking graph analysis,AUDIT,P2,L,Missing,,🎯,Writesonic Ahrefs,GapAnalysis-§4.2,S5,
+FR-AUD-017,Hreflang multi-region audit,AUDIT,P2,M,Missing,,,Writesonic Semrush,GapAnalysis-§4.2,S6+,
+FR-AUD-018,Canonical duplicate content detection,AUDIT,P1,M,Missing,,🎯,Writesonic Semrush,GapAnalysis-§4.2,S3,
+FR-AUD-019,Sitemap coverage audit,AUDIT,P1,S,Missing,,🎯,Writesonic Semrush,GapAnalysis-§4.2,S3,
+FR-AUD-020,Accessibility WCAG 2.2 AA,AUDIT,P1,S,Shipping,,,Writesonic,GapAnalysis-§4.2,S1,axe-core integrated
+FR-REC-001,Auto-generate from audit signals,RECOMMENDATIONS,P0,M,Shipping,🏆,,None as named surface,GapAnalysis-§5,S1,recommendation-engine.ts live
+FR-REC-002,Priority scoring P0-P3,RECOMMENDATIONS,P0,S,Shipping,🏆,,None,GapAnalysis-§5,S1,Live in schema
+FR-REC-003,Impact + effort estimate,RECOMMENDATIONS,P0,S,Shipping,🏆,,None,GapAnalysis-§5,S1,Live
+FR-REC-004,Confidence score per recommendation,RECOMMENDATIONS,P0,S,Shipping,🏆,,None,GapAnalysis-§5,S1,Live
+FR-REC-005,Evidence reasoning transparency expandable why,RECOMMENDATIONS,P1,S,Partial,🏆,,None,GapAnalysis-§5,S2,Click-through to signals
+FR-REC-006,Task assignment + due-date scheduling,RECOMMENDATIONS,P1,S,Partial,,,Partial in Profound,GapAnalysis-§5,S2,assigned_to already in schema
+FR-REC-007,Completion tracking + lift measurement,RECOMMENDATIONS,P1,M,Missing,🏆,,None,GapAnalysis-§5,S4,30-day post-completion delta
+FR-REC-008,Integration with Jira Linear Asana,RECOMMENDATIONS,P1,M,Missing,,🎯,Partial Profound,GapAnalysis-§5,S4,
+FR-REC-009,Competitor-gap recommendations,RECOMMENDATIONS,P1,M,Missing,,🎯,Profound partial,GapAnalysis-§5,S2,
+FR-REC-010,Trend-based recommendations,RECOMMENDATIONS,P2,M,Missing,🏆,,None,GapAnalysis-§5,S5,
+FR-REC-011,MONITOR→CREATE recommendations handoff,RECOMMENDATIONS,P0,M,Partial,🏆,,None,GapAnalysis-§5,S3,One-click brief generation
+FR-REC-012,Recommendation grouping batching,RECOMMENDATIONS,P2,S,Missing,,,None,GapAnalysis-§5,S5,
+FR-REC-013,Revenue-attributed ROI projected + realized,RECOMMENDATIONS,P2,L,Missing,🏆,,None,GapAnalysis-§15.5,S5,Category-first
+FR-REC-014,Dismissal reasoning capture,RECOMMENDATIONS,P3,S,Missing,,,None,GapAnalysis-§5,S6+,Defer
+FR-ATT-001,GA4 integration,ATTRIBUTION,P0,M,Missing,,🎯,Profound Peec Athena,GapAnalysis-§6,S1,Spec promised but not wired
+FR-ATT-002,Google Search Console integration,ATTRIBUTION,P0,M,Missing,,🎯,All Tier-1,GapAnalysis-§6,S1,
+FR-ATT-003,Shopify sales integration,ATTRIBUTION,P1,L,Missing,,,Athena only,GapAnalysis-§6,S4,SKU-level attribution
+FR-ATT-004,Citation→session funnel attribution,ATTRIBUTION,P2,L,Missing,🏆,,Athena partial,GapAnalysis-§6,S5,
+FR-ATT-005,Revenue per prompt per citation,ATTRIBUTION,P2,L,Missing,,🎯,Athena,GapAnalysis-§6,S5,
+FR-ATT-006,UTM-based attribution pipeline,ATTRIBUTION,P1,S,Missing,,🎯,All Tier-1,GapAnalysis-§6,S2,
+FR-ATT-007,Server-side event tracking,ATTRIBUTION,P2,M,Missing,,,Partial,GapAnalysis-§6,S5,Cookie-less
+FR-ATT-008,Cohort analysis,ATTRIBUTION,P3,M,Missing,,,Partial,GapAnalysis-§6,S6+,Defer
+FR-ATT-009,ROI dashboard program-wide,ATTRIBUTION,P1,M,Missing,,🎯,Athena,GapAnalysis-§6,S4,
+FR-AGT-001,Visibility Gap→Brief Agent,AGENTS,P1,L,Missing,🏆,,Profound has Agents,GapAnalysis-§15.2,S4,Flagship agent
+FR-AGT-002,Competitor Audit Agent,AGENTS,P1,L,Missing,🏆,,Profound has Agents,GapAnalysis-§15.2,S4,
+FR-AGT-003,Content Refresh Agent,AGENTS,P1,L,Missing,🏆,,Profound has Agents,GapAnalysis-§15.2,S4,
+FR-AGT-004,Approval-gated run queue never auto-publish,AGENTS,P0,M,Missing,,,Profound has,GapAnalysis-§15.2,S4,Brand safety critical
+FR-AGT-005,Run history + telemetry,AGENTS,P1,M,Missing,,,Profound,GapAnalysis-§15.2,S4,Tokens cost duration outcomes
+FR-AGT-006,Claude Agent SDK foundation,AGENTS,P1,M,Missing,,,Profound uses OpenAI,GapAnalysis-§15.2,S4,TS-native matches stack
+FR-AGT-007,Rate-limit-aware per tenant,AGENTS,P1,S,Missing,,,Partial,GapAnalysis-§15.2,S4,
+FR-AGT-008,Agent marketplace templates,AGENTS,P3,XL,Missing,,,None,GapAnalysis-§15.2,S6+,Defer
+FR-AGT-009,Drag-drop workflow builder,AGENTS,P3,XL,Missing,,,Profound has,GapAnalysis-§15.2,S6+,Explicitly skip - demo surface only
+FR-PRV-001,DataForSEO AI Optimization API,PROMPT,P1,M,Missing,,,Profound Prompt Volumes,GapAnalysis-§15.3,S3,$300-800/mo
+FR-PRV-002,GSC query-level ingestion per client,PROMPT,P0,M,Missing,,🎯,Most tools,GapAnalysis-§15.3,S1,Free via OAuth
+FR-PRV-003,AlsoAsked PAA mining,PROMPT,P1,S,Missing,,,Partial,GapAnalysis-§15.3,S3,$59/mo
+FR-PRV-004,LMSYS-Chat + WildChat corpus ingest,PROMPT,P1,M,Missing,,,None uses public,GapAnalysis-§15.3,S3,Free 2M prompts
+FR-PRV-005,Reddit Quora question mining,PROMPT,P2,M,Missing,,,Partial,GapAnalysis-§15.3,S5,Via DataForSEO SERP
+FR-PRV-006,LLM-synthesized prompt expansion,PROMPT,P2,S,Missing,,,None,GapAnalysis-§15.3,S5,Calibrated against real volumes
+FR-PRV-007,1-5 volume score bands Peec-style,PROMPT,P1,S,Missing,🏆,,Peec has Peec-style,GapAnalysis-§15.3,S3,Honest framing
+FR-PRV-008,Topic theme clustering,PROMPT,P1,M,Missing,,🎯,Profound Peec,GapAnalysis-§15.3,S3,HDBSCAN or similar
+FR-PRV-009,Intent classification info/trans/nav/comp,PROMPT,P2,M,Missing,,,Partial,GapAnalysis-§15.3,S5,
+FR-PRV-010,Phase 3 Similarweb/Datos panel license,PROMPT,P3,XL,Missing,,,Profound has,GapAnalysis-§15.3,S6+,Trigger at $75k MRR
+FR-INT-001,Explainable score decomposition,INTELLIGENCE,P2,M,Missing,🏆,,None,GapAnalysis-§15.5,S3,Category-first - show the math
+FR-INT-002,What-if simulator,INTELLIGENCE,P2,L,Missing,🏆,,None,GapAnalysis-§15.5,S5,Category-first - predict score delta
+FR-INT-003,Peer benchmarking panel anonymized opt-in,INTELLIGENCE,P3,XL,Missing,🏆,,None,GapAnalysis-§15.5,S6+,Category-first - needs customer density
+FR-INT-004,Ask-your-data NL query,INTELLIGENCE,P2,M,Missing,,🎯,Athena has Ask Athena,GapAnalysis-§15.4,S5,
+FR-INT-005,Vertical benchmarks public-web bootstrap,INTELLIGENCE,P2,M,Missing,,,Partial,GapAnalysis-§15.5,S5,Median peer score
+FR-ITG-001,Slack alerts + digest,INTEGRATIONS,P1,S,Missing,,🎯,All Tier-1,GapAnalysis-§8,S2,
+FR-ITG-002,Microsoft Teams alerts,INTEGRATIONS,P1,S,Missing,,🎯,Most,GapAnalysis-§8,S2,
+FR-ITG-003,WhatsApp Business alerts,INTEGRATIONS,P2,M,Missing,🏆,,None (SA advantage),GapAnalysis-§8,S6+,Category-first for SA market
+FR-ITG-004,Zapier event-trigger integration,INTEGRATIONS,P1,S,Missing,,🎯,Writesonic,GapAnalysis-§8,S2,5000+ downstream apps
+FR-ITG-005,Make.com integration,INTEGRATIONS,P1,S,Missing,,,Partial,GapAnalysis-§8,S2,
+FR-ITG-006,n8n community node,INTEGRATIONS,P2,S,Missing,🏆,,None,GapAnalysis-§8,S6+,Self-host audience
+FR-ITG-007,Jira push recommendation as issue,INTEGRATIONS,P1,M,Missing,,🎯,Partial,GapAnalysis-§8,S4,
+FR-ITG-008,Linear push recommendation as issue,INTEGRATIONS,P1,M,Missing,,,Partial,GapAnalysis-§8,S4,
+FR-ITG-009,Asana push recommendation as task,INTEGRATIONS,P2,M,Missing,,,Partial,GapAnalysis-§8,S6+,
+FR-ITG-010,Looker Studio community connector,INTEGRATIONS,P1,M,Missing,,🎯,Peec Otterly,GapAnalysis-§8,S3,
+FR-ITG-011,Tableau Power BI data source,INTEGRATIONS,P2,M,Missing,,,Partial,GapAnalysis-§8,S6+,
+FR-ITG-012,HubSpot CRM activity timeline,INTEGRATIONS,P2,M,Missing,,,Partial,GapAnalysis-§8,S6+,
+FR-ITG-013,Salesforce activity integration,INTEGRATIONS,P2,L,Missing,,,Partial,GapAnalysis-§8,S6+,AppExchange
+FR-AGY-001,Per-tenant brand logo colors favicon,AGENCY,P0,M,Shipping,🏆,,AI Peekaboo Searchable,GapAnalysis-§9,S1,brand-presets.ts live
+FR-AGY-002,Per-tenant custom domain,AGENCY,P1,M,Partial,,🎯,AI Peekaboo,GapAnalysis-§9,S4,DNS + SSL auto-provision
+FR-AGY-003,Branded email templates agency sender,AGENCY,P1,M,Missing,,🎯,AI Peekaboo,GapAnalysis-§9,S3,SPF/DKIM
+FR-AGY-004,Multi-client sub-brand dashboards,AGENCY,P1,L,Partial,,🎯,Peec AI Peekaboo,GapAnalysis-§9,S4,
+FR-AGY-005,Client portal view-only access,AGENCY,P1,M,Partial,,🎯,AI Peekaboo,GapAnalysis-§9,S4,
+FR-AGY-006,Agency→client billing passthrough,AGENCY,P2,L,Missing,🏆,,None,GapAnalysis-§9,S5,Stripe Connect + Metronome
+FR-AGY-007,Agency pricing tier unlimited clients,AGENCY,P1,S,Missing,,🎯,AI Peekaboo Peec,GapAnalysis-§9,S4,Stripe plan
+FR-AGY-008,White-label PDF report templates,AGENCY,P1,M,Missing,,🎯,Searchable,GapAnalysis-§9,S4,
+FR-AGY-009,Client onboarding flow <5min,AGENCY,P1,M,Partial,,,AI Peekaboo,GapAnalysis-§9,S4,
+FR-AGY-010,Usage billing reports per client,AGENCY,P1,M,Missing,,,AI Peekaboo,GapAnalysis-§9,S4,
+FR-AGY-011,Embeddable iframe widgets,AGENCY,P2,M,Missing,🏆,,None,GapAnalysis-§15.4,S4,Category-first
+FR-AGY-012,Signed-URL client reports no-login share,AGENCY,P1,M,Missing,,,Partial,GapAnalysis-§9,S4,
+FR-AGY-013,Reseller commission tracking,AGENCY,P3,L,Missing,🏆,,None,GapAnalysis-§9,S6+,Category-first
+FR-AGY-014,Data export per client GDPR,AGENCY,P2,M,Missing,,,Partial,GapAnalysis-§9,S5,
+FR-API-001,Public REST API v1 with OpenAPI spec,DEVAPI,P0,M,Partial,,🎯,All Tier-1,GapAnalysis-§7,S1,95% of UI capability exposed
+FR-API-002,API key management scoped rotation,DEVAPI,P0,M,Missing,,,Most,GapAnalysis-§7,S1,
+FR-API-003,Rate limiting per key per tier,DEVAPI,P0,S,Partial,,,All Tier-1,GapAnalysis-§7,S1,Stripe-style quotas
+FR-API-004,Webhooks for all major events,DEVAPI,P1,M,Missing,,🎯,All Tier-1,GapAnalysis-§7,S2,HMAC-signed + retry
+FR-API-005,GraphQL API,DEVAPI,P2,M,Missing,,,Partial,GapAnalysis-§15.4,S5,
+FR-API-006,TypeScript SDK,DEVAPI,P2,M,Missing,,,Partial,GapAnalysis-§15.4,S5,@apex/sdk npm
+FR-API-007,Python SDK,DEVAPI,P2,M,Missing,,,Partial,GapAnalysis-§15.4,S5,PyPI
+FR-API-008,Go SDK,DEVAPI,P3,S,Missing,,,None,GapAnalysis-§15.4,S6+,Generated from OpenAPI
+FR-API-009,Terraform provider,DEVAPI,P2,M,Missing,🏆,,None,GapAnalysis-§15.4,S5,Stripe has one - category-first for GEO
+FR-API-010,Public MCP server,DEVAPI,P2,M,Missing,🏆,,Peec has one,GapAnalysis-§15.4,S3,Query Apex from Claude/ChatGPT
+FR-API-011,Postman collection,DEVAPI,P1,S,Missing,,,Most,GapAnalysis-§15.4,S2,
+FR-API-012,CLI apex binary,DEVAPI,P3,M,Missing,,,None,GapAnalysis-§15.4,S6+,
+NFR-PER-001,Dashboard p95 load time <100ms,PERFORMANCE,P0,M,Partial,🏆,,Linear tier,RFP-§6.1,S2,
+NFR-PER-002,Dashboard p99 load time <300ms,PERFORMANCE,P0,M,Partial,,,Premium tier,RFP-§6.1,S2,
+NFR-PER-003,API p95 response <200ms,PERFORMANCE,P0,S,Partial,,,Industry-standard,RFP-§6.1,S1,
+NFR-PER-004,LLM fan-out p50 <60s (10 LLMs),PERFORMANCE,P0,M,Shipping,,,Industry-standard,RFP-§6.1,S1,Current fan-out working
+NFR-PER-005,Full audit p95 <10min for 1000-URL site,PERFORMANCE,P1,L,Partial,,,Industry-standard,RFP-§6.1,S3,
+NFR-PER-006,Content draft p50 <60s,PERFORMANCE,P0,S,Shipping,,,Industry-standard,RFP-§6.1,S1,
+NFR-PER-007,Cmd+K palette <30ms keystroke-to-result,PERFORMANCE,P1,M,Missing,🏆,,Linear Superhuman,RFP-§6.5,S2,Premium marker
+NFR-PER-008,Real-time answer-diff stream <5s latency,PERFORMANCE,P2,L,Missing,🏆,,None,RFP-§6.1,S5,Category-first
+NFR-SEC-001,Data encrypted at rest,SECURITY,P0,S,Shipping,,,Industry-standard,RFP-§6.2,S1,Supabase Postgres LUKS/pgcrypto
+NFR-SEC-002,TLS 1.3 data in transit,SECURITY,P0,S,Shipping,,,Industry-standard,RFP-§6.2,S1,HSTS preload
+NFR-SEC-003,RLS enforced on every tenant table,SECURITY,P0,M,Missing,,,Scrunch,RFP-§6.2,S1,Critical - infra ready policies missing
+NFR-SEC-004,Clerk + API-key per-tenant scoping,SECURITY,P0,S,Shipping,,,Most,RFP-§6.2,S1,
+NFR-SEC-005,SSO Google Microsoft Okta via Clerk,SECURITY,P1,S,Partial,,🎯,All Tier-1,RFP-§6.2,S2,
+NFR-SEC-006,SAML 2.0 for enterprise,SECURITY,P1,S,Missing,,🎯,Scrunch Profound Enterprise,RFP-§6.2,S4,Via Supabase Auth
+NFR-SEC-007,SCIM 2.0 provisioning,SECURITY,P2,M,Missing,,🎯,Scrunch,RFP-§6.2,S5,
+NFR-SEC-008,MFA enforced on admin owner,SECURITY,P0,S,Shipping,,,All Tier-1,RFP-§6.2,S1,Via Supabase Auth
+NFR-SEC-009,Audit log every state-change,SECURITY,P0,M,Partial,,,Most Tier-1,RFP-§6.2,S4,admin phase 5 exists
+NFR-SEC-010,Security headers CSP X-Frame Referrer,SECURITY,P0,S,Partial,,,Industry-standard,RFP-§6.2,S1,A rating target
+NFR-SEC-011,Dependency scanning Snyk Dependabot,SECURITY,P0,S,Partial,,,Industry-standard,RFP-§6.2,S1,
+NFR-SEC-012,Quarterly penetration test,SECURITY,P1,M,Missing,,,Enterprise Tier-1,RFP-§6.2,S5,External pentest
+NFR-SEC-013,Bug bounty program public,SECURITY,P2,S,Missing,,,Enterprise,RFP-§6.2,S5,HackerOne
+NFR-SEC-014,Secrets management never in code,SECURITY,P0,S,Partial,,,Industry-standard,RFP-§6.2,S1,Vault or Doppler
+NFR-SEC-015,Rate limiting per-tenant per-endpoint,SECURITY,P0,S,Partial,,,Industry-standard,RFP-§6.2,S1,
+NFR-SEC-016,DDoS protection Cloudflare Enterprise,SECURITY,P1,S,Missing,,,Most Tier-1,RFP-§6.2,S3,
+NFR-CMP-001,SOC 2 Type II audit,COMPLIANCE,P1,XL,Missing,,🎯,Scrunch only among GEO,RFP-§6.3,S4,Kickoff S4 signed by S6
+NFR-CMP-002,GDPR compliance DPA sub-processor,COMPLIANCE,P0,M,Partial,,,All Tier-1,RFP-§6.3,S2,Peec strong here
+NFR-CMP-003,POPIA compliance South Africa,COMPLIANCE,P0,M,Missing,🏆,,None (SA advantage),RFP-§6.3,S2,Category-first for SA
+NFR-CMP-004,EU AI Act Article 50 disclosure,COMPLIANCE,P1,M,Missing,,,Partial,RFP-§6.3,S3,AI content watermark
+NFR-CMP-005,CCPA California compliance,COMPLIANCE,P1,S,Missing,,,Most Tier-1,RFP-§6.3,S3,
+NFR-CMP-006,ISO 27001 readiness,COMPLIANCE,P3,XL,Missing,,,Scrunch,RFP-§6.3,S6+,Post-launch
+NFR-CMP-007,Right-to-erasure right-to-portability,COMPLIANCE,P0,M,Partial,,,Most Tier-1,RFP-§6.3,S2,UI + API tested
+NFR-CMP-008,Cookie consent EU CA,COMPLIANCE,P0,S,Missing,,,Industry-standard,RFP-§6.3,S2,Cookiebot or equivalent
+NFR-CMP-009,Trust Center UI downloadable policies,COMPLIANCE,P1,M,Missing,,,Enterprise Tier-1,RFP-§6.3,S4,/trust route
+NFR-CMP-010,Data Residency selector EU US ZA,COMPLIANCE,P2,L,Missing,🏆,,None (SA advantage),RFP-§6.3,S5,Category-first for ZA
+NFR-AVL-001,Uptime 99.9% rolling 90d,AVAILABILITY,P0,M,Partial,,,Industry-standard,RFP-§6.4,S3,Max 43min/mo down
+NFR-AVL-002,RPO ≤15min,AVAILABILITY,P0,S,Partial,,,Industry-standard,RFP-§6.4,S3,
+NFR-AVL-003,RTO ≤1 hour,AVAILABILITY,P0,M,Partial,,,Industry-standard,RFP-§6.4,S3,
+NFR-AVL-004,Daily Postgres backups 30-day retention,AVAILABILITY,P0,S,Partial,,,Industry-standard,RFP-§6.4,S0,Self-hosted Supabase pg_dump + WAL archive to R2
+TR-ARC-000,Self-hosted Supabase stack on-server,ARCHITECTURE,P0,L,Missing,,,Internal tooling,RFP-§7.2,S0,Postgres + GoTrue + Storage + Realtime + Studio via docker-compose — replaces Neon + Clerk
+TR-MIG-001,Neon→Supabase Postgres data migration,MIGRATION,P0,M,Missing,,,Internal,RFP-§9.0,S0,pg_dump + restore + dual-write validation
+TR-MIG-002,Clerk→Supabase Auth user migration,MIGRATION,P0,M,Missing,,,Internal,RFP-§9.0,S0,Export Clerk users + import to auth.users + retain mapping table 90 days
+TR-MIG-003,Replace @clerk/nextjs with @supabase/ssr,MIGRATION,P0,M,Missing,,,Internal,RFP-§9.0,S0,Session flow + middleware refactor
+TR-MIG-004,RLS policies migrated to Supabase native tooling,MIGRATION,P0,M,Missing,,,Internal,RFP-§9.0,S0,Supabase Studio editor + test harness
+TR-MIG-005,Dual-write cutover + Neon decommission,MIGRATION,P0,S,Missing,,,Internal,RFP-§9.0,S0,48h parity window then DNS swap
+TR-MIG-006,Supabase backup + restore drill,MIGRATION,P0,S,Missing,,,Internal,RFP-§9.0,S0,Daily pg_dump + WAL to encrypted offsite R2
+NFR-AVL-005,Multi-region failover capable,AVAILABILITY,P1,L,Missing,,,Enterprise,RFP-§6.4,S5,Runbook tested quarterly
+NFR-AVL-006,Public status page status.apex.com,AVAILABILITY,P1,S,Missing,,,Stripe tier,RFP-§6.4,S1,90-day incident history
+NFR-AVL-007,Incident postmortems <5 business days,AVAILABILITY,P2,S,Missing,,,Stripe tier,RFP-§6.4,S3,
+NFR-UX-001,Cmd+K command palette fuzzy search,UX,P1,M,Missing,🏆,,Linear Superhuman,RFP-§6.5,S2,Premium marker
+NFR-UX-002,Optimistic UI mutation feels instant,UX,P1,M,Partial,🏆,,Linear tier,RFP-§6.5,S2,
+NFR-UX-003,Keyboard-first navigation J/K/Enter/Esc,UX,P1,M,Missing,🏆,,Linear Superhuman,RFP-§6.5,S2,
+NFR-UX-004,Dark + Light themes per-tenant configurable,UX,P1,S,Partial,,,Industry-standard,RFP-§6.5,S2,
+NFR-UX-005,Design-system compliance var() not hex,UX,P0,S,Shipping,,,Industry-standard,RFP-§6.5,S1,Enforced in CI
+NFR-UX-006,Honest empty states no fabricated data,UX,P0,S,Shipping,🏆,,Rare in market,RFP-§6.5,S1,Signature Apex pattern
+NFR-UX-007,Loading skeletons no blank flashes,UX,P1,S,Partial,,,Industry-standard,RFP-§6.5,S2,
+NFR-UX-008,Error boundaries graceful degradation,UX,P1,S,Partial,,,Industry-standard,RFP-§6.5,S2,
+NFR-UX-009,Accessibility WCAG 2.2 AA,UX,P1,M,Partial,,,Enterprise-required,RFP-§6.5,S2,axe-core passes
+NFR-UX-010,PWA offline read-only support,UX,P2,M,Missing,🏆,,None,RFP-§6.5,S5,Install prompt + 7-day cache
+NFR-UX-011,Push notifications visibility drops,UX,P2,S,Missing,🏆,,None,RFP-§6.5,S5,Web Push API
+NFR-OBS-001,All LLM calls traced Langfuse,OBSERVABILITY,P0,M,Missing,,,Industry-best-practice,RFP-§6.6,S1,100% coverage replayable
+NFR-OBS-002,Application errors Sentry,OBSERVABILITY,P0,S,Shipping,,,Industry-standard,RFP-§6.6,S1,
+NFR-OBS-003,Structured JSON logs centralized,OBSERVABILITY,P0,S,Partial,,,Industry-standard,RFP-§6.6,S1,Grafana Loki
+NFR-OBS-004,OpenTelemetry spans HTTP DB LLM,OBSERVABILITY,P1,M,Missing,,,Enterprise,RFP-§6.6,S3,Grafana Tempo
+NFR-OBS-005,Custom business metrics MRR tenants,OBSERVABILITY,P1,S,Missing,,,Industry-standard,RFP-§6.6,S3,
+NFR-OBS-006,Alerting error rate latency queue depth,OBSERVABILITY,P0,S,Missing,,,Industry-standard,RFP-§6.6,S1,PagerDuty
+NFR-OBS-007,Customer-facing usage metrics in-UI,OBSERVABILITY,P1,M,Partial,,,Enterprise Tier-1,RFP-§6.6,S3,Per-tenant quota
+TR-ARC-001,Langfuse self-hosted for every LLM call,ARCHITECTURE,P0,M,Missing,,,Internal tooling,RFP-§7.2,S1,Drop-in observability
+TR-ARC-002,LiteLLM proxy for provider routing budgets,ARCHITECTURE,P0,M,Missing,,,Internal tooling,RFP-§7.2,S1,
+TR-ARC-003,Crawl4AI for AI-friendly scraping,ARCHITECTURE,P1,M,Missing,,,Internal tooling,RFP-§7.2,S3,Replace paid Browserless paths
+TR-ARC-004,Unlighthouse for bulk audit,ARCHITECTURE,P1,M,Missing,,,Internal tooling,RFP-§7.2,S3,Bypass PSI quota
+TR-ARC-005,SearXNG sidecar SERP context,ARCHITECTURE,P2,M,Missing,,,Internal tooling,RFP-§7.2,S5,AGPL sidecar pattern
+TR-ARC-006,Qdrant self-host migration from Pinecone,ARCHITECTURE,P2,L,Missing,,,Internal tooling,RFP-§7.2,S5,At $30k MRR
+TR-ARC-007,Claude Agent SDK for Apex Agents,ARCHITECTURE,P1,M,Missing,,,Internal tooling,RFP-§7.2,S4,
+TR-ARC-008,MCP server via @modelcontextprotocol/sdk,ARCHITECTURE,P2,M,Missing,,,Peec has one,RFP-§7.2,S3,
+TR-ARC-009,Presidio NER containerized sidecar,ARCHITECTURE,P0,M,Missing,,,Internal tooling,RFP-§7.2,S2,
+TR-ARC-010,Stripe Connect + Metronome tenant sub-billing,ARCHITECTURE,P2,L,Missing,,,Enterprise pattern,RFP-§7.2,S5,
+TR-ARC-011,Vanta-equivalent SOC 2 automation,ARCHITECTURE,P1,M,Missing,,,Vanta-powered trust centers,RFP-§7.2,S4,
+TR-ARC-012,Cloudflare Workers regional scraping SA EU US,ARCHITECTURE,P1,L,Missing,,🎯,Peec claims regional infra,RFP-§7.2,S3,
+DR-001,RLS policies on every tenant-scoped table,DATA,P0,M,Missing,,,Industry-standard,RFP-§7.3,S1,Critical
+DR-002,Data residency single-region no border cross,DATA,P2,L,Missing,🏆,,None (for ZA),RFP-§7.3,S5,
+DR-003,Time-series scores 2yr retention cold-storage after,DATA,P0,S,Partial,,,Industry-standard,RFP-§7.3,S1,
+DR-004,LLM responses archived raw + embedded,DATA,P0,S,Partial,,,Industry-standard,RFP-§7.3,S1,
+DR-005,GDPR right-to-erasure cascades correctly,DATA,P0,M,Partial,,,Industry-standard,RFP-§7.3,S2,
+DR-006,Backup + PITR + restore test documented,DATA,P0,S,Partial,,,Industry-standard,RFP-§7.3,S1,
+DR-007,Migration strategy Drizzle never manual SQL,DATA,P0,S,Shipping,,,Industry-standard,RFP-§7.3,S1,

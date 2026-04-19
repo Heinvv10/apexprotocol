@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
 import { brands } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -13,7 +13,8 @@ import { eq } from "drizzle-orm";
 export async function POST(req: NextRequest) {
   try {
     // Auth check
-    const { userId, orgId } = await auth();
+    const __session = await getSession();
+  const { userId, orgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

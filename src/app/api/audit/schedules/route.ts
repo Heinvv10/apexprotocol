@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
 import { scheduledJobs, audits } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -20,7 +20,8 @@ interface CreateScheduleRequest {
  */
 export async function GET(req: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const __session = await getSession();
+  const { userId, orgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
 
     if (!userId || !orgId) {
       return NextResponse.json(
@@ -79,7 +80,8 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const __session = await getSession();
+  const { userId, orgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
 
     if (!userId || !orgId) {
       return NextResponse.json(

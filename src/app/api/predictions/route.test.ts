@@ -62,7 +62,7 @@ vi.mock("@/lib/db/schema", () => ({
 }));
 
 // Import mocked modules AFTER vi.mock declarations
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import { extractHistoricalScores } from "@/lib/ml/data-pipeline";
 import { forecastGeoScore } from "@/lib/ml/forecaster";
 import { generatePredictionExplanation } from "@/lib/ml/explainer";

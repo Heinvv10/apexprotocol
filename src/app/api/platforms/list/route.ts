@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/supabase-server";
 import {
   getPlatformsByTier,
   getEnabledPlatforms,
@@ -16,7 +16,8 @@ import {
  */
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const __session = await getSession();
+  const { userId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
 
     if (!userId) {
       return NextResponse.json(
