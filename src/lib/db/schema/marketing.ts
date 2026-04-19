@@ -16,7 +16,6 @@ import {
   jsonb,
   pgEnum,
   index,
-  foreignKey,
 } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations';
 
@@ -82,6 +81,8 @@ export const postStatusEnum = pgEnum('post_status', [
   'failed',
 ]);
 
+export const periodEnum = pgEnum('period', ['day', 'week', 'month', 'year']);
+
 // ============================================================================
 // Campaign Management
 // ============================================================================
@@ -94,7 +95,7 @@ export const campaigns = pgTable(
   'marketing_campaigns',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    organizationId: uuid('organization_id')
+    organizationId: text('organization_id')
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
     externalCampaignId: varchar('external_campaign_id', { length: 255 }),
@@ -139,7 +140,7 @@ export const leads = pgTable(
   'marketing_leads',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    organizationId: uuid('organization_id')
+    organizationId: text('organization_id')
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
     externalLeadId: varchar('external_lead_id', { length: 255 }),
@@ -192,7 +193,7 @@ export const emailLists = pgTable(
   'marketing_email_lists',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    organizationId: uuid('organization_id')
+    organizationId: text('organization_id')
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
     externalListId: varchar('external_list_id', { length: 255 }),
@@ -223,7 +224,7 @@ export const emailEvents = pgTable(
   'marketing_email_events',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    organizationId: uuid('organization_id')
+    organizationId: text('organization_id')
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
     leadId: uuid('lead_id').references(() => leads.id, { onDelete: 'cascade' }),
@@ -276,7 +277,7 @@ export const socialPosts = pgTable(
   'marketing_social_posts',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    organizationId: uuid('organization_id')
+    organizationId: text('organization_id')
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
     campaignId: uuid('campaign_id').references(() => campaigns.id, {
@@ -326,7 +327,7 @@ export const analyticsEvents = pgTable(
   'marketing_analytics_events',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    organizationId: uuid('organization_id')
+    organizationId: text('organization_id')
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
     leadId: uuid('lead_id').references(() => leads.id, { onDelete: 'set null' }),
@@ -366,14 +367,14 @@ export const marketingMetrics = pgTable(
   'marketing_metrics',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    organizationId: uuid('organization_id')
+    organizationId: text('organization_id')
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
     campaignId: uuid('campaign_id').references(() => campaigns.id, {
       onDelete: 'set null',
     }),
     date: timestamp('date').notNull(),
-    period: pgEnum('period', ['day', 'week', 'month', 'year'])('period').notNull(),
+    period: periodEnum('period').notNull(),
     leads: integer('leads').default(0),
     emailSent: integer('email_sent').default(0),
     emailOpened: integer('email_opened').default(0),
@@ -405,7 +406,7 @@ export const emailSequences = pgTable(
   'marketing_email_sequences',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    organizationId: uuid('organization_id')
+    organizationId: text('organization_id')
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 255 }).notNull(),
@@ -443,7 +444,7 @@ export const automationLogs = pgTable(
   'marketing_automation_logs',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    organizationId: uuid('organization_id')
+    organizationId: text('organization_id')
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
     leadId: uuid('lead_id')

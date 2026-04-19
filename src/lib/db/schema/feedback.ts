@@ -26,7 +26,7 @@ export const recommendationFeedback = pgTable("recommendation_feedback", {
   id: uuid("id").primaryKey().defaultRandom(),
 
   // Foreign keys
-  recommendationId: uuid("recommendation_id")
+  recommendationId: text("recommendation_id")
     .notNull()
     .references(() => recommendations.id, { onDelete: "cascade" }),
   userId: text("user_id").notNull(),
@@ -72,7 +72,7 @@ export const geoScoreHistory = pgTable("geo_score_history", {
   id: uuid("id").primaryKey().defaultRandom(),
 
   // Foreign keys
-  brandId: uuid("brand_id")
+  brandId: text("brand_id")
     .notNull()
     .references(() => brands.id, { onDelete: "cascade" }),
 

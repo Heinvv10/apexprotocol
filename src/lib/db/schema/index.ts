@@ -517,6 +517,9 @@ export {
 
 // Content Publishing
 export {
+  scheduleStatusEnum,
+  publishingPlatformEnum,
+  publishingStatusEnum,
   contentItems,
   contentSchedules,
   publishingHistory,
@@ -656,6 +659,7 @@ export {
   automationLogs as marketingAutomationLogs,
   type AutomationLog,
   type NewAutomationLog,
+  periodEnum,
 } from "./marketing";
 
 // Platform Registry (Phase 10: Expanded AI Platform Coverage)
@@ -663,6 +667,7 @@ export {
   platformRegistry,
   platformIntegrations,
   platformQueryResults,
+  platformTierEnum,
   // Relations
   platformRegistryRelations,
   platformIntegrationsRelations,

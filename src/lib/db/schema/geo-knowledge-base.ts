@@ -8,7 +8,6 @@ import {
   timestamp,
   uuid,
   jsonb,
-  foreignKey,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -207,8 +206,8 @@ export const platformChanges = pgTable("platform_changes", {
  */
 export const geoAlerts = pgTable("geo_alerts", {
   id: uuid("id").primaryKey().defaultRandom(),
-  organizationId: uuid("organization_id").notNull(),
-  brandId: uuid("brand_id"), // Optional: for brand-specific alerts
+  organizationId: text("organization_id").notNull(),
+  brandId: text("brand_id"), // Optional: for brand-specific alerts
   alertType: varchar("alert_type", { length: 50 }).notNull(), // 'algorithm_change', 'strategy_deprecated', 'new_opportunity', 'competitor_move', 'score_impact', 'recommendation_updated'
   severity: varchar("severity", { length: 20 }).notNull(), // 'info', 'warning', 'critical'
   title: varchar("title", { length: 255 }).notNull(),
@@ -250,7 +249,7 @@ export const recommendationVersions = pgTable("recommendation_versions", {
  */
 export const actionPlanVersions = pgTable("action_plan_versions", {
   id: uuid("id").primaryKey().defaultRandom(),
-  brandId: uuid("brand_id").notNull(),
+  brandId: text("brand_id").notNull(),
   versionNumber: integer("version_number").notNull(),
   knowledgeBaseVersion: varchar("knowledge_base_version", { length: 50 }).notNull(),
   generatedAt: timestamp("generated_at", { withTimezone: true }).notNull().defaultNow(),
