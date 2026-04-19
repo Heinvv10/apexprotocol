@@ -64,13 +64,27 @@ export function signEmbedToken(
 
 export type VerifyResult =
   | { ok: true; payload: EmbedTokenPayload }
-  | { ok: false; reason: "malformed" | "bad_signature" | "expired" | "origin_mismatch" };
+  | {
+      ok: false;
+      reason:
+        | "malformed"
+        | "bad_signature"
+        | "expired"
+        | "origin_mismatch"
+        | "server_misconfigured";
+    };
 
 export function verifyEmbedToken(
   token: string,
   options?: { referer?: string | null },
 ): VerifyResult {
-  const secret = ensureSecret();
+  if (!SECRET) {
+    // Soft-fail instead of throwing: lets the embed page render a clean
+    // error card ("widget unavailable") rather than surfacing a 500 error
+    // boundary that leaks the misconfiguration message to end users.
+    return { ok: false, reason: "server_misconfigured" };
+  }
+  const secret = SECRET;
   const parts = token.split(".");
   if (parts.length !== 2) return { ok: false, reason: "malformed" };
   const [body, sig] = parts;

@@ -25,12 +25,18 @@ const cspDirectives: Record<string, string[]> = {
     // Google OAuth consent for GA4/GSC flows
     "https://accounts.google.com",
     "https://apis.google.com",
+    // Swagger UI CDN for /api/docs
+    "https://unpkg.com",
+    "https://cdn.jsdelivr.net",
     ...(IS_PROD ? [] : ["'unsafe-eval'"]),
   ],
   "style-src": [
     "'self'",
     "'unsafe-inline'", // Tailwind + shadcn emit inline style hashes we'd have to track
     "https://fonts.googleapis.com",
+    // Swagger UI CSS CDN
+    "https://unpkg.com",
+    "https://cdn.jsdelivr.net",
   ],
   "img-src": [
     "'self'",
