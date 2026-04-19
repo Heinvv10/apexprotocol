@@ -1,0 +1,59 @@
+version: 2
+updates:
+  # npm — group dependency updates daily to minimize review noise
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "03:00"
+      timezone: "Africa/Johannesburg"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "automated"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    groups:
+      # Group all patch+minor updates into one PR per group to reduce churn
+      production-dependencies:
+        applies-to: version-updates
+        dependency-type: "production"
+        update-types:
+          - "patch"
+          - "minor"
+      dev-dependencies:
+        applies-to: version-updates
+        dependency-type: "development"
+        update-types:
+          - "patch"
+          - "minor"
+      # Keep LLM SDKs as individual PRs — breaking changes in these need attention
+    ignore:
+      # Ship these individually so the PR title flags them clearly
+      - dependency-name: "@anthropic-ai/sdk"
+      - dependency-name: "openai"
+      - dependency-name: "@supabase/ssr"
+      - dependency-name: "@supabase/supabase-js"
+      - dependency-name: "drizzle-orm"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "ci"
+      - "automated"
+
+  # Docker (our own Dockerfiles + compose references)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "docker"
+      - "automated"
