@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Schema Code Snippet Generator API (F109)
  * POST /api/recommendations/schema - Generate schema.org JSON-LD snippets

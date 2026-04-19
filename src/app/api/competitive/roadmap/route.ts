@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getUserId } from "@/lib/auth/clerk";
+import { getUserId } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
 import { brands, improvementRoadmaps } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";

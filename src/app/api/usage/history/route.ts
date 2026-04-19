@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Usage History API (F176)
  * GET /api/usage/history - Get usage history over time

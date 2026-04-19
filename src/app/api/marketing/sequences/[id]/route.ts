@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getOrganizationId } from "@/lib/auth/clerk";
+import { getOrganizationId } from "@/lib/auth/supabase-server";
 
 // Mock sequences data
 const mockSequences = [

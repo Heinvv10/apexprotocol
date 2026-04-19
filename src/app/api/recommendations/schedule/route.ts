@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Auto-scheduling Recommendations API (F115)
  * POST /api/recommendations/schedule - Schedule recommendations

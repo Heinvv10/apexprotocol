@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getUserId } from "@/lib/auth/clerk";
+import { getUserId } from "@/lib/auth/supabase-server";
 import { parseHistoryQueryParams } from "@/lib/ai/validation";
 
 // Check if database is configured

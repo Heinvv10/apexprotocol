@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Competitor Snapshots API
  * Phase 9.1: Time-series data endpoint for competitor metrics

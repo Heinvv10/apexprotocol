@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Emerging Opportunities API Route
  * GET /api/predictions/opportunities?brandId=xxx

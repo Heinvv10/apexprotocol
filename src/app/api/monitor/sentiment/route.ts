@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Monitor - Sentiment Analysis API (F091)
  * Analyze sentiment of brand mentions using AI

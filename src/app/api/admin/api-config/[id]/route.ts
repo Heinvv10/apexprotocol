@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Admin API Configuration Management - Dynamic ID Routes
  * GET /api/admin/api-config/:id - Get integration details

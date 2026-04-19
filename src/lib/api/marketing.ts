@@ -3,7 +3,7 @@
  * Centralized functions for calling marketing-related backend APIs
  */
 
-import { getOrganizationId } from "@/lib/auth/clerk";
+import { getOrganizationId } from "@/lib/auth/supabase-server";
 
 // Base API configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";

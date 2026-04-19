@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Delete Competitor By Domain
  * DELETE /api/competitors/by-domain/:domain - Delete all snapshots for a competitor domain

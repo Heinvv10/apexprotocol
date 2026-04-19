@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { getOrganizationId } from "@/lib/auth/clerk";
+import { getOrganizationId } from "@/lib/auth/supabase-server";
 
 // Validation schema for organization update
 const updateOrganizationSchema = z.object({

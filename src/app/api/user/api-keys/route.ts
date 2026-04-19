@@ -1,4 +1,4 @@
-import { getInternalUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getInternalUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * User API Keys Management API
  * GET /api/user/api-keys - List user's API keys (masked values)

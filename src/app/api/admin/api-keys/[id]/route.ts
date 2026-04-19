@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Admin API Keys Management API - Individual Key Operations
  * GET /api/admin/api-keys/[id] - Get single API key details (masked)

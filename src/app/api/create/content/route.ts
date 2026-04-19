@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { content, brands } from "@/lib/db/schema";
 import { eq, and, desc, inArray, gte, lte } from "drizzle-orm";
 import { z } from "zod";
-import { getOrganizationId } from "@/lib/auth/clerk";
+import { getOrganizationId } from "@/lib/auth/supabase-server";
 
 // Validation schema for content query parameters
 const querySchema = z.object({

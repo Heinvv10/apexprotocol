@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Alert Threshold API (F176)
  * POST /api/usage/alerts/threshold - Set alert threshold

@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Admin Audit Logs API - Dynamic Route
  * GET /api/admin/audit-logs/:id - Get detailed log information

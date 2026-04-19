@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 import { slackManager } from "@/lib/integrations/slack";
 import { db } from "@/lib/db";
 import { brands } from "@/lib/db/schema";

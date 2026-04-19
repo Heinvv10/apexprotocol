@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { brandMentions, brands } from "@/lib/db/schema";
 import { eq, and, desc, gte, lte, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { getOrganizationId, getUserId } from "@/lib/auth/clerk";
+import { getOrganizationId, getUserId } from "@/lib/auth/supabase-server";
 import { onMentionCreated } from "@/lib/notifications/triggers";
 
 // Validation schema for mention query parameters

@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Admin API Keys Rotation API
  * POST /api/admin/api-keys/[id]/rotate - Rotate an external service API key

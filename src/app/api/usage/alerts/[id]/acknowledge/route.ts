@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Acknowledge Alert API (F176)
  * POST /api/usage/alerts/[id]/acknowledge - Acknowledge an alert

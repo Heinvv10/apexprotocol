@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getOrganizationId } from "@/lib/auth/clerk";
+import { getOrganizationId } from "@/lib/auth/supabase-server";
 
 // Check if database is configured
 const isDatabaseConfigured = () => {

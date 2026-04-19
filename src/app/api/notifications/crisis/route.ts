@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Crisis Alert System API (F130.5)
  * GET /api/notifications/crisis - Get crises, settings, dashboard

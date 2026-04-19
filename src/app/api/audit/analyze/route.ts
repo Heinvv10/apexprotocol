@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Audit Analyze API (F104-F105) - Real web analysis
  * POST /api/audit/analyze - Analyze a URL directly

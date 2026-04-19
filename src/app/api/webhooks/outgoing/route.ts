@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Outgoing Webhooks API (F127)
  * GET /api/webhooks/outgoing - Get webhooks, deliveries

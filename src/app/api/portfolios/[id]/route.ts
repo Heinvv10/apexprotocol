@@ -11,7 +11,7 @@ import {
 } from "@/lib/db/schema";
 import { eq, and, desc, count, sql } from "drizzle-orm";
 import { z } from "zod";
-import { getOrganizationId } from "@/lib/auth/clerk";
+import { getOrganizationId } from "@/lib/auth/supabase-server";
 
 // Validation schemas
 const updatePortfolioSchema = z.object({

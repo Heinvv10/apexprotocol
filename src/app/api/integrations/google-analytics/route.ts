@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Google Analytics Integration API (F122)
  * GET /api/integrations/google-analytics - Get connection status, metrics

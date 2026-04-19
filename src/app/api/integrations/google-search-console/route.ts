@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Google Search Console Integration API (F123)
  * GET /api/integrations/google-search-console - Get connection status, search data

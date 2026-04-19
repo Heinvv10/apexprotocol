@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Individual Competitor Snapshot Management - Dynamic ID Routes
  * GET /api/competitors/:id - Get competitor snapshot details

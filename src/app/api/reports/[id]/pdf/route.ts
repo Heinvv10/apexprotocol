@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { executiveReports, portfolios, organizations } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { getOrganizationId } from "@/lib/auth/clerk";
+import { getOrganizationId } from "@/lib/auth/supabase-server";
 import { generateExecutiveReportPDF } from "@/lib/reports/pdf-generator";
 
 // GET /api/reports/[id]/pdf - Generate and download PDF

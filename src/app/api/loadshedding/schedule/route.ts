@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Loadshedding Schedule API
  * GET /api/loadshedding/schedule - Get current loadshedding schedule

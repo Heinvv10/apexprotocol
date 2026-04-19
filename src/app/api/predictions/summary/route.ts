@@ -21,7 +21,7 @@ import {
   competitiveGaps,
 } from "@/lib/db/schema";
 import { and, count, desc, eq, gte, sql } from "drizzle-orm";
-import { getOrganizationId } from "@/lib/auth/clerk";
+import { getOrganizationId } from "@/lib/auth/supabase-server";
 
 interface SummaryResponse {
   brandId: string;

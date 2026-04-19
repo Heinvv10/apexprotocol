@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { notifications, notificationReads } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { getOrganizationId, getUserId } from "@/lib/auth/clerk";
+import { getOrganizationId, getUserId } from "@/lib/auth/supabase-server";
 
 /**
  * PATCH /api/notifications/read-all

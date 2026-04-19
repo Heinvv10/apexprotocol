@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * WhatsApp Notifications API (F131)
  * GET /api/notifications/whatsapp - Get status, recipients, messages

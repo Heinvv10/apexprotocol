@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { brands, organizations } from "@/lib/db/schema";
 import { eq, and, count } from "drizzle-orm";
 import { z } from "zod";
-import { getOrganizationId } from "@/lib/auth/clerk";
+import { getOrganizationId } from "@/lib/auth/supabase-server";
 
 // Validation schema for brand creation/update
 // BrandCompetitor schema matching database type

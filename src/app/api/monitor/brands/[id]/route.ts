@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { brands } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
-import { getOrganizationId } from "@/lib/auth/clerk";
+import { getOrganizationId } from "@/lib/auth/supabase-server";
 
 // BrandCompetitor schema matching database type
 const brandCompetitorSchema = z.object({

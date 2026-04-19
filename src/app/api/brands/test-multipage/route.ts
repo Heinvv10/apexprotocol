@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { scrapeMultiPageBrand } from "@/lib/services/brand-scraper-multipage";
-import { getOrganizationId } from "@/lib/auth/clerk";
+import { getOrganizationId } from "@/lib/auth/supabase-server";
 
 function isSafePublicUrl(raw: string): boolean {
   let parsed: URL;

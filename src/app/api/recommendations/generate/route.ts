@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Recommendations Generate API (F106-F107)
  * POST /api/recommendations/generate - Generate recommendations for a brand

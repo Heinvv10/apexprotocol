@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Competitor Discovery Confirmation API
  * Phase 9.1: Confirm or reject discovered competitors

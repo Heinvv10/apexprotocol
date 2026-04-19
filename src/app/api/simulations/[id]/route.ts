@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
 import { simulations, simulationResults } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";

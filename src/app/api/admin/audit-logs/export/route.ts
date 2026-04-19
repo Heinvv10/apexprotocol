@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Admin Audit Logs API - Export
  * POST /api/admin/audit-logs/export - Export logs to CSV or JSON

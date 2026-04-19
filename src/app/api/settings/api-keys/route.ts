@@ -4,7 +4,7 @@ import { apiKeys } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { createHash, randomBytes, createCipheriv, createDecipheriv } from "crypto";
-import { getOrganizationId } from "@/lib/auth/clerk";
+import { getOrganizationId } from "@/lib/auth/supabase-server";
 
 // Encryption configuration
 const ENCRYPTION_ALGORITHM = "aes-256-gcm";

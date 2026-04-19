@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getUserId } from "@/lib/auth/clerk";
+import { getUserId } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
 import { brands, competitorSnapshots, competitorMentions, competitorScores } from "@/lib/db/schema";
 import { eq, and, desc, gte } from "drizzle-orm";

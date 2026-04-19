@@ -116,7 +116,7 @@ vi.mock("@/lib/db", () => {
 });
 
 // Import mocked modules AFTER vi.mock declarations
-import { getOrganizationId, getUserId } from "@/lib/auth/clerk";
+import { getOrganizationId, getUserId } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
 
 // Reset mocks before each test

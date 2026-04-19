@@ -12,7 +12,7 @@ import {
 } from "@/lib/db/schema";
 import { eq, and, desc, count, sql, gte, lte } from "drizzle-orm";
 import { z } from "zod";
-import { getOrganizationId } from "@/lib/auth/clerk";
+import { getOrganizationId } from "@/lib/auth/supabase-server";
 import { createSampleReportContent } from "@/lib/reports/report-content";
 
 // Validation schemas

@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * Usage Breakdown API (F176)
  * GET /api/usage/breakdown - Get usage breakdown by brand/user/feature

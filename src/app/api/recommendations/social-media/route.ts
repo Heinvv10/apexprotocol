@@ -18,7 +18,7 @@ import {
   type SocialPlatform,
 } from "@/lib/recommendations/social-media-guide";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
-import { getUserId } from "@/lib/auth/clerk";
+import { getUserId } from "@/lib/auth/supabase-server";
 
 /**
  * GET - Retrieve social media strategies

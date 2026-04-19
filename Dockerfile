@@ -1,28 +1,18 @@
-# ================================
-# Apex GEO/AEO Platform - Dockerfile
-# Multi-stage build for Next.js production
-# ================================
+# =====================================================================
+# Apex GEO/AEO Platform — Dockerfile (Plan 5)
+# Multi-stage build for Next.js standalone production output
+# Uses bun (matches the project's bun.lock + bun-managed deps).
+# =====================================================================
 
-# Stage 1: Dependencies
-FROM node:20-alpine AS deps
-
-# Add necessary packages for native dependencies
-RUN apk add --no-cache libc6-compat
-
+# Stage 1: Dependencies (cached unless package.json/bun.lock changes)
+FROM oven/bun:1-alpine AS deps
 WORKDIR /app
-
-# Copy package files
-COPY package.json package-lock.json* ./
-
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 
 # Stage 2: Builder
-FROM node:20-alpine AS builder
-
+FROM oven/bun:1-alpine AS builder
 WORKDIR /app
-
-# Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -32,55 +22,38 @@ ARG NEXT_PUBLIC_GIT_SHA=""
 ENV GIT_SHA=${GIT_SHA}
 ENV NEXT_PUBLIC_GIT_SHA=${NEXT_PUBLIC_GIT_SHA}
 
-# Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-# Build the application
-RUN npm run build
+RUN bun run build
 
-# Stage 3: Runner (Production)
+# Stage 3: Runner — minimal Node runtime serving Next standalone output
 FROM node:20-alpine AS runner
-
 WORKDIR /app
 
-# Set production environment
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Release tagging for Sentry/Bugsink runtime (BL-55)
 ARG GIT_SHA=""
 ENV GIT_SHA=${GIT_SHA}
 
-# Create non-root user for security
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Non-root user for runtime
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
-# Copy built assets
-COPY --from=builder /app/public ./public
-
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
+# Copy built assets — leverages Next.js standalone output tracing
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+RUN mkdir .next && chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Switch to non-root user
 USER nextjs
 
-# Expose port
 EXPOSE 3000
-
-# Set port environment variable
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
-# Start the application
 CMD ["node", "server.js"]

@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getOrganizationId, getUserId } from "@/lib/auth/clerk";
+import { getOrganizationId, getUserId } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
 import { serviceScanResults, brands } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";

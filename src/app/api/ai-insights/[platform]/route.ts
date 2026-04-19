@@ -1,4 +1,4 @@
-import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
+import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 /**
  * AI Insights Platform-Specific API
  * GET /api/ai-insights/[platform] - Retrieve platform-specific insights
