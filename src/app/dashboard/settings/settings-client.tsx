@@ -332,7 +332,12 @@ function BillingSection() {
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Current Plan</p>
             <h3 className={`text-2xl font-bold ${getPlanColor(subscription?.plan || "free")}`}>
-              {subscription?.plan?.charAt(0).toUpperCase() + (subscription?.plan?.slice(1) || "ree")}
+              {(() => {
+                // When subscription.plan is undefined, the old `charAt(0) + (slice(1) || "ree")`
+                // pattern rendered literally "undefinedree" because undefined + "ree" coerces.
+                const plan = subscription?.plan || "free";
+                return plan.charAt(0).toUpperCase() + plan.slice(1);
+              })()}
             </h3>
             {subscription?.status && (
               <p className="text-sm text-muted-foreground mt-1">
