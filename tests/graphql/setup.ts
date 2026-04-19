@@ -160,25 +160,6 @@ export function createDbModuleMock() {
 }
 
 /**
- * Create a mock for Clerk authentication
- *
- * Use this in your test file's top-level vi.mock() call:
- * ```typescript
- * ```
- */
-  authData: { userId: string; orgId: string } = {
-    userId: "test-user-id",
-    orgId: "test-org-id",
-  }
-) {
-  return {
-    auth: vi.fn(() => authData),
-    currentUser: vi.fn(() => ({
-      id: authData.userId,
-      emailAddresses: [{ emailAddress: "test@example.com" }],
-    })),
-  };
-}
 
 /**
  * Mock database error for testing error handling
