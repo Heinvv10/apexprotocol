@@ -726,3 +726,12 @@ export {
   type NewBrandVoiceSample,
   type BrandVoiceDescriptor,
 } from "./brand-voice";
+
+// Zapier REST Hook subscriptions (FR-ITG-004)
+export {
+  zapierSubscriptions,
+  zapierSubscriptionsRelations,
+  zapierEventEnum,
+  type ZapierSubscription,
+  type NewZapierSubscription,
+} from "./zapier-subscriptions";
