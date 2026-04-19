@@ -119,7 +119,14 @@ export async function GET(request: NextRequest) {
 
     const position = allScores.indexOf(brandScore.unifiedScore) + 1;
     const total = allScores.length;
-    const percentile = Math.round(((total - position) / (total - 1)) * 100) || 100;
+    // When total === 1 (no competitors), the (total-1) divisor is 0. Guard
+    // that case separately — otherwise the old `|| 100` fallback also
+    // triggered for valid worst-position=0 percentile, making the UI say
+    // "#N of N (100th percentile)" for last place.
+    const percentile =
+      total <= 1
+        ? 100
+        : Math.round(((total - position) / (total - 1)) * 100);
 
     const response: ScoresResponse = {
       brandId,

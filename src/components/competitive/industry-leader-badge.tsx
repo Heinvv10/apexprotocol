@@ -14,7 +14,7 @@ interface IndustryLeaderBadgeProps {
 
 // Get badge config based on position
 function getBadgeConfig(position: number, total: number) {
-  const percentile = ((total - position) / (total - 1)) * 100;
+  const percentile = total <= 1 ? 100 : ((total - position) / (total - 1)) * 100;
 
   if (position === 1) {
     return {
@@ -91,7 +91,10 @@ export function IndustryLeaderBadge({
 }: IndustryLeaderBadgeProps) {
   const config = getBadgeConfig(position, total);
   const Icon = config.icon;
-  const percentile = Math.round(((total - position) / (total - 1)) * 100) || 100;
+  const percentile =
+    total <= 1
+      ? 100
+      : Math.round(((total - position) / (total - 1)) * 100);
 
   return (
     <div className={cn("flex items-center gap-4", className)}>
