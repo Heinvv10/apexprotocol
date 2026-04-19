@@ -26,6 +26,29 @@ export interface CrawlPage {
   }>;
   readabilityScore: number;
   body: string;
+
+  // Extended signals (added for real scoring — see src/lib/audit/scoring.ts).
+  /** 0..1 — images with non-empty alt / total images. 1.0 when imageCount===0. */
+  imageAltRatio: number;
+  /** Canonical URL from <link rel="canonical">, or null. */
+  canonicalUrl: string | null;
+  /** Open Graph tags — picked fields only. */
+  og: {
+    title: string | null;
+    description: string | null;
+    image: string | null;
+    type: string | null;
+  };
+  /** Sentence count (naive: split by .!? preserving boundaries). */
+  sentenceCount: number;
+  /** Average sentence length in words. 0 when no sentences. */
+  avgSentenceLength: number;
+  /** Count of "?" in headings — proxy for FAQ-style intent. */
+  questionCount: number;
+  /** Count of semantic landmark elements (nav/main/article/aside/section/header/footer). */
+  semanticTagCount: number;
+  /** Count of "click here" / "read more" / "here" links (anti-pattern for a11y + SEO). */
+  bareLinkCount: number;
 }
 
 export interface CrawlResult {
@@ -218,6 +241,55 @@ async function parsePage(url: string, html: string): Promise<CrawlPage> {
   const headingStructure = extractHeadingStructure($);
   const readabilityScore = calculateReadabilityScore(body);
 
+  // Extended signals for signal-grounded scoring.
+  const imagesWithAlt = $("img[alt]").filter((_, el) => {
+    const alt = ($(el).attr("alt") ?? "").trim();
+    return alt.length > 0;
+  }).length;
+  const imageAltRatio = imageCount > 0 ? imagesWithAlt / imageCount : 1;
+
+  const canonicalUrl = $('link[rel="canonical"]').attr("href") ?? null;
+
+  const og = {
+    title: $('meta[property="og:title"]').attr("content") ?? null,
+    description: $('meta[property="og:description"]').attr("content") ?? null,
+    image: $('meta[property="og:image"]').attr("content") ?? null,
+    type: $('meta[property="og:type"]').attr("content") ?? null,
+  };
+
+  // Sentence stats. Split on ., !, ? with lookbehind for letter/digit to avoid
+  // breaking on "Mr." etc. Naive but consistent.
+  const sentences = body
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 3);
+  const sentenceCount = sentences.length;
+  const avgSentenceLength =
+    sentenceCount > 0
+      ? Math.round(
+          sentences.reduce((sum, s) => sum + s.split(/\s+/).filter(Boolean).length, 0) /
+            sentenceCount,
+        )
+      : 0;
+
+  const questionCount = headingStructure.filter((h) => h.text.includes("?")).length;
+
+  const semanticTagCount =
+    $("nav").length +
+    $("main").length +
+    $("article").length +
+    $("aside").length +
+    $("section").length +
+    $("header").length +
+    $("footer").length;
+
+  const bareLinkPattern = /^\s*(click here|read more|here|learn more|more|this)\s*$/i;
+  let bareLinkCount = 0;
+  $("a[href]").each((_, el) => {
+    const text = $(el).text().trim();
+    if (bareLinkPattern.test(text)) bareLinkCount += 1;
+  });
+
   return {
     url,
     title,
@@ -235,6 +307,14 @@ async function parsePage(url: string, html: string): Promise<CrawlPage> {
     headingStructure,
     readabilityScore,
     body,
+    imageAltRatio,
+    canonicalUrl,
+    og,
+    sentenceCount,
+    avgSentenceLength,
+    questionCount,
+    semanticTagCount,
+    bareLinkCount,
   };
 }
 

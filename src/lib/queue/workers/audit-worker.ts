@@ -8,6 +8,7 @@ import { db } from "../../db";
 import { audits, brands } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { createCrawler, analyzeAuditResults } from "../../audit";
+import { scoreAudit } from "../../audit/scoring";
 import {
   checkAiCrawlers,
   checkEntityAuthority,
@@ -26,6 +27,15 @@ const WORKER_CONFIG = {
   defaultTimeout: 300000, // 5 minutes
   defaultMaxPages: 50,
 };
+
+function gradeForScore(score: number): "A+" | "A" | "B" | "C" | "D" | "F" {
+  if (score >= 90) return "A+";
+  if (score >= 80) return "A";
+  if (score >= 70) return "B";
+  if (score >= 60) return "C";
+  if (score >= 50) return "D";
+  return "F";
+}
 
 // Job result type
 interface AuditJobResult {
@@ -94,8 +104,14 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
       );
     }
 
-    // Analyze results
+    // Analyze results — issue detection + category baselines (legacy path).
     const analysis = analyzeAuditResults(crawlResult);
+
+    // Signal-grounded scoring — replaces the old `75 − issues × 10` style
+    // formulas. Each category score derives from extracted page signals
+    // (H1 count, schema types, title length, alt ratio, etc.) with an
+    // evidence trail persisted alongside the score. See src/lib/audit/scoring.ts.
+    const scored = scoreAudit(crawlResult.pages);
 
     // Run additional GEO/AEO checks in parallel
     // Get brand name for entity authority check
@@ -130,43 +146,25 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
       ...((chunkingResult as Record<string, unknown>).issues as AuditIssue[] ?? []),
     ];
 
-    result.overallScore = analysis.readability.overall;
+    result.overallScore = scored.overall;
     result.issuesFound = allIssues.length;
 
     // Update audit in database
     if (existingAudit) {
-      const finalCategoryScores = [
-        {
-          category: "structure",
-          score: analysis.readability.breakdown.structure.score,
-          maxScore: analysis.readability.breakdown.structure.maxScore,
-          issues: analysis.issues.filter((i) => i.category === "structure").length,
-        },
-        {
-          category: "schema",
-          score: analysis.readability.breakdown.schema.score,
-          maxScore: analysis.readability.breakdown.schema.maxScore,
-          issues: analysis.issues.filter((i) => i.category === "schema").length,
-        },
-        {
-          category: "clarity",
-          score: analysis.readability.breakdown.clarity.score,
-          maxScore: analysis.readability.breakdown.clarity.maxScore,
-          issues: analysis.issues.filter((i) => i.category === "content").length,
-        },
-        {
-          category: "metadata",
-          score: analysis.readability.breakdown.metadata.score,
-          maxScore: analysis.readability.breakdown.metadata.maxScore,
-          issues: analysis.issues.filter((i) => i.category === "metadata").length,
-        },
-        {
-          category: "accessibility",
-          score: analysis.readability.breakdown.accessibility.score,
-          maxScore: analysis.readability.breakdown.accessibility.maxScore,
-          issues: analysis.issues.filter((i) => i.category === "accessibility").length,
-        },
-      ];
+      // Prefer signal-grounded scores. Keep the same shape the UI expects
+      // (category/score/maxScore/issues) so /dashboard/audit/results renders
+      // unchanged.
+      const finalCategoryScores = (
+        ["structure", "schema", "clarity", "metadata", "accessibility"] as const
+      ).map((key) => ({
+        category: key,
+        score: scored.categoryScores[key],
+        maxScore: 100,
+        issues: analysis.issues.filter((i) => {
+          if (key === "clarity") return i.category === "content";
+          return i.category === key;
+        }).length,
+      }));
 
       // Compute AI-readiness score from the category scores the engine
       // just produced. This gives AIReadinessDeepDive real data instead
@@ -198,11 +196,18 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
           analysisTime: Date.now() - startTime - crawlResult.duration,
         },
         pagesAnalyzed: crawlResult.pages.length,
-        grade: analysis.readability.grade,
+        grade: gradeForScore(scored.overall),
         contentChunkingScore: (chunkingResult as Record<string, unknown>).score,
         contentChunkingBreakdown: (chunkingResult as Record<string, unknown>).breakdown,
         contentAnalysis: analysis.contentAnalysis,
         aiReadiness,
+        // Signal-grounded audit scoring: weighted decomposition + the raw
+        // evidence trail per category. The /api/admin/audit-debug/[id]
+        // route (Phase D) reads this to show "why this score?".
+        scoring: {
+          decomposition: scored.decomposition,
+          evidence: scored.evidence,
+        },
         ...(performance ? { performance } : {}),
       } as AuditMetadata;
 
@@ -211,7 +216,7 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
         .set({
           status: crawlResult.success ? "completed" : "failed",
           completedAt: new Date(),
-          overallScore: analysis.readability.overall,
+          overallScore: scored.overall,
           categoryScores: finalCategoryScores,
           issues: allIssues,
           issueCount: allIssues.length,
