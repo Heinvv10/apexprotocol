@@ -91,7 +91,7 @@ const SCRAPE_JOB_KEY = (jobId: string) => `brand:scrape:${jobId}`;
 
 // Check if real Redis is configured
 const hasRedis = () => {
-  return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+  return !!(process.env.REDIS_URL);
 };
 
 /**

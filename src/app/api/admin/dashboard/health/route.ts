@@ -93,7 +93,7 @@ async function checkRedisHealth(): Promise<{
   message: string;
 }> {
   // Check if Redis is configured
-  const redisUrl = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const redisUrl = process.env.REDIS_URL || process.env.REDIS_URL;
 
   if (!redisUrl) {
     return {

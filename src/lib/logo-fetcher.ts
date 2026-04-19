@@ -7,10 +7,9 @@
  * 3. Google Favicon API
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
 import { createId } from '@paralleldrive/cuid2';
 import { assertSafeUrl } from '@/lib/security/ssrf-protection';
+import { uploadAsset } from '@/lib/storage/supabase-storage';
 
 export interface LogoResult {
   success: boolean;
@@ -204,35 +203,22 @@ async function tryGoogleFavicon(domain: string): Promise<LogoResult> {
 }
 
 /**
- * Save logo file to uploads directory
+ * Upload logo to Supabase Storage and return the public CDN URL.
+ * Path traversal is prevented by sanitizing the domain + cuid filename.
+ * MIME type is whitelisted; default to image/png for unknown extensions.
  */
 async function saveLogoFile(buffer: Buffer, domain: string, ext: string): Promise<string> {
-  const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'brand-logos');
-
-  // Ensure directory exists
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
-
-  // Sanitize domain: only allow alphanumeric and hyphens
   const safeDomain = domain.replace(/[^a-z0-9.-]/gi, '').replace(/\./g, '-');
-  // Whitelist extension
   const safeExt = ['png', 'jpg', 'jpeg', 'ico', 'webp'].includes(ext) ? ext : 'png';
   const filename = `${safeDomain}-${createId()}.${safeExt}`;
-  const filePath = path.join(uploadsDir, filename);
-
-  // Verify resolved path stays within uploads directory (prevent path traversal)
-  const resolvedPath = path.resolve(filePath);
-  const resolvedUploadsDir = path.resolve(uploadsDir);
-  if (!resolvedPath.startsWith(resolvedUploadsDir)) {
-    throw new Error('Invalid file path: path traversal detected');
-  }
-
-  fs.writeFileSync(filePath, buffer);
-  console.log(`[LogoFetcher] Saved logo to: ${filePath}`);
-
-  // Return the public URL path
-  return `/uploads/brand-logos/${filename}`;
+  const key = `brand-logos/${filename}`;
+  const mimeMap: Record<string, string> = {
+    png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+    ico: 'image/x-icon', webp: 'image/webp',
+  };
+  const url = await uploadAsset(buffer, key, mimeMap[safeExt] ?? 'image/png');
+  console.log(`[LogoFetcher] Uploaded logo to Storage: ${key}`);
+  return url;
 }
 
 /**
@@ -248,17 +234,11 @@ function extractAttr(html: string, regex: RegExp): string | null {
  */
 export async function logoToBase64(logoPath: string): Promise<string | null> {
   try {
-    // Handle both local paths and URLs
-    if (logoPath.startsWith('/uploads/')) {
-      const fullPath = path.join(process.cwd(), 'public', logoPath);
-      const buffer = fs.readFileSync(fullPath);
-      const ext = path.extname(logoPath).slice(1);
-      const mimeType = ext === 'svg' ? 'image/svg+xml' 
-        : ext === 'png' ? 'image/png'
-        : ext === 'ico' ? 'image/x-icon'
-        : 'image/jpeg';
-      return `data:${mimeType};base64,${buffer.toString('base64')}`;
-    } else if (logoPath.startsWith('http')) {
+    // After Plan 4, all logos live in Supabase Storage with absolute URLs.
+    // Legacy /uploads/ paths from pre-cutover data fall through to fetch
+    // (which will fail; the migration script in Plan 6 should rewrite
+    // any old paths to the new Storage public URLs).
+    if (logoPath.startsWith('http')) {
       const response = await fetch(logoPath);
       const buffer = Buffer.from(await response.arrayBuffer());
       const contentType = response.headers.get('content-type') || 'image/png';

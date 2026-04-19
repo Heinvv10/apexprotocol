@@ -1,10 +1,9 @@
-import { Redis } from "@upstash/redis";
+import IORedis from "ioredis";
 import { Ratelimit } from "@upstash/ratelimit";
 
 // Check if Redis is configured
 const isRedisConfigured = () => {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = process.env.REDIS_URL;
   return !!url && !!token && url !== "undefined" && token !== "undefined";
 };
 
@@ -85,10 +84,7 @@ let _usingFallback = false;
 function getRedis(): Redis | InMemoryRedis {
   if (!_redisInstance) {
     if (isRedisConfigured()) {
-      _redisInstance = new Redis({
-        url: process.env.UPSTASH_REDIS_REST_URL!,
-        token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-      });
+      _redisInstance = new IORedis(process.env.REDIS_URL || "redis://localhost:6379");
     } else {
       if (!_usingFallback) {
         console.warn("[Cache/Redis] Using in-memory fallback. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for production.");

@@ -6,7 +6,7 @@
  * Falls back to allowing requests when Redis is unavailable.
  */
 
-import { Redis } from "@upstash/redis";
+import IORedis from "ioredis";
 import { Ratelimit } from "@upstash/ratelimit";
 
 // Rate limits per tier (requests per minute).
@@ -96,11 +96,10 @@ let redisClient: Redis | null = null;
 
 function getRedis(): Redis | null {
   if (redisClient) return redisClient;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return null;
+  const url = process.env.REDIS_URL;
+  if (!url) return null;
   try {
-    redisClient = new Redis({ url, token });
+    redisClient = new IORedis(process.env.REDIS_URL || "redis://localhost:6379");
     return redisClient;
   } catch {
     return null;

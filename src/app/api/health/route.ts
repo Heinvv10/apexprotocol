@@ -75,7 +75,7 @@ async function checkRedis(): Promise<ServiceHealth> {
   const start = Date.now();
   try {
     const isConfigured = Boolean(
-      process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+      process.env.REDIS_URL
     );
 
     if (!isConfigured) {
@@ -218,7 +218,7 @@ async function checkVectorDB(): Promise<ServiceHealth> {
 async function checkQueue(): Promise<ServiceHealth> {
   const start = Date.now();
   try {
-    const isConfigured = Boolean(process.env.UPSTASH_REDIS_REST_URL);
+    const isConfigured = Boolean(process.env.REDIS_URL);
 
     return {
       name: "queue",
