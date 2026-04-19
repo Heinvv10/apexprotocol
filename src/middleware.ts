@@ -45,6 +45,9 @@ const publicRoutes = [
   "/api/v1/health",
   "/api/v1/openapi.json",
   "/api/docs",
+  // Trust Center + embeddable widgets — public by design
+  "/trust",
+  "/embed(.*)",
   "/_next(.*)",
   "/static(.*)",
   "/favicon.ico",
@@ -73,6 +76,9 @@ const apiKeyAuthRoutes = [
   // Public v1 API — all endpoints except /health and /openapi.json
   "/api/v1/brands(.*)",
   "/api/v1/audits(.*)",
+  "/api/v1/webhooks(.*)",
+  "/api/v1/embed(.*)",
+  "/api/v1/mcp(.*)",
 ];
 
 const superAdminRoutes = ["/admin(.*)", "/api/admin(.*)"];
