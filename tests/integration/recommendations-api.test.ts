@@ -279,10 +279,8 @@ describe("Recommendations API Integration Tests", () => {
     });
 
     // Set up mocks
-      auth: mockAuth,
-    }));
-
     vi.doMock("@/lib/auth", () => ({
+      auth: mockAuth,
       getUserId: mockGetUserId,
       getOrganizationId: mockGetOrganizationId,
     }));

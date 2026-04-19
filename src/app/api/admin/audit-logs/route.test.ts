@@ -80,7 +80,7 @@ describe("GET /api/admin/audit-logs - List Audit Logs (FR-1)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default: authenticated super-admin
-    vi.mocked(auth).mockResolvedValue({ userId: "user_super123" } as any);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_super123", orgId: "test-org-id", orgRole: "admin", orgSlug: null });
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
   });
 
@@ -237,7 +237,7 @@ describe("GET /api/admin/audit-logs - List Audit Logs (FR-1)", () => {
 describe("GET /api/admin/audit-logs - Filter Functionality (FR-2)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(auth).mockResolvedValue({ userId: "user_super123" } as any);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_super123", orgId: "test-org-id", orgRole: "admin", orgSlug: null });
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
   });
 
@@ -470,7 +470,7 @@ describe("GET /api/admin/audit-logs - Filter Functionality (FR-2)", () => {
 describe("GET /api/admin/audit-logs - Search Functionality (FR-3)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(auth).mockResolvedValue({ userId: "user_super123" } as any);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_super123", orgId: "test-org-id", orgRole: "admin", orgSlug: null });
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
   });
 
@@ -535,7 +535,7 @@ describe("GET /api/admin/audit-logs - Search Functionality (FR-3)", () => {
 describe("POST /api/admin/audit-logs - Create Log (Internal)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(auth).mockResolvedValue({ userId: "user_super123" } as any);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_super123", orgId: "test-org-id", orgRole: "admin", orgSlug: null });
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
   });
 

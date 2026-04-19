@@ -38,22 +38,8 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-// Mock Clerk auth
-  useAuth: () => ({
-    userId: "user-123",
-    isLoaded: true,
-    isSignedIn: true,
-  }),
-  useUser: () => ({
-    user: {
-      id: "user-123",
-      firstName: "Test",
-      lastName: "User",
-      emailAddresses: [{ emailAddress: "test@example.com" }],
-    },
-    isLoaded: true,
-  }),
-}));
+// Auth is now Supabase — useSession/useUser are not used by the navigation
+// components under test. No auth mock needed.
 
 // Mock brand store
 const mockSelectedBrand = {

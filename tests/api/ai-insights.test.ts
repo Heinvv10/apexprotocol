@@ -9,8 +9,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("@/lib/auth/supabase-server", () => ({
   getSession: vi.fn(async () => ({ userId: "test-user-id", orgId: "test-org-id", orgRole: "admin", orgSlug: null })),
   currentDbUser: vi.fn(async () => null),
-})),
-}));
+  }));
 
 // Mock database and schema
 vi.mock("@/lib/db", () => {

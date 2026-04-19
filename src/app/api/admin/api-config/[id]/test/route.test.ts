@@ -13,7 +13,6 @@ import { TEST_CREDENTIALS } from "../../__test-constants";
 vi.mock("@/lib/auth/supabase-server", () => ({
   getSession: vi.fn(async () => ({ userId: "test-user-id", orgId: "test-org-id", orgRole: "admin", orgSlug: null })),
   currentDbUser: vi.fn(async () => null),
-})),
 }));
 
 // Mock super-admin check
@@ -201,8 +200,8 @@ describe("POST /api/admin/api-config/:id/test - Test Connection (FR-3)", () => {
 
 describe("POST /api/admin/api-config/:id/test - Security (SR-1, SR-2, SR-5)", () => {
   it("should return 401 when not authenticated", async () => {
-    const { auth } = await import("@/lib/auth/supabase-server");
-    vi.mocked(auth).mockResolvedValueOnce({ userId: null } as any);
+    const { getSession } = await import("@/lib/auth/supabase-server");
+    vi.mocked(getSession).mockResolvedValueOnce(null);
 
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/test-id/test", {
       method: "POST",

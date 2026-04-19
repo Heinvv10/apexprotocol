@@ -39,7 +39,7 @@ import { db } from "@/lib/db";
 describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(auth).mockResolvedValue({ userId: "user_super123" } as any);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_super123", orgId: "test-org-id", orgRole: "admin", orgSlug: null });
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
   });
 
@@ -210,7 +210,7 @@ describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
   });
 
   it("should return 401 when not authenticated (SR-1)", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: null } as any);
+    vi.mocked(getSession).mockResolvedValue({ userId: null, orgId: "test-org-id", orgRole: "admin", orgSlug: null });
 
     const logId = "log_test123";
     const request = new NextRequest(`http://localhost:3000/api/admin/audit-logs/${logId}`);
@@ -220,7 +220,7 @@ describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
   });
 
   it("should return 403 when not super-admin (SR-2)", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as any);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123", orgId: "test-org-id", orgRole: "admin", orgSlug: null });
     vi.mocked(isSuperAdmin).mockResolvedValue(false);
 
     const logId = "log_test123";

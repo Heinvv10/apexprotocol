@@ -324,10 +324,8 @@ describe("E2E Workflow: AI Recommendations Generation Lifecycle", () => {
     mockGenerateRecommendations.mockResolvedValue([]);
 
     // Set up mocks
-      auth: mockAuth,
-    }));
-
     vi.doMock("@/lib/auth", () => ({
+      auth: mockAuth,
       getOrganizationId: mockGetOrganizationId,
     }));
 
