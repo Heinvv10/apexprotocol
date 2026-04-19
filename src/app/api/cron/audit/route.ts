@@ -7,6 +7,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { runAuditWorker, getAuditWorkerStatus } from "@/lib/queue/workers/audit-worker";
+import { auditQueue } from "@/lib/queue";
 
 // Verify cron secret for security
 async function verifyCronSecret(): Promise<boolean> {
@@ -57,10 +58,22 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Resurrect any jobs stuck in the 'active' state past the timeout —
+    // typically orphaned by a dev server restart or a worker crash. Without
+    // this, a killed worker leaves jobs claimed indefinitely.
+    let staleCleaned = 0;
+    try {
+      staleCleaned = await auditQueue.cleanStaleJobs(60 * 60 * 1000);
+    } catch (err) {
+      // cleanStaleJobs is best-effort — don't block the worker on cleanup.
+      console.error("[Audit Cron] cleanStaleJobs failed:", err);
+    }
+
     const result = await runAuditWorker();
 
     return NextResponse.json({
       success: true,
+      staleCleaned,
       ...result,
     });
   } catch (error) {

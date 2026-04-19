@@ -108,19 +108,14 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // Process the job immediately (in-memory queue, works for both dev and production)
-    // Using setImmediate for better Node.js event loop handling
-    try {
-      const { runAuditWorker } = await import("@/lib/queue/workers/audit-worker");
-      // Process jobs asynchronously without blocking the response
-      setImmediate(() => {
-        runAuditWorker().catch((err) =>
-          console.error("[Audit] Error processing audit job:", err)
-        );
-      });
-    } catch (error) {
-      console.error("[Audit] Failed to auto-process audit job:", error);
-    }
+    // Worker pickup: the cron at /api/cron/audit runs runAuditWorker() every
+    // minute (see vercel.json). POST no longer calls setImmediate — that
+    // path was lost on every Next.js dev-server restart because the async
+    // work was tied to the ephemeral request lifecycle. Cron owns the
+    // processing loop now.
+    //
+    // Dev mode still gets prompt processing because the cron secret is
+    // bypassed in NODE_ENV=development (see cron route:18).
 
     return NextResponse.json({
       success: true,

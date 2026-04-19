@@ -1,0 +1,32 @@
+# Dev-only compose — runs just the services the local Next.js dev server
+# needs to talk to. The audit worker orphaning bug (Phase B) is resolved
+# by having a real Redis in dev that survives `npm run dev` restarts,
+# so queued jobs aren't lost when the Next process recycles on memory
+# pressure.
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up -d redis
+#   # then: REDIS_URL=redis://localhost:6379 in .env.local
+#   npm run dev
+
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: apex-dev-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - apex-dev-redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  apex-dev-redis-data:
