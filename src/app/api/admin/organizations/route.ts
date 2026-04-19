@@ -6,12 +6,12 @@ import { getUserId, getOrganizationId } from "@/lib/auth/clerk";
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { organizations, users, brands } from "@/lib/db/schema";
 import { eq, sql, ilike, or, desc } from "drizzle-orm";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
 import { createAuditLog } from "@/lib/audit-logger";
+import { getUserByAuthId } from "@/lib/auth/supabase-admin";
 
 export async function GET(request: NextRequest) {
   // Declare actor variables at function scope for audit logging
@@ -37,10 +37,9 @@ export async function GET(request: NextRequest) {
 
       // Get actor details from Clerk
       try {
-        const clerk = await clerkClient();
-        const user = await clerk.users.getUser(userId);
-        actorName = user.fullName || user.firstName || null;
-        actorEmail = user.emailAddresses[0]?.emailAddress || null;
+                const user = await getUserByAuthId(userId);
+        actorName = user.name || user.name || null;
+        actorEmail = user.email || null;
       } catch (error) {
         // Continue without actor details if Clerk fails
       }
@@ -220,10 +219,9 @@ export async function PATCH(request: NextRequest) {
 
       // Get actor details from Clerk
       try {
-        const clerk = await clerkClient();
-        const user = await clerk.users.getUser(userId);
-        actorName = user.fullName || user.firstName || null;
-        actorEmail = user.emailAddresses[0]?.emailAddress || null;
+                const user = await getUserByAuthId(userId);
+        actorName = user.name || user.name || null;
+        actorEmail = user.email || null;
       } catch (error) {
         // Continue without actor details if Clerk fails
       }

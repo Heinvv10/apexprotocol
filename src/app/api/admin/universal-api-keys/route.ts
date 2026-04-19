@@ -10,8 +10,7 @@ import { users } from "@/lib/db/schema";
 import { encrypt, decrypt } from "@/lib/encryption";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
-import { currentUser } from "@clerk/nextjs/server";
-
+import { getSession, currentDbUser } from "@/lib/auth/supabase-server";
 // Validation schemas
 const setApiKeySchema = z.object({
   provider: z.enum(["openai", "anthropic", "gemini"]),
@@ -27,7 +26,7 @@ const getApiKeySchema = z.object({
  * Checks both Clerk metadata and database user record
  */
 async function isAdmin(): Promise<boolean> {
-  const user = await currentUser();
+  const user = await currentDbUser();
 
   if (!user) {
     return false;
@@ -165,7 +164,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await currentUser();
+    const user = await currentDbUser();
     const body = await request.json();
     const params = setApiKeySchema.parse(body);
 

@@ -25,9 +25,9 @@
  * ```
  */
 
-import { auth } from "@clerk/nextjs/server";
 import type { NextRequest } from "next/server";
 import {
+import { getSession, currentDbUser } from "@/lib/auth/supabase-server";
   getApiKeyAuthContext,
   isApiKeyAuthenticated,
   type ApiKeyContext,
@@ -155,7 +155,8 @@ export async function getSessionAuthContext(): Promise<UnifiedAuthContext | null
   }
 
   try {
-    const { userId, orgId, orgRole, orgSlug } = await auth();
+    const __session = await getSession();
+  const { userId, orgId, orgRole, orgSlug } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
 
     if (!userId) {
       return null;

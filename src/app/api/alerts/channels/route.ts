@@ -11,6 +11,7 @@ import { alertChannels } from '@/lib/db/schema/alert-rules';
 import { organizations } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
+import { getSession, currentDbUser } from "@/lib/auth/supabase-server";
 
 // GET - List alert channels
 export async function GET(request: NextRequest) {
@@ -25,7 +26,8 @@ export async function GET(request: NextRequest) {
       }
       orgId = firstOrg.id;
     } else {
-      const { orgId: clerkOrgId } = await auth();
+      const __session = await getSession();
+  const { orgId: clerkOrgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
       if (!clerkOrgId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
@@ -77,7 +79,8 @@ export async function POST(request: NextRequest) {
       }
       orgId = firstOrg.id;
     } else {
-      const { orgId: clerkOrgId } = await auth();
+      const __session = await getSession();
+  const { orgId: clerkOrgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
       if (!clerkOrgId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
@@ -130,7 +133,8 @@ export async function PUT(request: NextRequest) {
       }
       orgId = firstOrg.id;
     } else {
-      const { orgId: clerkOrgId } = await auth();
+      const __session = await getSession();
+  const { orgId: clerkOrgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
       if (!clerkOrgId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
@@ -187,7 +191,8 @@ export async function DELETE(request: NextRequest) {
       }
       orgId = firstOrg.id;
     } else {
-      const { orgId: clerkOrgId } = await auth();
+      const __session = await getSession();
+  const { orgId: clerkOrgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
       if (!clerkOrgId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }

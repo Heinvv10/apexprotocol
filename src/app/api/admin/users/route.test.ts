@@ -146,7 +146,6 @@ vi.mock("@/lib/db", () => {
 });
 
 // Import mocked modules AFTER vi.mock declarations
-import { auth } from "@clerk/nextjs/server";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
 import { db } from "@/lib/db";
 
@@ -585,6 +584,7 @@ describe("PATCH /api/admin/users - Security & Validation", () => {
 
 // Import audit logger for spy access
 import { createAuditLog } from "@/lib/audit-logger";
+import { getUserByAuthId } from "@/lib/auth/supabase-admin";
 const createAuditLogSpy = vi.mocked(createAuditLog);
 
 describe("Audit Logging Integration - User Management", () => {

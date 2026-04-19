@@ -10,8 +10,7 @@ import { db } from "@/lib/db";
 import { notifications, notificationPreferences } from "@/lib/db/schema/notifications";
 import { eq, and, gte, desc } from "drizzle-orm";
 import { digestService, type DigestNotification, type DigestPriority } from "@/lib/notifications/digest";
-import { clerkClient } from "@clerk/nextjs/server";
-
+import { getUserByAuthId } from "@/lib/auth/supabase-admin";
 // Verify cron secret for security
 async function verifyCronSecret(): Promise<boolean> {
   const headersList = await headers();
@@ -131,15 +130,14 @@ async function sendDigests(frequency: "daily" | "weekly"): Promise<{
         }
 
         // Get user email from Clerk
-        const clerk = await clerkClient();
-        const clerkUser = await clerk.users.getUser(preference.userId);
+                const clerkUser = await getUserByAuthId(preference.userId);
         if (!clerkUser?.emailAddresses?.[0]?.emailAddress) {
           result.errors.push(`No email address for user ${preference.userId}`);
           result.failed++;
           continue;
         }
 
-        const userEmail = clerkUser.emailAddresses[0].emailAddress;
+        const userEmail = clerkUser.email;
 
         // Convert notifications to digest format
         const digestNotifications: DigestNotification[] = userNotifications.map((n) => ({

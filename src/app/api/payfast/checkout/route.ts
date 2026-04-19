@@ -10,6 +10,7 @@ import { createSubscriptionCheckout, PLANS, DEFAULT_CURRENCY, type PayFastCurren
 import { db } from '@/lib/db';
 import { organizations } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { getSession, currentDbUser } from "@/lib/auth/supabase-server";
 
 // Valid currencies
 const VALID_CURRENCIES: PayFastCurrency[] = ['ZAR', 'USD', 'EUR', 'GBP'];
@@ -61,7 +62,8 @@ export async function POST(request: NextRequest) {
       customerLastName = 'User';
     } else {
       // Production: require Clerk auth
-      const { userId, orgId: clerkOrgId } = await auth();
+      const __session = await getSession();
+  const { userId, orgId: clerkOrgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
       
       if (!userId || !clerkOrgId) {
         return NextResponse.json(
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      const user = await currentUser();
+      const user = await currentDbUser();
       if (!user) {
         return NextResponse.json(
           { error: 'User not found' },
@@ -93,9 +95,9 @@ export async function POST(request: NextRequest) {
       }
       
       orgId = org.id;
-      customerEmail = user.emailAddresses[0]?.emailAddress || '';
-      customerFirstName = user.firstName || undefined;
-      customerLastName = user.lastName || undefined;
+      customerEmail = user.email || '';
+      customerFirstName = user.name || undefined;
+      customerLastName = user.name || undefined;
     }
     
     // Get base URL for redirects

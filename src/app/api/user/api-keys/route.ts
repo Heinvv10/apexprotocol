@@ -8,7 +8,6 @@ import { getInternalUserId, getOrganizationId } from "@/lib/auth/clerk";
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { apiKeys } from "@/lib/db/schema";
 import { eq, and, desc, gte } from "drizzle-orm";
@@ -16,6 +15,7 @@ import { createAuditLog } from "@/lib/audit-logger";
 import { encryptApiKey } from "@/lib/crypto/api-key-encryption";
 import { generateApiKey, maskApiKey } from "@/lib/crypto/key-generation";
 import { createId } from "@paralleldrive/cuid2";
+import { getUserByAuthId } from "@/lib/auth/supabase-admin";
 
 // Rate limiting constants
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour in milliseconds
@@ -50,10 +50,9 @@ export async function GET(request: NextRequest) {
 
     // Get actor details from Clerk
     try {
-      const clerk = await clerkClient();
-      const user = await clerk.users.getUser(userId);
-      actorName = user.fullName || user.firstName || null;
-      actorEmail = user.emailAddresses[0]?.emailAddress || null;
+            const user = await getUserByAuthId(userId);
+      actorName = user.name || user.name || null;
+      actorEmail = user.email || null;
     } catch (_error) {
       // Continue without actor details if Clerk fails
     }
@@ -174,10 +173,9 @@ export async function POST(request: NextRequest) {
 
     // Get actor details from Clerk
     try {
-      const clerk = await clerkClient();
-      const user = await clerk.users.getUser(userId);
-      actorName = user.fullName || user.firstName || null;
-      actorEmail = user.emailAddresses[0]?.emailAddress || null;
+            const user = await getUserByAuthId(userId);
+      actorName = user.name || user.name || null;
+      actorEmail = user.email || null;
     } catch (_error) {
       // Continue without actor details if Clerk fails
     }

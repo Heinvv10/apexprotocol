@@ -1,3 +1,4 @@
+import { getUserByAuthId } from "@/lib/auth/supabase-admin";
 // Auth exports for Apex platform
 
 export {

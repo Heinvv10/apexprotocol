@@ -13,6 +13,7 @@ import { fetchBrandLogo } from '@/lib/logo-fetcher';
 import { db } from '@/lib/db';
 import { brands } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { getSession, currentDbUser } from "@/lib/auth/supabase-server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +21,8 @@ export async function POST(request: NextRequest) {
     const isDev = process.env.NODE_ENV === 'development' && process.env.DEV_SUPER_ADMIN === 'true';
     
     if (!isDev) {
-      const { userId } = await auth();
+      const __session = await getSession();
+  const { userId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
       if (!userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }

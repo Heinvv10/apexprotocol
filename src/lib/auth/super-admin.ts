@@ -1,7 +1,7 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { getSession, currentDbUser } from "@/lib/auth/supabase-server";
 
 // Check if Clerk is properly configured
 const CLERK_CONFIGURED =
@@ -27,7 +27,8 @@ export async function isSuperAdmin(): Promise<boolean> {
 
   try {
     // First check: Clerk metadata (fastest, in JWT claims)
-    const { sessionClaims, userId } = await auth();
+    const __session = await getSession();
+  const { sessionClaims, userId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
 
     if (!userId) {
       return false;
@@ -72,7 +73,8 @@ export async function requireSuperAdmin(): Promise<{ userId: string }> {
   }
 
   try {
-    const { userId } = await auth();
+    const __session = await getSession();
+  const { userId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
 
     if (!userId) {
       throw new Error("Authentication required");
@@ -116,7 +118,7 @@ export async function getSuperAdminUser(): Promise<{
   }
 
   try {
-    const user = await currentUser();
+    const user = await currentDbUser();
 
     if (!user) {
       return null;
@@ -130,8 +132,8 @@ export async function getSuperAdminUser(): Promise<{
 
     return {
       userId: user.id,
-      email: user.emailAddresses[0]?.emailAddress ?? "",
-      name: user.fullName,
+      email: user.email ?? "",
+      name: user.name,
       isSuperAdmin: true,
     };
   } catch {

@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { getReportData } from "@/lib/reports/report-data";
 import { getReportBranding, getBrandingCSSVariables } from "@/lib/reports/report-config";
+import { getSession, currentDbUser } from "@/lib/auth/supabase-server";
 
 export const dynamic = "force-dynamic";
 
@@ -95,7 +96,8 @@ export default async function ReportPage({ params, searchParams }: Props) {
   // Allow ?token=preview for unauthenticated access (Puppeteer)
   if (token !== "preview") {
     const { auth } = await import("@clerk/nextjs/server");
-    const { userId } = await auth();
+    const __session = await getSession();
+  const { userId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
     if (!userId) notFound();
   }
 
