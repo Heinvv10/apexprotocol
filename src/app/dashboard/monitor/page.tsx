@@ -345,6 +345,44 @@ export default function MonitorPage() {
     return [...realtimeQueries, ...uniqueApiQueries];
   }, [mentionsResponse, realtimeMentions, selectedBrand]);
 
+  // Derive per-platform visibility scores from the mentions we have.
+  // Without this, PlatformScoreCards would be fed an empty array and every
+  // card would render "No data" even when mentions existed.
+  const platformScoresFromMentions: PlatformVisibilityScore[] = React.useMemo(() => {
+    const mentions = mentionsResponse?.mentions ?? [];
+    if (!mentions.length) return [];
+    type Agg = { total: number; mentioned: number; cited: number };
+    const byPlatform = new Map<string, Agg>();
+    for (const m of mentions) {
+      const key = m.platform.toLowerCase();
+      const agg = byPlatform.get(key) ?? { total: 0, mentioned: 0, cited: 0 };
+      agg.total += 1;
+      if (m.mentioned) agg.mentioned += 1;
+      if (m.citationUrl) agg.cited += 1;
+      byPlatform.set(key, agg);
+    }
+    const allowed = new Set(["chatgpt", "claude", "gemini", "perplexity", "grok", "deepseek", "copilot"]);
+    const results: PlatformVisibilityScore[] = [];
+    for (const [platform, agg] of byPlatform) {
+      if (!allowed.has(platform)) continue;
+      const mentionRate = agg.total > 0 ? agg.mentioned / agg.total : 0;
+      const citationRate = agg.total > 0 ? agg.cited / agg.total : 0;
+      // Simple 0-100 visibility: weight citations 2x (a cited mention beats
+      // an uncited one in the GEO/AEO ranking stack).
+      const score = Math.round((mentionRate * 100 + citationRate * 100) / 2);
+      results.push({
+        platform: platform as PlatformVisibilityScore["platform"],
+        score,
+        mentionRate: Math.round(mentionRate * 100),
+        citationRate: Math.round(citationRate * 100),
+        shareOfVoice: 0,
+        trend: "stable",
+        lastUpdated: new Date().toISOString(),
+      });
+    }
+    return results;
+  }, [mentionsResponse]);
+
   // Build dynamic filter groups from mention data
   const filterGroups = React.useMemo(() => {
     if (!mentionsResponse?.mentions?.length) return emptyFilterGroups;
@@ -444,7 +482,7 @@ export default function MonitorPage() {
 
       {/* Platform Score Cards */}
       {selectedBrand && !isLoading && (
-        <PlatformScoreCards platformScores={[]} />
+        <PlatformScoreCards platformScores={platformScoresFromMentions} />
       )}
 
       {/* Main Content */}
