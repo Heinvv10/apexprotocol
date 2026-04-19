@@ -209,7 +209,7 @@ export default function PortfolioDetailPage() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Target className="h-4 w-4" />
-              Unified Score
+              Digital Presence Score
             </CardTitle>
           </CardHeader>
           <CardContent>

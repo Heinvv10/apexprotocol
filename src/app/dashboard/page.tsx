@@ -29,6 +29,7 @@ import { useBrandStore, useBrands, useSelectedBrand } from "@/stores";
 import { useOnboardingProgress } from "@/hooks/useOnboarding";
 import { useDashboardMetrics, useGEOScore, useUnifiedScore } from "@/hooks/useDashboard";
 import { UnifiedScoreGauge } from "@/components/dashboard/unified-score-gauge";
+import { ScoreTooltip } from "@/components/ui/score-tooltip";
 import { ScoreTrend } from "@/components/dashboard/score-trend";
 import { EmergingOpportunities } from "@/components/analytics/EmergingOpportunities";
 
@@ -616,10 +617,11 @@ export default function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main chart area */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Unified Score Gauge */}
+          {/* Unified Score Gauge — aka Digital Presence Score */}
           <div className="card-secondary">
-            <h2 className="text-lg font-semibold text-foreground mb-6">
-              Overall Performance
+            <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
+              Digital Presence Score
+              <ScoreTooltip kind="unified" />
             </h2>
             {unifiedScore?.score ? (
               <UnifiedScoreGauge

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { ScoreTooltip } from "@/components/ui/score-tooltip";
 
 interface CompetitorData {
   name: string;
@@ -72,7 +73,10 @@ export function CompetitorComparisonCard({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <div className="text-3xl font-bold text-primary">{yourBrand.unifiedScore}</div>
-            <div className="text-sm text-muted-foreground mt-2">Your Unified Score</div>
+            <div className="text-sm text-muted-foreground mt-2 flex items-center gap-1.5">
+              Your Digital Presence Score
+              <ScoreTooltip kind="unified" />
+            </div>
           </div>
           <div className="text-right">
             <div className="text-3xl font-bold text-muted-foreground">

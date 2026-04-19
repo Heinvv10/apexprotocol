@@ -85,11 +85,11 @@ export const METRIC_DEFINITIONS = {
   },
   // Additional metrics
   UNIFIED: {
-    name: "Unified Score",
+    name: "Digital Presence Score",
     shortName: "Score",
-    fullName: "Unified Competitive Score",
+    fullName: "Digital Presence Score (Unified Composite)",
     description: "Overall competitive strength combining all metrics. Higher scores indicate stronger market position across all channels.",
-    formula: "Weighted average of GEO, SEO, AEO, SMO, and PPO scores.",
+    formula: "SEO × 25% + GEO × 25% + AEO × 15% + SMO × 20% + PPO × 15%.",
     tips: [
       "Improve your weakest metric first",
       "Maintain balance across all areas",

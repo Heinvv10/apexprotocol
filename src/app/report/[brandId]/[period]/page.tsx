@@ -201,7 +201,7 @@ export default async function ReportPage({ params, searchParams }: Props) {
           <div style={{ display: "flex", gap: 24, marginBottom: 24, alignItems: "flex-start" }}>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 80, fontWeight: 900, lineHeight: 1, color: "var(--report-accent)" }}>{overallScore}</div>
-              <div style={{ fontSize: 12, color: "var(--report-text-muted)", marginTop: 4 }}>Unified Score</div>
+              <div style={{ fontSize: 12, color: "var(--report-text-muted)", marginTop: 4 }}>Digital Presence Score</div>
               <div style={{ marginTop: 8 }}>
                 <span className="badge" style={{ background: grade.color + "22", color: grade.color, fontSize: 22, fontWeight: 900, padding: "6px 20px" }}>
                   {grade.letter}

@@ -16,6 +16,7 @@ import { ScoreBadge, getGrade, getScoreColor } from "./score-badge";
 import { ScoreBreakdownChart } from "./score-breakdown-chart";
 import { ScoreComparisonTable } from "./score-comparison-table";
 import { IndustryLeaderBadge } from "./industry-leader-badge";
+import { ScoreTooltip } from "@/components/ui/score-tooltip";
 import type { ScoresResponse } from "@/app/api/competitive/scores/route";
 
 interface CompetitorScorecardProps {
@@ -316,8 +317,9 @@ export function CompetitorScorecard({
                 <div className="text-sm font-medium text-foreground">
                   {data.brandName}
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Your unified score
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  Your Digital Presence Score
+                  <ScoreTooltip kind="unified" />
                 </div>
               </div>
             </div>

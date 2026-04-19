@@ -184,13 +184,21 @@ export async function POST(request: NextRequest) {
       aiEnhanced,
     };
 
-    // Generate the roadmap
+    // Generate the roadmap — generator writes it as status="draft".
     const roadmap = await generateRoadmap(brandId, options);
+
+    // Auto-activate + snapshot so the /dashboard/competitive/roadmap page
+    // finds it via getActiveRoadmap (which filters status="active"). The
+    // POST caller is always the Quick Generate UI, which has no explicit
+    // "Start" step — leaving the roadmap as draft created a dead-end where
+    // the user generated a plan and then got an empty state.
+    await updateRoadmapStatus(roadmap.id, "active");
+    await createProgressSnapshot(roadmap.id, brandId);
 
     return NextResponse.json({
       success: true,
-      roadmap,
-      message: "Roadmap generated successfully",
+      roadmap: { ...roadmap, status: "active" },
+      message: "Roadmap generated and activated",
     });
   } catch (error) {
     console.error("Error in roadmap POST:", error);

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { TrendingUp, AlertCircle } from "lucide-react";
 import { Audit } from "@/hooks/useAudit";
+import { ScoreTooltip } from "@/components/ui/score-tooltip";
 
 interface OverallScoreCardProps {
   audit: Audit;
@@ -24,7 +25,10 @@ export function OverallScoreCard({ audit }: OverallScoreCardProps) {
   return (
     <div className="card-primary p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="font-semibold text-lg">Overall Score</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-lg">On-Page Audit Score</h3>
+          <ScoreTooltip kind="audit" />
+        </div>
         <TrendingUp className="h-5 w-5 text-primary" />
       </div>
 

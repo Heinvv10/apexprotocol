@@ -238,7 +238,7 @@ export function ProgressTimeline({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <div className="w-3 h-0.5 bg-primary rounded" />
-            <span>Unified Score</span>
+            <span>Digital Presence Score</span>
           </div>
           {targetScore && (
             <div className="flex items-center gap-2">

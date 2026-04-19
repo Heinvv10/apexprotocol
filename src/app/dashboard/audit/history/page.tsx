@@ -346,7 +346,7 @@ export default function AuditHistoryPage() {
               <Area
                 type="monotone"
                 dataKey="overallScore"
-                name="Overall Score"
+                name="On-Page Audit Score"
                 stroke="hsl(var(--primary))"
                 fill="url(#colorScore)"
                 strokeWidth={2}

@@ -39,7 +39,7 @@ export function AuditTrendChart({ audits }: AuditTrendChartProps) {
 
       {/* Score Trend */}
       <div className="mb-6">
-        <h4 className="text-sm font-medium mb-3">Overall Score Trend</h4>
+        <h4 className="text-sm font-medium mb-3">On-Page Audit Score Trend</h4>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -60,7 +60,7 @@ export function AuditTrendChart({ audits }: AuditTrendChartProps) {
               strokeWidth={2}
               dot={{ fill: "hsl(var(--primary))", r: 4 }}
               activeDot={{ r: 6 }}
-              name="Overall Score"
+              name="On-Page Audit Score"
             />
           </LineChart>
         </ResponsiveContainer>

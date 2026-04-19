@@ -90,8 +90,23 @@ export function ScoreBreakdownChart({
     });
   }, [brandName, brandScores, competitorName, competitorScores]);
 
+  // Weights per SEO 0.25 + GEO 0.25 + AEO 0.15 + SMO 0.20 + PPO 0.15 — mirrors
+  // the formula documented at src/lib/scoring/unified-score.ts:6.
+  const composition = React.useMemo(() => {
+    const parts = [
+      { label: "SEO", score: brandScores.seoScore, weight: 0.25 },
+      { label: "GEO", score: brandScores.geoScore, weight: 0.25 },
+      { label: "AEO", score: brandScores.aeoScore, weight: 0.15 },
+      { label: "SMO", score: brandScores.smoScore, weight: 0.20 },
+      { label: "PPO", score: brandScores.ppoScore, weight: 0.15 },
+    ];
+    const total = parts.reduce((sum, p) => sum + p.score * p.weight, 0);
+    return { parts, total: Math.round(total) };
+  }, [brandScores]);
+
   return (
-    <div className={cn("h-[300px] w-full", className)}>
+    <div className={cn("space-y-3", className)}>
+      <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={chartData}>
           <PolarGrid stroke="rgba(255,255,255,0.1)" strokeDasharray="3 3" />
@@ -137,6 +152,21 @@ export function ScoreBreakdownChart({
           />
         </RadarChart>
       </ResponsiveContainer>
+      </div>
+
+      {/* Formula breakdown — makes it obvious the unified score is a */}
+      {/* weighted composite rather than a magic number. */}
+      <div className="text-xs text-muted-foreground text-center">
+        {composition.parts.map((p, i) => (
+          <span key={p.label}>
+            {i > 0 && <span className="text-foreground/40"> + </span>}
+            <span className="font-medium text-foreground">{p.label}&nbsp;{p.score}</span>
+            <span className="text-foreground/60"> × {Math.round(p.weight * 100)}%</span>
+          </span>
+        ))}
+        <span className="text-foreground/40"> = </span>
+        <span className="font-semibold text-primary">{composition.total}</span>
+      </div>
     </div>
   );
 }
