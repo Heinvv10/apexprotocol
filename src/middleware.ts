@@ -174,29 +174,10 @@ async function productionMiddleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (matchesPattern(pathname, superAdminRoutes)) {
-    const devSuperAdmin =
-      process.env.NODE_ENV === "development" && process.env.DEV_SUPER_ADMIN === "true";
-    if (!devSuperAdmin) {
-      const { getUserByAuthId } = await import("@/lib/auth/supabase-admin");
-      const user = await getUserByAuthId(userId);
-      if (!user?.isSuperAdmin) {
-        const url = new URL("/dashboard", request.url);
-        url.searchParams.set("error", "super_admin_required");
-        return NextResponse.redirect(url);
-      }
-    }
-  }
-
-  if (matchesPattern(pathname, orgAdminRoutes)) {
-    const { getUserByAuthId } = await import("@/lib/auth/supabase-admin");
-    const user = await getUserByAuthId(userId);
-    if (user?.role !== "admin") {
-      const url = new URL("/dashboard", request.url);
-      url.searchParams.set("error", "unauthorized");
-      return NextResponse.redirect(url);
-    }
-  }
+  // NOTE: super-admin / org-admin DB lookups intentionally happen in the
+  // route handlers / page guards (NOT here). Middleware runs in the edge
+  // runtime which can't import pg. The middleware here only verifies that
+  // a session exists; detailed role enforcement is downstream.
 
   if (pathname.startsWith("/api/")) {
     try {

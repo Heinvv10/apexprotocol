@@ -79,6 +79,7 @@
     "simple-statistics": "^7.8.8",
     "sonner": "^1.7.4",
     "stripe": "^20.0.0",
+    "swr": "^2.4.1",
     "tailwind-merge": "^3.4.0",
     "twitter-api-v2": "^1.28.0",
     "zod": "^4.1.13",

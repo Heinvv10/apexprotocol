@@ -153,3 +153,13 @@ export async function currentDbUser() {
     .limit(1);
   return rows[0] ?? null;
 }
+
+/**
+ * Returns the current user's INTERNAL public.users.id (cuid), not the
+ * Supabase auth uuid. Replaces the Clerk-era getInternalUserId() — same
+ * intent: "what's our internal id for this user".
+ */
+export async function getInternalUserId(): Promise<string | null> {
+  const user = await currentDbUser();
+  return user?.id ?? null;
+}

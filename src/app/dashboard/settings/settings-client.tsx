@@ -8,7 +8,9 @@ import { ChevronDown, Trash2, User, Puzzle, Bell, Users, CreditCard, Key, Loader
 import { BrandHeader } from "@/components/layout/brand-header";
 import { ApiKeysSection, IntegrationsSection, NotificationsSection } from "@/components/settings/settings-sections";
 import { BrandingSection } from "@/components/settings/branding-section";
-import { useUserSafe } from "@/components/providers/clerk-provider";
+// useUserSafe replaced by Zustand store after Plan 3
+import { useAuthStore } from "@/stores/auth";
+const useUserSafe = () => ({ user: useAuthStore((s) => s.user), isLoaded: true, isSignedIn: !!useAuthStore((s) => s.user) });
 import { formatDate } from "@/lib/utils/formatters";
 
 // Available languages

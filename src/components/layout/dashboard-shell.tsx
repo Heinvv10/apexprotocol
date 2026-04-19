@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
-import { AuthSync } from "@/components/providers/auth-sync";
+import { SupabaseAuthSync as AuthSync } from "@/components/providers/supabase-auth-sync";
 
 interface DashboardShellProps {
   children: React.ReactNode;

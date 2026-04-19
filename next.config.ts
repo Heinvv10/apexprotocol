@@ -11,13 +11,19 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  turbopack: {
-    root: __dirname,
-  },
+  // Turbopack disabled for production builds — its serverExternalPackages
+  // handling for pg/ioredis is incomplete (Node builtins like dns/net/tls
+  // aren't externalized). Webpack handles serverExternalPackages correctly.
+  // (Turbopack still works for `next dev` if invoked with --turbopack flag.)
 
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
+
+  // Don't bundle pg / ioredis / nodemailer — they use Node builtins (dns,
+  // net, tls, fs) that the bundler can't trace. Mark them external so Node
+  // requires them at runtime instead. Required since the Plan 2 driver swap.
+  serverExternalPackages: ["pg", "ioredis", "nodemailer", "@supabase/supabase-js"],
 
   productionBrowserSourceMaps: process.env.SENTRY_ENABLED === "true",
 
