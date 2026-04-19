@@ -9,8 +9,10 @@ import { NextRequest } from "next/server";
 import { GET, PATCH } from "./route";
 
 // Mock Clerk auth
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: vi.fn(async () => ({ userId: "test-super-admin-id" })),
+vi.mock("@/lib/auth/supabase-server", () => ({
+  getSession: vi.fn(async () => ({ userId: "test-user-id", orgId: "test-org-id", orgRole: "admin", orgSlug: null })),
+  currentDbUser: vi.fn(async () => null),
+})),
   clerkClient: vi.fn(async () => ({
     users: {
       getUser: vi.fn(async (userId: string) => ({

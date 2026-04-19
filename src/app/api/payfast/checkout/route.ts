@@ -5,7 +5,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
 import { createSubscriptionCheckout, PLANS, DEFAULT_CURRENCY, type PayFastCurrency } from '@/lib/payfast';
 import { db } from '@/lib/db';
 import { organizations } from '@/lib/db/schema';

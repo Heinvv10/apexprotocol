@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ClerkProvider } from "@/components/providers/clerk-provider";
+import { SupabaseAuthSync } from "@/components/providers/supabase-auth-sync";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ToastProvider, Toaster } from "@/components/toast";
 import { QueryProvider } from "@/components/providers/query-provider";
@@ -71,23 +71,22 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning data-brand={brand.name.toLowerCase()}>
       <body className={`${inter.variable} antialiased`}>
-        <ClerkProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem={false}
-            disableTransitionOnChange
-          >
-            <QueryProvider>
-              <RealtimeProvider>
-                <ToastProvider>
-                  {children}
-                  <Toaster />
-                </ToastProvider>
-              </RealtimeProvider>
-            </QueryProvider>
-          </ThemeProvider>
-        </ClerkProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <QueryProvider>
+            <RealtimeProvider>
+              <ToastProvider>
+                <SupabaseAuthSync />
+                {children}
+                <Toaster />
+              </ToastProvider>
+            </RealtimeProvider>
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

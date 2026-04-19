@@ -324,7 +324,6 @@ describe("E2E Workflow: AI Recommendations Generation Lifecycle", () => {
     mockGenerateRecommendations.mockResolvedValue([]);
 
     // Set up mocks
-    vi.doMock("@clerk/nextjs/server", () => ({
       auth: mockAuth,
     }));
 

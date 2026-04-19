@@ -6,8 +6,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock Clerk auth
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: vi.fn(() => Promise.resolve({ userId: "test-user-123" })),
+vi.mock("@/lib/auth/supabase-server", () => ({
+  getSession: vi.fn(async () => ({ userId: "test-user-id", orgId: "test-org-id", orgRole: "admin", orgSlug: null })),
+  currentDbUser: vi.fn(async () => null),
+})),
 }));
 
 // Mock database and schema
@@ -320,7 +322,7 @@ describe("AI Insights API Routes", () => {
 
     it("should return 401 when user is not authenticated", async () => {
       // Mock auth to return no userId
-      const { auth } = await import("@clerk/nextjs/server");
+      const { auth } = await import("@/lib/auth/supabase-server");
       vi.mocked(auth).mockResolvedValueOnce({ userId: null } as never);
 
       const request = {
@@ -503,7 +505,7 @@ describe("AI Insights API Routes", () => {
     });
 
     it("should return 401 when user is not authenticated", async () => {
-      const { auth } = await import("@clerk/nextjs/server");
+      const { auth } = await import("@/lib/auth/supabase-server");
       vi.mocked(auth).mockResolvedValueOnce({ userId: null } as never);
 
       const request = {
@@ -682,7 +684,7 @@ describe("AI Insights API Routes", () => {
     });
 
     it("should return 401 when user is not authenticated", async () => {
-      const { auth } = await import("@clerk/nextjs/server");
+      const { auth } = await import("@/lib/auth/supabase-server");
       vi.mocked(auth).mockResolvedValueOnce({ userId: null } as never);
 
       const request = {

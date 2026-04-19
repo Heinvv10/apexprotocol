@@ -279,7 +279,6 @@ describe("Recommendations API Integration Tests", () => {
     });
 
     // Set up mocks
-    vi.doMock("@clerk/nextjs/server", () => ({
       auth: mockAuth,
     }));
 

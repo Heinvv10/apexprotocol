@@ -63,20 +63,3 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mock Clerk
-vi.mock("@clerk/nextjs", () => ({
-  useClerk: () => ({
-    signOut: vi.fn(),
-    openUserProfile: vi.fn(),
-  }),
-  useUser: () => ({
-    user: {
-      id: "test-user-id",
-      firstName: "Test",
-      lastName: "User",
-      emailAddresses: [{ emailAddress: "test@example.com" }],
-    },
-    isLoaded: true,
-    isSignedIn: true,
-  }),
-  ClerkProvider: ({ children }: { children: React.ReactNode }) => children,
-}));

@@ -23,8 +23,6 @@ if (!isRealDatabase) {
 }
 process.env.UPSTASH_REDIS_REST_URL = "https://test.upstash.io";
 process.env.UPSTASH_REDIS_REST_TOKEN = "test-token";
-process.env.CLERK_SECRET_KEY = "test-clerk-secret";
-process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "test-clerk-publishable";
 process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
 process.env.PINECONE_API_KEY = "test-pinecone-key";
 process.env.PINECONE_INDEX = "test-index";
@@ -96,24 +94,6 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mock Clerk for frontend tests
-vi.mock("@clerk/nextjs", () => ({
-  useClerk: () => ({
-    signOut: vi.fn(),
-    openUserProfile: vi.fn(),
-  }),
-  useUser: () => ({
-    user: {
-      id: "test-user-id",
-      firstName: "Test",
-      lastName: "User",
-      emailAddresses: [{ emailAddress: "test@example.com" }],
-    },
-    isLoaded: true,
-    isSignedIn: true,
-  }),
-  ClerkProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
-
 // Mock NextResponse for API route testing
 vi.mock("next/server", () => {
   class MockHeaders {
@@ -209,13 +189,3 @@ vi.mock("@/lib/db", () => ({
 }));
 
 // Mock Clerk auth
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: vi.fn(() => ({
-    userId: "test-user-id",
-    orgId: "test-org-id",
-  })),
-  currentUser: vi.fn(() => ({
-    id: "test-user-id",
-    emailAddresses: [{ emailAddress: "test@example.com" }],
-  })),
-}));

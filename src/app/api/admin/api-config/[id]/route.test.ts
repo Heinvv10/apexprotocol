@@ -14,8 +14,10 @@ import {
 } from "../__test-constants";
 
 // Mock Clerk auth
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: vi.fn(async () => ({ userId: "test-super-admin-id" })),
+vi.mock("@/lib/auth/supabase-server", () => ({
+  getSession: vi.fn(async () => ({ userId: "test-user-id", orgId: "test-org-id", orgRole: "admin", orgSlug: null })),
+  currentDbUser: vi.fn(async () => null),
+})),
 }));
 
 // Mock super-admin check
@@ -334,7 +336,7 @@ describe("DELETE /api/admin/api-config/:id - Delete Integration (FR-6)", () => {
 
 describe("Security - All [id] Routes (SR-1, SR-2)", () => {
   it("GET should return 401 when not authenticated", async () => {
-    const { auth } = await import("@clerk/nextjs/server");
+    const { auth } = await import("@/lib/auth/supabase-server");
     vi.mocked(auth).mockResolvedValueOnce({ userId: null } as any);
 
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/test-id");
@@ -354,7 +356,7 @@ describe("Security - All [id] Routes (SR-1, SR-2)", () => {
   });
 
   it("PATCH should return 401 when not authenticated", async () => {
-    const { auth } = await import("@clerk/nextjs/server");
+    const { auth } = await import("@/lib/auth/supabase-server");
     vi.mocked(auth).mockResolvedValueOnce({ userId: null } as any);
 
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/test-id", {
@@ -382,7 +384,7 @@ describe("Security - All [id] Routes (SR-1, SR-2)", () => {
   });
 
   it("DELETE should return 401 when not authenticated", async () => {
-    const { auth } = await import("@clerk/nextjs/server");
+    const { auth } = await import("@/lib/auth/supabase-server");
     vi.mocked(auth).mockResolvedValueOnce({ userId: null } as any);
 
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/test-id", {

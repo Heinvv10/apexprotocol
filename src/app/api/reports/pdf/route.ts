@@ -6,7 +6,6 @@
 
 import React from 'react';
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { db } from '@/lib/db';
 import { brands, organizations } from '@/lib/db/schema';

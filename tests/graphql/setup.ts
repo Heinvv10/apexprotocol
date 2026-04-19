@@ -164,10 +164,8 @@ export function createDbModuleMock() {
  *
  * Use this in your test file's top-level vi.mock() call:
  * ```typescript
- * vi.mock("@clerk/nextjs/server", () => createClerkMock({ userId: "user-1", orgId: "org-1" }));
  * ```
  */
-export function createClerkMock(
   authData: { userId: string; orgId: string } = {
     userId: "test-user-id",
     orgId: "test-org-id",

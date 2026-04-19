@@ -16,8 +16,10 @@ import {
 } from "./__test-constants";
 
 // Mock Clerk auth
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: vi.fn(async () => ({ userId: "test-super-admin-id" })),
+vi.mock("@/lib/auth/supabase-server", () => ({
+  getSession: vi.fn(async () => ({ userId: "test-user-id", orgId: "test-org-id", orgRole: "admin", orgSlug: null })),
+  currentDbUser: vi.fn(async () => null),
+})),
 }));
 
 // Mock super-admin check
@@ -209,7 +211,7 @@ describe("GET /api/admin/api-config - Search and Filter (FR-7)", () => {
 
 describe("GET /api/admin/api-config - Security (SR-1, SR-2)", () => {
   it("should return 401 when not authenticated", async () => {
-    const { auth } = await import("@clerk/nextjs/server");
+    const { auth } = await import("@/lib/auth/supabase-server");
     vi.mocked(auth).mockResolvedValueOnce({ userId: null } as any);
 
     const request = new NextRequest("http://localhost:3000/api/admin/api-config");
@@ -381,7 +383,7 @@ describe("POST /api/admin/api-config - Security", () => {
   it.skip("should return 401 when not authenticated", async () => {
     // Skip: Mock override for per-test auth state not working with vi.mock hoisting
     // Would need integration test or different mock strategy
-    const { auth } = await import("@clerk/nextjs/server");
+    const { auth } = await import("@/lib/auth/supabase-server");
     vi.mocked(auth).mockResolvedValueOnce({ userId: null } as any);
 
     const request = new NextRequest("http://localhost:3000/api/admin/api-config", {

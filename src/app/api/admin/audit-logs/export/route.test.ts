@@ -11,8 +11,9 @@ import { NextRequest } from "next/server";
 import { POST } from "./route";
 
 // Mock Clerk auth
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: vi.fn(),
+vi.mock("@/lib/auth/supabase-server", () => ({
+  getSession: vi.fn(async () => ({ userId: "test-user-id", orgId: "test-org-id", orgRole: "admin", orgSlug: null })),
+  currentDbUser: vi.fn(async () => null),
 }));
 
 // Mock super-admin check

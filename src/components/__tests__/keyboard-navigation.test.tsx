@@ -39,7 +39,6 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mock Clerk auth
-vi.mock("@clerk/nextjs", () => ({
   useAuth: () => ({
     userId: "user-123",
     isLoaded: true,
