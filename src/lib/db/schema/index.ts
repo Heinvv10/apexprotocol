@@ -758,3 +758,30 @@ export {
   type NewDashboardVersion,
   type DashboardConfig,
 } from "./dashboard-versions";
+
+// Recommendation lift measurement (🏆 FR-REC-007/013)
+export {
+  recommendationLift,
+  recommendationLiftRelations,
+  type RecommendationLift,
+  type NewRecommendationLift,
+  type LiftSnapshot,
+} from "./recommendation-lift";
+
+// Usage metering for usage-based billing + agency sub-billing
+export {
+  usageEvents,
+  usageEventsRelations,
+  usageEventKindEnum,
+  type UsageEvent,
+  type NewUsageEvent,
+} from "./usage-meters";
+
+// AI bot crawl log (FR-MON-033)
+export {
+  botCrawls,
+  botCrawlsRelations,
+  aiCrawlerEnum,
+  type BotCrawl,
+  type NewBotCrawl,
+} from "./bot-crawls";
