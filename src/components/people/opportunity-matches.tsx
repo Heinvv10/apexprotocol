@@ -455,7 +455,7 @@ function MatchDetailDialog({
               <DialogTitle>{opp.name}</DialogTitle>
               <DialogDescription>
                 {opp.organizer || config.label}
-                {opp.isFeatured && " â€¢ Featured Event"}
+                {opp.isFeatured && " • Featured Event"}
               </DialogDescription>
             </div>
           </div>

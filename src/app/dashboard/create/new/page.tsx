@@ -163,23 +163,23 @@ export default function NewContentPage() {
             <div className="font-medium">AI Optimization Tips</div>
             <ul className="text-sm text-muted-foreground space-y-2">
               <li className="flex items-start gap-2">
-                <span className="text-success mt-1">â€¢</span>
+                <span className="text-success mt-1">•</span>
                 Use clear, descriptive headings
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-success mt-1">â€¢</span>
+                <span className="text-success mt-1">•</span>
                 Include FAQ-style Q&A sections
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-success mt-1">â€¢</span>
+                <span className="text-success mt-1">•</span>
                 Add structured data markup
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-success mt-1">â€¢</span>
+                <span className="text-success mt-1">•</span>
                 Keep paragraphs concise
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-success mt-1">â€¢</span>
+                <span className="text-success mt-1">•</span>
                 Use bullet points for lists
               </li>
             </ul>

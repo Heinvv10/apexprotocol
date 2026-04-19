@@ -464,7 +464,7 @@ export default function BrandCompetitorsPage({ params }: { params: Promise<{ bra
                 <ul className="space-y-2">
                   {gapsData.recommendations.slice(0, 3).map((rec: string, i: number) => (
                     <li key={i} className="text-xs text-muted-foreground/80 flex items-start gap-2">
-                      <span className="text-primary">â€¢</span>
+                      <span className="text-primary">•</span>
                       {rec}
                     </li>
                   ))}

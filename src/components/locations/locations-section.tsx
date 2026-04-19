@@ -273,7 +273,7 @@ export function LocationsSection({
           <div>
             <h3 className="font-semibold text-foreground">Locations</h3>
             <p className="text-xs text-muted-foreground">
-              {summary?.totalLocations || 0} locations â€¢ {summary?.totalReviews || 0} reviews
+              {summary?.totalLocations || 0} locations • {summary?.totalReviews || 0} reviews
             </p>
           </div>
         </div>
@@ -495,7 +495,7 @@ export function LocationsWidget({
       </div>
       {data.avgRating > 0 && (
         <>
-          <span className="text-muted-foreground/50">â€¢</span>
+          <span className="text-muted-foreground/50">•</span>
           <div className="flex items-center gap-1">
             <span className="text-warning">â˜…</span>
             {/* ðŸŸ¢ WORKING: Using centralized formatScore and formatNumber */}

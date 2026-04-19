@@ -256,6 +256,15 @@ export async function GET(request: NextRequest) {
       aiReadiness: aiReadinessScore,
       breakdown,
       history,
+      // Frontend brand-detail page reads geoScore.metrics.totalMentions, etc.
+      // These were computed above but never included in the response, so
+      // every metric card on /dashboard/brands/[id] rendered "0".
+      metrics: {
+        totalMentions,
+        positiveMentions,
+        citedMentions,
+        platforms: Number(platforms) || 0,
+      },
       lastUpdated: new Date().toISOString(),
     };
 

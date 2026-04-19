@@ -249,7 +249,7 @@ export default function BrandDetailPage() {
                   )}
                   {brand.industry && (
                     <>
-                      <span>â€¢</span>
+                      <span>•</span>
                       <span className="capitalize">{brand.industry}</span>
                     </>
                   )}
