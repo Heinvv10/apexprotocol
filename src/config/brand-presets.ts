@@ -27,9 +27,9 @@ export const BRAND_PRESETS = {
     wordmarkSuffix: 'GEO',
     tagline: 'The Credibility Engine for African Business',
     cssFile: 'apex.css',
-    logoUrl: '/brands/apex/logo.svg',
-    logoDarkUrl: '/brands/apex/logo-dark.svg',
-    faviconUrl: '/brands/apex/favicon.ico',
+    logoUrl: '/apex-linkedin-logo.svg',
+    logoDarkUrl: '/apex-linkedin-logo.svg',
+    faviconUrl: '/favicon.ico',
   },
   solstice: {
     name: 'Solstice',

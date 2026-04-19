@@ -82,11 +82,6 @@ const apiKeyAuthRoutes = [
 ];
 
 const superAdminRoutes = ["/admin(.*)", "/api/admin(.*)"];
-const orgAdminRoutes = [
-  "/settings/organization(.*)",
-  "/settings/billing(.*)",
-  "/settings/api-keys(.*)",
-];
 
 function extractBearerToken(authHeader: string | null): string | null {
   if (!authHeader) return null;
@@ -182,6 +177,25 @@ async function productionMiddleware(request: NextRequest) {
   if (matchesPattern(pathname, publicRoutes)) return response;
 
   if (!userId) {
+    // API clients get a JSON 401 — browsers get redirected to /sign-in.
+    // The split is based on the request path (any /api/*) plus Accept header,
+    // because some browsers hit /api/* directly (downloads, embeds) and
+    // should still get redirected.
+    const isApiPath = pathname.startsWith("/api/");
+    const accept = request.headers.get("accept") ?? "";
+    const wantsHtml = accept.includes("text/html");
+    if (isApiPath && !wantsHtml) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "unauthorized",
+            message: "Missing or invalid credentials. Provide a Bearer API key or sign-in cookie.",
+            docs_url: "https://apex.dev/api/docs#auth",
+          },
+        },
+        { status: 401 },
+      );
+    }
     const url = new URL("/sign-in", request.url);
     url.searchParams.set("redirect_to", pathname);
     return NextResponse.redirect(url);
