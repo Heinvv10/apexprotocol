@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { useClerk, useUser } from "@clerk/nextjs";
+import { createBrowserClient } from "@/lib/auth/supabase-browser";
+import { useAuthStore } from "@/stores/auth";
 import { Bell, Search, User, LogOut, Shield, Home } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -30,10 +31,10 @@ export function AdminHeader({ title = "Admin Dashboard" }: AdminHeaderProps) {
   let user: any = null;
 
   try {
-    const clerk = useClerk();
+    const supabase = createBrowserClient();
     const userData = useUser();
-    signOut = clerk.signOut;
-    openUserProfile = clerk.openUserProfile;
+    signOut = supabase.auth.signOut;
+    openUserProfile = () => { window.location.href = "/settings"; };
     user = userData.user;
   } catch (error) {
     // Clerk not configured - use dev mode defaults

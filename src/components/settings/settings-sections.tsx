@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useUser, useClerk } from "@clerk/nextjs";
+import { createBrowserClient } from "@/lib/auth/supabase-browser";
+import { useAuthStore } from "@/stores/auth";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Copy, Eye, EyeOff, Upload, Trash2, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";

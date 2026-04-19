@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { useClerk, useUser } from "@clerk/nextjs";
+import { createBrowserClient } from "@/lib/auth/supabase-browser";
+import { useAuthStore } from "@/stores/auth";
 import { Search, User, LogOut, CreditCard, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -31,9 +32,11 @@ export function Header({ title = "Dashboard" }: HeaderProps) {
   // Safely use Clerk hooks - they may not be available if Clerk is not configured
   let clerkData: { signOut?: () => Promise<void>; openUserProfile?: () => void; user?: any } = {};
   try {
-    const clerk = useClerk();
-    const { user } = useUser();
-    clerkData = { signOut: clerk.signOut, openUserProfile: clerk.openUserProfile, user };
+    const supabase = createBrowserClient();
+    const user = useAuthStore((s) => s.user);
+  const isLoaded = true;
+  const isSignedIn = !!user;
+    clerkData = { signOut: supabase.auth.signOut, openUserProfile: () => { window.location.href = "/settings"; }, user };
   } catch (error) {
     // Clerk not configured - gracefully handle
     console.warn("Clerk not configured");

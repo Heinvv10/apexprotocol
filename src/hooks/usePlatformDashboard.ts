@@ -6,7 +6,7 @@
  */
 
 import useSWR from "swr";
-import { useAuth } from "@clerk/nextjs";
+import { useUserId } from "@/stores/auth";
 
 export interface PlatformMetrics {
   platform: string;
@@ -168,7 +168,8 @@ const dashboardFetcher = async (
  * Hook to fetch multi-platform dashboard data
  */
 export function usePlatformDashboard(brandId?: string | null) {
-  const { isLoaded, userId } = useAuth();
+  const userId = useUserId();
+  const isLoaded = userId !== undefined;
 
   // Build URLs for SWR fetching
   const listUrl = `/api/platforms/list`;
@@ -206,7 +207,8 @@ export function usePlatformDashboard(brandId?: string | null) {
  * Hook to fetch platform list with filtering
  */
 export function usePlatformList(tier?: "tier_1" | "tier_2" | string) {
-  const { isLoaded, userId } = useAuth();
+  const userId = useUserId();
+  const isLoaded = userId !== undefined;
 
   const url = tier
     ? `/api/platforms/list?tier=${tier}`

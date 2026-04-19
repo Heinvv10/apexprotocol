@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { useClerk } from "@clerk/nextjs";
+import { createBrowserClient } from "@/lib/auth/supabase-browser";
 import { useTheme } from "next-themes";
 import {
   Search,

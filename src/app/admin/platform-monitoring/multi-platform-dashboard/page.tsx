@@ -18,7 +18,7 @@ import { RegionalCoverageMap } from "@/components/platform-monitoring/regional-c
 import { PlatformPerformanceTable } from "@/components/platform-monitoring/platform-performance-table";
 import { PlatformDeepDiveModal } from "@/components/platform-monitoring/platform-deep-dive-modal";
 import { PlatformComparisonModal } from "@/components/platform-monitoring/platform-comparison-modal";
-import { useOrganization } from "@clerk/nextjs";
+import { useAuthStore } from "@/stores/auth";
 import { canAccessFeature } from "@/lib/permissions/feature-gates";
 import { usePlatformDashboard } from "@/hooks/usePlatformDashboard";
 import type { PlatformMetrics } from "@/hooks/usePlatformDashboard";

@@ -22,7 +22,7 @@ import {
   Brain,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useUser } from "@clerk/nextjs";
+import { useAuthStore } from "@/stores/auth";
 
 // Bottom navigation items (5 icons)
 const bottomNavItems = [
