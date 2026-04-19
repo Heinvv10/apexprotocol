@@ -53,7 +53,14 @@ export function useContentAnalysis(audit: Audit | null): ContentAnalysis | null 
     if (!audit) return null;
 
     const metadata = (audit.metadata as any) || {};
-    const contentAnalysis = metadata.contentAnalysis || {};
+    const contentAnalysis = metadata.contentAnalysis;
+
+    // If the audit wasn't run with the content-analysis module, the caller's
+    // card should render its "not captured" placeholder rather than getting
+    // fabricated word counts + fake keyword opportunities (the old hook
+    // returned hard-coded constants like 2100/1850/3200 for every brand,
+    // making the UI look like live analysis even without real data).
+    if (!contentAnalysis) return null;
 
     // Content Quality Analysis
     const contentQuality = {

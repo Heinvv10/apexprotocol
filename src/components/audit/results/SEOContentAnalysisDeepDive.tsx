@@ -22,7 +22,10 @@ export function SEOContentAnalysisDeepDive({ audit }: SEOContentAnalysisDeepDive
         <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-muted/50 flex items-center justify-center">
           <Brain className="h-6 w-6 text-muted-foreground" />
         </div>
-        <p className="text-muted-foreground">Loading SEO content analysis...</p>
+        <p className="text-sm font-medium text-foreground">Content analysis not captured</p>
+        <p className="text-xs text-muted-foreground mt-2 max-w-md mx-auto">
+          This audit didn&apos;t include word-count, readability, or keyword-opportunity scoring. Re-run with the content-analysis module enabled.
+        </p>
       </div>
     );
   }

@@ -56,6 +56,12 @@ export function useCompetitorComparison(audit: Audit | null): CompetitorComparis
   return useMemo(() => {
     if (!audit) return null;
 
+    // Only fabricate competitor data in explicit dev-demo mode. In prod and
+    // regular local dev, no real competitor scores means show nothing — the
+    // caller then renders an "analysis not available" placeholder instead of
+    // a leaderboard topped by "leader.example.com".
+    if (process.env.NEXT_PUBLIC_DEMO_COMPETITOR_DATA !== "true") return null;
+
     // Get scores from audit
     const geoScore = Math.round((audit.overallScore || 74) * 0.95);
     const seoScore = Math.round((audit.technicalScore || 72) * 0.98);

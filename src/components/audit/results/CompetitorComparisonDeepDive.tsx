@@ -21,7 +21,10 @@ export function CompetitorComparisonDeepDive({ audit }: CompetitorComparisonDeep
         <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-muted/50 flex items-center justify-center">
           <Zap className="h-6 w-6 text-muted-foreground" />
         </div>
-        <p className="text-muted-foreground">Loading competitor analysis...</p>
+        <p className="text-sm font-medium text-foreground">Competitor comparison not available</p>
+        <p className="text-xs text-muted-foreground mt-2 max-w-md mx-auto">
+          Add competitors in /dashboard/competitive and run audits against them to see head-to-head breakdowns here.
+        </p>
       </div>
     );
   }
