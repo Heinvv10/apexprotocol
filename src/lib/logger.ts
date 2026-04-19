@@ -93,26 +93,53 @@ function emit(level: LogLevel, message: string, context: LogContext): void {
 }
 
 interface Logger {
-  debug(message: string, context?: LogContext): void;
-  info(message: string, context?: LogContext): void;
-  warn(message: string, context?: LogContext): void;
-  error(message: string, context?: LogContext): void;
+  debug(message: string, context?: LogContext | unknown): void;
+  info(message: string, context?: LogContext | unknown): void;
+  warn(message: string, context?: LogContext | unknown): void;
+  error(message: string, context?: LogContext | unknown): void;
   child(boundContext: LogContext): Logger;
+}
+
+/**
+ * Coerce any second-arg value into a LogContext. Plain objects pass through;
+ * Errors get unwrapped into { err: { name, message, stack } }; primitives /
+ * arrays get wrapped as { value: … } so call sites that pass non-object
+ * values still produce structured logs instead of type errors.
+ *
+ * Necessary because the project-wide console.log→logger.info migration
+ * left many sites passing strings or unknown error catches as the second
+ * argument; the old logger enforced Record<string, unknown> strictly.
+ */
+function toContext(input: unknown): LogContext {
+  if (input === undefined || input === null) return {};
+  if (input instanceof Error) {
+    return {
+      err: {
+        name: input.name,
+        message: input.message,
+        stack: input.stack?.split("\n").slice(0, 10).join("\n"),
+      },
+    };
+  }
+  if (typeof input === "object" && !Array.isArray(input)) {
+    return input as LogContext;
+  }
+  return { value: input };
 }
 
 function makeLogger(bound: LogContext = {}): Logger {
   return {
-    debug(message, context = {}) {
-      emit("debug", message, { ...bound, ...context });
+    debug(message, context) {
+      emit("debug", message, { ...bound, ...toContext(context) });
     },
-    info(message, context = {}) {
-      emit("info", message, { ...bound, ...context });
+    info(message, context) {
+      emit("info", message, { ...bound, ...toContext(context) });
     },
-    warn(message, context = {}) {
-      emit("warn", message, { ...bound, ...context });
+    warn(message, context) {
+      emit("warn", message, { ...bound, ...toContext(context) });
     },
-    error(message, context = {}) {
-      emit("error", message, { ...bound, ...context });
+    error(message, context) {
+      emit("error", message, { ...bound, ...toContext(context) });
     },
     child(boundContext: LogContext) {
       return makeLogger({ ...bound, ...boundContext });
