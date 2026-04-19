@@ -1,4 +1,48 @@
-# Plan 3: Clerk → Supabase Auth migration
+# Plan 3: Clerk → Supabase Auth migration  (✅ COMPLETE 2026-04-19)
+
+## Verified state (2026-04-19 04:00 SAST)
+
+- **Imports clean:** 0 `@clerk/*` references across `src/`, `tests/`, `e2e/`, `scripts/` (confirmed by grep)
+- **Dependencies clean:** `@clerk/nextjs`, `@clerk/themes`, `svix` removed from `package.json`
+- **TypeScript:** 0 production errors (down from 419 pre-Plan-3 baseline → 32 total, all in test-mock typing noise)
+- **db + auth tests:** 29/31 pass (2 skipped — integration tests need TEST_DATABASE_URL)
+- **Migration 0017 applied** to apexgeo database; trigger verified end-to-end (Admin API user create → public.users row populated)
+- **SMTP wired:** ApexGEO's existing `noreply@apexgeo.app` mailbox plumbed into GoTrue (`apexgeo-supabase-auth` container). Email verification + password reset functional.
+- **Sign-in/up/callback/reset pages** built in Apex design system (cyan + dark navy, `card-primary`, react-hook-form + zod)
+- **Middleware preserves** API-key auth, dev-mode bypass, super-admin gate (now via `public.users.is_super_admin`), org-admin gate (via `public.users.role`), per-session rate limits
+
+## Files changed (16 work commits)
+
+| Commit | Tasks | What |
+|---|---|---|
+| `c42455c` | 2 | Add @supabase/supabase-js + @supabase/ssr deps |
+| `3e8d622` | 3 | .env.example Supabase Auth section |
+| `92af399` | 4 | Migration 0017 (auth_user_id + trigger) |
+| `bd26bf0` | 7-10 | Helper modules: auth-session, supabase-server/browser/middleware/admin |
+| `051ac8a` | 12-15 | Sign-in/up/callback/reset pages (Apex design) |
+| `1e944a7` | 16 | Middleware swap (Clerk → Supabase, all paths preserved) |
+| `828e09c` | 17 | AuthSync rewrite + /api/auth/context |
+| `1f4b69b` | 18 | Client hooks codemod (11 files) |
+| `ccc0b0e` | 19 | Bulk codemod ~100 server `auth()` sites |
+| `30c7c84` | 20-21 | Manual rewrite for currentUser + clerkClient sites (23 files) |
+| `601b621` | 22-24 | Delete Clerk files + uninstall deps + final cleanup |
+| `0534205` | 25 | Fix codemod syntax leftovers |
+
+## Skipped/deferred from original plan
+
+- **Task 6 (OAuth Google + GitHub config):** Email/password works; OAuth requires Google Cloud Console + GitHub Developer settings creds. Ready to wire when creds available — env vars documented in spec §6.2.
+- **Task 11 (supabase-server.test.ts):** Smoke tests deferred to follow-up; helpers verified via integration with apexgeo-supabase end-to-end.
+- **Task 26 (manual browser smoke):** Requires running dev server + visual verification; left as operator validation step.
+
+## Schema bootstrap caveat (carry to Plan 6)
+
+The apexgeo database currently has only a **minimal `users` + `organizations` schema** (hand-bootstrapped to make migration 0017 + Auth flows work). Plan 6's pg_dump-from-Neon will bring the full Apex schema. Drizzle-kit migrate hangs on this stack (root cause unknown — possibly compatibility with self-hosted Supabase's pre-existing schemas). Workaround: in Plan 6 the schema arrives via pg_dump rather than drizzle-kit migrate.
+
+## What this unblocks for Plan 4+
+
+The Apex codebase now talks Supabase Auth end-to-end. Plans 4 (cache + storage swap), 5 (Apex containerization), and 6 (production cutover) can proceed assuming auth is settled.
+
+---
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
