@@ -808,17 +808,23 @@ function BrandsPageContent() {
               )}
 
               {/* Confidence Score (if available) */}
-              {brand.confidence?.overall > 0 && (
-                <div className="mb-4 flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary transition-all"
-                      style={{ width: `${brand.confidence.overall}%` }}
-                    />
+              {/* Handle two storage conventions: scraper writes 0-1 decimals, */}
+              {/* manual edits may write 0-100. Normalize at the display site. */}
+              {brand.confidence?.overall > 0 && (() => {
+                const raw = brand.confidence.overall;
+                const pct = Math.round(raw <= 1 ? raw * 100 : raw);
+                return (
+                  <div className="mb-4 flex items-center gap-2">
+                    <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-muted-foreground">{pct}%</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{brand.confidence.overall}%</span>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Monitoring Platforms */}
               <div className="border-t border-border pt-4">

@@ -96,9 +96,13 @@ export function KeywordOpportunitiesCard({ opportunities }: KeywordOpportunities
         {opportunities.map((opp, idx) => {
           const impact = getImpactBadge(opp.estimatedImpact);
           const increase = opp.suggestedMentions - opp.currentMentions;
-          const increasePercent = Math.round(
-            ((opp.suggestedMentions - opp.currentMentions) / opp.currentMentions) * 100 || 0
-          );
+          // currentMentions === 0 → division by zero is Infinity, not NaN, so
+          // the `|| 0` fallback doesn't catch it. Show a dash instead of a
+          // percentage when there's no baseline to compute against.
+          const hasBaseline = opp.currentMentions > 0;
+          const increasePercent = hasBaseline
+            ? Math.round(((opp.suggestedMentions - opp.currentMentions) / opp.currentMentions) * 100)
+            : null;
 
           return (
             <div key={idx} className="card-tertiary p-4 border rounded-lg space-y-2">
@@ -141,7 +145,10 @@ export function KeywordOpportunitiesCard({ opportunities }: KeywordOpportunities
                 <Zap className="h-3 w-3 text-primary" />
                 <span className="text-xs text-muted-foreground">
                   <strong className="text-primary">{increase}</strong> additional mentions
-                  ({increasePercent > 0 ? "+" : ""}{increasePercent}%)
+                  {increasePercent !== null && (
+                    <> ({increasePercent > 0 ? "+" : ""}{increasePercent}%)</>
+                  )}
+                  {increasePercent === null && <> (new keyword)</>}
                 </span>
               </div>
             </div>
