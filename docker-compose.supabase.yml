@@ -1,0 +1,224 @@
+# Apex — dev/on-server stack extension on top of self-hosted Supabase.
+#
+# Adds: LiteLLM proxy, Langfuse (observability), Grafana Loki (log aggregation).
+# Assumes Supabase's own docker-compose is already running on the same host.
+#
+# Usage:
+#   # From the Supabase compose dir (e.g. /opt/supabase/supabase/docker)
+#   docker compose -f docker-compose.yml -f /path/to/apex/docker-compose.supabase.yml up -d
+#
+# All services bind to a shared 'supabase_network'. They stay internal; external
+# traffic goes through the Kong gateway the main Supabase compose already runs.
+
+name: apex-extensions
+
+networks:
+  default:
+    name: supabase_network_${COMPOSE_PROJECT_NAME:-supabase}
+    external: true
+
+services:
+  # ---------------------------------------------------------------------------
+  # LiteLLM proxy — single entrypoint for all LLM providers (TR-ARC-002)
+  # ---------------------------------------------------------------------------
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    container_name: apex-litellm
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4000:4000"
+    volumes:
+      - ./infra/litellm/config.yaml:/app/config.yaml:ro
+    environment:
+      # Master key for the proxy admin API (internal use only)
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?LITELLM_MASTER_KEY is required}
+      # Provider keys — sourced from host env (.env on project server)
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      PERPLEXITY_API_KEY: ${PERPLEXITY_API_KEY:-}
+      XAI_API_KEY: ${XAI_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      # Persist budgets / keys / usage in the same Postgres Supabase uses
+      DATABASE_URL: ${LITELLM_DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/postgres}
+      STORE_MODEL_IN_DB: "True"
+      # Langfuse integration — every request auto-traced
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_HOST: http://langfuse-web:3000
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--num_workers", "4"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/health/liveliness"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # Langfuse — LLM observability (TR-ARC-001 / NFR-OBS-001)
+  # Self-hosted, uses dedicated Postgres + ClickHouse for traces.
+  # ---------------------------------------------------------------------------
+  langfuse-cache:
+    image: redis:7-alpine
+    container_name: apex-langfuse-cache
+    restart: unless-stopped
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  langfuse-clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    container_name: apex-langfuse-clickhouse
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:-changeme}
+      CLICKHOUSE_DB: default
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - langfuse_clickhouse_data:/var/lib/clickhouse
+      - langfuse_clickhouse_logs:/var/log/clickhouse-server
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8123/ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  langfuse-minio:
+    image: minio/minio
+    container_name: apex-langfuse-minio
+    restart: unless-stopped
+    entrypoint: sh
+    command: -c 'mkdir -p /data/langfuse && minio server --address ":9000" --console-address ":9001" /data'
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: ${LANGFUSE_MINIO_PASSWORD:-changeme}
+    volumes:
+      - langfuse_minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  langfuse-worker:
+    image: langfuse/langfuse-worker:3
+    container_name: apex-langfuse-worker
+    restart: unless-stopped
+    depends_on:
+      langfuse-cache:
+        condition: service_healthy
+      langfuse-clickhouse:
+        condition: service_healthy
+      langfuse-minio:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${LANGFUSE_DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/langfuse}
+      SALT: ${LANGFUSE_SALT:?LANGFUSE_SALT is required}
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:?LANGFUSE_ENCRYPTION_KEY is required}
+      TELEMETRY_ENABLED: "false"
+      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "false"
+      CLICKHOUSE_MIGRATION_URL: clickhouse://langfuse-clickhouse:9000
+      CLICKHOUSE_URL: http://langfuse-clickhouse:8123
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:-changeme}
+      CLICKHOUSE_CLUSTER_ENABLED: "false"
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: minio
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:-changeme}
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+      REDIS_HOST: langfuse-cache
+      REDIS_PORT: "6379"
+
+  langfuse-web:
+    image: langfuse/langfuse:3
+    container_name: apex-langfuse-web
+    restart: unless-stopped
+    depends_on:
+      langfuse-worker:
+        condition: service_started
+    ports:
+      - "127.0.0.1:3002:3000"
+    environment:
+      DATABASE_URL: ${LANGFUSE_DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/langfuse}
+      SALT: ${LANGFUSE_SALT:?LANGFUSE_SALT is required}
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:?LANGFUSE_ENCRYPTION_KEY is required}
+      NEXTAUTH_URL: ${LANGFUSE_NEXTAUTH_URL:-http://localhost:3002}
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:?LANGFUSE_NEXTAUTH_SECRET is required}
+      TELEMETRY_ENABLED: "false"
+      LANGFUSE_INIT_ORG_ID: apex
+      LANGFUSE_INIT_ORG_NAME: Apex
+      LANGFUSE_INIT_PROJECT_ID: apex-default
+      LANGFUSE_INIT_PROJECT_NAME: Apex Platform
+      CLICKHOUSE_MIGRATION_URL: clickhouse://langfuse-clickhouse:9000
+      CLICKHOUSE_URL: http://langfuse-clickhouse:8123
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:-changeme}
+      CLICKHOUSE_CLUSTER_ENABLED: "false"
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: minio
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:-changeme}
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+      REDIS_HOST: langfuse-cache
+      REDIS_PORT: "6379"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/public/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+
+  # ---------------------------------------------------------------------------
+  # Grafana Loki — log aggregation for structured JSON logs (NFR-OBS-003)
+  # ---------------------------------------------------------------------------
+  loki:
+    image: grafana/loki:3.2.0
+    container_name: apex-loki
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3100:3100"
+    volumes:
+      - ./infra/observability/loki.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3100/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: apex-grafana
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3003:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/observability/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+    depends_on:
+      loki:
+        condition: service_healthy
+
+volumes:
+  langfuse_clickhouse_data:
+  langfuse_clickhouse_logs:
+  langfuse_minio_data:
+  loki_data:
+  grafana_data:

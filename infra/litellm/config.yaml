@@ -1,0 +1,130 @@
+# LiteLLM proxy configuration for Apex (TR-ARC-002).
+#
+# Every LLM call in the Apex codebase hits LiteLLM as a single OpenAI-compatible
+# endpoint. LiteLLM fans out to the right provider, handles fallbacks, tracks
+# spend, and emits traces to Langfuse.
+#
+# Model aliases must match the names used in src/lib/llm/client.ts.
+
+model_list:
+  # ---------------- Anthropic ----------------
+  - model_name: claude-opus-4-7
+    litellm_params:
+      model: anthropic/claude-opus-4-7
+      api_key: os.environ/ANTHROPIC_API_KEY
+      rpm: 200
+      tpm: 500000
+  - model_name: claude-sonnet-4-6
+    litellm_params:
+      model: anthropic/claude-sonnet-4-6
+      api_key: os.environ/ANTHROPIC_API_KEY
+      rpm: 500
+      tpm: 1000000
+  - model_name: claude-haiku-4-5
+    litellm_params:
+      model: anthropic/claude-haiku-4-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+      rpm: 1000
+      tpm: 2000000
+  - model_name: claude-3-5-sonnet
+    litellm_params:
+      model: anthropic/claude-3-5-sonnet-latest
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  # ---------------- OpenAI ----------------
+  - model_name: gpt-5
+    litellm_params:
+      model: openai/gpt-5
+      api_key: os.environ/OPENAI_API_KEY
+      rpm: 500
+      tpm: 500000
+  - model_name: gpt-5.2
+    litellm_params:
+      model: openai/gpt-5.2
+      api_key: os.environ/OPENAI_API_KEY
+  - model_name: gpt-4o
+    litellm_params:
+      model: openai/gpt-4o
+      api_key: os.environ/OPENAI_API_KEY
+  - model_name: gpt-4o-mini
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+
+  # ---------------- Google Gemini ----------------
+  - model_name: gemini-2.5-pro
+    litellm_params:
+      model: gemini/gemini-2.5-pro
+      api_key: os.environ/GEMINI_API_KEY
+  - model_name: gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY
+
+  # ---------------- Perplexity ----------------
+  - model_name: perplexity-sonar
+    litellm_params:
+      model: perplexity/sonar
+      api_key: os.environ/PERPLEXITY_API_KEY
+  - model_name: perplexity-sonar-pro
+    litellm_params:
+      model: perplexity/sonar-pro
+      api_key: os.environ/PERPLEXITY_API_KEY
+
+  # ---------------- xAI Grok ----------------
+  - model_name: grok-4
+    litellm_params:
+      model: xai/grok-4
+      api_key: os.environ/XAI_API_KEY
+  - model_name: grok-4-fast
+    litellm_params:
+      model: xai/grok-4-fast
+      api_key: os.environ/XAI_API_KEY
+
+  # ---------------- DeepSeek ----------------
+  - model_name: deepseek-chat
+    litellm_params:
+      model: deepseek/deepseek-chat
+      api_key: os.environ/DEEPSEEK_API_KEY
+  - model_name: deepseek-reasoner
+    litellm_params:
+      model: deepseek/deepseek-reasoner
+      api_key: os.environ/DEEPSEEK_API_KEY
+
+# Fallback routing — primary fails (429/5xx) → try these in order.
+litellm_settings:
+  fallbacks:
+    - claude-opus-4-7: [claude-sonnet-4-6, gpt-5]
+    - claude-sonnet-4-6: [claude-haiku-4-5, gpt-4o]
+    - gpt-5: [gpt-5.2, claude-opus-4-7]
+    - gpt-4o: [gpt-4o-mini, claude-sonnet-4-6]
+    - gemini-2.5-pro: [claude-sonnet-4-6, gpt-4o]
+
+  # Redact prompts over this size before shipping to Langfuse (bytes)
+  redact_messages_in_exceptions: true
+  max_request_size_bytes: 1048576
+
+  # Per-request defaults
+  request_timeout: 120
+  num_retries: 2
+
+  # Tracing — pipe every call to Langfuse
+  success_callback: ["langfuse"]
+  failure_callback: ["langfuse"]
+
+# General proxy settings
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL
+  store_model_in_db: true
+  # Per-tenant budget enforcement — keys created via proxy admin API
+  # carry a tenant_id metadata that resolves to a budget.
+  max_budget: 50  # USD default budget cap per api-key if none set
+  budget_duration: 30d
+
+# User-level tagging — X-Tenant-Id header from our app becomes a tag on the trace
+router_settings:
+  redis_host: apex-langfuse-cache
+  redis_port: 6379
+  routing_strategy: usage-based-routing-v2
+  enable_pre_call_checks: true
