@@ -300,7 +300,7 @@ async function processScrapeJob(
       job.progressMessage = "Analysis complete!";
       job.data = result;
       job.completedAt = new Date().toISOString();
-      await redis.set(jobKey, JSON.stringify(job), { ex: 3600 });
+      await redis.setex(jobKey, 3600, JSON.stringify(job));
     }
   } catch (error) {
     console.error(`[BrandScrape] Job ${jobId} error:`, error);
@@ -313,7 +313,7 @@ async function processScrapeJob(
       job.progressMessage = "Analysis failed";
       job.error = error instanceof Error ? error.message : "Unknown error occurred";
       job.completedAt = new Date().toISOString();
-      await redis.set(jobKey, JSON.stringify(job), { ex: 3600 });
+      await redis.setex(jobKey, 3600, JSON.stringify(job));
     }
   }
 }
@@ -333,7 +333,7 @@ async function updateJobProgress(
     job.status = status;
     job.progress = progress;
     job.progressMessage = progressMessage;
-    await redis.set(jobKey, JSON.stringify(job), { ex: 3600 });
+    await redis.setex(jobKey, 3600, JSON.stringify(job));
   }
 }
 

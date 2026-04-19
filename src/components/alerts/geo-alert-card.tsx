@@ -37,7 +37,7 @@ import {
   getPlatformDisplayName,
   type AlertSeverity,
   type GeoAlertType,
-} from "@/lib/geo/alert-generator";
+} from "@/lib/geo/alert-utils";
 
 interface GeoAlertCardProps {
   alert: GeoAlert;

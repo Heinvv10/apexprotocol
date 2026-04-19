@@ -31,7 +31,7 @@ const notificationSchema = z.object({
  */
 const isRedisConfigured = () => {
   const url = process.env.REDIS_URL;
-  return !!url && !!token && url !== "undefined" && token !== "undefined";
+  return !!url && url !== "undefined";
 };
 
 /**

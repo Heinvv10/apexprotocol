@@ -19,7 +19,7 @@ import { initializeTier1Platforms } from "@/lib/monitoring/platform-registry";
 export async function POST(request: NextRequest) {
   try {
     const __session = await getSession();
-  const { userId, has } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
+    const { userId } = __session ?? { userId: null };
 
     if (!userId) {
       return NextResponse.json(

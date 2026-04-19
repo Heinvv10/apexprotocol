@@ -711,7 +711,7 @@ export default function SettingsClient() {
                             {user.fullName || user.firstName || "User"}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            {user.primaryEmailAddress?.emailAddress || "No email"}
+                            {user.email || "No email"}
                           </p>
                         </div>
                       </>

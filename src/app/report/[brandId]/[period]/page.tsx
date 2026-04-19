@@ -95,9 +95,8 @@ export default async function ReportPage({ params, searchParams }: Props) {
 
   // Allow ?token=preview for unauthenticated access (Puppeteer)
   if (token !== "preview") {
-    const { auth } = await import("@/lib/auth/supabase-server");
     const __session = await getSession();
-  const { userId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
+    const { userId } = __session ?? { userId: null };
     if (!userId) notFound();
   }
 

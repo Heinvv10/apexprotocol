@@ -129,15 +129,15 @@ async function sendDigests(frequency: "daily" | "weekly"): Promise<{
           continue;
         }
 
-        // Get user email from Clerk
-                const clerkUser = await getUserByAuthId(preference.userId);
-        if (!clerkUser?.emailAddresses?.[0]?.emailAddress) {
+        // Get user email from database
+        const dbUser = await getUserByAuthId(preference.userId);
+        if (!dbUser?.email) {
           result.errors.push(`No email address for user ${preference.userId}`);
           result.failed++;
           continue;
         }
 
-        const userEmail = clerkUser.email;
+        const userEmail = dbUser.email;
 
         // Convert notifications to digest format
         const digestNotifications: DigestNotification[] = userNotifications.map((n) => ({

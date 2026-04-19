@@ -217,7 +217,7 @@ export function MobileSidebarDrawer({
                     {user.fullName || user.firstName || "User"}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {user.primaryEmailAddress?.emailAddress || "View profile"}
+                    {user.email || "View profile"}
                   </p>
                 </div>
               </>

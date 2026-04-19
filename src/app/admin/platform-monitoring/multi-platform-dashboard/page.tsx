@@ -18,7 +18,7 @@ import { RegionalCoverageMap } from "@/components/platform-monitoring/regional-c
 import { PlatformPerformanceTable } from "@/components/platform-monitoring/platform-performance-table";
 import { PlatformDeepDiveModal } from "@/components/platform-monitoring/platform-deep-dive-modal";
 import { PlatformComparisonModal } from "@/components/platform-monitoring/platform-comparison-modal";
-import { useAuthStore } from "@/stores/auth";
+import { useAuthStore, useOrganization } from "@/stores/auth";
 import { canAccessFeature } from "@/lib/permissions/feature-gates";
 import { usePlatformDashboard } from "@/hooks/usePlatformDashboard";
 import type { PlatformMetrics } from "@/hooks/usePlatformDashboard";
@@ -47,8 +47,8 @@ export default function MultiPlatformDashboard() {
 
   useEffect(() => {
     const checkAccess = async () => {
-      if (organization.organization) {
-        const planId = organization.organization.publicMetadata?.planId as string || "starter";
+      if (organization) {
+        const planId = organization.publicMetadata?.planId as string || "starter";
         const hasAccess = await canAccessFeature("platform_expansion_tier_2", planId as import("@/lib/permissions/feature-gates").Plan);
         setCanAccessTier2(hasAccess);
       }

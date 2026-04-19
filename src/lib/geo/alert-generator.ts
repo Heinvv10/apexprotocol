@@ -12,14 +12,11 @@
  * - Score impacts
  */
 
-import { db } from "@/lib/db";
-import {
-  geoAlerts,
-  type GeoAlert,
-  type NewGeoAlert,
-  type PlatformChange,
+import type {
+  GeoAlert,
+  NewGeoAlert,
+  PlatformChange,
 } from "../db/schema/geo-knowledge-base";
-import { organizations } from "@/lib/db/schema/organizations";
 import type { PlatformBehaviorSignal } from "./platform-monitor";
 
 // Alert type enum values
@@ -728,6 +725,11 @@ export async function generateAlertsFromSignals(
     return { created: 0, errors: 0 };
   }
 
+  // Lazy import to avoid pulling db/pg into client bundles
+  const { db } = await import("@/lib/db");
+  const { organizations } = await import("@/lib/db/schema/organizations");
+  const { geoAlerts } = await import("../db/schema/geo-knowledge-base");
+
   let created = 0;
   let errors = 0;
 
@@ -796,8 +798,6 @@ export async function generateAlertsFromSignals(
 // Alert Database Operations
 // ============================================================================
 
-import { eq, and, desc, isNull, sql } from "drizzle-orm";
-
 /**
  * Get alerts for an organization with optional filters
  */
@@ -810,14 +810,12 @@ export async function getOrganizationAlerts(
     limit?: number;
   } = {}
 ): Promise<GeoAlert[]> {
-  const { unreadOnly, severity, type, limit = 50 } = options;
+  // Lazy import to avoid pulling db/pg into client bundles
+  const { db } = await import("@/lib/db");
+  const { geoAlerts } = await import("../db/schema/geo-knowledge-base");
+  const { eq, and, desc } = await import("drizzle-orm");
 
-  let query = db
-    .select()
-    .from(geoAlerts)
-    .where(eq(geoAlerts.organizationId, organizationId))
-    .orderBy(desc(geoAlerts.createdAt))
-    .limit(limit);
+  const { unreadOnly, severity, type, limit = 50 } = options;
 
   // Apply filters - we need to build a compound where clause
   const conditions = [eq(geoAlerts.organizationId, organizationId)];
@@ -852,6 +850,11 @@ export async function getAlertSummary(organizationId: string): Promise<{
   actionRequired: number;
   byType: Record<GeoAlertType, number>;
 }> {
+  // Lazy import to avoid pulling db/pg into client bundles
+  const { db } = await import("@/lib/db");
+  const { geoAlerts } = await import("../db/schema/geo-knowledge-base");
+  const { eq, and, isNull } = await import("drizzle-orm");
+
   const alerts = await db
     .select()
     .from(geoAlerts)
@@ -897,6 +900,11 @@ export async function getAlertSummary(organizationId: string): Promise<{
  * Mark an alert as read
  */
 export async function markAlertAsRead(alertId: string): Promise<GeoAlert | null> {
+  // Lazy import to avoid pulling db/pg into client bundles
+  const { db } = await import("@/lib/db");
+  const { geoAlerts } = await import("../db/schema/geo-knowledge-base");
+  const { eq } = await import("drizzle-orm");
+
   const [updated] = await db
     .update(geoAlerts)
     .set({ isRead: true, readAt: new Date() })
@@ -910,6 +918,11 @@ export async function markAlertAsRead(alertId: string): Promise<GeoAlert | null>
  * Mark all alerts as read for an organization
  */
 export async function markAllAlertsAsRead(organizationId: string): Promise<number> {
+  // Lazy import to avoid pulling db/pg into client bundles
+  const { db } = await import("@/lib/db");
+  const { geoAlerts } = await import("../db/schema/geo-knowledge-base");
+  const { eq, and } = await import("drizzle-orm");
+
   const result = await db
     .update(geoAlerts)
     .set({ isRead: true, readAt: new Date() })
@@ -927,6 +940,11 @@ export async function markAllAlertsAsRead(organizationId: string): Promise<numbe
  * Dismiss an alert
  */
 export async function dismissAlert(alertId: string): Promise<GeoAlert | null> {
+  // Lazy import to avoid pulling db/pg into client bundles
+  const { db } = await import("@/lib/db");
+  const { geoAlerts } = await import("../db/schema/geo-knowledge-base");
+  const { eq } = await import("drizzle-orm");
+
   const [updated] = await db
     .update(geoAlerts)
     .set({ dismissedAt: new Date() })

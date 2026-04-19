@@ -4,7 +4,7 @@ import { Ratelimit } from "@upstash/ratelimit";
 // Check if Redis is configured
 const isRedisConfigured = () => {
   const url = process.env.REDIS_URL;
-  return !!url && !!token && url !== "undefined" && token !== "undefined";
+  return !!url && url !== "undefined";
 };
 
 // In-memory fallback for development
@@ -78,10 +78,10 @@ class InMemoryRedis {
 }
 
 // Initialize Redis client (with fallback)
-let _redisInstance: Redis | InMemoryRedis | null = null;
+let _redisInstance: IORedis | InMemoryRedis | null = null;
 let _usingFallback = false;
 
-function getRedis(): Redis | InMemoryRedis {
+function getRedis(): IORedis | InMemoryRedis {
   if (!_redisInstance) {
     if (isRedisConfigured()) {
       _redisInstance = new IORedis(process.env.REDIS_URL || "redis://localhost:6379");
@@ -97,7 +97,7 @@ function getRedis(): Redis | InMemoryRedis {
 }
 
 // Export redis getter (maintains API compatibility)
-export const redis = new Proxy({} as Redis, {
+export const redis = new Proxy({} as IORedis, {
   get(_target, prop) {
     const instance = getRedis();
     const value = (instance as unknown as Record<string | symbol, unknown>)[prop];
@@ -118,12 +118,15 @@ class MockRatelimit {
 // Create rate limiter (real or mock based on Redis availability)
 function createRatelimit(limiter: ReturnType<typeof Ratelimit.slidingWindow>, prefix: string): Ratelimit | MockRatelimit {
   if (isRedisConfigured()) {
-    return new Ratelimit({
-      redis: getRedis() as Redis,
-      limiter,
-      analytics: true,
-      prefix,
-    });
+    const instance = getRedis();
+    if (instance instanceof IORedis) {
+      return new Ratelimit({
+        redis: instance,
+        limiter,
+        analytics: true,
+        prefix,
+      });
+    }
   }
   return new MockRatelimit();
 }
@@ -203,8 +206,14 @@ export const CacheTTL = {
 // Helper functions for common cache operations
 export async function getFromCache<T>(key: string): Promise<T | null> {
   try {
-    const data = await redis.get<T>(key);
-    return data;
+    const instance = getRedis();
+    const data = await instance.get(key);
+    if (!data) return null;
+    // ioredis returns string; InMemoryRedis returns original type
+    if (typeof data === 'string') {
+      return JSON.parse(data) as T;
+    }
+    return data as T;
   } catch (error) {
     console.error(`Cache get error for key ${key}:`, error);
     return null;
@@ -217,7 +226,13 @@ export async function setInCache<T>(
   ttlSeconds: number = CacheTTL.medium
 ): Promise<boolean> {
   try {
-    await redis.set(key, value, { ex: ttlSeconds });
+    const instance = getRedis();
+    if (instance instanceof InMemoryRedis) {
+      await instance.set(key, value, { ex: ttlSeconds });
+    } else {
+      // ioredis uses setex(key, seconds, value)
+      await instance.setex(key, ttlSeconds, JSON.stringify(value));
+    }
     return true;
   } catch (error) {
     console.error(`Cache set error for key ${key}:`, error);

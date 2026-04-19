@@ -44,7 +44,7 @@ import {
   type GeoAlertType,
   type AlertSeverity,
   getAlertTypeLabel,
-} from "@/lib/geo/alert-generator";
+} from "@/lib/geo/alert-utils";
 
 interface AlertsSummary {
   unreadCount: number;

@@ -23,7 +23,7 @@ const getApiKeySchema = z.object({
 
 /**
  * Check if user is admin using proper role-based access control
- * Checks both Clerk metadata and database user record
+ * Checks database user record (source of truth after Supabase Auth migration)
  */
 async function isAdmin(): Promise<boolean> {
   const user = await currentDbUser();
@@ -32,19 +32,7 @@ async function isAdmin(): Promise<boolean> {
     return false;
   }
 
-  // First check Clerk metadata (fast path)
-  const publicMetadata = user.publicMetadata as { role?: string; isSuperAdmin?: boolean } | undefined;
-  const privateMetadata = user.privateMetadata as { role?: string } | undefined;
-
-  if (publicMetadata?.isSuperAdmin === true) {
-    return true;
-  }
-
-  if (publicMetadata?.role === "admin" || privateMetadata?.role === "admin") {
-    return true;
-  }
-
-  // Then check database for super admin status (source of truth)
+  // Check database for super admin status (source of truth)
   try {
     const dbUser = await db
       .select({ isSuperAdmin: users.isSuperAdmin, role: users.role })

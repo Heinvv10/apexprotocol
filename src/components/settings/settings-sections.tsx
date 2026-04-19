@@ -51,7 +51,7 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
   // Get user data from Clerk (with prop fallback)
   const firstName = profile?.firstName ?? user?.firstName ?? "";
   const lastName = profile?.lastName ?? user?.lastName ?? "";
-  const email = profile?.email ?? user?.primaryEmailAddress?.emailAddress ?? "";
+  const email = profile?.email ?? user?.email ?? "";
   const avatarUrl = user?.imageUrl;
   const avatarInitials = profile?.avatarInitials ??
     (firstName && lastName ? `${firstName[0]}${lastName[0]}`.toUpperCase() : "");
