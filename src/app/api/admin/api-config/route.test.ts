@@ -19,7 +19,6 @@ import {
 vi.mock("@/lib/auth/supabase-server", () => ({
   getSession: vi.fn(async () => ({ userId: "test-user-id", orgId: "test-org-id", orgRole: "admin", orgSlug: null })),
   currentDbUser: vi.fn(async () => null),
-})),
 }));
 
 // Mock super-admin check
