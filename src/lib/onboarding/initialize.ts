@@ -5,7 +5,7 @@
 
 import { db } from "@/lib/db";
 import { organizations, brands, audits, recommendations } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 
 export async function initializeOnboardingStatus(orgId: string): Promise<void> {
   try {
@@ -44,21 +44,29 @@ export async function initializeOnboardingStatus(orgId: string): Promise<void> {
       updated = true;
     }
 
-    if (!newStatus.auditRun) {
-      const completedAudits = await db.query.audits.findFirst({
+    // Only count audits/recommendations that belong to this org's brands.
+    // The old queries were org-global (any completed audit in the entire DB
+    // would flip auditRun=true for every org on first page-load).
+    const brandIds = orgBrands.map((b) => b.id);
+
+    if (!newStatus.auditRun && brandIds.length > 0) {
+      const completedAudit = await db.query.audits.findFirst({
         where: and(
-          eq(audits.status, "completed")
+          eq(audits.status, "completed"),
+          inArray(audits.brandId, brandIds),
         ),
       });
-      if (completedAudits) {
+      if (completedAudit) {
         newStatus.auditRun = true;
         updated = true;
       }
     }
 
-    if (!newStatus.recommendationsReviewed) {
-      const recs = await db.query.recommendations.findFirst({});
-      if (recs) {
+    if (!newStatus.recommendationsReviewed && brandIds.length > 0) {
+      const rec = await db.query.recommendations.findFirst({
+        where: inArray(recommendations.brandId, brandIds),
+      });
+      if (rec) {
         newStatus.recommendationsReviewed = true;
         updated = true;
       }
