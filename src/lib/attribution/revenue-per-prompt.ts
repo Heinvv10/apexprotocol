@@ -50,70 +50,92 @@ export async function computeRevenuePerPrompt(
   const minRuns = opts.minRuns ?? 3;
   const limit = opts.limit ?? 50;
 
-  // We do not assume the ga4_daily_metrics + shopify_orders tables exist on
-  // every deployment; guard against missing tables with to_regclass.
-  // If either table is absent, revenue columns are zeroed.
-  const rows = await db.execute<{
-    query: string;
-    platforms: string[];
-    total_runs: number;
-    mentioned_runs: number;
-    cited_runs: number;
-    ai_sessions: number;
-    orders: number;
-    revenue_cents: number;
-  }>(sql`
-    WITH mentions AS (
-      SELECT
-        query,
-        array_agg(DISTINCT platform::text) AS platforms,
-        COUNT(*)::int AS total_runs,
-        COUNT(*) FILTER (WHERE position IS NOT NULL)::int AS mentioned_runs,
-        COUNT(*) FILTER (WHERE citation_url IS NOT NULL)::int AS cited_runs,
-        array_agg(DISTINCT citation_url) FILTER (WHERE citation_url IS NOT NULL) AS cited_urls
-      FROM brand_mentions
-      WHERE brand_id = ${opts.brandId}
-        AND timestamp >= ${opts.from}
-        AND timestamp <= ${opts.to}
-      GROUP BY query
-      HAVING COUNT(*) >= ${minRuns}
-    ),
-    ga4_matched AS (
-      SELECT
-        m.query,
-        COALESCE(SUM(g.sessions), 0)::int AS ai_sessions
-      FROM mentions m
-      LEFT JOIN LATERAL (
-        SELECT sessions
-        FROM ga4_daily_metrics
-        WHERE brand_id = ${opts.brandId}
-          AND landing_page = ANY(m.cited_urls)
-          AND date >= ${opts.from}::date
-          AND date <= ${opts.to}::date
-          AND source_medium ILIKE ANY(ARRAY[
-            '%chat.openai.com%',
-            '%perplexity.ai%',
-            '%claude.ai%',
-            '%gemini.google.com%',
-            '%copilot.microsoft.com%'
-          ])
-      ) g ON TRUE
-      GROUP BY m.query
-    )
+  // ga4_daily_metrics + shopify_orders may not exist on every deployment
+  // (only provisioned when the integration is connected). Check first via
+  // to_regclass — a missing table should return mentions-only data with zero
+  // revenue (honest-empty), not throw a SQL error.
+  const tableCheck = await db.execute(sql`
     SELECT
-      m.query,
-      m.platforms,
-      m.total_runs,
-      m.mentioned_runs,
-      m.cited_runs,
-      COALESCE(ga.ai_sessions, 0) AS ai_sessions,
-      0::int AS orders,
-      0::bigint AS revenue_cents
-    FROM mentions m
-    LEFT JOIN ga4_matched ga ON m.query = ga.query
-    ORDER BY m.mentioned_runs DESC
-    LIMIT ${limit}
+      to_regclass('public.ga4_daily_metrics') IS NOT NULL AS has_ga4
   `);
+  const tableRows = (tableCheck as unknown as { rows?: Array<{ has_ga4: boolean }> }).rows
+    ?? (tableCheck as unknown as Array<{ has_ga4: boolean }>);
+  const hasGa4 = Boolean(tableRows[0]?.has_ga4);
+
+  const query = hasGa4
+    ? sql`
+        WITH mentions AS (
+          SELECT
+            query,
+            array_agg(DISTINCT platform::text) AS platforms,
+            COUNT(*)::int AS total_runs,
+            COUNT(*) FILTER (WHERE position IS NOT NULL)::int AS mentioned_runs,
+            COUNT(*) FILTER (WHERE citation_url IS NOT NULL)::int AS cited_runs,
+            array_agg(DISTINCT citation_url) FILTER (WHERE citation_url IS NOT NULL) AS cited_urls
+          FROM brand_mentions
+          WHERE brand_id = ${opts.brandId}
+            AND timestamp >= ${opts.from}
+            AND timestamp <= ${opts.to}
+          GROUP BY query
+          HAVING COUNT(*) >= ${minRuns}
+        ),
+        ga4_matched AS (
+          SELECT
+            m.query,
+            COALESCE(SUM(g.sessions), 0)::int AS ai_sessions
+          FROM mentions m
+          LEFT JOIN LATERAL (
+            SELECT sessions
+            FROM ga4_daily_metrics
+            WHERE brand_id = ${opts.brandId}
+              AND landing_page = ANY(m.cited_urls)
+              AND date >= ${opts.from}::date
+              AND date <= ${opts.to}::date
+              AND source_medium ILIKE ANY(ARRAY[
+                '%chat.openai.com%',
+                '%perplexity.ai%',
+                '%claude.ai%',
+                '%gemini.google.com%',
+                '%copilot.microsoft.com%'
+              ])
+          ) g ON TRUE
+          GROUP BY m.query
+        )
+        SELECT
+          m.query,
+          m.platforms,
+          m.total_runs,
+          m.mentioned_runs,
+          m.cited_runs,
+          COALESCE(ga.ai_sessions, 0) AS ai_sessions,
+          0::int AS orders,
+          0::bigint AS revenue_cents
+        FROM mentions m
+        LEFT JOIN ga4_matched ga ON m.query = ga.query
+        ORDER BY m.mentioned_runs DESC
+        LIMIT ${limit}
+      `
+    : sql`
+        SELECT
+          query,
+          array_agg(DISTINCT platform::text) AS platforms,
+          COUNT(*)::int AS total_runs,
+          COUNT(*) FILTER (WHERE position IS NOT NULL)::int AS mentioned_runs,
+          COUNT(*) FILTER (WHERE citation_url IS NOT NULL)::int AS cited_runs,
+          0::int AS ai_sessions,
+          0::int AS orders,
+          0::bigint AS revenue_cents
+        FROM brand_mentions
+        WHERE brand_id = ${opts.brandId}
+          AND timestamp >= ${opts.from}
+          AND timestamp <= ${opts.to}
+        GROUP BY query
+        HAVING COUNT(*) >= ${minRuns}
+        ORDER BY mentioned_runs DESC
+        LIMIT ${limit}
+      `;
+
+  const rows = await db.execute(query);
 
   const rawRows = Array.isArray(rows)
     ? (rows as Array<Record<string, unknown>>)

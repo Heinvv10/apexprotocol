@@ -144,7 +144,18 @@ async function handleApiKeyAuth(request: NextRequest): Promise<NextResponse | nu
     const response = NextResponse.next({ request: { headers: requestHeaders } });
     for (const [k, v] of Object.entries(rateLimitHeaders)) response.headers.set(k, v);
     return response;
-  } catch {
+  } catch (err) {
+    // Log for diagnosis — blanket-catch without logging is how silent
+    // auth failures hide.
+    try {
+      const { logger } = await import("@/lib/logger");
+      logger.error("api-key-auth middleware failure", {
+        err: (err as Error).message,
+        stack: (err as Error).stack?.split("\n").slice(0, 5).join("\n"),
+      });
+    } catch {
+      /* logger import itself failed — can't surface to anywhere */
+    }
     return NextResponse.json(
       { error: "Internal Server Error", message: "Failed to validate API key" },
       { status: 500 }
@@ -238,6 +249,12 @@ export default async function middleware(request: NextRequest) {
   if (!SUPABASE_AUTH_CONFIGURED) return devMiddleware(request);
   return productionMiddleware(request);
 }
+
+// Node.js runtime is REQUIRED because api-key-auth imports pg via Drizzle;
+// pg uses node:net / node:tls which the Edge runtime doesn't provide. When
+// this file ran on Edge, every API-key auth attempt threw silently and
+// surfaced as "Failed to validate API key" → HTTP 500.
+export const runtime = "nodejs";
 
 export const config = {
   matcher: [

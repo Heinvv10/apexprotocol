@@ -25,15 +25,20 @@ export interface EmbedTokenPayload {
   origin?: string;
 }
 
-const SECRET = process.env.WIDGET_EMBED_SECRET;
+function getSecret(): string | undefined {
+  // Read at call time, not module-init time — so tests/scripts that load
+  // dotenv *after* this module still see the value.
+  return process.env.WIDGET_EMBED_SECRET;
+}
 
 function ensureSecret(): string {
-  if (!SECRET) {
+  const secret = getSecret();
+  if (!secret) {
     throw new Error(
       "WIDGET_EMBED_SECRET not configured — required for signed embed tokens",
     );
   }
-  return SECRET;
+  return secret;
 }
 
 function base64urlEncode(buf: Buffer): string {
@@ -78,13 +83,13 @@ export function verifyEmbedToken(
   token: string,
   options?: { referer?: string | null },
 ): VerifyResult {
-  if (!SECRET) {
+  const secret = getSecret();
+  if (!secret) {
     // Soft-fail instead of throwing: lets the embed page render a clean
     // error card ("widget unavailable") rather than surfacing a 500 error
     // boundary that leaks the misconfiguration message to end users.
     return { ok: false, reason: "server_misconfigured" };
   }
-  const secret = SECRET;
   const parts = token.split(".");
   if (parts.length !== 2) return { ok: false, reason: "malformed" };
   const [body, sig] = parts;

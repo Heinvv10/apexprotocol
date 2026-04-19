@@ -93,10 +93,26 @@ export function withApiErrorHandling<T extends (...args: never[]) => Promise<Res
           traceId: err.traceId,
         });
       }
-      const e = err as Error;
+      const e = err as Error & { cause?: unknown };
+      const causeDetail =
+        e.cause instanceof Error
+          ? { name: e.cause.name, message: e.cause.message }
+          : e.cause instanceof AggregateError
+            ? {
+                name: "AggregateError",
+                nested: (e.cause as AggregateError).errors
+                  .slice(0, 3)
+                  .map((x: unknown) =>
+                    x instanceof Error ? { message: x.message, code: (x as Error & { code?: string }).code } : String(x),
+                  ),
+              }
+            : e.cause
+              ? String(e.cause)
+              : null;
       logger.error("api.v1.unhandled_error", {
         name: e.name,
         message: e.message,
+        cause: causeDetail,
         stack: e.stack?.split("\n").slice(0, 5).join("\n"),
       });
       return apiError(

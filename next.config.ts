@@ -49,9 +49,11 @@ const cspDirectives: Record<string, string[]> = {
     "'self'",
     "https://*.supabase.co",
     "https://*.supabase.in",
-    // Our own self-hosted Supabase
+    // Our own self-hosted Supabase (both domains)
     "https://api.apex.dev",
     "https://*.apex.dev",
+    "https://api.apexgeo.app",
+    "https://*.apexgeo.app",
     // LLM provider APIs for anything called client-side (minimize this)
     "https://api.openai.com",
     "https://api.anthropic.com",
@@ -70,7 +72,9 @@ const cspDirectives: Record<string, string[]> = {
   "base-uri": ["'self'"],
   "form-action": ["'self'", "https://accounts.google.com"],
   "object-src": ["'none'"],
-  "upgrade-insecure-requests": [],
+  // upgrade-insecure-requests rewrites http://localhost → https://localhost in
+  // the browser, which breaks local dev (no TLS on dev server). Prod-only.
+  ...(IS_PROD ? { "upgrade-insecure-requests": [] } : {}),
 };
 
 const csp = Object.entries(cspDirectives)
@@ -86,10 +90,15 @@ const securityHeaders = [
     value:
       "accelerometer=(), autoplay=(), camera=(), cross-origin-isolated=(), display-capture=(), document-domain=(), encrypted-media=(), fullscreen=(self), geolocation=(), gyroscope=(), keyboard-map=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), usb=(), xr-spatial-tracking=()",
   },
-  {
-    key: "Strict-Transport-Security",
-    value: "max-age=63072000; includeSubDomains; preload",
-  },
+  // HSTS is prod-only: once a browser sees it on localhost, it forces HTTPS
+  // on that host for the max-age window — locking you out of http://localhost
+  // for up to 2 years. That's a recurring dev-foot-gun.
+  ...(IS_PROD
+    ? [{
+        key: "Strict-Transport-Security",
+        value: "max-age=63072000; includeSubDomains; preload",
+      }]
+    : []),
   { key: "X-DNS-Prefetch-Control", value: "on" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
