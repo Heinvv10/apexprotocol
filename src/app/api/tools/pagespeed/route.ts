@@ -14,7 +14,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { randomUUID } from "node:crypto";
 import { getUserId } from "@/lib/auth/supabase-server";
-import { checkPageSpeed } from "@/lib/audit/checks/pagespeed-check";
+import { checkPageSpeedFull } from "@/lib/audit/checks/pagespeed-full";
 
 type JobState =
   | { status: "running"; startedAt: number }
@@ -22,9 +22,7 @@ type JobState =
       status: "completed";
       startedAt: number;
       completedAt: number;
-      url: string;
-      strategy: "mobile" | "desktop";
-      result: Awaited<ReturnType<typeof checkPageSpeed>>;
+      result: NonNullable<Awaited<ReturnType<typeof checkPageSpeedFull>>>;
     }
   | { status: "failed"; startedAt: number; error: string };
 
@@ -75,7 +73,7 @@ export async function POST(request: NextRequest) {
   // Kick off the PSI scan and let it settle into the job store. We
   // don't await — Cloudflare has already closed the request socket
   // by the time PSI returns.
-  checkPageSpeed(parsed.toString(), { strategy: effectiveStrategy })
+  checkPageSpeedFull(parsed.toString(), { strategy: effectiveStrategy })
     .then((result) => {
       if (!result) {
         JOBS.set(jobId, {
@@ -90,8 +88,6 @@ export async function POST(request: NextRequest) {
         status: "completed",
         startedAt,
         completedAt: Date.now(),
-        url: parsed.toString(),
-        strategy: effectiveStrategy,
         result,
       });
     })
