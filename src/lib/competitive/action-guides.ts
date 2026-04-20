@@ -31,7 +31,8 @@ export interface ApexTool {
     | "pagespeed_scan"
     | "html_auto_patcher"
     | "content_brief_generator"
-    | "schema_markup_builder";
+    | "schema_markup_builder"
+    | "llms_txt_generator";
   /** Path to the tool inside /dashboard/... */
   href: string;
   /** Button label shown to the user */
@@ -1084,6 +1085,30 @@ export const ACTION_GUIDES: Record<string, ActionGuide> = {
       "Adjust the content calendar for next month accordingly.",
     ],
     estMinutes: 60,
+  },
+
+  // ============================================================
+  // AEO — AI Crawler Discovery
+  // ============================================================
+  "Publish llms.txt for AI crawler discovery": {
+    why: "llms.txt is an emerging standard (llmstxt.org) that ChatGPT, Claude, and Perplexity use to discover the canonical pages on your site. Without it, crawlers guess — and often miss your most important pages.",
+    steps: [
+      "Use the Apex llms.txt Generator (below) to crawl your site and build the file.",
+      "Review the output — the generator groups pages by prefix (docs, blog, features), which keeps it readable and useful to LLMs.",
+      "Edit any page titles or descriptions that look low-signal or marketing-heavy.",
+      "Upload as /llms.txt at the root of your domain — same level as /robots.txt.",
+      "Verify it loads at https://yourdomain.com/llms.txt with content-type text/plain.",
+    ],
+    resources: [
+      { label: "llmstxt.org spec", url: "https://llmstxt.org" },
+    ],
+    tool: {
+      kind: "llms_txt_generator",
+      href: "/dashboard/tools/llms-txt",
+      cta: "Generate llms.txt",
+      description: "Crawl your site and build a ready-to-deploy llms.txt file.",
+    },
+    estMinutes: 20,
   },
 };
 
