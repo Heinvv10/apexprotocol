@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ActionItemCard } from "./action-item-card";
 
 interface ActionItem {
   id: string;
@@ -205,34 +206,18 @@ export function MilestoneCard({
           {actionItems.length > 0 && (
             <div className="space-y-2">
               <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Action Items
+                Action Items — click any to see step-by-step instructions
               </h5>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {actionItems.map((item) => (
-                  <label
+                  <ActionItemCard
                     key={item.id}
-                    className="flex items-start gap-3 cursor-pointer group"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={item.isCompleted}
-                      onChange={(e) =>
-                        onActionItemToggle?.(item.id, e.target.checked)
-                      }
-                      disabled={status === "completed" || status === "skipped"}
-                      className="mt-0.5 w-4 h-4 rounded border-border bg-muted/30 text-primary focus:ring-primary/50"
-                    />
-                    <span
-                      className={cn(
-                        "text-sm transition-colors",
-                        item.isCompleted
-                          ? "text-muted-foreground line-through"
-                          : "text-foreground group-hover:text-primary"
-                      )}
-                    >
-                      {item.title}
-                    </span>
-                  </label>
+                    id={item.id}
+                    title={item.title}
+                    isCompleted={item.isCompleted}
+                    disabled={status === "completed" || status === "skipped"}
+                    onToggle={(c) => onActionItemToggle?.(item.id, c)}
+                  />
                 ))}
               </div>
             </div>
