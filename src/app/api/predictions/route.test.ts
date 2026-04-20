@@ -65,7 +65,7 @@ vi.mock("@/lib/db/schema", () => ({
 }));
 
 // Import mocked modules AFTER vi.mock declarations
-import { getSession } from "@/lib/auth/supabase-server";
+import { getSession, getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 import { extractHistoricalScores } from "@/lib/ml/data-pipeline";
 import { forecastGeoScore } from "@/lib/ml/forecaster";
 import { generatePredictionExplanation } from "@/lib/ml/explainer";
@@ -196,6 +196,8 @@ const mockExplanation = {
 
 const setupAuthMock = (userId: string | null = mockUserId) => {
   vi.mocked(getSession).mockResolvedValue({ userId } as any);
+  vi.mocked(getUserId).mockResolvedValue(userId);
+  vi.mocked(getOrganizationId).mockResolvedValue(userId ? "test-org-id" : null);
 };
 
 const setupBrandMock = (brand: any = mockBrand) => {

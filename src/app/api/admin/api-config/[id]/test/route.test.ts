@@ -202,8 +202,10 @@ describe("POST /api/admin/api-config/:id/test - Test Connection (FR-3)", () => {
 
 describe("POST /api/admin/api-config/:id/test - Security (SR-1, SR-2, SR-5)", () => {
   it("should return 401 when not authenticated", async () => {
-    const { getSession } = await import("@/lib/auth/supabase-server");
+    const { getSession, getUserId, getOrganizationId } = await import("@/lib/auth/supabase-server");
     vi.mocked(getSession).mockResolvedValueOnce(null);
+    vi.mocked(getUserId).mockResolvedValueOnce(null);
+    vi.mocked(getOrganizationId).mockResolvedValueOnce(null);
 
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/test-id/test", {
       method: "POST",

@@ -337,8 +337,10 @@ describe("DELETE /api/admin/api-config/:id - Delete Integration (FR-6)", () => {
 
 describe("Security - All [id] Routes (SR-1, SR-2)", () => {
   it("GET should return 401 when not authenticated", async () => {
-    const { getSession } = await import("@/lib/auth/supabase-server");
+    const { getSession, getUserId, getOrganizationId } = await import("@/lib/auth/supabase-server");
     vi.mocked(getSession).mockResolvedValueOnce(null);
+    vi.mocked(getUserId).mockResolvedValueOnce(null);
+    vi.mocked(getOrganizationId).mockResolvedValueOnce(null);
 
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/test-id");
     const response = await GET(request, { params: Promise.resolve({ id: "test-id" }) });
@@ -357,8 +359,10 @@ describe("Security - All [id] Routes (SR-1, SR-2)", () => {
   });
 
   it("PATCH should return 401 when not authenticated", async () => {
-    const { getSession } = await import("@/lib/auth/supabase-server");
+    const { getSession, getUserId, getOrganizationId } = await import("@/lib/auth/supabase-server");
     vi.mocked(getSession).mockResolvedValueOnce(null);
+    vi.mocked(getUserId).mockResolvedValueOnce(null);
+    vi.mocked(getOrganizationId).mockResolvedValueOnce(null);
 
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/test-id", {
       method: "PATCH",
@@ -385,8 +389,10 @@ describe("Security - All [id] Routes (SR-1, SR-2)", () => {
   });
 
   it("DELETE should return 401 when not authenticated", async () => {
-    const { getSession } = await import("@/lib/auth/supabase-server");
+    const { getSession, getUserId, getOrganizationId } = await import("@/lib/auth/supabase-server");
     vi.mocked(getSession).mockResolvedValueOnce(null);
+    vi.mocked(getUserId).mockResolvedValueOnce(null);
+    vi.mocked(getOrganizationId).mockResolvedValueOnce(null);
 
     const request = new NextRequest("http://localhost:3000/api/admin/api-config/test-id", {
       method: "DELETE",

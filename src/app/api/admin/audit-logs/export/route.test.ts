@@ -34,7 +34,7 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-import { getSession } from "@/lib/auth/supabase-server";
+import { getSession, getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
 import { db } from "@/lib/db";
 
@@ -247,6 +247,7 @@ describe("POST /api/admin/audit-logs/export - Export Functionality (FR-5)", () =
 
   it("should return 401 when not authenticated (SR-1)", async () => {
     vi.mocked(getSession).mockResolvedValue({ userId: null, orgId: "test-org-id", orgRole: "admin", orgSlug: null });
+    vi.mocked(getUserId).mockResolvedValueOnce(null);
 
     const request = new NextRequest("http://localhost:3000/api/admin/audit-logs/export", {
       method: "POST",
