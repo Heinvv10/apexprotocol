@@ -48,10 +48,13 @@ jobs:
       - name: Check for console.log in src/
         run: |
           set +e
+          # Skip lines whose content starts with a line-comment or JSDoc
+          # marker — those are prose references to console.log, not calls.
           MATCHES=$(grep -rnE "console\.(log|debug)" src/ \
             --include="*.ts" --include="*.tsx" \
             --exclude-dir="__tests__" \
             --exclude="*.test.ts" --exclude="*.test.tsx" \
+            | grep -vE ":[0-9]+:[[:space:]]*(//|\*)" \
             | grep -v "// eslint-ignore-console" || true)
           if [ -n "$MATCHES" ]; then
             echo "::error::Unapproved console.* usage found — use src/lib/logger.ts"
