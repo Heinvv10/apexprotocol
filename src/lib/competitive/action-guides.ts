@@ -708,6 +708,12 @@ export const ACTION_GUIDES: Record<string, ActionGuide> = {
       { label: "Schema.org Organization", url: "https://schema.org/Organization" },
       { label: "Schema.org LocalBusiness", url: "https://schema.org/LocalBusiness" },
     ],
+    tool: {
+      kind: "schema_markup_builder",
+      href: "/dashboard/tools/schema",
+      cta: "Build Organization schema",
+      description: "Fill the form, get ready-to-deploy Organization JSON-LD.",
+    },
     estMinutes: 90,
   },
   "Add Product/Service schema where applicable": {
@@ -723,6 +729,12 @@ export const ACTION_GUIDES: Record<string, ActionGuide> = {
       { label: "Schema.org Product", url: "https://schema.org/Product" },
       { label: "Schema.org SoftwareApplication", url: "https://schema.org/SoftwareApplication" },
     ],
+    tool: {
+      kind: "schema_markup_builder",
+      href: "/dashboard/tools/schema",
+      cta: "Build Product schema",
+      description: "Fill price, image, availability — get JSON-LD you can paste into the head.",
+    },
     estMinutes: 240,
   },
   "Implement Article schema for blog posts": {
@@ -737,6 +749,12 @@ export const ACTION_GUIDES: Record<string, ActionGuide> = {
     resources: [
       { label: "Schema.org Article", url: "https://schema.org/Article" },
     ],
+    tool: {
+      kind: "schema_markup_builder",
+      href: "/dashboard/tools/schema",
+      cta: "Build Article schema",
+      description: "Headline, author, dates — JSON-LD ready for your CMS template.",
+    },
     estMinutes: 180,
   },
   "Test all implementations with validators": {
