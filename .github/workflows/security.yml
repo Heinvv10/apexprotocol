@@ -33,7 +33,19 @@ jobs:
           node-version: "20"
           cache: "npm"
       - run: npm ci
+      - name: Check for SNYK_TOKEN
+        id: snyk_guard
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          if [ -z "$SNYK_TOKEN" ]; then
+            echo "::warning::SNYK_TOKEN secret not configured — skipping dependency scan. Add at Settings → Secrets → Actions."
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Snyk — test dependencies
+        if: steps.snyk_guard.outputs.has_token == 'true'
         uses: snyk/actions/node@master
         continue-on-error: false
         env:
