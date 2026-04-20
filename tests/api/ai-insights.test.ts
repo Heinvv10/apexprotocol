@@ -8,6 +8,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock Clerk auth
 vi.mock("@/lib/auth/supabase-server", () => ({
   getSession: vi.fn(async () => ({ userId: "test-user-id", orgId: "test-org-id", orgRole: "admin", orgSlug: null })),
+  getUserId: vi.fn(async () => "test-user-id"),
+  getOrganizationId: vi.fn(async () => "test-org-id"),
   currentDbUser: vi.fn(async () => null),
   }));
 
@@ -322,7 +324,7 @@ describe("AI Insights API Routes", () => {
     it("should return 401 when user is not authenticated", async () => {
       // Mock auth to return no userId
       const { auth } = await import("@/lib/auth/supabase-server");
-      vi.mocked(auth).mockResolvedValueOnce({ userId: null } as never);
+      vi.mocked(getSession).mockResolvedValueOnce({ userId: null } as never);
 
       const request = {
         url: "http://localhost:3000/api/ai-insights/analyze",
@@ -505,7 +507,7 @@ describe("AI Insights API Routes", () => {
 
     it("should return 401 when user is not authenticated", async () => {
       const { auth } = await import("@/lib/auth/supabase-server");
-      vi.mocked(auth).mockResolvedValueOnce({ userId: null } as never);
+      vi.mocked(getSession).mockResolvedValueOnce({ userId: null } as never);
 
       const request = {
         url: "http://localhost:3000/api/ai-insights/history",
@@ -684,7 +686,7 @@ describe("AI Insights API Routes", () => {
 
     it("should return 401 when user is not authenticated", async () => {
       const { auth } = await import("@/lib/auth/supabase-server");
-      vi.mocked(auth).mockResolvedValueOnce({ userId: null } as never);
+      vi.mocked(getSession).mockResolvedValueOnce({ userId: null } as never);
 
       const request = {
         url: "http://localhost:3000/api/ai-insights/chatgpt",

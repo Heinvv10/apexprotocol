@@ -12,6 +12,8 @@ import { GET } from "./route";
 // Mock Clerk auth
 vi.mock("@/lib/auth/supabase-server", () => ({
   getSession: vi.fn(async () => ({ userId: "test-user-id", orgId: "test-org-id", orgRole: "admin", orgSlug: null })),
+  getUserId: vi.fn(async () => "test-user-id"),
+  getOrganizationId: vi.fn(async () => "test-org-id"),
   currentDbUser: vi.fn(async () => null),
 }));
 
@@ -54,7 +56,7 @@ describe("GET /api/admin/dashboard/stats", () => {
 
   // UT-1: Returns 401 if not authenticated
   it("UT-1: should return 401 if not authenticated", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: null } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: null } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/stats");
     const response = await GET(request);
@@ -66,7 +68,7 @@ describe("GET /api/admin/dashboard/stats", () => {
 
   // UT-2: Returns 403 if not super-admin
   it("UT-2: should return 403 if not super-admin", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(false);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/stats");
@@ -79,7 +81,7 @@ describe("GET /api/admin/dashboard/stats", () => {
 
   // UT-3: Returns correct organization count
   it("UT-3: should return correct organization count", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/stats");
@@ -94,7 +96,7 @@ describe("GET /api/admin/dashboard/stats", () => {
 
   // UT-4: Returns correct user count
   it("UT-4: should return correct user count", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/stats");
@@ -108,7 +110,7 @@ describe("GET /api/admin/dashboard/stats", () => {
 
   // UT-5: Returns organizations created this month
   it("UT-5: should return organizations created this month", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/stats");
@@ -122,7 +124,7 @@ describe("GET /api/admin/dashboard/stats", () => {
 
   // UT-6: Returns users created this week
   it("UT-6: should return users created this week", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/stats");
@@ -136,7 +138,7 @@ describe("GET /api/admin/dashboard/stats", () => {
 
   // UT-7: Returns active sessions count
   it("UT-7: should return active sessions count", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/stats");
@@ -150,7 +152,7 @@ describe("GET /api/admin/dashboard/stats", () => {
 
   // UT-8: Returns API requests in last 24 hours
   it("UT-8: should return API requests in last 24 hours", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/stats");
@@ -164,7 +166,7 @@ describe("GET /api/admin/dashboard/stats", () => {
 
   // UT-9: Returns all expected fields
   it("UT-9: should return all expected stats fields", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/stats");

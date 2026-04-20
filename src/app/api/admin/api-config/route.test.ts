@@ -18,6 +18,8 @@ import {
 // Mock Clerk auth
 vi.mock("@/lib/auth/supabase-server", () => ({
   getSession: vi.fn(async () => ({ userId: "test-user-id", orgId: "test-org-id", orgRole: "admin", orgSlug: null })),
+  getUserId: vi.fn(async () => "test-user-id"),
+  getOrganizationId: vi.fn(async () => "test-org-id"),
   currentDbUser: vi.fn(async () => null),
 }));
 

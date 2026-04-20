@@ -11,6 +11,8 @@ import { GET, PATCH } from "./route";
 // Mock Clerk auth
 vi.mock("@/lib/auth/supabase-server", () => ({
   getSession: vi.fn(async () => ({ userId: "test-user-id", orgId: "test-org-id", orgRole: "admin", orgSlug: null })),
+  getUserId: vi.fn(async () => "test-user-id"),
+  getOrganizationId: vi.fn(async () => "test-org-id"),
   currentDbUser: vi.fn(async () => null),
     clerkClient: vi.fn(async () => ({
     users: {
@@ -147,13 +149,14 @@ vi.mock("@/lib/db", () => {
 });
 
 // Import mocked modules AFTER vi.mock declarations
+import { getSession } from "@/lib/auth/supabase-server";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
 import { db } from "@/lib/db";
 
 // Global beforeEach to reset mocks to default authenticated super-admin state
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(auth).mockResolvedValue({ userId: "test-super-admin-id" } as any);
+  vi.mocked(getSession).mockResolvedValue({ userId: "test-super-admin-id" } as any);
   vi.mocked(isSuperAdmin).mockResolvedValue(true);
 });
 
@@ -379,7 +382,7 @@ describe("GET /api/admin/users - Pagination (FR-7)", () => {
 describe("GET /api/admin/users - Security (SR-1, SR-2)", () => {
   it("should return 401 when not authenticated", async () => {
     // Mock auth to return no userId
-    vi.mocked(auth).mockResolvedValueOnce({ userId: null } as any);
+    vi.mocked(getSession).mockResolvedValueOnce({ userId: null } as any);
 
     const request = new NextRequest("http://localhost:3000/api/admin/users");
     const response = await GET(request);
@@ -523,7 +526,7 @@ describe("PATCH /api/admin/users - Security & Validation", () => {
   it.skip("should return 401 when not authenticated", async () => {
     // Skip: Mock override for per-test auth state not working with vi.mock hoisting
     // Would need integration test or different mock strategy
-    vi.mocked(auth).mockResolvedValue({ userId: null } as any);
+    vi.mocked(getSession).mockResolvedValue({ userId: null } as any);
 
     const request = new NextRequest("http://localhost:3000/api/admin/users", {
       method: "PATCH",

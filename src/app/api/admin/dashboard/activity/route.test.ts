@@ -12,6 +12,8 @@ import { GET } from "./route";
 // Mock Clerk auth
 vi.mock("@/lib/auth/supabase-server", () => ({
   getSession: vi.fn(async () => ({ userId: "test-user-id", orgId: "test-org-id", orgRole: "admin", orgSlug: null })),
+  getUserId: vi.fn(async () => "test-user-id"),
+  getOrganizationId: vi.fn(async () => "test-org-id"),
   currentDbUser: vi.fn(async () => null),
 }));
 
@@ -43,7 +45,7 @@ describe("GET /api/admin/dashboard/activity", () => {
 
   // UT-16: Returns recent audit logs
   it("UT-16: should return recent audit logs", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/activity");
@@ -58,7 +60,7 @@ describe("GET /api/admin/dashboard/activity", () => {
 
   // UT-17: Respects limit parameter
   it("UT-17: should respect limit parameter", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/activity?limit=5");
@@ -71,7 +73,7 @@ describe("GET /api/admin/dashboard/activity", () => {
 
   // UT-18: Orders by timestamp descending
   it("UT-18: should order by timestamp descending", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/activity");
@@ -90,7 +92,7 @@ describe("GET /api/admin/dashboard/activity", () => {
 
   // UT-19: Calculates relative time correctly
   it("UT-19: should calculate relative time correctly", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/activity");
@@ -107,7 +109,7 @@ describe("GET /api/admin/dashboard/activity", () => {
 
   // UT-20: Includes actor and target information
   it("UT-20: should include actor and target information", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/activity");
@@ -125,7 +127,7 @@ describe("GET /api/admin/dashboard/activity", () => {
 
   // UT-21: Returns 401 if not authenticated
   it("UT-21: should return 401 if not authenticated", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: null } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: null } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/activity");
     const response = await GET(request);
@@ -137,7 +139,7 @@ describe("GET /api/admin/dashboard/activity", () => {
 
   // UT-22: Returns 403 if not super-admin
   it("UT-22: should return 403 if not super-admin", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(false);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/activity");
@@ -150,7 +152,7 @@ describe("GET /api/admin/dashboard/activity", () => {
 
   // UT-23: Limits maximum to 50
   it("UT-23: should limit maximum to 50", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/activity?limit=100");
@@ -164,7 +166,7 @@ describe("GET /api/admin/dashboard/activity", () => {
 
   // UT-24: Default limit is 10
   it("UT-24: should default limit to 10", async () => {
-    vi.mocked(auth).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof auth> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue({ userId: "user_123" } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/activity");
