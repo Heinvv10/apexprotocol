@@ -1084,7 +1084,9 @@ describe("Admin API Keys Integration Tests", () => {
     itWithDb("should complete create -> read -> update -> rotate -> revoke -> delete cycle", async () => {
       const db = getDb();
       const schema = getSchemaFn();
-      const keyData = createUniqueApiKey("full-crud-cycle");
+      // Suffix includes Date.now() so reruns don't collide with leftover rows
+      // from a previous aborted run (the test's final delete might not have executed).
+      const keyData = createUniqueApiKey(`full-crud-cycle-${Date.now()}`);
 
       // CREATE
       const encryptedKey = encryptApiKey(keyData.rawKey);
