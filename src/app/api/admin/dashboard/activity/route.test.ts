@@ -35,7 +35,7 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-import { getSession } from "@/lib/auth/supabase-server";
+import { getSession, getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
 
 describe("GET /api/admin/dashboard/activity", () => {
@@ -128,6 +128,7 @@ describe("GET /api/admin/dashboard/activity", () => {
   // UT-21: Returns 401 if not authenticated
   it("UT-21: should return 401 if not authenticated", async () => {
     vi.mocked(getSession).mockResolvedValue({ userId: null } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
+    vi.mocked(getUserId).mockResolvedValueOnce(null);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/activity");
     const response = await GET(request);

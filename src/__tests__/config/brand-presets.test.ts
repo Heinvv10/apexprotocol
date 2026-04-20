@@ -27,7 +27,10 @@ describe('brand-presets', () => {
       const preset = BRAND_PRESETS[key as keyof typeof BRAND_PRESETS];
       expect(preset.name).toBeTruthy();
       expect(preset.cssFile).toMatch(/\.css$/);
-      expect(preset.logoUrl).toMatch(/^\/brands\//);
+      // logoUrl must be an absolute public path; third-party brands conventionally
+      // live under /brands/<slug>/, but the default Apex preset keeps its legacy
+      // root-level asset path.
+      expect(preset.logoUrl).toMatch(/^\/.+\.(svg|png|jpg|jpeg|webp)$/);
     }
   });
 });

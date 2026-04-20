@@ -149,7 +149,7 @@ vi.mock("@/lib/db", () => {
 });
 
 // Import mocked modules AFTER vi.mock declarations
-import { getSession } from "@/lib/auth/supabase-server";
+import { getSession, getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 import { isSuperAdmin } from "@/lib/auth/super-admin";
 import { db } from "@/lib/db";
 
@@ -383,6 +383,7 @@ describe("GET /api/admin/users - Security (SR-1, SR-2)", () => {
   it("should return 401 when not authenticated", async () => {
     // Mock auth to return no userId
     vi.mocked(getSession).mockResolvedValueOnce({ userId: null } as any);
+    vi.mocked(getUserId).mockResolvedValueOnce(null);
 
     const request = new NextRequest("http://localhost:3000/api/admin/users");
     const response = await GET(request);
@@ -527,6 +528,7 @@ describe("PATCH /api/admin/users - Security & Validation", () => {
     // Skip: Mock override for per-test auth state not working with vi.mock hoisting
     // Would need integration test or different mock strategy
     vi.mocked(getSession).mockResolvedValue({ userId: null } as any);
+    vi.mocked(getUserId).mockResolvedValueOnce(null);
 
     const request = new NextRequest("http://localhost:3000/api/admin/users", {
       method: "PATCH",

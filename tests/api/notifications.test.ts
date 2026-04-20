@@ -16,12 +16,12 @@ import { GET as getPreferences, PATCH as updatePreferences } from "@/app/api/not
 process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
 
 // Mock auth
-vi.mock("@/lib/auth/clerk", () => ({
+vi.mock("@/lib/auth/supabase-server", () => ({
   getUserId: vi.fn(() => Promise.resolve("demo-user")),
   getOrganizationId: vi.fn(() => Promise.resolve("demo-org")),
 }));
 
-vi.mock("@/lib/auth/clerk", () => ({
+vi.mock("@/lib/auth/supabase-server", () => ({
   getUserId: vi.fn(() => Promise.resolve("demo-user")),
   getOrganizationId: vi.fn(() => Promise.resolve("demo-org")),
 }));
@@ -762,7 +762,7 @@ describe("Notification API Routes", () => {
 
   describe("Authentication", () => {
     it("should return 401 when user is not authenticated", async () => {
-      const { getUserId } = await import("@/lib/auth/clerk");
+      const { getUserId } = await import("@/lib/auth/supabase-server");
       vi.mocked(getUserId).mockResolvedValueOnce(null);
 
       const url = new URL("http://localhost:3000/api/notifications?limit=50&offset=0");
@@ -778,7 +778,7 @@ describe("Notification API Routes", () => {
     });
 
     it("should return 401 when organization is not found", async () => {
-      const { getOrganizationId } = await import("@/lib/auth/clerk");
+      const { getOrganizationId } = await import("@/lib/auth/supabase-server");
       vi.mocked(getOrganizationId).mockResolvedValueOnce(null);
 
       const url = new URL("http://localhost:3000/api/notifications?limit=50&offset=0");

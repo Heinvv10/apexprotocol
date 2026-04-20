@@ -212,8 +212,10 @@ describe("GET /api/admin/api-config - Search and Filter (FR-7)", () => {
 
 describe("GET /api/admin/api-config - Security (SR-1, SR-2)", () => {
   it("should return 401 when not authenticated", async () => {
-    const { getSession } = await import("@/lib/auth/supabase-server");
+    const { getSession, getUserId, getOrganizationId } = await import("@/lib/auth/supabase-server");
     vi.mocked(getSession).mockResolvedValueOnce(null);
+    vi.mocked(getUserId).mockResolvedValueOnce(null);
+    vi.mocked(getOrganizationId).mockResolvedValueOnce(null);
 
     const request = new NextRequest("http://localhost:3000/api/admin/api-config");
     const response = await GET(request);
@@ -384,8 +386,10 @@ describe("POST /api/admin/api-config - Security", () => {
   it.skip("should return 401 when not authenticated", async () => {
     // Skip: Mock override for per-test auth state not working with vi.mock hoisting
     // Would need integration test or different mock strategy
-    const { getSession } = await import("@/lib/auth/supabase-server");
+    const { getSession, getUserId, getOrganizationId } = await import("@/lib/auth/supabase-server");
     vi.mocked(getSession).mockResolvedValueOnce(null);
+    vi.mocked(getUserId).mockResolvedValueOnce(null);
+    vi.mocked(getOrganizationId).mockResolvedValueOnce(null);
 
     const request = new NextRequest("http://localhost:3000/api/admin/api-config", {
       method: "POST",
