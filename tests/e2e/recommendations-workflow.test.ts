@@ -323,10 +323,13 @@ describe("E2E Workflow: AI Recommendations Generation Lifecycle", () => {
 
     mockGenerateRecommendations.mockResolvedValue([]);
 
-    // Set up mocks
-    vi.doMock("@/lib/auth", () => ({
-      auth: mockAuth,
+    // Set up mocks — route imports from @/lib/auth/supabase-server directly,
+    // so that's the path we need to intercept (mocking the @/lib/auth barrel
+    // has no effect on deep imports).
+    vi.doMock("@/lib/auth/supabase-server", () => ({
+      getUserId: vi.fn().mockResolvedValue(TEST_USER_ID),
       getOrganizationId: mockGetOrganizationId,
+      getSession: mockAuth,
     }));
 
     vi.doMock("@/lib/onboarding/auto-detection", () => ({
