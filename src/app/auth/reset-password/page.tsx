@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -71,7 +71,35 @@ function ResetPasswordForm() {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [sessionReady, setSessionReady] = useState(!isReset);
   const supabase = createBrowserClient();
+
+  // gotrue's /auth/v1/verify redirects here with tokens in the URL hash
+  // (#access_token=…&refresh_token=…&type=recovery). @supabase/ssr's cookie-
+  // based client does not pick those up automatically — we have to hand them
+  // to setSession() so a subsequent updateUser() has an authed context.
+  useEffect(() => {
+    if (!isReset || typeof window === "undefined") return;
+    const hash = window.location.hash.replace(/^#/, "");
+    if (!hash) { setSessionReady(true); return; }
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+    if (!accessToken || !refreshToken) { setSessionReady(true); return; }
+    supabase.auth
+      .setSession({ access_token: accessToken, refresh_token: refreshToken })
+      .then(({ error }) => {
+        if (error) setServerError(error.message);
+        // Strip the tokens from the URL so a refresh doesn't re-consume them
+        // and so they don't leak into browser history / referer headers.
+        window.history.replaceState(
+          null,
+          "",
+          `${window.location.pathname}?type=recovery`,
+        );
+        setSessionReady(true);
+      });
+  }, [isReset, supabase]);
 
   const requestForm = useForm<RequestValues>({
     resolver: zodResolver(RequestSchema),
@@ -148,7 +176,12 @@ function ResetPasswordForm() {
         </p>
       </div>
 
-      {isReset ? (
+      {isReset && !sessionReady ? (
+        <div className="flex items-center justify-center py-6 text-muted-foreground">
+          <Loader2 className="size-5 animate-spin mr-2" />
+          <span className="text-sm">Verifying recovery link…</span>
+        </div>
+      ) : isReset ? (
         <form onSubmit={newPasswordForm.handleSubmit(setNewPassword)} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="password">New password</Label>
