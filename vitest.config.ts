@@ -23,6 +23,9 @@ export default defineConfig({
     ],
     // Setup file - handles both environments
     setupFiles: ["./tests/setup.ts"],
+    // Integration tests under tests/integration/** run DB setup in beforeAll
+    // against Neon; a cold connection can exceed the 10s Vitest default.
+    hookTimeout: 30_000,
     // Run integration tests sequentially (they share database state)
     poolOptions: {
       threads: {
