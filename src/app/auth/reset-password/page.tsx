@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -72,34 +72,29 @@ function ResetPasswordForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [sessionReady, setSessionReady] = useState(!isReset);
-  const supabase = createBrowserClient();
+  // Access token pulled from the #hash on recovery redirects — used directly
+  // as a Bearer token against gotrue so we bypass @supabase/ssr's cookie-
+  // store which does not pick up implicit-flow hash fragments.
+  const [recoveryToken, setRecoveryToken] = useState<string | null>(null);
+  const supabase = useMemo(() => createBrowserClient(), []);
 
   // gotrue's /auth/v1/verify redirects here with tokens in the URL hash
-  // (#access_token=…&refresh_token=…&type=recovery). @supabase/ssr's cookie-
-  // based client does not pick those up automatically — we have to hand them
-  // to setSession() so a subsequent updateUser() has an authed context.
+  // (#access_token=…&refresh_token=…&type=recovery). Capture them client-
+  // side so the submit handler can call /auth/v1/user directly.
   useEffect(() => {
     if (!isReset || typeof window === "undefined") return;
     const hash = window.location.hash.replace(/^#/, "");
     if (!hash) { setSessionReady(true); return; }
     const params = new URLSearchParams(hash);
     const accessToken = params.get("access_token");
-    const refreshToken = params.get("refresh_token");
-    if (!accessToken || !refreshToken) { setSessionReady(true); return; }
-    supabase.auth
-      .setSession({ access_token: accessToken, refresh_token: refreshToken })
-      .then(({ error }) => {
-        if (error) setServerError(error.message);
-        // Strip the tokens from the URL so a refresh doesn't re-consume them
-        // and so they don't leak into browser history / referer headers.
-        window.history.replaceState(
-          null,
-          "",
-          `${window.location.pathname}?type=recovery`,
-        );
-        setSessionReady(true);
-      });
-  }, [isReset, supabase]);
+    if (accessToken) {
+      setRecoveryToken(accessToken);
+      // Strip the tokens from the URL so a refresh doesn't re-consume them
+      // and so they don't leak into browser history / referer headers.
+      window.history.replaceState(null, "", `${window.location.pathname}?type=recovery`);
+    }
+    setSessionReady(true);
+  }, [isReset]);
 
   const requestForm = useForm<RequestValues>({
     resolver: zodResolver(RequestSchema),
@@ -128,6 +123,30 @@ function ResetPasswordForm() {
     setServerError(null);
     setSubmitting(true);
     try {
+      // Fall back to a direct gotrue call with the recovery access token when
+      // we have one — this bypasses the cookie-backed session that the SSR
+      // client can't populate from a URL hash fragment.
+      if (recoveryToken) {
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        const res = await fetch(`${url}/auth/v1/user`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${recoveryToken}`,
+            apikey: anon ?? "",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ password: values.password }),
+        });
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { msg?: string; error_description?: string };
+          setServerError(body.msg ?? body.error_description ?? `Update failed (${res.status})`);
+          return;
+        }
+        router.replace("/sign-in?reset=ok");
+        router.refresh();
+        return;
+      }
       const { error } = await supabase.auth.updateUser({ password: values.password });
       if (error) {
         setServerError(error.message);
