@@ -1,15 +1,17 @@
 /**
  * POST /api/tools/site-patch         — discover + queue a site patch job
- * GET  /api/tools/site-patch?jobId=X — poll job status (also download URL)
- * GET  /api/tools/site-patch/download?jobId=X — download the zip
+ * GET  /api/tools/site-patch?jobId=X — poll job status
+ * GET  /api/tools/site-patch?jobId=X&download=1 — stream the zip
  *
  * Crawls a site (sitemap.xml → robots.txt → /sitemap_index.xml → BFS
  * fallback), patches each HTML page via src/lib/audit/html-codemods.ts,
  * and zips the result. User downloads one file with everything ready
  * to drop into their CMS / S3 / repo.
  *
- * Background-job pattern (same as PSI) because even modest sites take
- * 30–120s to fetch + patch + zip — way past Cloudflare's 30s limit.
+ * State lives in Redis so completed zips survive dev-server restarts
+ * (same rationale as the Phase B audit-worker fix). In-flight work does
+ * not resume — a restart mid-job forces the user to re-run, which is
+ * fine since crawl+patch is idempotent and under 3 min for 50 pages.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
@@ -18,11 +20,15 @@ import JSZip from "jszip";
 import { getUserId } from "@/lib/auth/supabase-server";
 import { discoverPages } from "@/lib/audit/sitemap-discover";
 import { applyCodemods } from "@/lib/audit/html-codemods";
+import { getRedisClient } from "@/lib/redis";
 
 const MAX_URLS = 50;
-const JOB_TTL_MS = 30 * 60 * 1000; // 30 min — zips can be big
+const JOB_TTL_SECONDS = 30 * 60;
 const FETCH_TIMEOUT_MS = 20000;
-const INTER_REQUEST_DELAY_MS = 150; // light throttling; ~7 req/s
+const INTER_REQUEST_DELAY_MS = 150;
+
+const jobKey = (id: string) => `site-patch:job:${id}`;
+const zipKey = (id: string) => `site-patch:zip:${id}`;
 
 interface PageResult {
   url: string;
@@ -33,6 +39,7 @@ interface PageResult {
   error?: string;
 }
 
+// Persisted state (no binary — zip stored under a separate key).
 type JobState =
   | {
       status: "discovering";
@@ -57,18 +64,38 @@ type JobState =
       pages: PageResult[];
       totalChanges: number;
       zipBytes: number;
-      zip: Uint8Array;
     }
   | { status: "failed"; startedAt: number; error: string };
 
-const JOBS = new Map<string, JobState>();
+async function setJob(id: string, state: JobState): Promise<void> {
+  const redis = getRedisClient();
+  await redis.setex(jobKey(id), JOB_TTL_SECONDS, JSON.stringify(state));
+}
 
-function pruneStaleJobs() {
-  const now = Date.now();
-  for (const [id, job] of JOBS) {
-    const stamp = "completedAt" in job ? job.completedAt : job.startedAt;
-    if (now - stamp > JOB_TTL_MS) JOBS.delete(id);
+async function getJob(id: string): Promise<JobState | null> {
+  const redis = getRedisClient();
+  const raw = await redis.get(jobKey(id));
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as JobState;
+  } catch {
+    return null;
   }
+}
+
+async function setZip(id: string, buf: Uint8Array): Promise<void> {
+  const redis = getRedisClient();
+  // Store as base64 — avoids binary-handling edge cases across in-memory
+  // fallback and ioredis, and the string path is already TTL-safe.
+  const encoded = Buffer.from(buf).toString("base64");
+  await redis.setex(zipKey(id), JOB_TTL_SECONDS, encoded);
+}
+
+async function getZip(id: string): Promise<Uint8Array | null> {
+  const redis = getRedisClient();
+  const encoded = await redis.get(zipKey(id));
+  if (!encoded) return null;
+  return new Uint8Array(Buffer.from(encoded, "base64"));
 }
 
 function safeFilename(url: string): string {
@@ -77,10 +104,8 @@ function safeFilename(url: string): string {
     let path = u.pathname;
     if (path === "/" || path === "") path = "/index";
     if (path.endsWith("/")) path = path + "index";
-    // Ensure .html extension
     if (!/\.[a-z0-9]+$/i.test(path)) path = path + ".html";
     if (!/\.html?$/i.test(path)) path = path.replace(/\.[^.]+$/, ".html");
-    // Strip leading slash — JSZip paths should be relative
     return path.replace(/^\/+/, "");
   } catch {
     return "unnamed.html";
@@ -113,11 +138,11 @@ async function runSitePatchJob(jobId: string, rootUrl: string) {
   const startedAt = Date.now();
 
   try {
-    JOBS.set(jobId, { status: "discovering", startedAt, rootUrl });
+    await setJob(jobId, { status: "discovering", startedAt, rootUrl });
     const discovery = await discoverPages(rootUrl, { maxUrls: MAX_URLS });
 
     if (discovery.urls.length === 0) {
-      JOBS.set(jobId, {
+      await setJob(jobId, {
         status: "failed",
         startedAt,
         error:
@@ -126,7 +151,7 @@ async function runSitePatchJob(jobId: string, rootUrl: string) {
       return;
     }
 
-    JOBS.set(jobId, {
+    await setJob(jobId, {
       status: "patching",
       startedAt,
       rootUrl,
@@ -139,7 +164,6 @@ async function runSitePatchJob(jobId: string, rootUrl: string) {
     const pages: PageResult[] = [];
     let totalChanges = 0;
 
-    // Summary CSV header
     const csvRows = [
       ["url", "status", "changes", "source_bytes", "patched_bytes", "error"].join(","),
     ];
@@ -181,21 +205,18 @@ async function runSitePatchJob(jobId: string, rootUrl: string) {
         }
       }
 
-      // Update progress snapshot
-      const current = JOBS.get(jobId);
-      if (current && current.status === "patching") {
-        JOBS.set(jobId, {
-          ...current,
-          done: pages.length,
-          pages: [...pages],
-        });
-      }
+      await setJob(jobId, {
+        status: "patching",
+        startedAt,
+        rootUrl,
+        total: discovery.urls.length,
+        done: pages.length,
+        pages: [...pages],
+      });
 
-      // Polite throttling
       await new Promise((r) => setTimeout(r, INTER_REQUEST_DELAY_MS));
     }
 
-    // Add summary files
     zip.file("_summary.csv", csvRows.join("\n"));
     zip.file(
       "_README.txt",
@@ -218,7 +239,8 @@ async function runSitePatchJob(jobId: string, rootUrl: string) {
 
     const zipBuffer = await zip.generateAsync({ type: "uint8array" });
 
-    JOBS.set(jobId, {
+    await setZip(jobId, zipBuffer);
+    await setJob(jobId, {
       status: "completed",
       startedAt,
       completedAt: Date.now(),
@@ -228,10 +250,9 @@ async function runSitePatchJob(jobId: string, rootUrl: string) {
       pages,
       totalChanges,
       zipBytes: zipBuffer.byteLength,
-      zip: zipBuffer,
     });
   } catch (e) {
-    JOBS.set(jobId, {
+    await setJob(jobId, {
       status: "failed",
       startedAt,
       error: e instanceof Error ? e.message : "Unknown error during site patch",
@@ -266,7 +287,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "url must be http or https" }, { status: 400 });
   }
 
-  pruneStaleJobs();
   const jobId = randomUUID();
 
   runSitePatchJob(jobId, parsed.toString()).catch((e) => {
@@ -286,8 +306,8 @@ export async function GET(request: NextRequest) {
   if (!jobId) {
     return NextResponse.json({ error: "jobId required" }, { status: 400 });
   }
-  pruneStaleJobs();
-  const job = JOBS.get(jobId);
+
+  const job = await getJob(jobId);
   if (!job) {
     return NextResponse.json({ error: "job not found or expired" }, { status: 404 });
   }
@@ -300,6 +320,10 @@ export async function GET(request: NextRequest) {
         { status: 409 },
       );
     }
+    const zip = await getZip(jobId);
+    if (!zip) {
+      return NextResponse.json({ error: "zip expired" }, { status: 410 });
+    }
     const hostname = (() => {
       try {
         return new URL(job.rootUrl).hostname;
@@ -307,7 +331,7 @@ export async function GET(request: NextRequest) {
         return "site";
       }
     })();
-    return new NextResponse(new Uint8Array(job.zip), {
+    return new NextResponse(new Uint8Array(zip), {
       status: 200,
       headers: {
         "Content-Type": "application/zip",
@@ -317,11 +341,5 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // Poll response — omit the raw zip buffer (large)
-  if (job.status === "completed") {
-    const { zip: _zip, ...rest } = job;
-    void _zip;
-    return NextResponse.json(rest);
-  }
   return NextResponse.json(job);
 }
