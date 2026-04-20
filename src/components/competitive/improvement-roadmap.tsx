@@ -21,7 +21,7 @@ import { ScoreBadge } from "./score-badge";
 
 interface ActionItem {
   id: string;
-  text: string;
+  title: string;
   isCompleted: boolean;
 }
 

@@ -7,7 +7,7 @@ import { MilestoneCard } from "./milestone-card";
 
 interface ActionItem {
   id: string;
-  text: string;
+  title: string;
   isCompleted: boolean;
 }
 

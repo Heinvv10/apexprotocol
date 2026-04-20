@@ -17,7 +17,11 @@ import { Button } from "@/components/ui/button";
 
 interface ActionItem {
   id: string;
-  text: string;
+  // The generator + schema persist this as `title` (see
+  // src/lib/db/schema/competitive.ts:609). Earlier local copy of this
+  // interface used `text`, which rendered every action item as a blank
+  // checkbox because item.text was always undefined.
+  title: string;
   isCompleted: boolean;
 }
 
@@ -226,7 +230,7 @@ export function MilestoneCard({
                           : "text-foreground group-hover:text-primary"
                       )}
                     >
-                      {item.text}
+                      {item.title}
                     </span>
                   </label>
                 ))}
