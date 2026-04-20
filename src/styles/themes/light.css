@@ -72,6 +72,13 @@
   --border: 222 47% 11% / 0.1;
   --input: 222 47% 11% / 0.1;
   --ring: 174 72% 38%;
+
+  /* Unprefixed accent tokens for Tailwind v4 `@theme inline` (paired to dark.css) */
+  --accent-purple:       var(--palette-purple-600);
+  --accent-purple-light: var(--palette-purple-500);
+  --accent-purple-dark:  262 83% 36%;
+  --accent-pink:         var(--palette-pink-500);
+  --accent-blue:         217 91% 50%;
   --success: 142 71% 35%;
   --success-muted: 142 71% 35% / 0.12;
   --warning: 38 92% 45%;

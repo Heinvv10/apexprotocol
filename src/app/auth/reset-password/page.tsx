@@ -8,10 +8,12 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye, EyeOff, Loader2, MailCheck } from "lucide-react";
 import { createBrowserClient } from "@/lib/auth/supabase-browser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ApexLogoMark, ApexWordmark } from "@/components/ui/apex-logo";
 
 const RequestSchema = z.object({ email: z.string().email("Enter a valid email") });
 const NewPasswordSchema = z.object({
@@ -22,12 +24,53 @@ const NewPasswordSchema = z.object({
 type RequestValues = z.infer<typeof RequestSchema>;
 type NewPasswordValues = z.infer<typeof NewPasswordSchema>;
 
+function AmbientBackground() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0">
+      <div className="absolute -top-40 -left-32 h-[28rem] w-[28rem] rounded-full bg-[#00E5CC]/10 blur-[120px]" />
+      <div className="absolute -bottom-40 -right-32 h-[28rem] w-[28rem] rounded-full bg-[#8B5CF6]/10 blur-[120px]" />
+      <div
+        className="absolute inset-0 opacity-[0.04]"
+        style={
+          {
+            backgroundImage:
+              "linear-gradient(rgba(0,229,204,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,204,0.4) 1px, transparent 1px)",
+            backgroundSize: "64px 64px",
+            maskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse at center, black 30%, transparent 70%)",
+          } satisfies React.CSSProperties
+        }
+      />
+    </div>
+  );
+}
+
+function AuthCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="card-primary rounded-2xl p-8 shadow-2xl border border-white/5"
+      style={
+        {
+          background:
+            "radial-gradient(circle at top right, rgba(0,229,204,0.08), transparent 55%), radial-gradient(circle at bottom left, rgba(139,92,246,0.05), transparent 55%), #141930",
+        } satisfies React.CSSProperties
+      }
+    >
+      {children}
+    </div>
+  );
+}
+
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isReset = searchParams.get("type") === "recovery";
   const [emailSent, setEmailSent] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const supabase = createBrowserClient();
 
   const requestForm = useForm<RequestValues>({
@@ -41,80 +84,222 @@ function ResetPasswordForm() {
 
   async function requestReset(values: RequestValues) {
     setServerError(null);
-    const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-      redirectTo: `${window.location.origin}/auth/reset-password?type=recovery`,
-    });
-    if (error) setServerError(error.message);
-    else setEmailSent(values.email);
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
+        redirectTo: `${window.location.origin}/auth/reset-password?type=recovery`,
+      });
+      if (error) setServerError(error.message);
+      else setEmailSent(values.email);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function setNewPassword(values: NewPasswordValues) {
     setServerError(null);
-    const { error } = await supabase.auth.updateUser({ password: values.password });
-    if (error) {
-      setServerError(error.message);
-    } else {
-      router.replace("/dashboard");
-      router.refresh();
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: values.password });
+      if (error) {
+        setServerError(error.message);
+      } else {
+        router.replace("/dashboard");
+        router.refresh();
+      }
+    } finally {
+      setSubmitting(false);
     }
   }
 
-  return (
-    <div className="w-full max-w-md card-primary rounded-2xl p-8 shadow-2xl">
-      <h1 className="text-2xl font-semibold text-foreground mb-2">
-        {isReset ? "Set a new password" : "Reset your password"}
-      </h1>
-
-      {emailSent ? (
-        <p className="text-sm text-muted-foreground">
-          We sent a recovery link to <span className="text-foreground">{emailSent}</span>.
-          Open the email to continue.
+  if (emailSent) {
+    return (
+      <AuthCard>
+        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-primary/15 text-primary">
+          <MailCheck className="size-6" />
+        </div>
+        <h1 className="text-xl font-semibold text-foreground text-center mb-2">Check your email</h1>
+        <p className="text-sm text-muted-foreground text-center">
+          We sent a recovery link to{" "}
+          <span className="text-foreground font-medium">{emailSent}</span>. Open the email to continue.
         </p>
-      ) : isReset ? (
-        <form onSubmit={newPasswordForm.handleSubmit(setNewPassword)} className="space-y-4 mt-4">
-          <div className="space-y-1">
+        <div className="mt-5 text-center">
+          <Link
+            href="/sign-in"
+            className="text-primary text-sm hover:text-primary/80 transition-colors"
+          >
+            Back to sign in
+          </Link>
+        </div>
+      </AuthCard>
+    );
+  }
+
+  return (
+    <AuthCard>
+      <div className="mb-6 text-center">
+        <h1 className="text-xl font-semibold text-foreground">
+          {isReset ? "Set a new password" : "Reset your password"}
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          {isReset
+            ? "Choose a strong password you haven't used before."
+            : "We'll email you a link to reset your password."}
+        </p>
+      </div>
+
+      {isReset ? (
+        <form onSubmit={newPasswordForm.handleSubmit(setNewPassword)} className="space-y-4">
+          <div className="space-y-1.5">
             <Label htmlFor="password">New password</Label>
-            <Input id="password" type="password" autoComplete="new-password" {...newPasswordForm.register("password")} />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="At least 8 characters"
+                className="h-10 pr-10"
+                {...newPasswordForm.register("password")}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
             {newPasswordForm.formState.errors.password && (
-              <p className="text-xs text-destructive">{newPasswordForm.formState.errors.password.message}</p>
+              <p className="text-xs text-destructive">
+                {newPasswordForm.formState.errors.password.message}
+              </p>
             )}
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label htmlFor="confirm">Confirm password</Label>
-            <Input id="confirm" type="password" autoComplete="new-password" {...newPasswordForm.register("confirm")} />
+            <div className="relative">
+              <Input
+                id="confirm"
+                type={showConfirm ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="Re-enter password"
+                className="h-10 pr-10"
+                {...newPasswordForm.register("confirm")}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm((v) => !v)}
+                aria-label={showConfirm ? "Hide password" : "Show password"}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}
+              >
+                {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
             {newPasswordForm.formState.errors.confirm && (
-              <p className="text-xs text-destructive">{newPasswordForm.formState.errors.confirm.message}</p>
+              <p className="text-xs text-destructive">
+                {newPasswordForm.formState.errors.confirm.message}
+              </p>
             )}
           </div>
-          {serverError && <div className="text-sm text-destructive">{serverError}</div>}
-          <Button type="submit" className="w-full">Update password</Button>
+          {serverError && (
+            <div
+              role="alert"
+              className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-sm text-destructive"
+            >
+              {serverError}
+            </div>
+          )}
+          <Button type="submit" className="w-full h-10" disabled={submitting}>
+            {submitting ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Updating…
+              </>
+            ) : (
+              "Update password"
+            )}
+          </Button>
         </form>
       ) : (
-        <form onSubmit={requestForm.handleSubmit(requestReset)} className="space-y-4 mt-4">
-          <div className="space-y-1">
+        <form onSubmit={requestForm.handleSubmit(requestReset)} className="space-y-4">
+          <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" {...requestForm.register("email")} />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@company.com"
+              className="h-10"
+              {...requestForm.register("email")}
+            />
             {requestForm.formState.errors.email && (
               <p className="text-xs text-destructive">{requestForm.formState.errors.email.message}</p>
             )}
           </div>
-          {serverError && <div className="text-sm text-destructive">{serverError}</div>}
-          <Button type="submit" className="w-full">Send reset link</Button>
-          <p className="text-sm text-muted-foreground text-center">
-            <Link href="/sign-in" className="text-primary hover:text-primary/80">Back to sign in</Link>
-          </p>
+          {serverError && (
+            <div
+              role="alert"
+              className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-sm text-destructive"
+            >
+              {serverError}
+            </div>
+          )}
+          <Button type="submit" className="w-full h-10" disabled={submitting}>
+            {submitting ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Sending…
+              </>
+            ) : (
+              "Send reset link"
+            )}
+          </Button>
         </form>
       )}
-    </div>
+    </AuthCard>
   );
 }
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0a0f1a] px-4">
-      <Suspense fallback={<div className="w-full max-w-md card-primary rounded-2xl p-8 shadow-2xl h-48" />}>
-        <ResetPasswordForm />
-      </Suspense>
+    <div className="relative min-h-screen flex items-center justify-center bg-[#0a0f1a] px-4 py-10 overflow-hidden">
+      <AmbientBackground />
+      <div className="relative w-full max-w-md">
+        <div className="flex flex-col items-center gap-3 mb-6">
+          <ApexLogoMark size={48} />
+          <div className="flex flex-col items-center">
+            <ApexWordmark className="text-2xl" />
+            <span className="text-xs text-muted-foreground mt-1">AI Visibility Platform</span>
+          </div>
+        </div>
+        <Suspense
+          fallback={
+            <div
+              className="card-primary rounded-2xl p-8 shadow-2xl border border-white/5 h-48"
+              style={
+                {
+                  background:
+                    "radial-gradient(circle at top right, rgba(0,229,204,0.08), transparent 55%), #141930",
+                } satisfies React.CSSProperties
+              }
+            />
+          }
+        >
+          <ResetPasswordForm />
+        </Suspense>
+        <p className="text-sm text-muted-foreground text-center mt-6">
+          Remembered it?{" "}
+          <Link
+            href="/sign-in"
+            className="text-primary hover:text-primary/80 font-medium transition-colors"
+          >
+            Back to sign in
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
