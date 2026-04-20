@@ -29,6 +29,7 @@ export interface ApexTool {
     | "faq_schema_generator"
     | "meta_tag_suggester"
     | "pagespeed_scan"
+    | "html_auto_patcher"
     | "content_brief_generator"
     | "schema_markup_builder";
   /** Path to the tool inside /dashboard/... */
@@ -289,23 +290,37 @@ export const ACTION_GUIDES: Record<string, ActionGuide> = {
   "Implement lazy loading for images": {
     why: "Lazy-loading defers off-screen images, improving LCP by ~20–40% on image-heavy pages.",
     steps: [
+      "Use the Apex HTML Auto-Patcher (button below) — automatically adds `loading=\"lazy\"` to all below-fold images and `fetchpriority=\"high\"` to the hero.",
       "For every `<img>` that isn't the LCP candidate, add `loading=\"lazy\"`.",
       "For iframes (YouTube embeds, etc.) add `loading=\"lazy\"` too.",
       "For the LCP image specifically, set `fetchpriority=\"high\"` and `loading=\"eager\"`.",
       "Test via Chrome DevTools → Network → disable cache → throttle to Slow 4G.",
       "Confirm LCP image downloads first, below-fold images queued.",
     ],
+    tool: {
+      kind: "html_auto_patcher",
+      href: "/dashboard/tools/html-patch",
+      cta: "Auto-patch HTML",
+      description: "Applies lazy-load + fetchpriority fixes automatically.",
+    },
     estMinutes: 45,
   },
   "Minimize JavaScript blocking time": {
     why: "Total Blocking Time (TBT) and INP are driven by heavy JS. Deferring non-critical scripts moves these metrics into the green.",
     steps: [
+      "Use the Apex HTML Auto-Patcher (button below) — it automatically adds `defer` to non-critical scripts in your HTML and shows you the diff.",
       "Audit your `<head>` — any `<script>` without `async` or `defer` is blocking.",
       "Add `defer` to non-critical scripts (analytics, chat widgets, A/B test SDKs).",
       "Move 3rd-party tags below the fold where possible, or load on interaction.",
       "Use PageSpeed Insights' \"Reduce unused JavaScript\" to find dead code.",
       "Consider tree-shaking or dynamic imports for heavy client components.",
     ],
+    tool: {
+      kind: "html_auto_patcher",
+      href: "/dashboard/tools/html-patch",
+      cta: "Auto-patch HTML",
+      description: "Applies defer + lazy-load + width/height fixes to your HTML in one click.",
+    },
     estMinutes: 90,
   },
   "Re-test and document improvements": {
