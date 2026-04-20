@@ -77,6 +77,13 @@
   --border: 0 0% 100% / 0.08;
   --input: var(--palette-neutral-650);
   --ring: var(--palette-cyan-500);
+
+  /* Unprefixed accent tokens for Tailwind v4 `@theme inline` (mirrors --primary / --color-primary) */
+  --accent-purple:       var(--palette-purple-500);
+  --accent-purple-light: var(--palette-purple-400);
+  --accent-purple-dark:  var(--palette-purple-600);
+  --accent-pink:         var(--palette-pink-500);
+  --accent-blue:         var(--palette-blue-500);
   --success: var(--palette-success);
   --success-muted: var(--palette-success) / 0.15;
   --warning: var(--palette-warning);

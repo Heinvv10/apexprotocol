@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   Info,
   Bell,
+  Zap,
   X,
   Check,
   ExternalLink,
@@ -318,8 +319,8 @@ interface AlertBadgeProps {
 export function AlertBadge({ count, criticalCount = 0, onClick }: AlertBadgeProps) {
   if (count === 0) {
     return (
-      <Button variant="ghost" size="icon" onClick={onClick}>
-        <Bell className="h-5 w-5" />
+      <Button variant="ghost" size="icon" onClick={onClick} aria-label="GEO alerts" title="GEO alerts">
+        <Zap className="h-5 w-5" />
       </Button>
     );
   }
@@ -330,8 +331,10 @@ export function AlertBadge({ count, criticalCount = 0, onClick }: AlertBadgeProp
       size="icon"
       className="relative"
       onClick={onClick}
+      aria-label={`GEO alerts, ${count} unread`}
+      title="GEO alerts"
     >
-      <Bell className="h-5 w-5" />
+      <Zap className="h-5 w-5" />
       <span
         className={cn(
           "absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-xs font-bold",

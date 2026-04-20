@@ -33,6 +33,11 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-purple: var(--accent-purple);
+  --color-accent-purple-light: var(--accent-purple-light);
+  --color-accent-purple-dark: var(--accent-purple-dark);
+  --color-accent-pink: var(--accent-pink);
+  --color-accent-blue: var(--accent-blue);
   --color-destructive: var(--destructive);
 
   --color-card: var(--card);
