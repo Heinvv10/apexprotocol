@@ -16,6 +16,8 @@ services:
       args:
         GIT_SHA: ${GIT_SHA:-}
         NEXT_PUBLIC_GIT_SHA: ${NEXT_PUBLIC_GIT_SHA:-}
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
     container_name: apex-app
     restart: unless-stopped
     ports:
@@ -35,6 +37,11 @@ services:
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      # Supabase Auth (self-hosted at api.apexgeo.app)
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
       # Bugsink error tracking (BL-55) — inert unless SENTRY_ENABLED=true
       - SENTRY_ENABLED=${SENTRY_ENABLED:-false}
       - SENTRY_DSN=${SENTRY_DSN:-}

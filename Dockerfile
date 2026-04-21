@@ -22,6 +22,14 @@ ARG NEXT_PUBLIC_GIT_SHA=""
 ENV GIT_SHA=${GIT_SHA}
 ENV NEXT_PUBLIC_GIT_SHA=${NEXT_PUBLIC_GIT_SHA}
 
+# Supabase public vars must be available at BUILD time — Next.js inlines
+# NEXT_PUBLIC_* into the client bundle during `next build`, not at runtime.
+# Without these the browser falls back to the placeholder URL in supabase-browser.ts.
+ARG NEXT_PUBLIC_SUPABASE_URL=""
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY=""
+ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 

@@ -28,6 +28,8 @@ const cspDirectives: Record<string, string[]> = {
     // Swagger UI CDN for /api/docs
     "https://unpkg.com",
     "https://cdn.jsdelivr.net",
+    // Cloudflare Insights beacon — auto-injected when site is proxied via Cloudflare
+    "https://static.cloudflareinsights.com",
     ...(IS_PROD ? [] : ["'unsafe-eval'"]),
   ],
   "style-src": [
@@ -62,6 +64,8 @@ const cspDirectives: Record<string, string[]> = {
     // Observability
     "https://*.ingest.sentry.io",
     "https://*.vercel-analytics.com",
+    // Cloudflare Insights beacon reporting endpoint
+    "https://cloudflareinsights.com",
     "wss:",
   ],
   "frame-src": [
