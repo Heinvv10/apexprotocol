@@ -7,6 +7,11 @@ import {
   AIPlatforms,
   Integrations,
   PricingSection,
+  TestimonialsSection,
+  ComparisonTable,
+  DemoMode,
+  CaseStudies,
+  PerplexitySection,
   FAQSection,
   CTAFooter,
   SiteFooter,
@@ -21,8 +26,13 @@ export default function Home() {
         <ValueProps />
         <FeaturesShowcase />
         <DashboardPreview />
+        <TestimonialsSection />
+        <ComparisonTable />
+        <DemoMode />
+        <CaseStudies />
         <AIPlatforms />
         <Integrations />
+        <PerplexitySection />
         <PricingSection />
         <FAQSection />
         <CTAFooter />

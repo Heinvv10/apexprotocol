@@ -69,7 +69,7 @@ export default function RootLayout({
 }>) {
   const brand = getActiveBrand();
   return (
-    <html lang="en" suppressHydrationWarning data-brand={brand.name.toLowerCase()}>
+    <html lang="en" className="dark" suppressHydrationWarning data-brand={brand.name.toLowerCase()}>
       <body className={`${inter.variable} antialiased`}>
         <ThemeProvider
           attribute="class"

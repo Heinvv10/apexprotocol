@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
+import { motion, useInView } from "framer-motion";
+import { useRef } from "react";
 
 type Feature = {
   icon: LucideIcon;
@@ -79,7 +81,20 @@ const SUBSCORES = [
   { label: "AEO", value: 69 },
 ];
 
+const sectionVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 28 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.21, 1.02, 0.73, 1] as [number, number, number, number] } },
+};
+
 export function FeaturesShowcase() {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+
   return (
     <section id="features" className="py-24 relative">
       {/* Background */}
@@ -87,7 +102,13 @@ export function FeaturesShowcase() {
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
-        <div className="text-center mb-14">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-14"
+        >
           <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium tracking-wider uppercase mb-4">
             Features
           </span>
@@ -97,27 +118,32 @@ export function FeaturesShowcase() {
           <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
             Every feature designed to maximize your visibility across AI search.
           </p>
-        </div>
+        </motion.div>
 
         {/* Bento Grid */}
-        <div className="grid lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
-          {/* Featured: GEO Score Dashboard (2 cols) */}
+        <motion.div
+          ref={ref}
+          variants={sectionVariants}
+          initial="hidden"
+          animate={inView ? "show" : "hidden"}
+          className="grid lg:grid-cols-3 gap-4 max-w-6xl mx-auto"
+        >
           <FeaturedCard feature={FEATURED} />
-
-          {/* Smart Recommendations (1 col) */}
           <StandardCard feature={SUPPORTING[0]} />
-
-          {/* Row 2: Monitor, Audit, Generator */}
           <StandardCard feature={SUPPORTING[1]} />
           <StandardCard feature={SUPPORTING[2]} />
           <StandardCard feature={SUPPORTING[3]} />
-
-          {/* Integration Hub (full width) */}
           <IntegrationHubCard feature={INTEGRATION_HUB} logos={INTEGRATION_LOGOS} />
-        </div>
+        </motion.div>
 
-        {/* CTA — demoted to ghost link */}
-        <div className="text-center mt-10">
+        {/* CTA */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4 }}
+          className="text-center mt-10"
+        >
           <Link
             href="/sign-up"
             className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 text-sm font-medium transition-colors"
@@ -125,7 +151,7 @@ export function FeaturesShowcase() {
             See all 20+ features
             <ArrowRight className="w-4 h-4" />
           </Link>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -134,7 +160,7 @@ export function FeaturesShowcase() {
 function FeaturedCard({ feature }: { feature: Feature }) {
   const Icon = feature.icon;
   return (
-    <div className="lg:col-span-2 relative group overflow-hidden rounded-2xl border border-primary/20 bg-card/70 backdrop-blur-sm p-6 md:p-7">
+    <motion.div variants={cardVariants} className="lg:col-span-2 relative group overflow-hidden rounded-2xl border border-primary/20 bg-card/70 backdrop-blur-sm p-6 md:p-7">
       {/* Accent glow */}
       <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/15 rounded-full blur-3xl pointer-events-none" />
 
@@ -192,14 +218,19 @@ function FeaturedCard({ feature }: { feature: Feature }) {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 function StandardCard({ feature }: { feature: Feature }) {
   const Icon = feature.icon;
   return (
-    <div className="relative group rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-5 transition-all hover:border-primary/40 hover:bg-card/70">
+    <motion.div
+      variants={cardVariants}
+      whileHover={{ y: -4, boxShadow: "0 16px 36px rgba(0,0,0,0.14)" }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className="relative group rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-5 hover:border-primary/40 hover:bg-card/70"
+    >
       {/* Pill on top — lead with proof */}
       <div className="flex items-center justify-between mb-4">
         <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-semibold">
@@ -214,7 +245,7 @@ function StandardCard({ feature }: { feature: Feature }) {
       <p className="text-sm text-muted-foreground leading-relaxed">
         {feature.body}
       </p>
-    </div>
+    </motion.div>
   );
 }
 
@@ -227,7 +258,7 @@ function IntegrationHubCard({
 }) {
   const Icon = feature.icon;
   return (
-    <div className="lg:col-span-3 relative rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6">
+    <motion.div variants={cardVariants} className="lg:col-span-3 relative rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6">
       <div className="grid lg:grid-cols-[1.2fr_1fr] gap-6 items-center">
         <div>
           <div className="flex items-center gap-3 mb-3">
@@ -255,7 +286,7 @@ function IntegrationHubCard({
           ))}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

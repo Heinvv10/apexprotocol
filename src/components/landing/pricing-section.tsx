@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Check, Sparkles, MessageCircle, Globe2 } from "lucide-react";
 import Link from "next/link";
@@ -216,7 +217,14 @@ export function PricingSection() {
             const { display, unit } = priceFor(plan);
             const isPopular = plan.popular;
             return (
-              <div key={plan.name} className="relative">
+              <motion.div
+                key={plan.name}
+                className="relative"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                viewport={{ once: true }}
+              >
                 {/* Gradient border for popular plan */}
                 {isPopular && (
                   <div className="absolute -inset-[1px] bg-gradient-to-br from-primary via-accent-blue to-accent-purple rounded-2xl" />
@@ -247,23 +255,45 @@ export function PricingSection() {
 
                   {/* Price — consistent scale whether number or "Custom" */}
                   <div className="mb-6">
-                    <div className="flex items-baseline gap-1">
-                      {plan.key === "enterprise" ? (
-                        <span className="text-4xl font-bold tracking-tight">
-                          Custom
-                        </span>
-                      ) : (
-                        <>
-                          <span className="text-4xl font-bold tabular-nums tracking-tight">
-                            {display}
-                          </span>
-                          {unit && (
-                            <span className="text-muted-foreground text-sm">
-                              {unit}
+                    <div className="flex items-baseline gap-1 h-12 relative">
+                      <AnimatePresence mode="wait">
+                        {plan.key === "enterprise" ? (
+                          <motion.span
+                            key="custom"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{
+                              duration: 0.3,
+                              ease: [0.21, 1.02, 0.73, 1],
+                            }}
+                            className="text-4xl font-bold tracking-tight absolute"
+                          >
+                            Custom
+                          </motion.span>
+                        ) : (
+                          <motion.div
+                            key={`price-${display}`}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{
+                              duration: 0.3,
+                              ease: [0.21, 1.02, 0.73, 1],
+                            }}
+                            className="flex items-baseline gap-1"
+                          >
+                            <span className="text-4xl font-bold tabular-nums tracking-tight">
+                              {display}
                             </span>
-                          )}
-                        </>
-                      )}
+                            {unit && (
+                              <span className="text-muted-foreground text-sm">
+                                {unit}
+                              </span>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 min-h-[1rem]">
                       {plan.key === "enterprise"
@@ -312,7 +342,7 @@ export function PricingSection() {
                     </Link>
                   </Button>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>

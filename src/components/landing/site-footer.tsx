@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ApexLogo } from "@/components/ui/apex-logo";
+import { MessageCircle } from "lucide-react";
 
 const footerLinks = {
   platform: [
@@ -116,14 +117,26 @@ export function SiteFooter() {
         </div>
 
         {/* Bottom */}
-        <div className="mt-12 pt-8 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="mt-12 pt-8 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-6">
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} ApexGEO. All rights reserved.
           </p>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>🇿🇦 Built for Africa</span>
-            <span>•</span>
-            <span>🌍 Available Worldwide</span>
+          <div className="flex items-center gap-4 flex-wrap justify-center md:justify-end">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>🇿🇦 Built for Africa</span>
+              <span>•</span>
+              <span>🌍 Available Worldwide</span>
+            </div>
+            <a
+              href="https://wa.me/27000000000?text=Hi%20ApexGEO!%20I%27d%20like%20to%20learn%20more%20about%20your%20GEO%20intelligence%20platform."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
+              aria-label="Chat on WhatsApp"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>WhatsApp</span>
+            </a>
           </div>
         </div>
       </div>
