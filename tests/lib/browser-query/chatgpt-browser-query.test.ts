@@ -428,7 +428,11 @@ describe("ChatGPTBrowserQueryExecutor", () => {
         }
       );
 
-      if (result.status === "success" && result.extractedData.citations.length > 0) {
+      if (
+        result.status === "success" &&
+        result.extractedData.citations &&
+        result.extractedData.citations.length > 0
+      ) {
         const citation = result.extractedData.citations[0];
         expect(citation.url).toBeDefined();
         expect(citation.url.length).toBeGreaterThan(0);
@@ -903,7 +907,10 @@ describe("ChatGPTBrowserQueryExecutor", () => {
       };
 
       const multiPlatformResult = executor.convertToMultiPlatformResult(result);
-      expect(multiPlatformResult.metrics.citationBonus || 0).toBe(0);
+      const metrics = multiPlatformResult.metrics as typeof multiPlatformResult.metrics & {
+        citationBonus?: number;
+      };
+      expect(metrics.citationBonus || 0).toBe(0);
     });
 
     it("should handle multiple retries correctly", async () => {

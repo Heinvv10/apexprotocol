@@ -173,7 +173,7 @@ describe('ContentTypeHandlerService', () => {
       const config = service.getContentTypeConfig('social_media');
       expect(config).toBeDefined();
       expect(config.contentType).toBe('social_media');
-      expect(config.requirements.maxLength).toBeDefined();
+      expect((config.requirements as { maxLength: Record<string, number> }).maxLength).toBeDefined();
     });
 
     it('should return marketing copy configuration', () => {
@@ -729,7 +729,7 @@ describe('ContentTypeHandlerService', () => {
           style: ['formal'],
           vocabulary: { preferred: [], avoided: [] }
         }
-      } as ContentTypeInput;
+      } as unknown as ContentTypeInput;
 
       const result = await service.generate(input);
 
@@ -765,7 +765,7 @@ describe('ContentTypeHandlerService', () => {
           style: ['formal'],
           vocabulary: { preferred: [], avoided: [] }
         }
-      } as ContentTypeInput;
+      } as unknown as ContentTypeInput;
 
       await service.generate(input);
 

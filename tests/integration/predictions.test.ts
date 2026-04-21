@@ -20,6 +20,7 @@ import {
   isDatabaseConfigured,
 } from "./setup";
 import { TEST_IDS } from "./seed";
+import type { PredictionMetadata } from "../../src/lib/db/schema/predictions";
 
 // Check if database is configured
 const dbConfigured = isDatabaseConfigured();
@@ -59,8 +60,8 @@ describe("Prediction Integration Tests", () => {
         historicalDataPoints: 90,
         dataQuality: 85,
         algorithmUsed: "linear-regression",
-        warnings: [],
-      },
+        warnings: [] as string[],
+      } as PredictionMetadata,
     };
   };
 

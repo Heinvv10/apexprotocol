@@ -4,10 +4,9 @@ import {
   createCrawlerService,
   type CrawlerConfig,
   type CrawlResult,
-  type PageData,
   type RobotsTxtData,
   type SitemapData,
-  type CrawlStatus
+  type CrawlStats
 } from '../src/services/crawler-service';
 
 describe('CrawlerService', () => {

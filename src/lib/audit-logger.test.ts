@@ -29,7 +29,21 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-import { db } from "@/lib/db";
+import { db as dbReal } from "@/lib/db";
+
+// The mock augments db with extra methods (limit, returning, etc.) that are
+// chain-terminal on drizzle. Cast to a mock-shaped type so vi.mocked can type them.
+type MockedDb = typeof dbReal & {
+  limit: ReturnType<typeof vi.fn>;
+  returning: ReturnType<typeof vi.fn>;
+  select: ReturnType<typeof vi.fn>;
+  from: ReturnType<typeof vi.fn>;
+  where: ReturnType<typeof vi.fn>;
+  orderBy: ReturnType<typeof vi.fn>;
+  insert: ReturnType<typeof vi.fn>;
+  values: ReturnType<typeof vi.fn>;
+};
+const db = dbReal as unknown as MockedDb;
 
 describe("Audit Logger - Hash Generation", () => {
   beforeEach(() => {

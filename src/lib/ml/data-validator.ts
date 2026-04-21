@@ -5,6 +5,8 @@
 
 import type { HistoricalDataPoint } from "./data-pipeline";
 
+export type { HistoricalDataPoint };
+
 /**
  * Validation result with detailed error information
  */

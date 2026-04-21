@@ -212,7 +212,7 @@ describe("NotificationService", () => {
     const redis = getRedisClient();
     vi.mocked(redis.exists).mockResolvedValue(0);
     vi.mocked(redis.setex).mockResolvedValue("OK");
-    vi.mocked(publish).mockResolvedValue(1);
+    vi.mocked(publish).mockResolvedValue(undefined);
   });
 
   describe("createNotification", () => {
@@ -513,7 +513,7 @@ describe("NotificationService", () => {
     it("should create default preferences if none exist", async () => {
       const { db } = await import("@/lib/db");
       vi.mocked(db.query.notificationPreferences.findFirst).mockResolvedValue(
-        null
+        undefined
       );
 
       const result = await NotificationService.getOrCreatePreferences(
@@ -527,7 +527,7 @@ describe("NotificationService", () => {
     it("should create preferences with correct defaults", async () => {
       const { db } = await import("@/lib/db");
       vi.mocked(db.query.notificationPreferences.findFirst).mockResolvedValue(
-        null
+        undefined
       );
 
       await NotificationService.getOrCreatePreferences("user-1", "org-1");

@@ -3,11 +3,11 @@ import {
   PerformanceService,
   createPerformanceService,
   type PerformanceConfig,
-  type PerformanceResult,
   type CoreWebVitals,
-  type LighthouseMetrics,
   type ResourceAnalysis,
-  type PerformanceIssue
+  type PerformanceIssue,
+  type Resource,
+  type ImageData
 } from '../src/services/performance-service';
 
 describe('PerformanceService', () => {
@@ -284,7 +284,7 @@ describe('PerformanceService', () => {
         { url: 'https://example.com/critical.css', type: 'stylesheet', renderBlocking: true, size: 20000 },
         { url: 'https://example.com/async.js', type: 'script', renderBlocking: false, size: 50000 },
         { url: 'https://example.com/sync.js', type: 'script', renderBlocking: true, size: 30000 }
-      ];
+      ] as Array<Resource & { renderBlocking?: boolean }>;
 
       const result = service.findRenderBlockingResources(resources);
 
@@ -298,7 +298,7 @@ describe('PerformanceService', () => {
         { url: 'https://cdn.example.com/lib.js', type: 'script', size: 30000 },
         { url: 'https://analytics.google.com/analytics.js', type: 'script', size: 20000 },
         { url: 'https://fonts.googleapis.com/css', type: 'stylesheet', size: 5000 }
-      ];
+      ] as Resource[];
 
       const result = service.analyzeThirdPartyResources(resources, 'example.com');
 
@@ -328,7 +328,7 @@ describe('PerformanceService', () => {
       const images = [
         { url: 'https://example.com/large.jpg', size: 2000000, width: 4000, height: 3000, displayWidth: 800, displayHeight: 600 },
         { url: 'https://example.com/right-size.jpg', size: 50000, width: 800, height: 600, displayWidth: 800, displayHeight: 600 }
-      ];
+      ] as Array<ImageData & { displayWidth?: number; displayHeight?: number }>;
 
       const result = service.findOversizedImages(images);
 
@@ -342,7 +342,7 @@ describe('PerformanceService', () => {
         { url: 'https://example.com/above-fold.jpg', loading: 'eager', aboveFold: true },
         { url: 'https://example.com/below-fold.jpg', loading: 'eager', aboveFold: false },
         { url: 'https://example.com/lazy.jpg', loading: 'lazy', aboveFold: false }
-      ];
+      ] as Array<ImageData & { loading?: string; aboveFold?: boolean }>;
 
       const result = service.analyzeLazyLoading(images);
 
@@ -355,7 +355,7 @@ describe('PerformanceService', () => {
         { url: 'https://example.com/photo.jpg', format: 'jpeg', size: 200000 },
         { url: 'https://example.com/graphic.png', format: 'png', size: 150000 },
         { url: 'https://example.com/animation.gif', format: 'gif', size: 500000 }
-      ];
+      ] as ImageData[];
 
       const result = service.recommendImageFormats(images);
 
@@ -448,7 +448,7 @@ describe('PerformanceService', () => {
 
   describe('Caching Analysis', () => {
     it('should analyze cache headers', () => {
-      const resources = [
+      const resources: Array<{ url: string; headers: Record<string, string> }> = [
         { url: 'https://example.com/app.js', headers: { 'cache-control': 'max-age=31536000' } },
         { url: 'https://example.com/api/data', headers: { 'cache-control': 'no-cache' } },
         { url: 'https://example.com/style.css', headers: {} }
@@ -486,7 +486,7 @@ describe('PerformanceService', () => {
 
   describe('Compression Analysis', () => {
     it('should detect compression usage', () => {
-      const resources = [
+      const resources: Array<{ url: string; headers: Record<string, string>; size: number }> = [
         { url: 'https://example.com/app.js', headers: { 'content-encoding': 'gzip' }, size: 50000 },
         { url: 'https://example.com/style.css', headers: { 'content-encoding': 'br' }, size: 20000 },
         { url: 'https://example.com/data.json', headers: {}, size: 30000 }

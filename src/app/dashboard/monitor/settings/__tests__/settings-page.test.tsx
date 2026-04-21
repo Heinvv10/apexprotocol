@@ -90,6 +90,8 @@ const mockBrand: Brand = {
   ],
   valuePropositions: ["Value 1"],
   socialLinks: {},
+  locations: [],
+  personnel: [],
   voice: {
     tone: "professional",
     personality: ["Innovative"],

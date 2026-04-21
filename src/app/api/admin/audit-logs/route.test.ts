@@ -48,34 +48,36 @@ function setupGetMocks(logs: any[], totalCount?: number) {
   const count = totalCount !== undefined ? totalCount : logs.length;
 
   // Reset mocks
-  vi.mocked(db.where).mockReturnValue(db as any);
-  vi.mocked(db.from).mockReturnValue(db as any);
+  const dbAny = db as any;
+  vi.mocked(dbAny.where).mockReturnValue(dbAny);
+  vi.mocked(dbAny.from).mockReturnValue(dbAny);
 
   // Setup sequential query responses
   let queryCount = 0;
 
-  vi.mocked(db.where).mockImplementation((clause: any) => {
+  vi.mocked(dbAny.where).mockImplementation((clause: any) => {
     queryCount++;
     if (queryCount === 1) {
       // First query is count
       return Promise.resolve([{ count }]) as any;
     }
     // Second query is logs - continue chain
-    return db as any;
+    return dbAny;
   });
 
   // Logs query resolves at offset
-  vi.mocked(db.offset).mockResolvedValue(logs);
+  vi.mocked(dbAny.offset).mockResolvedValue(logs);
 }
 
 // Helper to set up database mocks for POST requests
 function setupPostMocks(createdLog: any, previousLogHash: string | null = null) {
+  const dbAny = db as any;
   // Mock previous log hash query (first query)
   const previousLog = previousLogHash ? [{ integrityHash: previousLogHash }] : [];
-  vi.mocked(db.limit).mockResolvedValueOnce(previousLog);
+  vi.mocked(dbAny.limit).mockResolvedValueOnce(previousLog);
 
   // Mock insert returning (second query)
-  vi.mocked(db.returning).mockResolvedValue([createdLog]);
+  vi.mocked(dbAny.returning).mockResolvedValue([createdLog]);
 }
 
 describe("GET /api/admin/audit-logs - List Audit Logs (FR-1)", () => {
@@ -632,7 +634,7 @@ describe("Security - Authentication and Authorization", () => {
   });
 
   it("should allow access in dev mode when DEV_SUPER_ADMIN is set (GET)", async () => {
-    process.env.NODE_ENV = "development";
+    (process.env as Record<string, string>).NODE_ENV = "development";
     process.env.DEV_SUPER_ADMIN = "true";
 
     setupGetMocks([]);
@@ -646,7 +648,7 @@ describe("Security - Authentication and Authorization", () => {
   });
 
   it("should allow access in dev mode when DEV_SUPER_ADMIN is set (POST)", async () => {
-    process.env.NODE_ENV = "development";
+    (process.env as Record<string, string>).NODE_ENV = "development";
     process.env.DEV_SUPER_ADMIN = "true";
 
     const mockCreatedLog = {

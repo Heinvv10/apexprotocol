@@ -502,7 +502,7 @@ describe('SiteAuditSubAgent', () => {
 
       const json = agent.exportResult('test-123', 'json');
 
-      expect(JSON.parse(json).overallScore).toBe(80);
+      expect(JSON.parse(json as string).overallScore).toBe(80);
     });
 
     it('should export audit result as PDF data', () => {

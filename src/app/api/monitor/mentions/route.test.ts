@@ -76,7 +76,7 @@ const createSelectChain = (result: unknown[]) => {
 };
 
 // Track inserted data for POST tests
-let lastInsertedData: unknown = null;
+let lastInsertedData: Record<string, unknown> | null = null;
 
 vi.mock("@/lib/db", () => {
   return {
@@ -95,7 +95,7 @@ vi.mock("@/lib/db", () => {
         return createSelectChain(mockMentions);
       }),
       insert: vi.fn(() => ({
-        values: vi.fn((data: unknown) => {
+        values: vi.fn((data: Record<string, unknown>) => {
           lastInsertedData = data;
           return {
             returning: vi.fn(() =>
@@ -168,7 +168,7 @@ describe("GET /api/monitor/mentions - Data Filtering (AC-2.1.2)", () => {
   it("should return empty array when organization has no brands", async () => {
     // Override the mock to return empty brands
     vi.mocked(db.select).mockImplementationOnce(() =>
-      createSelectChain([]) as ReturnType<typeof db.select>
+      createSelectChain([]) as unknown as ReturnType<typeof db.select>
     );
 
     const request = new NextRequest("http://localhost:3000/api/monitor/mentions");

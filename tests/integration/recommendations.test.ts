@@ -91,7 +91,11 @@ describe("Recommendation Integration Tests", () => {
       impact: "medium" as const,
       estimatedTime: "1 hour",
       source: "manual" as const,
-      steps: ["Step 1", "Step 2", "Step 3"],
+      steps: [
+        { stepNumber: 1, instruction: "Step 1" },
+        { stepNumber: 2, instruction: "Step 2" },
+        { stepNumber: 3, instruction: "Step 3" },
+      ],
       notes: null,
       dueDate: null,
       completedAt: status === "completed" ? new Date() : null,

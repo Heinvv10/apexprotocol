@@ -556,7 +556,7 @@ describe('ResearchService', () => {
         sources: ['invalid_source' as ResearchSource]
       };
 
-      const result = await service.research(request);
+      const result = await service.research(request as unknown as ResearchRequest);
 
       // Zod validation rejects invalid enum values
       expect(result.success).toBe(false);

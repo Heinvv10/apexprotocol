@@ -44,7 +44,6 @@ function generateHistoricalData(
     data.push({
       date,
       score,
-      brandId: "test-brand",
     });
   }
 

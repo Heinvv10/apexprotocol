@@ -121,14 +121,14 @@ const setupStandardMock = (
     callCount++;
     if (callCount === 1) {
       // First call: get organization's brands
-      return createChain(brandsResult) as ReturnType<typeof db.select>;
+      return createChain(brandsResult) as unknown as ReturnType<typeof db.select>;
     }
     if (callCount === 2) {
       // Second call: get current period mentions
-      return createChain(currentMentionsResult) as ReturnType<typeof db.select>;
+      return createChain(currentMentionsResult) as unknown as ReturnType<typeof db.select>;
     }
     // Third call: get previous period mentions (for trend calculation)
-    return createChain(previousMentionsResult) as ReturnType<typeof db.select>;
+    return createChain(previousMentionsResult) as unknown as ReturnType<typeof db.select>;
   });
 };
 

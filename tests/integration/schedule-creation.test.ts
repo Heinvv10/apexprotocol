@@ -48,7 +48,7 @@ describe("Schedule Creation API Integration Tests", () => {
   }));
 
   // Helper to create test content
-  const createTestContent = async (idPrefix: string, status: "draft" | "approved" | "published" = "draft") => {
+  const createTestContent = async (idPrefix: string, status: "draft" | "review" | "published" = "draft") => {
     // Use timestamp-based unique ID to avoid collisions
     const id = `${idPrefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -161,7 +161,7 @@ describe("Schedule Creation API Integration Tests", () => {
       // Update content status (as API would do)
       await db
         .update(schema.contentItems)
-        .set({ status: "approved", updatedAt: new Date() })
+        .set({ status: "review", updatedAt: new Date() })
         .where(eq(schema.contentItems.id, contentId));
 
       // Verify status updated
@@ -171,7 +171,7 @@ describe("Schedule Creation API Integration Tests", () => {
         .where(eq(schema.contentItems.id, contentId))
         .limit(1);
 
-      expect(content.status).toBe("approved");
+      expect(content.status).toBe("review");
     });
 
     it("should store QStash message ID", async () => {

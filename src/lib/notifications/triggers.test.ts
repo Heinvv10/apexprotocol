@@ -169,9 +169,9 @@ describe("onPredictedScoreDrop", () => {
 
     vi.mocked(shouldTriggerPredictiveAlert).mockReturnValue({
       trigger: true,
-      severity: "high",
+      severity: "critical",
       leadTime: 60,
-      predictedDrop: 0.35,
+      percentageChange: 0.35,
     });
 
     const input: PredictiveTriggerInput = {
@@ -200,9 +200,9 @@ describe("onPredictedScoreDrop", () => {
 
     vi.mocked(shouldTriggerPredictiveAlert).mockReturnValue({
       trigger: true,
-      severity: "medium",
+      severity: "warning",
       leadTime: 30,
-      predictedDrop: 0.25,
+      percentageChange: 0.25,
     });
 
     const input: PredictiveTriggerInput = {
@@ -228,14 +228,16 @@ describe("onPredictedScoreDrop", () => {
 
     vi.mocked(shouldTriggerPredictiveAlert).mockReturnValue({
       trigger: true,
-      severity: "medium",
+      severity: "warning",
       leadTime: 30,
-      predictedDrop: 0.25,
+      percentageChange: 0.25,
     });
 
     // Mock createNotification to return deduplicated result
     vi.mocked(createNotification).mockResolvedValueOnce({
       id: "notif-1",
+      notification: {} as never,
+      published: false,
       deduplicated: true,
     });
 
@@ -258,9 +260,9 @@ describe("onPredictedScoreDrop", () => {
 
     vi.mocked(shouldTriggerPredictiveAlert).mockReturnValue({
       trigger: true,
-      severity: "medium",
+      severity: "warning",
       leadTime: 30,
-      predictedDrop: 0.25,
+      percentageChange: 0.25,
     });
 
     // Mock brand not found
@@ -285,9 +287,9 @@ describe("onPredictedScoreDrop", () => {
 
     vi.mocked(shouldTriggerPredictiveAlert).mockReturnValue({
       trigger: true,
-      severity: "high",
+      severity: "critical",
       leadTime: 30,
-      predictedDrop: 0.35,
+      percentageChange: 0.35,
     });
 
     const input: PredictiveTriggerInput = {
@@ -303,9 +305,9 @@ describe("onPredictedScoreDrop", () => {
     expect(generateAlertTitle).toHaveBeenCalledWith(
       expect.objectContaining({
         trigger: true,
-        severity: "high",
+        severity: "critical",
         leadTime: 30,
-        predictedDrop: 0.35,
+        percentageChange: 0.35,
       })
     );
 
@@ -315,14 +317,14 @@ describe("onPredictedScoreDrop", () => {
       prediction,
       expect.objectContaining({
         trigger: true,
-        severity: "high",
+        severity: "critical",
       })
     );
 
     expect(generateActionRecommendation).toHaveBeenCalledWith(
       expect.objectContaining({
         trigger: true,
-        severity: "high",
+        severity: "critical",
       })
     );
   });
@@ -332,9 +334,9 @@ describe("onPredictedScoreDrop", () => {
 
     vi.mocked(shouldTriggerPredictiveAlert).mockReturnValue({
       trigger: true,
-      severity: "high",
+      severity: "critical",
       leadTime: 30,
-      predictedDrop: 0.35,
+      percentageChange: 0.35,
     });
 
     vi.mocked(generateActionRecommendation).mockReturnValue(

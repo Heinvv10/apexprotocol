@@ -89,7 +89,7 @@ describe("PageError Component", () => {
 
   afterEach(() => {
     // Restore NODE_ENV
-    process.env.NODE_ENV = originalEnv;
+    (process.env as Record<string, string | undefined>).NODE_ENV = originalEnv;
   });
 
   describe("Rendering with Default Props", () => {
@@ -260,7 +260,7 @@ describe("PageError Component", () => {
 
   describe("Development Mode Error Details", () => {
     it("should display error message in development mode", () => {
-      process.env.NODE_ENV = "development";
+      (process.env as Record<string, string | undefined>).NODE_ENV = "development";
 
       render(<PageError error={mockError} reset={mockReset} />);
 
@@ -268,7 +268,7 @@ describe("PageError Component", () => {
     });
 
     it("should display error digest in development mode when present", () => {
-      process.env.NODE_ENV = "development";
+      (process.env as Record<string, string | undefined>).NODE_ENV = "development";
 
       render(<PageError error={mockErrorWithDigest} reset={mockReset} />);
 
@@ -276,7 +276,7 @@ describe("PageError Component", () => {
     });
 
     it("should not display error digest when not present", () => {
-      process.env.NODE_ENV = "development";
+      (process.env as Record<string, string | undefined>).NODE_ENV = "development";
 
       render(<PageError error={mockError} reset={mockReset} />);
 
@@ -284,7 +284,7 @@ describe("PageError Component", () => {
     });
 
     it("should hide error details in production mode", () => {
-      process.env.NODE_ENV = "production";
+      (process.env as Record<string, string | undefined>).NODE_ENV = "production";
 
       render(<PageError error={mockError} reset={mockReset} />);
 
@@ -292,7 +292,7 @@ describe("PageError Component", () => {
     });
 
     it("should hide error digest in production mode", () => {
-      process.env.NODE_ENV = "production";
+      (process.env as Record<string, string | undefined>).NODE_ENV = "production";
 
       render(<PageError error={mockErrorWithDigest} reset={mockReset} />);
 
@@ -413,7 +413,7 @@ describe("PageError Component", () => {
     });
 
     it("should handle error with very long message", () => {
-      process.env.NODE_ENV = "development";
+      (process.env as Record<string, string | undefined>).NODE_ENV = "development";
       const longMessage = "Error: ".repeat(100);
       const longError = new Error(longMessage);
 
@@ -426,7 +426,7 @@ describe("PageError Component", () => {
     });
 
     it("should handle error with special characters in message", () => {
-      process.env.NODE_ENV = "development";
+      (process.env as Record<string, string | undefined>).NODE_ENV = "development";
       const specialError = new Error(
         'Error with "quotes" and <special> chars & symbols'
       );

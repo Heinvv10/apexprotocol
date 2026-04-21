@@ -341,7 +341,7 @@ describe('ListMonk Webhook Handler', () => {
           email: 'test@example.com',
         };
 
-        const invalidSubscriber = {
+        const invalidSubscriber: { id: number; email?: string } = {
           id: 789,
           // email: missing
         };

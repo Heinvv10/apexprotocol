@@ -406,7 +406,6 @@ describe("AI Insights API Routes", () => {
           {
             code: "invalid_type",
             expected: "string",
-            received: "undefined",
             path: ["queryText"],
             message: "Required",
           },

@@ -42,7 +42,7 @@ describe("FullScreenError Component", () => {
 
   afterEach(() => {
     // Restore NODE_ENV
-    process.env.NODE_ENV = originalEnv;
+    (process.env as Record<string, string | undefined>).NODE_ENV = originalEnv;
   });
 
   describe("Rendering with Default Props", () => {
@@ -186,7 +186,7 @@ describe("FullScreenError Component", () => {
 
   describe("Development Mode Error Details", () => {
     it("should display error message in development mode", () => {
-      process.env.NODE_ENV = "development";
+      (process.env as Record<string, string | undefined>).NODE_ENV = "development";
 
       render(<FullScreenError error={mockError} reset={mockReset} />);
 
@@ -196,7 +196,7 @@ describe("FullScreenError Component", () => {
     });
 
     it("should display error digest in development mode when present", () => {
-      process.env.NODE_ENV = "development";
+      (process.env as Record<string, string | undefined>).NODE_ENV = "development";
 
       render(<FullScreenError error={mockErrorWithDigest} reset={mockReset} />);
 
@@ -204,7 +204,7 @@ describe("FullScreenError Component", () => {
     });
 
     it("should not display error digest when not present", () => {
-      process.env.NODE_ENV = "development";
+      (process.env as Record<string, string | undefined>).NODE_ENV = "development";
 
       render(<FullScreenError error={mockError} reset={mockReset} />);
 
@@ -212,7 +212,7 @@ describe("FullScreenError Component", () => {
     });
 
     it("should hide error details in production mode", () => {
-      process.env.NODE_ENV = "production";
+      (process.env as Record<string, string | undefined>).NODE_ENV = "production";
 
       render(<FullScreenError error={mockError} reset={mockReset} />);
 
@@ -222,7 +222,7 @@ describe("FullScreenError Component", () => {
     });
 
     it("should hide error digest in production mode", () => {
-      process.env.NODE_ENV = "production";
+      (process.env as Record<string, string | undefined>).NODE_ENV = "production";
 
       render(<FullScreenError error={mockErrorWithDigest} reset={mockReset} />);
 
@@ -390,7 +390,7 @@ describe("FullScreenError Component", () => {
     });
 
     it("should handle error with very long message", () => {
-      process.env.NODE_ENV = "development";
+      (process.env as Record<string, string | undefined>).NODE_ENV = "development";
       const longMessage = "Critical Error: ".repeat(100);
       const longError = new Error(longMessage);
 
@@ -403,7 +403,7 @@ describe("FullScreenError Component", () => {
     });
 
     it("should handle error with special characters in message", () => {
-      process.env.NODE_ENV = "development";
+      (process.env as Record<string, string | undefined>).NODE_ENV = "development";
       const specialError = new Error(
         'Critical error with "quotes" and <special> chars & symbols'
       );

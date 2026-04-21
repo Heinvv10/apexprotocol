@@ -422,44 +422,44 @@ describe('DataAggregationService', () => {
     it('should detect upward trend', () => {
       const summary = service.calculateMetricSummary('brand-123', 'increasing');
 
-      expect(summary.trend).toBe('up');
+      expect(summary!.trend).toBe('up');
     });
 
     it('should detect downward trend', () => {
       const summary = service.calculateMetricSummary('brand-123', 'decreasing');
 
-      expect(summary.trend).toBe('down');
+      expect(summary!.trend).toBe('down');
     });
 
     it('should detect stable trend', () => {
       const summary = service.calculateMetricSummary('brand-123', 'stable');
 
-      expect(summary.trend).toBe('stable');
+      expect(summary!.trend).toBe('stable');
     });
 
     it('should calculate correct min value', () => {
       const summary = service.calculateMetricSummary('brand-123', 'increasing');
 
-      expect(summary.min).toBe(10);
+      expect(summary!.min).toBe(10);
     });
 
     it('should calculate correct max value', () => {
       const summary = service.calculateMetricSummary('brand-123', 'increasing');
 
-      expect(summary.max).toBe(50);
+      expect(summary!.max).toBe(50);
     });
 
     it('should calculate correct average', () => {
       const summary = service.calculateMetricSummary('brand-123', 'increasing');
 
-      expect(summary.avg).toBe(30); // (10+20+30+40+50) / 5 = 30
+      expect(summary!.avg).toBe(30); // (10+20+30+40+50) / 5 = 30
     });
 
     it('should calculate standard deviation', () => {
       const summary = service.calculateMetricSummary('brand-123', 'increasing');
 
-      expect(summary.stdDev).toBeDefined();
-      expect(summary.stdDev).toBeGreaterThan(0);
+      expect(summary!.stdDev).toBeDefined();
+      expect(summary!.stdDev).toBeGreaterThan(0);
     });
 
     it('should return null for non-existent metric', () => {

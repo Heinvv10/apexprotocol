@@ -903,7 +903,7 @@ describe('ContentGenerationSubAgent', () => {
           platform: 'website',
           topic: 'Test'
         });
-        fail('Should have thrown');
+        throw new Error('Should have thrown');
       } catch (error) {
         expect(error).toBeDefined();
       }

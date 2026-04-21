@@ -56,7 +56,7 @@ describe("GET /api/admin/dashboard/stats", () => {
 
   // UT-1: Returns 401 if not authenticated
   it("UT-1: should return 401 if not authenticated", async () => {
-    vi.mocked(getSession).mockResolvedValue({ userId: null } as ReturnType<typeof getSession> extends Promise<infer T> ? T : never);
+    vi.mocked(getSession).mockResolvedValue(null);
     vi.mocked(getUserId).mockResolvedValueOnce(null);
 
     const request = new NextRequest("http://localhost:3000/api/admin/dashboard/stats");

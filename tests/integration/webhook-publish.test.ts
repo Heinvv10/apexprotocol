@@ -46,14 +46,14 @@ describe("Webhook Publish API Integration Tests", () => {
     // Use timestamp-based unique ID to avoid collisions
     const id = `${idPrefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Create content in approved status (ready for publishing)
+    // Create content in review status (ready for publishing)
     await db.insert(schema.contentItems).values({
       id,
       userId: "test-user-001",
       organizationId: "test-org-001",
       title: `Test Content ${id}`,
       body: `Test body for ${id}`,
-      status: "approved",
+      status: "review",
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -207,17 +207,17 @@ describe("Webhook Publish API Integration Tests", () => {
   });
 
   describe("Failed Publishing Flow", () => {
-    it("should keep content in approved status on failure", async () => {
+    it("should keep content in review status on failure", async () => {
       const { contentId } = await createScheduledContent("webhook-fail-status-1");
 
-      // Content remains approved (no status update on failure)
+      // Content remains in its pre-publish state (no status update on failure)
       const [content] = await db
         .select()
         .from(schema.contentItems)
         .where(eq(schema.contentItems.id, contentId))
         .limit(1);
 
-      expect(content.status).toBe("approved");
+      expect(content.status).toBe("review");
     });
 
     it("should create failed publishing history record", async () => {
@@ -554,7 +554,7 @@ describe("Webhook Publish API Integration Tests", () => {
         .where(eq(schema.publishingHistory.contentId, contentId))
         .limit(1);
 
-      expect(content.status).toBe("approved"); // Content stays approved on failure
+      expect(content.status).toBe("review"); // Content stays in review on failure
       expect(schedule.status).toBe("failed");
       expect(publishHistory.status).toBe("failed");
       expect(publishHistory.errorMessage).toContain("connection failed");

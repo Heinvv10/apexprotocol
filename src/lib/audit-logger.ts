@@ -9,7 +9,7 @@
 
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { systemAuditLogs } from "@/lib/db/schema";
+import { systemAuditLogs, type SystemAuditLog } from "@/lib/db/schema";
 import { desc } from "drizzle-orm";
 import crypto from "crypto";
 import { createId } from "@paralleldrive/cuid2";
@@ -209,7 +209,7 @@ export async function getPreviousLogHash(): Promise<string | null> {
 export async function createAuditLog(
   params: CreateAuditLogParams,
   request: NextRequest | null
-): Promise<unknown> {
+): Promise<SystemAuditLog | null> {
   try {
     // Extract metadata from request
     const requestMetadata = extractMetadata(request);

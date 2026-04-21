@@ -459,7 +459,7 @@ describe('MonitoringService', () => {
         { condition: 'rises_above', threshold: 90 },
         { condition: 'changes_by', threshold: 10 },
         { condition: 'changes_by_percent', threshold: 15 }
-      ];
+      ] as const;
 
       for (const { condition, threshold } of conditions) {
         const result = service.createAlertRule({

@@ -401,7 +401,7 @@ describe("GET /api/admin/users - Security (SR-1, SR-2)", () => {
   });
 
   it("should allow access with DEV_SUPER_ADMIN=true in dev mode", async () => {
-    process.env.NODE_ENV = "development";
+    (process.env as Record<string, string>).NODE_ENV = "development";
     process.env.DEV_SUPER_ADMIN = "true";
 
     const request = new NextRequest("http://localhost:3000/api/admin/users");

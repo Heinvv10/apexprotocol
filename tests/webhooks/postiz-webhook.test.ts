@@ -333,7 +333,7 @@ describe('Postiz Webhook Handler', () => {
           },
         };
 
-        const invalidEvent = {
+        const invalidEvent: { type: string; data: { id?: string } } = {
           type: 'post.published',
           data: {
             // id: missing

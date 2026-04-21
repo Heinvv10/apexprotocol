@@ -297,7 +297,8 @@ const createMockSocialMediaCorrelationSubAgent = (config: Partial<SocialMediaCor
         distribution: {
           positive: positiveCount / (sentiments.length || 1),
           neutral: neutralCount / (sentiments.length || 1),
-          negative: negativeCount / (sentiments.length || 1)
+          negative: negativeCount / (sentiments.length || 1),
+          unrecognized: 0
         }
       },
       correlations: {

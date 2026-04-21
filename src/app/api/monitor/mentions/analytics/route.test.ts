@@ -67,16 +67,16 @@ import { getOrganizationId } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
 
 // Helper to setup standard mock behavior (brands + mentions)
-const setupStandardMock = (brandsResult = mockBrands, mentionsResult = mockMentions) => {
+const setupStandardMock = (brandsResult: unknown[] = mockBrands, mentionsResult: unknown[] = mockMentions) => {
   let callCount = 0;
   vi.mocked(db.select).mockImplementation(() => {
     callCount++;
     if (callCount === 1) {
       // First call: get organization's brands
-      return createChain(brandsResult) as ReturnType<typeof db.select>;
+      return createChain(brandsResult) as unknown as ReturnType<typeof db.select>;
     }
     // Second call: get mentions
-    return createChain(mentionsResult) as ReturnType<typeof db.select>;
+    return createChain(mentionsResult) as unknown as ReturnType<typeof db.select>;
   });
 };
 

@@ -26,6 +26,8 @@ import {
   generateAlertMessage,
   generateActionRecommendation,
 } from "../../src/lib/alerts/predictive-alerts";
+import type { PredictionAlertEvaluation } from "../../src/lib/alerts/predictive-alerts";
+import type { NewPredictiveAlert } from "../../src/lib/db/schema/predictions";
 
 // Check if database is configured
 const dbConfigured = isDatabaseConfigured();
@@ -42,7 +44,7 @@ describe("Predictive Alert Integration Tests", () => {
     setupIntegrationTest();
 
   // Helper to create a unique alert for testing
-  const createUniqueAlert = (suffix: string = Date.now().toString()) => {
+  const createUniqueAlert = (suffix: string = Date.now().toString()): NewPredictiveAlert => {
     const seededData = getSeededData();
     const brandId = TEST_IDS.BRANDS[0];
     const userId = seededData?.users[0]?.id || TEST_IDS.USERS[0];
@@ -52,8 +54,8 @@ describe("Predictive Alert Integration Tests", () => {
     return {
       brandId,
       userId,
-      alertType: "predicted_drop" as const,
-      severity: "critical" as const,
+      alertType: "predicted_drop",
+      severity: "critical",
       confidence: 0.85,
       currentValue: 75.0,
       predictedValue: 50.0,
@@ -608,7 +610,7 @@ describe("Predictive Alert Integration Tests", () => {
       const evaluation = shouldTriggerPredictiveAlert({
         prediction,
         currentScore,
-      });
+      }) as PredictionAlertEvaluation;
 
       expect(evaluation.trigger).toBe(true);
       expect(evaluation.severity).toBe("critical");
@@ -642,7 +644,7 @@ describe("Predictive Alert Integration Tests", () => {
       const evaluation = shouldTriggerPredictiveAlert({
         prediction,
         currentScore,
-      });
+      }) as PredictionAlertEvaluation;
 
       expect(evaluation.trigger).toBe(true);
       expect(evaluation.severity).toBe("warning");
@@ -675,7 +677,7 @@ describe("Predictive Alert Integration Tests", () => {
       const evaluation = shouldTriggerPredictiveAlert({
         prediction,
         currentScore,
-      });
+      }) as PredictionAlertEvaluation;
 
       expect(evaluation.trigger).toBe(false);
       expect(evaluation.reason).toContain("below threshold");
@@ -708,7 +710,7 @@ describe("Predictive Alert Integration Tests", () => {
       const evaluation = shouldTriggerPredictiveAlert({
         prediction,
         currentScore,
-      });
+      }) as PredictionAlertEvaluation;
 
       expect(evaluation.trigger).toBe(false);
       expect(evaluation.reason).toContain("Confidence");
@@ -741,7 +743,7 @@ describe("Predictive Alert Integration Tests", () => {
       const evaluation = shouldTriggerPredictiveAlert({
         prediction,
         currentScore,
-      });
+      }) as PredictionAlertEvaluation;
 
       const title = generateAlertTitle(evaluation);
       const message = generateAlertMessage("Test Brand", currentScore, prediction, evaluation);

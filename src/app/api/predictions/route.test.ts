@@ -72,9 +72,13 @@ import { generatePredictionExplanation } from "@/lib/ml/explainer";
 import { db } from "@/lib/db";
 
 // Get references to the mocked functions
-const mockDbQuery = db.query;
-const mockDbUpdate = db.update;
-const mockDbInsert = db.insert;
+const mockDbQuery = db.query as unknown as {
+  brands: { findFirst: ReturnType<typeof vi.fn> };
+  predictions: { findMany: ReturnType<typeof vi.fn> };
+  modelMetadata: { findFirst: ReturnType<typeof vi.fn> };
+};
+const mockDbUpdate = db.update as unknown as ReturnType<typeof vi.fn>;
+const mockDbInsert = db.insert as unknown as ReturnType<typeof vi.fn>;
 
 // ============================================================================
 // Test Fixtures

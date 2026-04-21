@@ -148,7 +148,21 @@ describe('Mautic Webhook Handler', () => {
 
     describe('email.open event', () => {
       it('should record email open with metadata', () => {
-        const openEvent = {
+        const openEvent: {
+          type: string;
+          data: {
+            id: string;
+            lead_id: number;
+            url: string;
+            user_agent: string;
+            ip_address: string;
+            browser: string;
+            device: string;
+            os: string;
+            region: string;
+            event?: string;
+          };
+        } = {
           type: 'email.open',
           data: {
             id: 'open_2001',
@@ -303,7 +317,7 @@ describe('Mautic Webhook Handler', () => {
           firstname: 'Test',
         };
 
-        const invalidLead = {
+        const invalidLead: { firstname: string; email?: string } = {
           // email: missing
           firstname: 'Test',
         };

@@ -725,7 +725,7 @@ describe('RecommendationWorkflowService', () => {
         title: `Opportunity ${i}`,
         description: `Description ${i}`,
         confidence: 70 + (i % 30),
-        impact: ['low', 'medium', 'high'][i % 3] as const,
+        impact: (['low', 'medium', 'high'] as const)[i % 3],
         dataPoints: [`metric-${i}`]
       }));
 

@@ -227,7 +227,8 @@ const createMockNarrativeDetectionService = (config?: Partial<NarrativeDetection
             distribution: {
               positive: sentiments.filter(s => s > 0.3).length / sentiments.length,
               neutral: sentiments.filter(s => s >= -0.3 && s <= 0.3).length / sentiments.length,
-              negative: sentiments.filter(s => s < -0.3).length / sentiments.length
+              negative: sentiments.filter(s => s < -0.3).length / sentiments.length,
+              unrecognized: 0
             }
           },
           platforms,
@@ -762,7 +763,7 @@ describe('NarrativeDetectionService', () => {
           { id: 'm2', platform: 'twitter', brandId: 'b1', content: 'test', author: 'influencer1', timestamp: new Date() },
           { id: 'm3', platform: 'linkedin', brandId: 'b1', content: 'test', author: 'influencer2', timestamp: new Date() }
         ],
-        sentiment: { average: 0.5, distribution: { positive: 0.6, neutral: 0.3, negative: 0.1 } },
+        sentiment: { average: 0.5, distribution: { positive: 0.6, neutral: 0.3, negative: 0.1, unrecognized: 0 } },
         platforms: ['twitter', 'linkedin'],
         timeRange: { start: new Date(), end: new Date() },
         velocity: 10,
@@ -784,7 +785,7 @@ describe('NarrativeDetectionService', () => {
         description: 'Negative discussion',
         keywords: ['crisis'],
         mentions: [],
-        sentiment: { average: -0.7, distribution: { positive: 0.1, neutral: 0.1, negative: 0.8 } },
+        sentiment: { average: -0.7, distribution: { positive: 0.1, neutral: 0.1, negative: 0.8, unrecognized: 0 } },
         platforms: ['twitter'],
         timeRange: { start: new Date(), end: new Date() },
         velocity: 50,
@@ -806,7 +807,7 @@ describe('NarrativeDetectionService', () => {
         description: 'Test',
         keywords: ['test'],
         mentions: [],
-        sentiment: { average: -0.3, distribution: { positive: 0.2, neutral: 0.3, negative: 0.5 } },
+        sentiment: { average: -0.3, distribution: { positive: 0.2, neutral: 0.3, negative: 0.5, unrecognized: 0 } },
         platforms: ['twitter'],
         timeRange: { start: new Date(), end: new Date() },
         velocity: 20,
@@ -994,7 +995,7 @@ describe('NarrativeDetectionService', () => {
         description: 'High velocity narrative',
         keywords: ['viral'],
         mentions: [],
-        sentiment: { average: 0.8, distribution: { positive: 0.8, neutral: 0.15, negative: 0.05 } },
+        sentiment: { average: 0.8, distribution: { positive: 0.8, neutral: 0.15, negative: 0.05, unrecognized: 0 } },
         platforms: ['twitter', 'linkedin', 'facebook', 'reddit'],
         timeRange: { start: new Date(), end: new Date() },
         velocity: 50,
@@ -1018,7 +1019,7 @@ describe('NarrativeDetectionService', () => {
         description: 'Test',
         keywords: ['test'],
         mentions: [],
-        sentiment: { average: 0.7, distribution: { positive: 0.7, neutral: 0.2, negative: 0.1 } },
+        sentiment: { average: 0.7, distribution: { positive: 0.7, neutral: 0.2, negative: 0.1, unrecognized: 0 } },
         platforms: ['twitter', 'linkedin', 'facebook'],
         timeRange: { start: new Date(), end: new Date() },
         velocity: 30,

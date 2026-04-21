@@ -212,7 +212,7 @@ describe("GET /api/admin/audit-logs/:id - Log Details (FR-4)", () => {
   });
 
   it("should return 401 when not authenticated (SR-1)", async () => {
-    vi.mocked(getSession).mockResolvedValue({ userId: null, orgId: "test-org-id", orgRole: "admin", orgSlug: null });
+    vi.mocked(getSession).mockResolvedValue(null);
     vi.mocked(getUserId).mockResolvedValueOnce(null);
 
     const logId = "log_test123";

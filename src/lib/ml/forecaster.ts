@@ -12,6 +12,8 @@ import {
 import type { HistoricalDataPoint } from "./data-pipeline";
 import { prepareDataForForecasting } from "./data-validator";
 
+export type { HistoricalDataPoint };
+
 /**
  * Performance timing result
  */

@@ -363,9 +363,15 @@ describe("Retry Utility - Callbacks", () => {
     const mockFn = createMockAsyncFunction(2, "success");
     const callOrder: string[] = [];
 
-    const onErrorMock = vi.fn(() => callOrder.push("error"));
-    const onRetryMock = vi.fn(() => callOrder.push("retry"));
-    const onSuccessMock = vi.fn(() => callOrder.push("success"));
+    const onErrorMock = vi.fn(() => {
+      callOrder.push("error");
+    });
+    const onRetryMock = vi.fn(() => {
+      callOrder.push("retry");
+    });
+    const onSuccessMock = vi.fn(() => {
+      callOrder.push("success");
+    });
 
     await retry(mockFn, {
       maxRetries: 3,
@@ -1691,7 +1697,7 @@ describe("Retry Utility - Claude AI Integration", () => {
    * ðŸŸ¢ WORKING: Matches actual Claude SDK response format
    */
   interface MockClaudeResponse {
-    content: Array<{ type: string; text?: string }>;
+    content: Array<{ type: string; text: string }>;
     usage: {
       input_tokens: number;
       output_tokens: number;
@@ -1707,7 +1713,7 @@ describe("Retry Utility - Claude AI Integration", () => {
 
     return {
       messages: {
-        create: vi.fn(async (): Promise<MockClaudeResponse> => {
+        create: vi.fn(async (_params: unknown): Promise<MockClaudeResponse> => {
           attemptCount++;
 
           // Simulate network errors on early attempts
@@ -1757,7 +1763,7 @@ describe("Retry Utility - Claude AI Integration", () => {
   function createInvalidJSONClaudeClient() {
     return {
       messages: {
-        create: vi.fn(async (): Promise<MockClaudeResponse> => {
+        create: vi.fn(async (_params: unknown): Promise<MockClaudeResponse> => {
           return {
             content: [
               {
@@ -1784,7 +1790,7 @@ describe("Retry Utility - Claude AI Integration", () => {
 
     return {
       messages: {
-        create: vi.fn(async (): Promise<MockClaudeResponse> => {
+        create: vi.fn(async (_params: unknown): Promise<MockClaudeResponse> => {
           attemptCount++;
 
           if (attemptCount < successOnAttempt) {

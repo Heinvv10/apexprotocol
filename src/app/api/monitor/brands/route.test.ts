@@ -114,12 +114,12 @@ import { db } from "@/lib/db";
 // Helper to setup standard mock behavior for GET
 const setupSelectMock = (brandsResult = mockBrands) => {
   vi.mocked(db.select).mockImplementation(() => {
-    return createChain(brandsResult) as ReturnType<typeof db.select>;
+    return createChain(brandsResult) as unknown as ReturnType<typeof db.select>;
   });
 };
 
 // Helper to setup mock behavior for POST (insert)
-const setupInsertMock = (returnedBrand = mockBrands[0]) => {
+const setupInsertMock = (returnedBrand: (typeof mockBrands)[number] | Record<string, unknown> = mockBrands[0]) => {
   const insertChain = {
     values: vi.fn().mockReturnThis(),
     returning: vi.fn().mockImplementation(() => {
@@ -128,7 +128,7 @@ const setupInsertMock = (returnedBrand = mockBrands[0]) => {
     then: (resolve: (value: unknown) => void) => Promise.resolve([returnedBrand]).then(resolve),
     catch: (reject: (reason: unknown) => void) => Promise.resolve([returnedBrand]).catch(reject),
   };
-  vi.mocked(db.insert).mockReturnValue(insertChain as ReturnType<typeof db.insert>);
+  vi.mocked(db.insert).mockReturnValue(insertChain as unknown as ReturnType<typeof db.insert>);
 };
 
 // Reset mocks before each test

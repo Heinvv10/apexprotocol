@@ -72,6 +72,8 @@ const mockBrand: Brand = {
   competitors: [],
   valuePropositions: ["Value 1"],
   socialLinks: {},
+  locations: [],
+  personnel: [],
   voice: {
     tone: "professional",
     personality: ["Innovative"],

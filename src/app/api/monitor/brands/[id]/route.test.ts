@@ -98,7 +98,7 @@ const createRouteContext = (id: string) => ({
 // Helper to setup standard mock behavior for GET (single brand)
 const setupSelectMock = (brandResult: unknown[] = [mockBrand]) => {
   vi.mocked(db.select).mockImplementation(() => {
-    return createSelectChain(brandResult) as ReturnType<typeof db.select>;
+    return createSelectChain(brandResult) as unknown as ReturnType<typeof db.select>;
   });
 };
 
@@ -111,10 +111,10 @@ const setupSelectUpdateMock = (
   vi.mocked(db.select).mockImplementation(() => {
     selectCallCount++;
     // First select is for checking if brand exists
-    return createSelectChain(existingBrand) as ReturnType<typeof db.select>;
+    return createSelectChain(existingBrand) as unknown as ReturnType<typeof db.select>;
   });
   vi.mocked(db.update).mockImplementation(() => {
-    return createUpdateChain(updatedBrand) as ReturnType<typeof db.update>;
+    return createUpdateChain(updatedBrand) as unknown as ReturnType<typeof db.update>;
   });
 };
 

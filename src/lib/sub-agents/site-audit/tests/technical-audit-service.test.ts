@@ -4,10 +4,6 @@ import {
   createTechnicalAuditService,
   type TechnicalAuditConfig,
   type TechnicalAuditResult,
-  type IndexabilityAnalysis,
-  type CrawlabilityAnalysis,
-  type SecurityAnalysis,
-  type RedirectAnalysis,
   type TechnicalIssue,
   type IssueSeverity
 } from '../src/services/technical-audit-service';
@@ -491,9 +487,9 @@ describe('TechnicalAuditService', () => {
           { url: 'https://example.com/', statusCode: 200, depth: 0 },
           { url: 'https://example.com/about', statusCode: 200, depth: 1 }
         ],
-        errors: [],
-        robotsTxt: { exists: true, disallowedPaths: [] },
-        sitemap: { urls: [], isIndex: false }
+        errors: [] as Array<{ url: string; statusCode: number }>,
+        robotsTxt: { exists: true, disallowedPaths: [] as string[], allowedPaths: [] as string[], crawlDelay: 0 },
+        sitemap: { urls: [] as string[], isIndex: false }
       };
 
       const result = service.generateAuditResult(crawlData);

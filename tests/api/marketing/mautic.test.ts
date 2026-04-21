@@ -47,8 +47,9 @@ class MauticClient {
       }
 
       const data = await response.json();
-      this.accessToken = data.access_token;
-      return this.accessToken;
+      const token: string = data.access_token;
+      this.accessToken = token;
+      return token;
     } catch (error) {
       throw error;
     }

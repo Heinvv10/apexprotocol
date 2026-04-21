@@ -246,7 +246,7 @@ describe("POST /api/admin/audit-logs/export - Export Functionality (FR-5)", () =
   });
 
   it("should return 401 when not authenticated (SR-1)", async () => {
-    vi.mocked(getSession).mockResolvedValue({ userId: null, orgId: "test-org-id", orgRole: "admin", orgSlug: null });
+    vi.mocked(getSession).mockResolvedValue(null);
     vi.mocked(getUserId).mockResolvedValueOnce(null);
 
     const request = new NextRequest("http://localhost:3000/api/admin/audit-logs/export", {
@@ -280,7 +280,7 @@ describe("POST /api/admin/audit-logs/export - Export Functionality (FR-5)", () =
   });
 
   it("should allow access in dev mode when DEV_SUPER_ADMIN is set", async () => {
-    process.env.NODE_ENV = "development";
+    (process.env as Record<string, string>).NODE_ENV = "development";
     process.env.DEV_SUPER_ADMIN = "true";
 
     vi.mocked((db as any).limit).mockResolvedValue([]);
