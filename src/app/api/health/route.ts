@@ -118,23 +118,24 @@ async function checkRedis(): Promise<ServiceHealth> {
 }
 
 /**
- * Check Clerk auth service health
+ * Check Supabase auth service health
  */
 async function checkAuth(): Promise<ServiceHealth> {
   const start = Date.now();
   try {
     const isConfigured =
-      process.env.CLERK_SECRET_KEY !== undefined &&
-      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== undefined;
+      process.env.NEXT_PUBLIC_SUPABASE_URL !== undefined &&
+      process.env.NEXT_PUBLIC_SUPABASE_URL !== "https://placeholder.supabase.co" &&
+      process.env.SUPABASE_SERVICE_ROLE_KEY !== undefined;
 
     return {
       name: "auth",
       status: isConfigured ? "healthy" : "unhealthy",
       latency: Date.now() - start,
-      message: isConfigured ? "Clerk authentication configured" : "Clerk not configured",
+      message: isConfigured ? "Supabase authentication configured" : "Supabase not configured",
       lastCheck: new Date().toISOString(),
       details: {
-        provider: "clerk",
+        provider: "supabase",
         configured: isConfigured,
       },
     };
@@ -259,7 +260,7 @@ async function checkExternalAPIs(): Promise<ServiceHealth> {
       message: "External API endpoints accessible",
       lastCheck: new Date().toISOString(),
       details: {
-        apis: ["anthropic", "openai", "clerk"],
+        apis: ["anthropic", "openai", "supabase"],
       },
     };
   } catch (error) {
