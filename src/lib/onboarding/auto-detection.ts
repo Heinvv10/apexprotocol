@@ -5,23 +5,30 @@
 
 import { db } from "@/lib/db";
 import { organizations, brands } from "@/lib/db/schema";
-import { eq, count } from "drizzle-orm";
+import { eq, or, count } from "drizzle-orm";
 
 /**
- * Mark a specific onboarding step as complete
+ * Mark a specific onboarding step as complete.
+ *
+ * Callers pass the *internal* org id (`organizations.id`) from
+ * `getOrganizationId()`. The parameter name `clerkOrgId` is a legacy artifact
+ * from the Clerk era — we now match on `id` first and fall back to
+ * `clerkOrgId` so historical rows carrying a Clerk org id still resolve.
  */
 export async function markOnboardingStepComplete(
   clerkOrgId: string,
   step: "brandAdded" | "monitoringConfigured" | "auditRun" | "recommendationsReviewed"
 ): Promise<void> {
   try {
-    // Get current organization
     const org = await db.query.organizations.findFirst({
-      where: eq(organizations.clerkOrgId, clerkOrgId),
+      where: or(
+        eq(organizations.id, clerkOrgId),
+        eq(organizations.clerkOrgId, clerkOrgId),
+      ),
     });
 
     if (!org) {
-      console.warn(`Organization not found for clerkOrgId: ${clerkOrgId}`);
+      console.warn(`Organization not found for id/clerkOrgId: ${clerkOrgId}`);
       return;
     }
 
@@ -79,9 +86,13 @@ export async function markOnboardingStepComplete(
  */
 export async function detectBrandAdded(clerkOrgId: string): Promise<void> {
   try {
-    // Get organization first
+    // Same id/clerkOrgId fallback as markOnboardingStepComplete — the
+    // parameter carries the internal org id for Supabase-era callers.
     const org = await db.query.organizations.findFirst({
-      where: eq(organizations.clerkOrgId, clerkOrgId),
+      where: or(
+        eq(organizations.id, clerkOrgId),
+        eq(organizations.clerkOrgId, clerkOrgId),
+      ),
     });
 
     if (!org) {
