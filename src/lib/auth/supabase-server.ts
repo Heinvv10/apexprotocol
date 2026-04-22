@@ -8,10 +8,7 @@ import type { AuthSession } from "./auth-session";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export const SUPABASE_AUTH_CONFIGURED =
-  !!SUPABASE_URL &&
-  !!SUPABASE_ANON_KEY &&
-  SUPABASE_URL !== "https://placeholder.supabase.co";
+export const SUPABASE_AUTH_CONFIGURED = !!SUPABASE_URL && !!SUPABASE_ANON_KEY;
 
 const DEV_USER_ID = "dev-user-id";
 const DEV_ORG_ID = "demo-org-id";
