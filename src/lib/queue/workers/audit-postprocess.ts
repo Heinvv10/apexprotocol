@@ -20,11 +20,13 @@
 
 import { eq } from "drizzle-orm";
 import { db } from "../../db";
-import { recommendations } from "../../db/schema";
+import { brands, recommendations } from "../../db/schema";
 import type {
   AuditIssue,
   CategoryScore,
 } from "../../db/schema/audits";
+import { generateSchemaCodeForIssue } from "../../audit/generators/schema-jsonld";
+import { projectExpectedImpact } from "../../audit/expected-impact";
 
 // Map audit-engine issue categories → recommendation schema categories.
 // Audit categories: structure | schema | clarity | metadata | accessibility
@@ -86,6 +88,7 @@ export async function persistRecommendationsFromIssues(params: {
   auditId: string;
   brandId: string;
   issues: AuditIssue[];
+  categoryScores?: CategoryScore[];
 }): Promise<number> {
   if (!params.issues.length) return 0;
 
@@ -96,10 +99,32 @@ export async function persistRecommendationsFromIssues(params: {
     .where(eq(recommendations.auditId, params.auditId));
   const existingTitles = new Set(existing.map((r) => r.title));
 
+  // Look up the brand once so we can generate ready-to-paste JSON-LD
+  // snippets for schema-shaped issues. Falls back to null (no snippet)
+  // if the brand row is gone — shouldn't happen in practice since the
+  // audit just queried the same brand, but defensive against FK race.
+  const brand = await db.query.brands.findFirst({
+    where: eq(brands.id, params.brandId),
+  });
+
+  // Project expected overall-score impact per finding from the category
+  // scores the audit engine produced. Lets the UI tell a user "fixing
+  // this lifts your score ~12 points" instead of leaving the field null.
+  const impactMap = params.categoryScores
+    ? projectExpectedImpact({
+        issues: params.issues,
+        categoryScores: params.categoryScores,
+      })
+    : new Map<string, number>();
+
   const rows = params.issues
     .filter((i) => !existingTitles.has(i.title))
     .map((issue) => {
       const severity = issue.severity ?? "medium";
+      const schemaCode = brand
+        ? generateSchemaCodeForIssue(issue.title, brand)
+        : null;
+      const expectedScoreImpact = impactMap.get(issue.id);
       return {
         brandId: params.brandId,
         auditId: params.auditId,
@@ -112,6 +137,10 @@ export async function persistRecommendationsFromIssues(params: {
         impact: mapImpact(severity),
         source: "audit" as const,
         steps: [],
+        ...(schemaCode ? { schemaCode } : {}),
+        ...(typeof expectedScoreImpact === "number"
+          ? { expectedScoreImpact }
+          : {}),
       };
     });
 

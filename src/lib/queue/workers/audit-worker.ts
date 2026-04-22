@@ -21,6 +21,11 @@ import {
   computeAiReadinessScore,
 } from "./audit-postprocess";
 import { computeGeoScore } from "@/lib/analytics/geo-score-compute";
+import { generateAndPersistRecommendationsForBrand } from "@/lib/recommendations/generate-for-brand";
+import { buildActionPlan } from "@/lib/recommendations/action-plan";
+import { projectExpectedImpact } from "@/lib/audit/expected-impact";
+import { brandMentions } from "@/lib/db/schema";
+import { desc } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 
 // Worker configuration
@@ -195,6 +200,70 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
         categoryScores: finalCategoryScores,
       });
 
+      // Synthesise a top-3 action plan. Cross-references the projected
+      // score impact of each finding with platform-recognition signals
+      // from the monitoring data so the UI can render "do these first"
+      // bullets ordered by leverage rather than dropping the user into
+      // a flat list.
+      const impactMap = projectExpectedImpact({
+        issues: allIssues,
+        categoryScores: finalCategoryScores,
+      });
+      const recentMentions = await db
+        .select({
+          platform: brandMentions.platform,
+          sentiment: brandMentions.sentiment,
+          position: brandMentions.position,
+        })
+        .from(brandMentions)
+        .where(eq(brandMentions.brandId, brandId))
+        .orderBy(desc(brandMentions.timestamp))
+        .limit(100);
+      const platformGroups = new Map<
+        string,
+        { total: number; recognised: number; sentiments: string[] }
+      >();
+      for (const m of recentMentions) {
+        const g = platformGroups.get(m.platform) ?? {
+          total: 0,
+          recognised: 0,
+          sentiments: [],
+        };
+        g.total += 1;
+        if (m.position !== null) g.recognised += 1;
+        if (m.sentiment) g.sentiments.push(m.sentiment);
+        platformGroups.set(m.platform, g);
+      }
+      const platformSignals = Array.from(platformGroups.entries()).map(
+        ([platform, g]) => {
+          const neg =
+            g.sentiments.filter((s) => s === "negative").length;
+          const pos =
+            g.sentiments.filter((s) => s === "positive").length;
+          const unrec = g.sentiments.filter(
+            (s) => s === "unrecognized",
+          ).length;
+          const dominant: "positive" | "neutral" | "negative" | "unrecognized" =
+            unrec > g.total / 3
+              ? "unrecognized"
+              : neg > pos
+                ? "negative"
+                : pos > neg
+                  ? "positive"
+                  : "neutral";
+          return {
+            platform,
+            mentionRate: Math.round((g.recognised / Math.max(g.total, 1)) * 100),
+            sentiment: dominant,
+          };
+        },
+      );
+      const actionPlan = buildActionPlan({
+        issues: allIssues,
+        expectedImpactById: impactMap,
+        platformSignals,
+      });
+
       // Performance metrics come from Google PageSpeed Insights when
       // the safeCheck above succeeded. When PSI is unreachable or rate-
       // limited, performance stays undefined and PerformanceDeepDive
@@ -230,6 +299,14 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
           decomposition: scored.decomposition,
           evidence: scored.evidence,
         },
+        ...(actionPlan.length > 0
+          ? {
+              actionPlan: {
+                generatedAt: new Date().toISOString(),
+                items: actionPlan,
+              },
+            }
+          : {}),
         ...(performance ? { performance } : {}),
       } as AuditMetadata;
 
@@ -262,6 +339,7 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
             auditId: existingAudit.id,
             brandId: existingAudit.brandId,
             issues: allIssues,
+            categoryScores: finalCategoryScores,
           });
         } catch (err) {
           // Don't fail the audit if recommendation persistence has a
@@ -293,6 +371,47 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
           });
           Sentry?.captureException(err, {
             tags: { worker: "audit", phase: "geo-score-recompute" },
+          });
+        }
+      }
+
+      // Auto-invoke the AI recommendation generator once the audit is in
+      // the DB. The rule-based persistRecommendationsFromIssues() call
+      // above already wrote flat issue→rec rows; this pass layers AI
+      // recommendations that include `steps`, cross-reference
+      // brand_mentions, and use Claude to synthesise actions beyond
+      // per-finding boilerplate. Dedup by (brandId, title, category)
+      // prevents collisions. Gated by APEX_AUTO_AI_RECS=false to opt
+      // out (defaults on); also no-ops cleanly if ANTHROPIC_API_KEY is
+      // missing because generateAIRecommendations returns a structured
+      // error we log and move past.
+      if (
+        crawlResult.success &&
+        process.env.APEX_AUTO_AI_RECS !== "false"
+      ) {
+        try {
+          const aiResult = await generateAndPersistRecommendationsForBrand(
+            existingAudit.brandId,
+          );
+          if (!aiResult.success && aiResult.error) {
+            logger.warn("[audit-worker] AI rec generator returned error", {
+              brandId: existingAudit.brandId,
+              error: aiResult.error,
+            });
+          } else {
+            logger.info("[audit-worker] AI recs persisted", {
+              brandId: existingAudit.brandId,
+              persisted: aiResult.persisted,
+              duplicatesSkipped: aiResult.duplicatesSkipped,
+            });
+          }
+        } catch (err) {
+          logger.error("[audit-worker] AI rec generation failed", {
+            error: err instanceof Error ? err.message : String(err),
+            brandId: existingAudit.brandId,
+          });
+          Sentry?.captureException(err, {
+            tags: { worker: "audit", phase: "ai-recommendations" },
           });
         }
       }

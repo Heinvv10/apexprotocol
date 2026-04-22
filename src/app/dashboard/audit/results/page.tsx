@@ -19,6 +19,9 @@ import { PerformanceDeepDive } from "@/components/audit/results/PerformanceDeepD
 import { AIReadinessDeepDive } from "@/components/audit/results/AIReadinessDeepDive";
 import { SEOContentAnalysisDeepDive } from "@/components/audit/results/SEOContentAnalysisDeepDive";
 import { CompetitorComparisonDeepDive } from "@/components/audit/results/CompetitorComparisonDeepDive";
+import { ActionPlanCard } from "@/components/audit/results/ActionPlanCard";
+import { CrawlScopeBanner } from "@/components/audit/results/CrawlScopeBanner";
+import type { AuditMetadata } from "@/lib/db/schema/audits";
 
 // Import hook
 import { useAudit, useExportAuditReport } from "@/hooks/useAudit";
@@ -143,6 +146,27 @@ function AuditResultsPageInner() {
       <div className="container mx-auto px-6 py-8 space-y-8">
         {/* Header */}
         <AuditResultsHeader audit={audit} />
+
+        {(() => {
+          const meta = (audit.metadata ?? {}) as AuditMetadata;
+          return (
+            <>
+              {/* Shallow-crawl notice — only renders when audit covered ≤1 page */}
+              <CrawlScopeBanner
+                depth={meta.depth}
+                pagesAnalyzed={meta.pagesAnalyzed}
+              />
+
+              {/* Prioritised top-3 action plan */}
+              {meta.actionPlan?.items && meta.actionPlan.items.length > 0 && (
+                <ActionPlanCard
+                  items={meta.actionPlan.items}
+                  generatedAt={meta.actionPlan.generatedAt}
+                />
+              )}
+            </>
+          );
+        })()}
 
         {/* Overall Score */}
         <div className="grid gap-6 lg:grid-cols-3">
