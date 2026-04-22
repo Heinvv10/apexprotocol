@@ -97,44 +97,6 @@ describe("Competitor Queries - Module Exports", () => {
   });
 });
 
-describe("Competitor Queries - Type Safety", () => {
-  it("should export filter types", () => {
-    // These types should be available for import
-    type CompetitorSnapshotFilters = import("./competitor-queries").CompetitorSnapshotFilters;
-    type ShareOfVoiceFilters = import("./competitor-queries").ShareOfVoiceFilters;
-    type CompetitorMentionFilters = import("./competitor-queries").CompetitorMentionFilters;
-    type SerpFeatureFilters = import("./competitor-queries").SerpFeatureFilters;
-    type CompetitiveGapFilters = import("./competitor-queries").CompetitiveGapFilters;
-    type CompetitiveAlertFilters = import("./competitor-queries").CompetitiveAlertFilters;
-    type DiscoveredCompetitorFilters = import("./competitor-queries").DiscoveredCompetitorFilters;
-
-    // If types are properly defined, this test passes
-    expect(true).toBe(true);
-  });
-
-  it("should export enum types", () => {
-    type DiscoveryMethod = import("./competitor-queries").DiscoveryMethod;
-    type DiscoveryStatus = import("./competitor-queries").DiscoveryStatus;
-    type SerpFeatureType = import("./competitor-queries").SerpFeatureType;
-    type FeatureOwner = import("./competitor-queries").FeatureOwner;
-
-    // If types are properly defined, this test passes
-    expect(true).toBe(true);
-  });
-
-  it("should export pagination and sort types", () => {
-    type PaginationOptions = import("./competitor-queries").PaginationOptions;
-    type SortOptions = import("./competitor-queries").SortOptions;
-
-    // If types are properly defined, this test passes
-    expect(true).toBe(true);
-  });
-
-  it("should export trend data types", () => {
-    type TrendDataPoint = import("./competitor-queries").TrendDataPoint;
-    type CompetitorTrendData = import("./competitor-queries").CompetitorTrendData;
-
-    // If types are properly defined, this test passes
-    expect(true).toBe(true);
-  });
-});
+// Type-export checks previously lived here as four expect(true).toBe(true) tests.
+// Type availability is already enforced by tsc at build time — redundant asserts
+// removed rather than kept as always-passing placeholders.
