@@ -9,6 +9,12 @@ playwright-report/
 test-results/
 videos/
 tsconfig.tsbuildinfo
+tsconfig.build.tsbuildinfo
+*.tsbuildinfo
+
+# Runtime logs and dev scratch (health/ui jsonl, audit screenshots)
+logs/
+tmp/
 
 # Playwright auth state — regenerated per run, contains live session cookies
 e2e/.auth/storage-state.json
