@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
 import { createId } from "@paralleldrive/cuid2";
 import { getOrganizationId } from "@/lib/auth/supabase-server";
+import { uploadAsset } from "@/lib/storage/supabase-storage";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -14,7 +12,16 @@ const MIME_TO_EXT: Record<string, string> = {
   "image/webp": "webp",
 };
 
-const ALLOWED_UPLOAD_TYPES = new Set(["logo", "avatar", "brand", "general"]);
+// Maps the client-supplied `type` field to a Supabase Storage path prefix
+// inside the `apex-assets` bucket. Keep in sync with other uploaders
+// (logo-fetcher writes brand-logos/*).
+const TYPE_TO_PREFIX: Record<string, string> = {
+  "brand-logos": "brand-logos",
+  logo: "brand-logos",
+  brand: "brand-logos",
+  avatar: "avatars",
+  general: "uploads",
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,7 +44,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const type = ALLOWED_UPLOAD_TYPES.has(rawType) ? rawType : "general";
+    const prefix = TYPE_TO_PREFIX[rawType] ?? TYPE_TO_PREFIX.general;
 
     const ext = MIME_TO_EXT[file.type];
     if (!ext) {
@@ -54,19 +61,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const uploadsDir = path.join(process.cwd(), "public", "uploads", type);
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-    }
-
     const filename = `${orgId}-${createId()}.${ext}`;
-    const filepath = path.join(uploadsDir, filename);
+    const key = `${prefix}/${filename}`;
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
 
-    const url = `/uploads/${type}/${filename}`;
+    const url = await uploadAsset(buffer, key, file.type);
 
     return NextResponse.json({
       success: true,
