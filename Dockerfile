@@ -36,7 +36,7 @@ ENV NODE_ENV=production
 RUN bun run build
 
 # Stage 3: Runner — minimal Node runtime serving Next standalone output
-FROM node:20-alpine AS runner
+FROM node:25-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
