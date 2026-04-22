@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Download, Share2, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
+import { Download, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 // Import result components
+import { ShareDialog } from "@/components/audit/results/ShareDialog";
 import { AuditResultsHeader } from "@/components/audit/results/AuditResultsHeader";
 import { OverallScoreCard } from "@/components/audit/results/OverallScoreCard";
 import { IssueSummaryCard } from "@/components/audit/results/IssueSummaryCard";
@@ -29,7 +30,6 @@ function AuditResultsPageInner() {
 
   // State for export menu
   const [showExportMenu, setShowExportMenu] = React.useState(false);
-  const [shareMessage, setShareMessage] = React.useState("");
 
   // Fetch audit data
   const { data: audit, isLoading, error } = useAudit(auditId || "");
@@ -40,15 +40,6 @@ function AuditResultsPageInner() {
     if (!auditId) return;
     exportReport({ auditId, format });
     setShowExportMenu(false);
-  };
-
-  // Handle share
-  const handleShare = () => {
-    const url = `${typeof window !== "undefined" ? window.location.origin : ""}/dashboard/audit/results?id=${auditId}`;
-    navigator.clipboard.writeText(url).then(() => {
-      setShareMessage("Link copied to clipboard!");
-      setTimeout(() => setShareMessage(""), 3000);
-    });
   };
 
   // Loading state
@@ -107,18 +98,7 @@ function AuditResultsPageInner() {
           </div>
 
           <div className="flex items-center gap-2">
-            {shareMessage && (
-              <span className="text-sm text-success mr-2">{shareMessage}</span>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={handleShare}
-            >
-              <Share2 className="h-4 w-4" />
-              Share
-            </Button>
+            {auditId && <ShareDialog auditId={auditId} />}
 
             <div className="relative">
               <Button

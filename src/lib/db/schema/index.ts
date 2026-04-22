@@ -74,6 +74,13 @@ export {
 } from "./audits";
 
 export {
+  auditShares,
+  auditSharesRelations,
+  type AuditShare,
+  type NewAuditShare,
+} from "./audit-shares";
+
+export {
   recommendations,
   priorityEnum,
   recommendationStatusEnum,
