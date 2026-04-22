@@ -46,12 +46,24 @@ const publicRoutes = [
   // Trust Center + embeddable widgets — public by design
   "/trust",
   "/embed(.*)",
+  // Marketing / legal pages — must be publicly indexable + visible to footer clicks
+  "/blog(.*)",
+  "/careers",
+  "/changelog",
+  "/contact",
+  "/cookies",
+  "/privacy",
+  "/support",
+  "/terms",
+  "/status",
+  "/docs(.*)",
   "/_next(.*)",
   "/static(.*)",
   "/favicon.ico",
   "/logo.svg",
   "/robots.txt",
   "/sitemap.xml",
+  "/llms.txt",
   "/manifest.json",
 ];
 

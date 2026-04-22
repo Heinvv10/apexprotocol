@@ -24,11 +24,17 @@ export const viewport: Viewport = {
 const _brand = getActiveBrand();
 
 export const metadata: Metadata = {
-  title: _brand.name,
+  title: {
+    default: `${_brand.name} — AI Visibility Platform`,
+    template: `%s | ${_brand.name}`,
+  },
   description: _brand.tagline,
   keywords: ["GEO", "AEO", "AI visibility", "brand monitoring", "AI search optimization", "generative engine optimization"],
   manifest: "/manifest.json",
   metadataBase: new URL("https://www.apexgeo.app"),
+  alternates: {
+    canonical: "/",
+  },
   icons: { icon: _brand.faviconUrl },
   openGraph: {
     type: "website",
