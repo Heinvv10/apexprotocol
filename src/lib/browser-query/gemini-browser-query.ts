@@ -305,22 +305,23 @@ class GeminiDOMExtractor implements DOMExtractor {
   }
 
   async waitForContentReady(page: Page, timeoutMs: number = 28000): Promise<void> {
-    // Gemini uses streaming responses; wait for response to appear and complete
+    // Gemini uses streaming responses; wait for response to appear and complete.
+    // Attach a silent .catch() to each race branch so the loser's eventual
+    // rejection (e.g. "detached Frame" after cleanup) doesn't surface as an
+    // unhandled rejection once the race has already settled.
+    const selectorPromise = page.waitForSelector(
+      "[role='article'], .message, [data-testid='response']",
+      { timeout: timeoutMs }
+    );
+    const fallbackPromise = page.waitForFunction(
+      () => document.body.innerText.length > 100,
+      { timeout: timeoutMs }
+    );
+    selectorPromise.catch(() => {});
+    fallbackPromise.catch(() => {});
+
     try {
-      await Promise.race([
-        // Wait for response article to appear
-        page.waitForSelector("[role='article'], .message, [data-testid='response']", {
-          timeout: timeoutMs,
-        }),
-        // Fallback: wait for any content loading
-        page.waitForFunction(
-          () => {
-            const text = document.body.innerText;
-            return text.length > 100; // At least some content
-          },
-          { timeout: timeoutMs }
-        ),
-      ]);
+      await Promise.race([selectorPromise, fallbackPromise]);
 
       // Wait for streaming to complete (loading indicators disappear)
       try {
