@@ -45,6 +45,19 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ARG GIT_SHA=""
 ENV GIT_SHA=${GIT_SHA}
 
+# Chromium for the multi-page brand scraper (src/lib/services/brand-scraper-multipage.ts).
+# Alpine's Playwright story is brittle — we install the system chromium via apk and
+# point Playwright at it instead of letting it download chrome-headless-shell.
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
 # Non-root user for runtime
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
