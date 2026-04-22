@@ -235,12 +235,14 @@ describe("GET /api/admin/api-config - Security (SR-1, SR-2)", () => {
 
   it("should allow access with DEV_SUPER_ADMIN=true in dev mode", async () => {
     vi.stubEnv('NODE_ENV', 'development');
-    process.env.DEV_SUPER_ADMIN = "true";
+    vi.stubEnv('DEV_SUPER_ADMIN', 'true');
 
     const request = new NextRequest("http://localhost:3000/api/admin/api-config");
     const response = await GET(request);
 
     expect(response.status).toBe(200);
+
+    vi.unstubAllEnvs();
   });
 });
 
@@ -383,9 +385,15 @@ describe("POST /api/admin/api-config - Create Integration (FR-2)", () => {
 });
 
 describe("POST /api/admin/api-config - Security", () => {
-  it.skip("should return 401 when not authenticated", async () => {
-    // Skip: Mock override for per-test auth state not working with vi.mock hoisting
-    // Would need integration test or different mock strategy
+  beforeEach(() => {
+    // The earlier GET 'dev-mode bypass' test used to leak process.env.DEV_SUPER_ADMIN
+    // directly, which bypassed auth in subsequent tests. That leak is now fixed at
+    // source (stubEnv + unstubAllEnvs), but keep this defensive unstub so these
+    // tests don't re-regress if someone adds another env-mutation test above.
+    vi.unstubAllEnvs();
+  });
+
+  it("should return 401 when not authenticated", async () => {
     const { getSession, getUserId, getOrganizationId } = await import("@/lib/auth/supabase-server");
     vi.mocked(getSession).mockResolvedValueOnce(null);
     vi.mocked(getUserId).mockResolvedValueOnce(null);
@@ -405,9 +413,7 @@ describe("POST /api/admin/api-config - Security", () => {
     expect(response.status).toBe(401);
   });
 
-  it.skip("should return 403 when not super-admin", async () => {
-    // Skip: Mock override for per-test isSuperAdmin state not working with vi.mock hoisting
-    // Would need integration test or different mock strategy
+  it("should return 403 when not super-admin", async () => {
     const { isSuperAdmin } = await import("@/lib/auth/super-admin");
     vi.mocked(isSuperAdmin).mockResolvedValueOnce(false);
 

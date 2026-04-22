@@ -401,13 +401,15 @@ describe("GET /api/admin/users - Security (SR-1, SR-2)", () => {
   });
 
   it("should allow access with DEV_SUPER_ADMIN=true in dev mode", async () => {
-    (process.env as Record<string, string>).NODE_ENV = "development";
-    process.env.DEV_SUPER_ADMIN = "true";
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("DEV_SUPER_ADMIN", "true");
 
     const request = new NextRequest("http://localhost:3000/api/admin/users");
     const response = await GET(request);
 
     expect(response.status).toBe(200);
+
+    vi.unstubAllEnvs();
   });
 });
 
@@ -524,10 +526,9 @@ describe("PATCH /api/admin/users - Super Admin (FR-6)", () => {
 describe("PATCH /api/admin/users - Security & Validation", () => {
   // Note: Global beforeEach resets mocks to authenticated super-admin state
 
-  it.skip("should return 401 when not authenticated", async () => {
-    // Skip: Mock override for per-test auth state not working with vi.mock hoisting
-    // Would need integration test or different mock strategy
-    vi.mocked(getSession).mockResolvedValue({ userId: null } as any);
+  it("should return 401 when not authenticated", async () => {
+    vi.unstubAllEnvs();
+    vi.mocked(getSession).mockResolvedValueOnce({ userId: null } as any);
     vi.mocked(getUserId).mockResolvedValueOnce(null);
 
     const request = new NextRequest("http://localhost:3000/api/admin/users", {
@@ -539,10 +540,9 @@ describe("PATCH /api/admin/users - Security & Validation", () => {
     expect(response.status).toBe(401);
   });
 
-  it.skip("should return 403 when not super-admin", async () => {
-    // Skip: Mock override for per-test isSuperAdmin state not working with vi.mock hoisting
-    // Would need integration test or different mock strategy
-    vi.mocked(isSuperAdmin).mockResolvedValue(false);
+  it("should return 403 when not super-admin", async () => {
+    vi.unstubAllEnvs();
+    vi.mocked(isSuperAdmin).mockResolvedValueOnce(false);
 
     const request = new NextRequest("http://localhost:3000/api/admin/users", {
       method: "PATCH",
