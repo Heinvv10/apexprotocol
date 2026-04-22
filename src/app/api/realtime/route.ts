@@ -27,11 +27,18 @@ const notificationSchema = z.object({
 });
 
 /**
- * Check if Redis is configured
+ * Upstash Realtime needs the Upstash REST API (not ioredis). The local
+ * `apex-redis` sidecar serves ioredis traffic only, so `REDIS_URL` alone is
+ * not enough to initialise an Upstash client — `Redis.fromEnv()` reads
+ * UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN. If those are absent we
+ * must fall through to the mock SSE stream, otherwise the Upstash SDK
+ * silently creates a broken client that later throws `Invalid URL /pipeline`
+ * on every command.
  */
 const isRedisConfigured = () => {
-  const url = process.env.REDIS_URL;
-  return !!url && url !== "undefined";
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  return !!url && url !== "undefined" && !!token && token !== "undefined";
 };
 
 /**
