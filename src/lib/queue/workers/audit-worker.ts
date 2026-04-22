@@ -20,6 +20,7 @@ import {
   persistRecommendationsFromIssues,
   computeAiReadinessScore,
 } from "./audit-postprocess";
+import { computeGeoScore } from "@/lib/analytics/geo-score-compute";
 
 // Worker configuration
 const WORKER_CONFIG = {
@@ -249,6 +250,19 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
             "[audit-worker] failed to persist recommendations:",
             err
           );
+        }
+      }
+
+      // Recompute + persist the brand's GEO score now that the audit's
+      // overallScore has updated the technical component. `forceHistory`
+      // ensures we always write a history row after an audit so the trend
+      // chart reflects audit-driven movement even below the 5-pt change
+      // threshold. Notifications still respect the threshold internally.
+      if (crawlResult.success) {
+        try {
+          await computeGeoScore(existingAudit.brandId, { forceHistory: true });
+        } catch (err) {
+          console.error("[audit-worker] GEO score recompute failed:", err);
         }
       }
     }

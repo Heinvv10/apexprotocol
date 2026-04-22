@@ -122,8 +122,8 @@ export async function processMonitorJob(job: Job): Promise<MonitorJobResult> {
               query: mention.query,
               response: mention.response,
               sentiment: dbSentiment,
-              position: null, // Can be calculated separately
-              citationUrl: null,
+              position: null,
+              citationUrl: mention.citationUrl ?? null,
               metadata: mention.metadata as Record<string, unknown>,
             }).returning();
             result.mentionsFound++;
@@ -280,6 +280,26 @@ export async function runMonitorWorker(): Promise<{
       if (result.success) {
         await monitorQueue.completeJob(job.id, result);
         stats.succeeded++;
+
+        // After a monitor job ingests new mentions, the brand's content +
+        // authority + ai-readiness components all move. Recompute and
+        // persist history so notifications fire in real time. The job
+        // payload carries brandId — pull it safely in case of shape drift.
+        const brandId = (job.payload as { brandId?: string })?.brandId;
+        if (brandId) {
+          try {
+            const { computeGeoScore } = await import(
+              "@/lib/analytics/geo-score-compute"
+            );
+            await computeGeoScore(brandId, { forceHistory: true });
+          } catch (err) {
+            console.error(
+              "[monitor-worker] GEO score recompute failed for brand",
+              brandId,
+              err,
+            );
+          }
+        }
       } else {
         await monitorQueue.failJob(job.id, result.errors.join("; "));
         stats.failed++;

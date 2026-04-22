@@ -5,12 +5,11 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
-import { brandMentions, audits, brands, geoScoreHistory } from "@/lib/db/schema";
-import { eq, count, sql, desc } from "drizzle-orm";
+import { brandMentions, brands } from "@/lib/db/schema";
+import { eq, count, sql } from "drizzle-orm";
 import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
-import { onScoreChange } from "@/lib/notifications/triggers";
+import { computeGeoScore } from "@/lib/analytics/geo-score-compute";
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,123 +34,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Brand not found" }, { status: 404 });
     }
 
-    // Get mention stats for authority score
-    const mentionsData = await db
-      .select({
-        total: count(),
-        positive: sql<number>`COUNT(CASE WHEN ${brandMentions.sentiment} = 'positive' THEN 1 END)`,
-        withCitation: sql<number>`COUNT(CASE WHEN ${brandMentions.citationUrl} IS NOT NULL THEN 1 END)`,
-      })
-      .from(brandMentions)
-      .where(eq(brandMentions.brandId, brandId));
-
-    const mentions = mentionsData[0] || { total: 0, positive: 0, withCitation: 0 };
-
-    // Get platform coverage
-    const platformCount = await db
-      .select({
-        count: sql<number>`COUNT(DISTINCT ${brandMentions.platform})`,
-      })
-      .from(brandMentions)
-      .where(eq(brandMentions.brandId, brandId));
-
-    const platforms = platformCount[0]?.count || 0;
-
-    // Get last audit for technical score
-    const lastAudit = await db.query.audits.findFirst({
-      where: eq(audits.brandId, brandId),
-      orderBy: [desc(audits.createdAt)],
+    // Unified compute: writes history + fires notifications when change ≥5.
+    // Worker-triggered precomputes usually beat this path, but we still run
+    // here so API callers see the freshest numbers even between worker ticks.
+    const organizationId = await getOrganizationId();
+    const {
+      overall,
+      technical: technicalScore,
+      content: contentScore,
+      authority: authorityScore,
+      aiReadiness: aiReadinessScore,
+      metrics: { totalMentions, positiveMentions, citedMentions, platforms },
+    } = await computeGeoScore(brandId, {
+      userId,
+      organizationId: organizationId ?? undefined,
     });
-
-    // Calculate component scores
-    const totalMentions = Number(mentions.total) || 0;
-    const positiveMentions = Number(mentions.positive) || 0;
-    const citedMentions = Number(mentions.withCitation) || 0;
-
-    // Technical Score (from audit or default)
-    const technicalScore = lastAudit?.overallScore || 65;
-
-    // Content Score (based on positive mention rate)
-    const contentScore = totalMentions > 0
-      ? Math.min(Math.round((positiveMentions / totalMentions) * 100), 100)
-      : 50;
-
-    // Authority Score (based on citations)
-    const authorityScore = totalMentions > 0
-      ? Math.min(Math.round((citedMentions / totalMentions) * 100) + 20, 100)
-      : 40;
-
-    // AI Readiness Score (based on platform coverage - 7 platforms max)
-    const aiReadinessScore = Math.min(Math.round((Number(platforms) / 7) * 100), 100);
-
-    // Overall GEO Score (weighted average)
-    const overall = Math.round(
-      technicalScore * 0.25 +
-      contentScore * 0.25 +
-      authorityScore * 0.25 +
-      aiReadinessScore * 0.25
-    );
-
-    // Get previous score from history for score change detection
-    const lastScoreHistory = await db.query.geoScoreHistory.findFirst({
-      where: eq(geoScoreHistory.brandId, brandId),
-      orderBy: [desc(geoScoreHistory.calculatedAt)],
-    });
-
-    // Calculate score change and determine if notification should be triggered
-    const previousScore = lastScoreHistory?.overallScore ?? overall;
-    const scoreChange = overall - previousScore;
-    const absChange = Math.abs(scoreChange);
-
-    // Trigger score change notification if change is Â±5 or more
-    if (absChange >= 5) {
-      try {
-        // Get user context for notification
-        const notificationUserId = await getUserId();
-        const organizationId = await getOrganizationId();
-
-        if (notificationUserId && organizationId) {
-          // Create score history record
-          const trend = scoreChange > 0 ? "up" : scoreChange < 0 ? "down" : "stable";
-
-          const [scoreHistoryRecord] = await db
-            .insert(geoScoreHistory)
-            .values({
-              brandId,
-              overallScore: overall,
-              visibilityScore: aiReadinessScore,
-              sentimentScore: contentScore,
-              recommendationScore: authorityScore,
-              competitorGapScore: null,
-              previousScore,
-              scoreChange,
-              trend,
-              mentionCount: totalMentions,
-              positiveMentions,
-              negativeMentions: 0,
-              neutralMentions: totalMentions - positiveMentions,
-              recommendationCount: null,
-              completedRecommendations: null,
-              calculationNotes: `Score ${trend} by ${absChange.toFixed(1)} points`,
-              dataQuality: totalMentions > 10 ? 90 : totalMentions > 5 ? 75 : 60,
-            })
-            .returning();
-
-          // Trigger notification
-          await onScoreChange({
-            scoreHistory: scoreHistoryRecord,
-            userId: notificationUserId,
-            organizationId,
-          });
-        }
-      } catch (notificationError) {
-        // Log error but don't fail the API request
-        console.error(
-          "[GEO Score API] Failed to create score change notification:",
-          notificationError
-        );
-      }
-    }
 
     // Build breakdown
     const breakdown = [

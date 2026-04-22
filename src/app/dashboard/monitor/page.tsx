@@ -50,12 +50,15 @@ function mentionToQueryRow(mention: Mention): QueryRow {
     copilot: "chatgpt", // Map Copilot to chatgpt styling
   };
 
+  // A row in the mentions table means the brand appeared in the response — so the
+  // baseline badge is "mentioned". Upgrade to "cited" when we have a citationUrl.
+  // "not_cited" is reserved for future use (queries where the brand was absent).
   return {
     id: mention.id,
     query: mention.query,
     platform: platformMap[mention.platform] || "chatgpt",
     sentiment: mention.sentiment,
-    citationStatus: mention.citationUrl ? "cited" : (mention.position != null ? "mentioned" : "not_cited"),
+    citationStatus: mention.citationUrl ? "cited" : "mentioned",
     timestamp: mention.createdAt,
     response: mention.response,
     url: mention.citationUrl ?? undefined,
