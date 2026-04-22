@@ -344,33 +344,19 @@ async function sendWebhookNotification(params: SendAlertParams): Promise<void> {
   logger.info(`[AlertDelivery] Webhook sent to ${channelConfig.webhook.url}`);
 }
 
-/**
- * Send WhatsApp notification (placeholder - requires WhatsApp Business API)
- */
-async function sendWhatsAppNotification(params: SendAlertParams): Promise<void> {
-  const { channelConfig } = params;
-
-  if (!channelConfig?.whatsapp?.phoneNumbers?.[0]) {
-    throw new Error("WhatsApp number not configured");
-  }
-
-  // TODO: Implement WhatsApp Business API integration
-  // For now, log a warning
-  console.warn("[AlertDelivery] WhatsApp notifications not yet implemented");
+// Fail loud: do not let dispatched WhatsApp/SMS alerts silently no-op. The channel
+// creation API rejects these types; this throw is a defence in depth for any records
+// that may already exist in older organizations.
+async function sendWhatsAppNotification(_params: SendAlertParams): Promise<void> {
+  throw new Error(
+    "WhatsApp delivery is not implemented. Route this alert through email, Slack, webhook, or in-app."
+  );
 }
 
-/**
- * Send SMS notification (placeholder - requires SMS provider)
- */
-async function sendSMSNotification(params: SendAlertParams): Promise<void> {
-  const { channelConfig } = params;
-
-  if (!channelConfig) {
-    throw new Error("SMS channel not configured");
-  }
-
-  // TODO: Implement Twilio or other SMS provider
-  console.warn("[AlertDelivery] SMS notifications not yet implemented");
+async function sendSMSNotification(_params: SendAlertParams): Promise<void> {
+  throw new Error(
+    "SMS delivery is not implemented. Route this alert through email, Slack, webhook, or in-app."
+  );
 }
 
 /**

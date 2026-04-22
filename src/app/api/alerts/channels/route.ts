@@ -68,6 +68,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (type === 'whatsapp' || type === 'sms') {
+      return NextResponse.json(
+        { error: `${type.toUpperCase()} delivery is not available yet — pick email, Slack, webhook, or in-app.` },
+        { status: 400 }
+      );
+    }
+
     const isDev = process.env.NODE_ENV === 'development' && process.env.DEV_SUPER_ADMIN === 'true';
     let orgId: string;
 

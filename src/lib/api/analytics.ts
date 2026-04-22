@@ -1,6 +1,11 @@
 /**
  * Analytics API Client
  * Centralized functions for calling Analytics-related backend APIs
+ *
+ * BROKEN: Every function in this file returns zeroed placeholder data — no backend
+ * route exists. Callers live under src/app/admin/analytics/* and render "0"s as if
+ * they were real CRM/sales/marketing numbers. Either wire each function to a real
+ * backend route or remove the admin surfaces from navigation before GA. See audit 2026-04-22.
  */
 
 // Base API configuration
@@ -254,8 +259,11 @@ export interface ReportsList {
  */
 
 export async function getAnalyticsDashboard(brandId: string): Promise<AnalyticsDashboard> {
-  // For now, return mock data since Analytics API may not exist yet
-  // TODO: Replace with actual API call when backend is ready
+  // BROKEN: returns zeroed placeholders; no backend wired (audit 2026-04-22).
+  if (typeof window !== "undefined") {
+    // eslint-disable-next-line no-console
+    console.warn("[analytics] returning placeholder data — backend not wired");
+  }
   return {
     geoScore: 0,
     geoTrend: "stable",
@@ -271,8 +279,11 @@ export async function getAnalyticsDashboard(brandId: string): Promise<AnalyticsD
 }
 
 export async function getUnifiedScore(brandId: string): Promise<UnifiedScore> {
-  // For now, return mock data since Analytics API may not exist yet
-  // TODO: Replace with actual API call when backend is ready
+  // BROKEN: returns zeroed placeholders; no backend wired (audit 2026-04-22).
+  if (typeof window !== "undefined") {
+    // eslint-disable-next-line no-console
+    console.warn("[analytics] returning placeholder data — backend not wired");
+  }
   return {
     overallScore: 0,
     geoScore: 0,
@@ -288,8 +299,11 @@ export async function getUnifiedScore(brandId: string): Promise<UnifiedScore> {
 }
 
 export async function getAnalyticsSummary(): Promise<AnalyticsSummary> {
-  // For now, return mock data since Analytics API may not exist yet
-  // TODO: Replace with actual API call when backend is ready
+  // BROKEN: returns zeroed placeholders; no backend wired (audit 2026-04-22).
+  if (typeof window !== "undefined") {
+    // eslint-disable-next-line no-console
+    console.warn("[analytics] returning placeholder data — backend not wired");
+  }
   return {
     totalRevenue: 0,
     revenueGrowth: 0,
@@ -305,8 +319,11 @@ export async function getAnalyticsSummary(): Promise<AnalyticsSummary> {
 }
 
 export async function getSalesMetrics(): Promise<SalesMetrics> {
-  // For now, return mock data since Analytics API may not exist yet
-  // TODO: Replace with actual API call when backend is ready
+  // BROKEN: returns zeroed placeholders; no backend wired (audit 2026-04-22).
+  if (typeof window !== "undefined") {
+    // eslint-disable-next-line no-console
+    console.warn("[analytics] returning placeholder data — backend not wired");
+  }
   return {
     pipeline: {
       totalValue: 0,
@@ -345,8 +362,11 @@ export async function getSalesMetrics(): Promise<SalesMetrics> {
 }
 
 export async function getMarketingMetrics(): Promise<MarketingMetrics> {
-  // For now, return mock data since Analytics API may not exist yet
-  // TODO: Replace with actual API call when backend is ready
+  // BROKEN: returns zeroed placeholders; no backend wired (audit 2026-04-22).
+  if (typeof window !== "undefined") {
+    // eslint-disable-next-line no-console
+    console.warn("[analytics] returning placeholder data — backend not wired");
+  }
   return {
     overview: {
       totalSpend: 0,
@@ -394,8 +414,11 @@ export async function getMarketingMetrics(): Promise<MarketingMetrics> {
 }
 
 export async function getReports(): Promise<ReportsList> {
-  // For now, return mock data since Analytics API may not exist yet
-  // TODO: Replace with actual API call when backend is ready
+  // BROKEN: returns zeroed placeholders; no backend wired (audit 2026-04-22).
+  if (typeof window !== "undefined") {
+    // eslint-disable-next-line no-console
+    console.warn("[analytics] returning placeholder data — backend not wired");
+  }
   return {
     reports: [],
     totalReports: 0,

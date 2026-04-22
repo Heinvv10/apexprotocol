@@ -573,8 +573,16 @@ export class ReputationIntelligenceService extends EventEmitter {
   // Benchmarking
   // =============================
 
+  // BROKEN: Returns synthetic benchmark data (Math.random()). A real implementation needs
+  // an industry-aggregated benchmarks table or an external data feed. Callers in production
+  // should not depend on this. See audit 2026-04-22.
   async getBenchmarkData(industry: string): Promise<BenchmarkData> {
-    // Mock benchmark data
+    if (process.env.NODE_ENV === 'production' && process.env.ALLOW_STUB_SUBAGENTS !== '1') {
+      throw new Error(
+        'getBenchmarkData returns synthetic data and is disabled in production. ' +
+        'Wire a real benchmark source before enabling (ALLOW_STUB_SUBAGENTS=1 only for staging).'
+      );
+    }
     return {
       industry,
       averageScore: 55 + Math.random() * 20,
@@ -629,10 +637,17 @@ export class ReputationIntelligenceService extends EventEmitter {
     const brandScore = await this.getReputationScore(brandId);
     const allBrands = [brandId, ...competitorIds];
 
+    // BROKEN: Competitor scores are Math.random() — no real competitor-score source
+    // is wired yet. Guarded via NODE_ENV so the stub can't silently ship to users.
+    if (process.env.NODE_ENV === 'production' && process.env.ALLOW_STUB_SUBAGENTS !== '1') {
+      throw new Error(
+        'compareToCompetitors returns synthetic competitor scores and is disabled in production.'
+      );
+    }
     const rankings = await Promise.all(
       allBrands.map(async (id) => {
         const score =
-          id === brandId ? brandScore?.overall || 50 : 40 + Math.random() * 40; // Mock competitor scores
+          id === brandId ? brandScore?.overall || 50 : 40 + Math.random() * 40;
         return { brandId: id, score, position: 0 };
       })
     );

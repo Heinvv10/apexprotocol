@@ -1,12 +1,11 @@
 import { z } from 'zod';
 import { EventEmitter } from 'events';
 
-/**
- * Insights & Recommendations Sub-Agent
- *
- * Generates comprehensive, data-driven strategic insights and
- * prioritized recommendations for brand visibility and performance optimization.
- */
+// BROKEN: This sub-agent emits synthetic insights (Math.random() data points, fabricated
+// confidence scores, coin-flip anomaly detection) — see audit 2026-04-22. It is NOT imported
+// by production code today. The runtime guard in createInsightsRecommendationsSubAgent()
+// prevents accidental wiring in prod. Before removing the guard, replace the random
+// generators around lines 397-543 with real data-source queries.
 
 // Data Source Types
 export type DataSourceType =
@@ -629,7 +628,7 @@ export class InsightsRecommendationsSubAgent extends EventEmitter {
   }
 
   private generateActionItems(
-    insight: Insight,
+    _insight: Insight,
     category: RecommendationCategory
   ): Recommendation['actionItems'] {
     const actionTemplates: Record<RecommendationCategory, string[]> = {
@@ -680,11 +679,14 @@ export class InsightsRecommendationsSubAgent extends EventEmitter {
   }
 }
 
-/**
- * Factory function
- */
 export function createInsightsRecommendationsSubAgent(
   config: Partial<InsightsConfig> = {}
 ): InsightsRecommendationsSubAgent {
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_STUB_SUBAGENTS !== '1') {
+    throw new Error(
+      'insights-recommendations sub-agent emits synthetic data and is disabled in production. ' +
+      'Set ALLOW_STUB_SUBAGENTS=1 only for staging experiments; wire real data sources before enabling.'
+    );
+  }
   return new InsightsRecommendationsSubAgent(config);
 }
