@@ -60,22 +60,6 @@
       "purpose": "any maskable"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshots/dashboard-wide.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Dashboard overview"
-    },
-    {
-      "src": "/screenshots/dashboard-narrow.png",
-      "sizes": "640x1136",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Mobile dashboard"
-    }
-  ],
   "shortcuts": [
     {
       "name": "Monitor",
