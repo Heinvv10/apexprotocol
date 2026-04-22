@@ -232,6 +232,72 @@ function analyzeSentiment(
 }
 
 /**
+ * Derive a confidence score from real signals in the response. This replaces
+ * the previous hardcoded per-platform constants (0.8/0.85/0.9) which gave the
+ * GEO score pipeline fabricated metadata regardless of response quality.
+ *
+ * Signals, all bounded so the score stays in [0, 0.95]:
+ *   - base 0.5 for any successful mention
+ *   - +0.05 per brand-name occurrence in the response (capped at +0.2)
+ *   - +0.15 if the brand has a detected ranking position
+ *   - +0.10 if the AI provided a citation URL
+ *   - +0.05 if the response is substantive (> 300 chars)
+ */
+function computeConfidenceScore(
+  response: string,
+  brandName: string,
+  position: number | null,
+  citationUrl: string | null,
+): number {
+  if (!response) return 0;
+  let score = 0.5;
+  const brandLower = brandName.toLowerCase();
+  const escapedBrand = brandLower.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const mentionCount = (response.toLowerCase().match(new RegExp(escapedBrand, "g")) || []).length;
+  score += Math.min(mentionCount * 0.05, 0.2);
+  if (position !== null && position > 0) score += 0.15;
+  if (citationUrl) score += 0.1;
+  if (response.length > 300) score += 0.05;
+  return Math.min(score, 0.95);
+}
+
+/**
+ * Deterministic per-brand-per-platform query template selector. Previously
+ * used Math.random() which meant repeated monitoring runs asked different
+ * questions and produced inconsistent trend data. Hashing brand+platform+day
+ * keeps runs on the same day reproducible and still rotates daily.
+ */
+function pickTemplate(
+  templates: Record<string, QueryTemplate>,
+  brandName: string,
+  platform: string,
+): QueryTemplate {
+  const keys = Object.keys(templates);
+  const day = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+  const seed = `${brandName}|${platform}|${day}`;
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+  }
+  const idx = Math.abs(hash) % keys.length;
+  return templates[keys[idx]];
+}
+
+function pickPrompt(
+  template: QueryTemplate,
+  brandName: string,
+  platform: string,
+): string {
+  const day = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+  const seed = `${brandName}|${platform}|prompt|${day}`;
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+  }
+  return template.prompts[Math.abs(hash) % template.prompts.length];
+}
+
+/**
  * Extract position of brand mention in response (if it's a list/ranking)
  */
 function extractPosition(response: string, brandName: string): number | null {
@@ -309,9 +375,7 @@ export async function queryChatGPT(
   try {
     const client = getOpenAIClient();
 
-    // Generate query from template
-    const promptIndex = Math.floor(Math.random() * queryTemplate.prompts.length);
-    const query = queryTemplate.prompts[promptIndex]
+    const query = pickPrompt(queryTemplate, brandName, "chatgpt")
       .replace("{brand}", brandName)
       .replace("{industry}", "e-commerce")
       .replace("{region}", "South Africa")
@@ -332,27 +396,31 @@ export async function queryChatGPT(
     const response = completion.choices[0]?.message?.content || "";
 
     if (!response || !response.toLowerCase().includes(brandName.toLowerCase())) {
-      return null; // Brand not mentioned
+      return null;
     }
+
+    const position = extractPosition(response, brandName);
+    const urlMatch = response.match(/https?:\/\/[^\s)]+/);
+    const citationUrl = urlMatch ? urlMatch[0] : null;
 
     return {
       platform: "chatgpt",
       query,
       response,
       sentiment: analyzeSentiment(response, brandName),
-      position: extractPosition(response, brandName),
-      citationUrl: null, // ChatGPT doesn't provide citations by default
+      position,
+      citationUrl,
       competitors: extractCompetitors(response, brandName),
       promptCategory: queryTemplate.category,
       topics: ["e-commerce", "online shopping"],
       metadata: {
-        modelVersion: "GPT-4 Turbo",
+        modelVersion: completion.model || "gpt-4o",
         responseLength: response.length,
-        confidenceScore: 0.85,
+        confidenceScore: computeConfidenceScore(response, brandName, position, citationUrl),
       },
     };
   } catch (error) {
-    console.error("ChatGPT query error:", error);
+    logger.error("[ai-platform-query] ChatGPT query error", { error });
     return null;
   }
 }
@@ -368,8 +436,7 @@ export async function queryClaude(
   try {
     const client = getAnthropicClient();
 
-    const promptIndex = Math.floor(Math.random() * queryTemplate.prompts.length);
-    const query = queryTemplate.prompts[promptIndex]
+    const query = pickPrompt(queryTemplate, brandName, "claude")
       .replace("{brand}", brandName)
       .replace("{industry}", "e-commerce")
       .replace("{region}", "South Africa")
@@ -393,24 +460,28 @@ export async function queryClaude(
       return null;
     }
 
+    const position = extractPosition(response, brandName);
+    const urlMatch = response.match(/https?:\/\/[^\s)]+/);
+    const citationUrl = urlMatch ? urlMatch[0] : null;
+
     return {
       platform: "claude",
       query,
       response,
       sentiment: analyzeSentiment(response, brandName),
-      position: extractPosition(response, brandName),
-      citationUrl: null,
+      position,
+      citationUrl,
       competitors: extractCompetitors(response, brandName),
       promptCategory: queryTemplate.category,
       topics: ["e-commerce", "retail"],
       metadata: {
-        modelVersion: "Claude 3.5 Sonnet",
+        modelVersion: message.model || "claude-sonnet-4",
         responseLength: response.length,
-        confidenceScore: 0.9,
+        confidenceScore: computeConfidenceScore(response, brandName, position, citationUrl),
       },
     };
   } catch (error) {
-    console.error("Claude query error:", error);
+    logger.error("[ai-platform-query] Claude query error", { error });
     return null;
   }
 }
@@ -427,8 +498,7 @@ export async function queryGemini(
     const client = getGeminiClient();
     const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const promptIndex = Math.floor(Math.random() * queryTemplate.prompts.length);
-    const query = queryTemplate.prompts[promptIndex]
+    const query = pickPrompt(queryTemplate, brandName, "gemini")
       .replace("{brand}", brandName)
       .replace("{industry}", "e-commerce")
       .replace("{region}", "South Africa")
@@ -441,24 +511,28 @@ export async function queryGemini(
       return null;
     }
 
+    const position = extractPosition(response, brandName);
+    const urlMatch = response.match(/https?:\/\/[^\s)]+/);
+    const citationUrl = urlMatch ? urlMatch[0] : null;
+
     return {
       platform: "gemini",
       query,
       response,
       sentiment: analyzeSentiment(response, brandName),
-      position: extractPosition(response, brandName),
-      citationUrl: null,
+      position,
+      citationUrl,
       competitors: extractCompetitors(response, brandName),
       promptCategory: queryTemplate.category,
       topics: ["e-commerce", "south africa"],
       metadata: {
-        modelVersion: "Gemini 2.0 Flash",
+        modelVersion: "gemini-2.5-flash",
         responseLength: response.length,
-        confidenceScore: 0.8,
+        confidenceScore: computeConfidenceScore(response, brandName, position, citationUrl),
       },
     };
   } catch (error) {
-    console.error("Gemini query error:", error);
+    logger.error("[ai-platform-query] Gemini query error", { error });
     return null;
   }
 }
@@ -495,8 +569,7 @@ export async function queryPerplexity(
         maxRetries: 1, // Let our custom retry handle it
       });
 
-      const promptIndex = Math.floor(Math.random() * queryTemplate.prompts.length);
-      const query = queryTemplate.prompts[promptIndex]
+      const query = pickPrompt(queryTemplate, brandName, "perplexity")
         .replace("{brand}", brandName)
         .replace("{industry}", "e-commerce")
         .replace("{region}", "South Africa")
@@ -519,24 +592,31 @@ export async function queryPerplexity(
         return null;
       }
 
-      // Perplexity often includes citations
-      const citationMatch = response.match(/\[(\d+)\]/);
-      const citationUrl = citationMatch ? `https://www.${brandName.toLowerCase()}.com` : null;
+      // Perplexity's API response includes a `citations` array alongside the
+      // message. Fall back to scraping a URL out of the response text if the
+      // SDK version doesn't surface it. DO NOT fabricate a brand domain here
+      // — prior code synthesised https://www.<brand>.com which was a lie.
+      const completionAny = completion as unknown as { citations?: string[] };
+      const perplexityCitations = completionAny.citations;
+      const urlMatch = response.match(/https?:\/\/[^\s)]+/);
+      const citationUrl = perplexityCitations?.[0] ?? (urlMatch ? urlMatch[0] : null);
+
+      const position = extractPosition(response, brandName);
 
       return {
         platform: "perplexity",
         query,
         response,
         sentiment: analyzeSentiment(response, brandName),
-        position: extractPosition(response, brandName),
+        position,
         citationUrl,
         competitors: extractCompetitors(response, brandName),
         promptCategory: queryTemplate.category,
         topics: ["e-commerce", "online shopping", "south africa"],
         metadata: {
-          modelVersion: "Perplexity Sonar Pro",
+          modelVersion: completion.model || "sonar-pro",
           responseLength: response.length,
-          confidenceScore: 0.85,
+          confidenceScore: computeConfidenceScore(response, brandName, position, citationUrl),
         },
       };
     } catch (error) {
@@ -622,8 +702,7 @@ export async function queryDeepSeek(
       baseURL: "https://api.deepseek.com",
     });
 
-    const promptIndex = Math.floor(Math.random() * queryTemplate.prompts.length);
-    const query = queryTemplate.prompts[promptIndex]
+    const query = pickPrompt(queryTemplate, brandName, "deepseek")
       .replace("{brand}", brandName)
       .replace("{industry}", "e-commerce")
       .replace("{region}", "South Africa")
@@ -646,24 +725,28 @@ export async function queryDeepSeek(
       return null;
     }
 
+    const position = extractPosition(response, brandName);
+    const urlMatch = response.match(/https?:\/\/[^\s)]+/);
+    const citationUrl = urlMatch ? urlMatch[0] : null;
+
     return {
       platform: "deepseek",
       query,
       response,
       sentiment: analyzeSentiment(response, brandName),
-      position: extractPosition(response, brandName),
-      citationUrl: null,
+      position,
+      citationUrl,
       competitors: extractCompetitors(response, brandName),
       promptCategory: queryTemplate.category,
       topics: ["e-commerce"],
       metadata: {
-        modelVersion: "DeepSeek V3",
+        modelVersion: completion.model || "deepseek-chat",
         responseLength: response.length,
-        confidenceScore: 0.75,
+        confidenceScore: computeConfidenceScore(response, brandName, position, citationUrl),
       },
     };
   } catch (error) {
-    console.error("DeepSeek query error:", error);
+    logger.error("[ai-platform-query] DeepSeek query error", { error });
     return null;
   }
 }
@@ -693,9 +776,7 @@ export async function queryGrok(
   }
 
   try {
-    // Generate query from template (same pattern as other platforms)
-    const promptIndex = Math.floor(Math.random() * queryTemplate.prompts.length);
-    const query = queryTemplate.prompts[promptIndex]
+    const query = pickPrompt(queryTemplate, brandName, "grok")
       .replace("{brand}", brandName)
       .replace("{industry}", "e-commerce")
       .replace("{region}", "South Africa")
@@ -743,12 +824,14 @@ export async function queryGrok(
     const urlMatch = aiResponse.match(/https?:\/\/[^\s)]+/);
     const citationUrl = urlMatch ? urlMatch[0] : null;
 
+    const position = extractPosition(aiResponse, brandName);
+
     return {
       platform: "grok",
       query,
       response: aiResponse,
       sentiment: analyzeSentiment(aiResponse, brandName),
-      position: extractPosition(aiResponse, brandName),
+      position,
       citationUrl,
       competitors: extractCompetitors(aiResponse, brandName),
       promptCategory: queryTemplate.category,
@@ -756,11 +839,11 @@ export async function queryGrok(
       metadata: {
         modelVersion: data.model || "grok-beta",
         responseLength: aiResponse.length,
-        confidenceScore: 0.75,
+        confidenceScore: computeConfidenceScore(aiResponse, brandName, position, citationUrl),
       },
     };
   } catch (error) {
-    console.error("Grok query error:", error);
+    logger.error("[ai-platform-query] Grok query error", { error });
     return null;
   }
 }
@@ -791,9 +874,7 @@ export async function queryCopilot(
   }
 
   try {
-    // Generate query from template
-    const promptIndex = Math.floor(Math.random() * queryTemplate.prompts.length);
-    const query = queryTemplate.prompts[promptIndex]
+    const query = pickPrompt(queryTemplate, brandName, "copilot")
       .replace("{brand}", brandName)
       .replace("{industry}", "e-commerce")
       .replace("{region}", "South Africa")
@@ -851,12 +932,14 @@ export async function queryCopilot(
     const urlMatch = aiResponse.match(/https?:\/\/[^\s)]+/);
     const citationUrl = urlMatch ? urlMatch[0] : null;
 
+    const position = extractPosition(aiResponse, brandName);
+
     return {
       platform: "copilot",
       query,
       response: aiResponse,
       sentiment: analyzeSentiment(aiResponse, brandName),
-      position: extractPosition(aiResponse, brandName),
+      position,
       citationUrl,
       competitors: extractCompetitors(aiResponse, brandName),
       promptCategory: queryTemplate.category,
@@ -864,11 +947,11 @@ export async function queryCopilot(
       metadata: {
         modelVersion: deploymentName,
         responseLength: aiResponse.length,
-        confidenceScore: 0.75,
+        confidenceScore: computeConfidenceScore(aiResponse, brandName, position, citationUrl),
       },
     };
   } catch (error) {
-    console.error("Copilot query error:", error);
+    logger.error("[ai-platform-query] Copilot query error", { error });
     return null;
   }
 }
@@ -885,26 +968,26 @@ export async function queryAIPlatform(
   brandName: string,
   keyword: string
 ): Promise<AIPlatformMention | null> {
-  // Select a random query template
-  const templateKeys = Object.keys(QUERY_TEMPLATES);
-  const randomTemplate =
-    QUERY_TEMPLATES[templateKeys[Math.floor(Math.random() * templateKeys.length)]];
+  // Deterministic template per brand+platform+day so repeated runs produce
+  // comparable results. Previous Math.random() selection made GEO score
+  // trend data jumpy because each run asked a different question.
+  const template = pickTemplate(QUERY_TEMPLATES, brandName, platform);
 
   switch (platform.toLowerCase()) {
     case "chatgpt":
-      return queryChatGPT(brandName, keyword, randomTemplate);
+      return queryChatGPT(brandName, keyword, template);
     case "claude":
-      return queryClaude(brandName, keyword, randomTemplate);
+      return queryClaude(brandName, keyword, template);
     case "gemini":
-      return queryGemini(brandName, keyword, randomTemplate);
+      return queryGemini(brandName, keyword, template);
     case "perplexity":
-      return queryPerplexity(brandName, keyword, randomTemplate);
+      return queryPerplexity(brandName, keyword, template);
     case "grok":
-      return queryGrok(brandName, keyword, randomTemplate);
+      return queryGrok(brandName, keyword, template);
     case "deepseek":
-      return queryDeepSeek(brandName, keyword, randomTemplate);
+      return queryDeepSeek(brandName, keyword, template);
     case "copilot":
-      return queryCopilot(brandName, keyword, randomTemplate);
+      return queryCopilot(brandName, keyword, template);
     default:
       console.warn(`Unknown platform: ${platform}`);
       return null;
