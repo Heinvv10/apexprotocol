@@ -1,4 +1,3 @@
-import Script from "next/script";
 import {
   SiteHeader,
   HeroSection,
@@ -59,20 +58,18 @@ const websiteLd = {
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
-      <Script
-        id="ld-organization"
+      <script
         type="application/ld+json"
-        strategy="beforeInteractive"
+        suppressHydrationWarning
       >
         {JSON.stringify(organizationLd)}
-      </Script>
-      <Script
-        id="ld-website"
+      </script>
+      <script
         type="application/ld+json"
-        strategy="beforeInteractive"
+        suppressHydrationWarning
       >
         {JSON.stringify(websiteLd)}
-      </Script>
+      </script>
       <SiteHeader />
       <main>
         <HeroSection />
