@@ -293,11 +293,14 @@ export async function runMonitorWorker(): Promise<{
             );
             await computeGeoScore(brandId, { forceHistory: true });
           } catch (err) {
-            console.error(
-              "[monitor-worker] GEO score recompute failed for brand",
+            logger.error("[monitor-worker] GEO score recompute failed", {
+              error: err instanceof Error ? err.message : String(err),
               brandId,
-              err,
-            );
+            });
+            const Sentry = await import("@sentry/nextjs").catch(() => null);
+            Sentry?.captureException(err, {
+              tags: { worker: "monitor", phase: "geo-score-recompute" },
+            });
           }
         }
       } else {

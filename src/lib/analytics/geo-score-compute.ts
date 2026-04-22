@@ -14,6 +14,7 @@ import { db } from "@/lib/db";
 import { brandMentions, audits, geoScoreHistory } from "@/lib/db/schema";
 import { eq, count, sql, desc } from "drizzle-orm";
 import { onScoreChange } from "@/lib/notifications/triggers";
+import { logger } from "@/lib/logger";
 
 export interface GeoScoreResult {
   overall: number;
@@ -149,12 +150,26 @@ export async function computeGeoScore(
           scoreHistory: scoreHistoryRecord,
           userId: opts.userId,
           organizationId: opts.organizationId,
-        }).catch((err) => {
-          console.error("[geo-score] notification failed:", err);
+        }).catch(async (err) => {
+          logger.error("[geo-score] notification failed", {
+            error: err instanceof Error ? err.message : String(err),
+            brandId,
+          });
+          const Sentry = await import("@sentry/nextjs").catch(() => null);
+          Sentry?.captureException(err, {
+            tags: { module: "geo-score-compute", phase: "notify" },
+          });
         });
       }
     } catch (err) {
-      console.error("[geo-score] history persist failed:", err);
+      logger.error("[geo-score] history persist failed", {
+        error: err instanceof Error ? err.message : String(err),
+        brandId,
+      });
+      const Sentry = await import("@sentry/nextjs").catch(() => null);
+      Sentry?.captureException(err, {
+        tags: { module: "geo-score-compute", phase: "persist-history" },
+      });
     }
   }
 

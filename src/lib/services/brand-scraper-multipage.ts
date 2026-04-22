@@ -113,7 +113,18 @@ async function crawlSinglePagePlaywright(url: string, timeout = 15000): Promise<
   try {
     // Dynamic import so a missing browser binary doesn't crash at module load
     const { chromium } = await import("playwright");
-    browser = await chromium.launch({ headless: true });
+    // In Docker we install system chromium (alpine's `chromium` apk package)
+    // and point Playwright at it via PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH.
+    // Falling back to Playwright's bundled browser when the env var is unset.
+    const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined;
+    browser = await chromium.launch({
+      headless: true,
+      executablePath,
+      // Alpine's system chromium needs these flags to launch in a container.
+      args: executablePath
+        ? ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+        : undefined,
+    });
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "domcontentloaded", timeout });
 
@@ -149,7 +160,13 @@ async function crawlSinglePagePlaywright(url: string, timeout = 15000): Promise<
       socialLinks: socialResult.links,
     };
   } catch (e) {
-    console.warn(`Playwright crawl failed for ${url}:`, e);
+    // Playwright failure is expected in environments without a browser binary;
+    // the caller will fall back to crawlSinglePageStatic. Log at warn so it
+    // surfaces in telemetry without firing as an error.
+    logger.warn("[brand-scraper] playwright crawl failed — falling back to static", {
+      url,
+      error: e instanceof Error ? e.message : String(e),
+    });
     return null;
   } finally {
     await browser?.close();
@@ -189,7 +206,10 @@ async function crawlSinglePageStatic(url: string, timeout = 15000): Promise<Page
         const socialResult = extractSocialPatterns($);
         socialLinks = socialResult.links;
       } catch (e) {
-        console.warn(`Failed to extract social links from ${url}:`, e);
+        logger.warn("[brand-scraper] social-links extraction failed", {
+          url,
+          error: e instanceof Error ? e.message : String(e),
+        });
       }
     }
 
@@ -205,7 +225,18 @@ async function crawlSinglePageStatic(url: string, timeout = 15000): Promise<Page
       socialLinks,
     };
   } catch (error) {
-    console.error(`Failed to crawl ${url} (static):`, error);
+    // Static crawl is the last-resort path; if it fails we have no data at
+    // all. Route to Sentry so operators see a persistent pattern rather than
+    // the audit silently returning incomplete brand info.
+    logger.error("[brand-scraper] static crawl failed", {
+      url,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    const Sentry = await import("@sentry/nextjs").catch(() => null);
+    Sentry?.captureException(error, {
+      tags: { module: "brand-scraper", phase: "static-crawl" },
+      extra: { url },
+    });
     return null;
   }
 }
@@ -219,7 +250,7 @@ async function crawlSinglePage(url: string, timeout = 15000): Promise<PageData |
   if (playwrightResult) {
     return playwrightResult;
   }
-  console.info(`Falling back to static HTML crawl for ${url}`);
+  logger.info("[brand-scraper] falling back to static HTML crawl", { url });
   return crawlSinglePageStatic(url, timeout);
 }
 

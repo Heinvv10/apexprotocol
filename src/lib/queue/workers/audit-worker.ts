@@ -21,6 +21,7 @@ import {
   computeAiReadinessScore,
 } from "./audit-postprocess";
 import { computeGeoScore } from "@/lib/analytics/geo-score-compute";
+import { logger } from "@/lib/logger";
 
 // Worker configuration
 const WORKER_CONFIG = {
@@ -120,15 +121,35 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
       where: eq(brands.id, brandId),
     });
 
-    // Wrap external checks in safe fallbacks to prevent crashes on timeout/network errors
-    const safeCheck = async (fn: () => Promise<unknown>, fallback: unknown): Promise<unknown> => {
-      try { return await fn(); } catch (e) { console.error('[Audit] Check failed:', e instanceof Error ? e.message : String(e)); return fallback; }
+    // Wrap external checks in safe fallbacks to prevent crashes on timeout/network errors.
+    // Failures are surfaced to Sentry + the structured logger with the check label so
+    // operators can see when an audit silently skipped a signal (previously these were
+    // only console.error'd, easy to miss in prod).
+    const Sentry = await import("@sentry/nextjs").catch(() => null);
+    const safeCheck = async <T>(
+      label: string,
+      fn: () => Promise<T>,
+      fallback: T,
+    ): Promise<T> => {
+      try {
+        return await fn();
+      } catch (err) {
+        logger.error(`[audit-worker] ${label} failed`, {
+          error: err instanceof Error ? err.message : String(err),
+          brandId,
+          url,
+        });
+        Sentry?.captureException(err, { tags: { worker: "audit", check: label } });
+        return fallback;
+      }
     };
     const [aiCrawlerIssues, entityIssues, chunkingResult, pageSpeedResult] = await Promise.all([
-      safeCheck(() => checkAiCrawlers(url), []),
-      brand ? safeCheck(() => checkEntityAuthority(brand.name, brand.domain || undefined), []) : Promise.resolve([]),
-      safeCheck(() => checkContentChunking(url), { issues: [], score: 0 }),
-      safeCheck(() => checkPageSpeed(url), null),
+      safeCheck("ai-crawlers", () => checkAiCrawlers(url), [] as unknown),
+      brand
+        ? safeCheck("entity-authority", () => checkEntityAuthority(brand.name, brand.domain || undefined), [] as unknown)
+        : Promise.resolve([] as unknown),
+      safeCheck("content-chunking", () => checkContentChunking(url), { issues: [], score: 0 } as unknown),
+      safeCheck("page-speed", () => checkPageSpeed(url), null as unknown),
     ]);
 
     // Merge all issues
@@ -246,10 +267,14 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
           // Don't fail the audit if recommendation persistence has a
           // hiccup (FK race, schema drift). Audit completes; the
           // recommendations backfill can be re-run separately.
-          console.error(
-            "[audit-worker] failed to persist recommendations:",
-            err
-          );
+          logger.error("[audit-worker] failed to persist recommendations", {
+            error: err instanceof Error ? err.message : String(err),
+            auditId: existingAudit.id,
+            brandId: existingAudit.brandId,
+          });
+          Sentry?.captureException(err, {
+            tags: { worker: "audit", phase: "persist-recommendations" },
+          });
         }
       }
 
@@ -262,7 +287,13 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
         try {
           await computeGeoScore(existingAudit.brandId, { forceHistory: true });
         } catch (err) {
-          console.error("[audit-worker] GEO score recompute failed:", err);
+          logger.error("[audit-worker] GEO score recompute failed", {
+            error: err instanceof Error ? err.message : String(err),
+            brandId: existingAudit.brandId,
+          });
+          Sentry?.captureException(err, {
+            tags: { worker: "audit", phase: "geo-score-recompute" },
+          });
         }
       }
     }
