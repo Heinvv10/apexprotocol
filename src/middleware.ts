@@ -3,9 +3,7 @@ import type { NextRequest } from "next/server";
 import { updateSupabaseSession } from "@/lib/auth/supabase-middleware";
 
 const SUPABASE_AUTH_CONFIGURED =
-  !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
-  !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-  process.env.NEXT_PUBLIC_SUPABASE_URL !== "https://placeholder.supabase.co";
+  !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 const API_KEY_AUTH_HEADERS = {
   AUTH_TYPE: "x-apex-auth-type",
