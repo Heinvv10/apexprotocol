@@ -26,6 +26,7 @@ export interface MailOptions {
   html?: string;
   text?: string;
   replyTo?: string;
+  headers?: Record<string, string>;
 }
 
 export interface SendResult {
@@ -113,6 +114,7 @@ export async function sendMail(options: MailOptions): Promise<SendResult> {
       subject: options.subject,
       html: options.html,
       text: options.text,
+      headers: options.headers,
     });
 
     return { id: info.messageId, success: true };
