@@ -724,6 +724,36 @@ export {
   type NewBrowserPlatformHealth,
 } from "./browser-sessions";
 
+// Social-browser auth (browser-automation posting credentials)
+export {
+  socialBrowserCredentials,
+  socialBrowserActions,
+  socialBrowserCredentialStatusEnum,
+  socialBrowserActionTypeEnum,
+  socialBrowserActionStatusEnum,
+  socialBrowserCredentialsRelations,
+  socialBrowserActionsRelations,
+  type SocialBrowserCredential,
+  type NewSocialBrowserCredential,
+  type SocialBrowserAction,
+  type NewSocialBrowserAction,
+} from "./social-browser-auth";
+
+// Social engagement — hybrid-autonomy reply/comment queue
+export {
+  socialEngagementSettings,
+  socialEngagementDrafts,
+  engagementAutonomyModeEnum,
+  engagementDraftStatusEnum,
+  engagementKindEnum,
+  socialEngagementSettingsRelations,
+  socialEngagementDraftsRelations,
+  type SocialEngagementSettings,
+  type NewSocialEngagementSettings,
+  type SocialEngagementDraft,
+  type NewSocialEngagementDraft,
+} from "./social-engagement";
+
 // Brand voice v0.5 — style-descriptor extraction + injection (FR-CRE-002)
 export {
   brandVoiceSamples,

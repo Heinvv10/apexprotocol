@@ -40,6 +40,7 @@ export const socialPlatformEnum = pgEnum("social_platform", [
   "threads",
   "mastodon",
   "bluesky",
+  "quora",
 ]);
 
 export const socialSentimentEnum = pgEnum("social_sentiment", [

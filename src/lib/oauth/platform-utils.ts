@@ -165,6 +165,14 @@ export const PLATFORM_INFO: Record<AllSocialPlatform, PlatformInfo> = {
     oauthSupported: false,
     apiSupported: true,
   },
+  quora: {
+    displayName: "Quora",
+    color: "#B92B27",
+    icon: "quora",
+    description: "Long-form Q&A — strong AI-engine citation for evergreen answers",
+    oauthSupported: false,
+    apiSupported: false,
+  },
 };
 
 // ============================================================================

@@ -85,6 +85,27 @@
       "when": 1776829369778,
       "tag": "0011_amazing_doctor_octopus",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1777536000000,
+      "tag": "0012_drop_clerk_ids",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1776953337479,
+      "tag": "0013_flashy_vulture",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1776958415161,
+      "tag": "0014_fat_gamma_corps",
+      "breakpoints": true
     }
   ]
 }

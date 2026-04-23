@@ -110,6 +110,10 @@ export const PLATFORM_RATE_LIMITS: Record<SocialPlatform, RateLimitConfig[]> = {
   mastodon: [
     { platform: "mastodon", endpoint: "default", requestsLimit: 300, windowDurationSeconds: 300 }, // 300/5min
   ],
+  quora: [
+    // No public API — rate-limit entry kept for type completeness only.
+    { platform: "quora", endpoint: "default", requestsLimit: 0, windowDurationSeconds: 86400 },
+  ],
 };
 
 // ============================================================================
