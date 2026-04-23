@@ -47,6 +47,7 @@ const publicRoutes = [
   "/trust",
   "/embed(.*)",
   // Marketing / legal pages — must be publicly indexable + visible to footer clicks
+  "/what-is-apexgeo",
   "/blog(.*)",
   "/careers",
   "/changelog",
