@@ -164,20 +164,31 @@ export function ShareDialog({ auditId }: { auditId: string }) {
           <div>
             <p className="mb-2 text-sm font-medium">Link expires after</p>
             <div className="grid grid-cols-4 gap-2">
-              {(["7d", "14d", "30d", "never"] as Expiry[]).map((opt) => (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => setExpiry(opt)}
-                  className={`rounded-lg border px-3 py-2 text-sm transition ${
-                    expiry === opt
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border text-muted-foreground hover:border-primary/50"
-                  }`}
-                >
-                  {EXPIRY_LABEL[opt]}
-                </button>
-              ))}
+              {(["7d", "14d", "30d", "never"] as Expiry[]).map((opt) => {
+                const selected = expiry === opt;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setExpiry(opt)}
+                    className="rounded-lg border px-3 py-2 text-sm transition"
+                    style={
+                      selected
+                        ? {
+                            borderColor: "hsl(var(--primary))",
+                            background: "hsl(var(--primary) / 0.12)",
+                            color: "hsl(var(--primary))",
+                          }
+                        : {
+                            borderColor: "hsl(var(--border))",
+                            color: "hsl(var(--muted-foreground))",
+                          }
+                    }
+                  >
+                    {EXPIRY_LABEL[opt]}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
