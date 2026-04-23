@@ -88,9 +88,14 @@ export default async function SharedAuditPage({ params }: PageProps) {
     low: audit.lowCount ?? issues.filter((i) => i.severity === "low").length,
   };
 
-  const topRecs = issues
-    .filter((i) => i.severity === "critical" || i.severity === "high")
-    .slice(0, 6);
+  const SEVERITY_ORDER: AuditIssue["severity"][] = ["critical", "high", "medium", "low"];
+  const issuesBySeverity: Record<AuditIssue["severity"], AuditIssue[]> = {
+    critical: [],
+    high: [],
+    medium: [],
+    low: [],
+  };
+  for (const issue of issues) issuesBySeverity[issue.severity].push(issue);
 
   const scannedOn = audit.startedAt
     ? new Date(audit.startedAt).toLocaleDateString("en-ZA", {
@@ -256,42 +261,108 @@ export default async function SharedAuditPage({ params }: PageProps) {
           </section>
         )}
 
-        {/* Priority actions */}
-        {topRecs.length > 0 && (
+        {/* Full action plan — every issue with full remediation context */}
+        {issues.length > 0 && (
           <section className="shared-card mb-8 rounded-2xl border border-white/10 bg-[#141930] p-8">
-            <h2 className="mb-6 text-lg font-semibold text-slate-50">Priority Actions</h2>
-            <ol className="space-y-4">
-              {topRecs.map((issue, i) => {
-                const meta = SEVERITY_META[issue.severity];
-                return (
-                  <li
-                    key={issue.id}
-                    className="flex gap-4 border-b border-white/5 pb-4 last:border-b-0 last:pb-0"
-                  >
-                    <span className="shared-muted w-6 shrink-0 text-2xl font-black text-slate-600">
-                      {i + 1}
+            <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-50">Action Plan</h2>
+                <p className="shared-muted mt-1 text-sm text-slate-400">
+                  Every outstanding issue, grouped by severity. Work top-down to move the score fastest.
+                </p>
+              </div>
+              <p className="shared-muted text-xs uppercase tracking-wider text-slate-500">
+                {issues.length} {issues.length === 1 ? "task" : "tasks"} total
+              </p>
+            </div>
+
+            {SEVERITY_ORDER.map((sev) => {
+              const list = issuesBySeverity[sev];
+              if (list.length === 0) return null;
+              const meta = SEVERITY_META[sev];
+              let counter = 0;
+              return (
+                <div key={sev} className="mb-8 last:mb-0">
+                  <div className="mb-4 flex items-center gap-3">
+                    <span
+                      className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider"
+                      style={{ background: meta.color + "22", color: meta.color }}
+                    >
+                      {meta.label}
                     </span>
-                    <div className="flex-1">
-                      <div className="mb-2 flex flex-wrap items-center gap-2">
-                        <span
-                          className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider"
-                          style={{ background: meta.color + "22", color: meta.color }}
+                    <span className="shared-muted text-xs text-slate-500">
+                      {list.length} {list.length === 1 ? "task" : "tasks"}
+                    </span>
+                  </div>
+                  <ol className="space-y-5">
+                    {list.map((issue) => {
+                      counter += 1;
+                      return (
+                        <li
+                          key={issue.id}
+                          className="flex gap-4 border-b border-white/5 pb-5 last:border-b-0 last:pb-0"
                         >
-                          {meta.label}
-                        </span>
-                        <span className="shared-muted text-[11px] uppercase tracking-wider text-slate-500">
-                          {issue.category}
-                        </span>
-                      </div>
-                      <h3 className="text-sm font-semibold text-slate-100">{issue.title}</h3>
-                      <p className="shared-muted mt-1 text-sm leading-relaxed text-slate-400">
-                        {issue.recommendation || issue.description}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
+                          <span
+                            className="w-7 shrink-0 text-xl font-black tabular-nums"
+                            style={{ color: meta.color }}
+                          >
+                            {String(counter).padStart(2, "0")}
+                          </span>
+                          <div className="flex-1">
+                            <div className="mb-2 flex flex-wrap items-center gap-2">
+                              <span className="shared-muted text-[11px] uppercase tracking-wider text-slate-500">
+                                {issue.category}
+                              </span>
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-100">
+                              {issue.title}
+                            </h3>
+                            {issue.description && (
+                              <p className="shared-muted mt-2 text-sm leading-relaxed text-slate-400">
+                                {issue.description}
+                              </p>
+                            )}
+                            {issue.recommendation && (
+                              <div className="mt-3 rounded-lg border border-white/5 bg-white/[0.02] p-3">
+                                <p
+                                  className="mb-1 text-[10px] font-semibold uppercase tracking-wider"
+                                  style={{ color: accentColor }}
+                                >
+                                  How to fix
+                                </p>
+                                <p className="text-sm leading-relaxed text-slate-200">
+                                  {issue.recommendation}
+                                </p>
+                              </div>
+                            )}
+                            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs">
+                              {issue.impact && (
+                                <div className="flex-1 min-w-[180px]">
+                                  <p className="shared-muted text-[10px] uppercase tracking-wider text-slate-500">
+                                    Expected impact
+                                  </p>
+                                  <p className="mt-0.5 text-slate-300">{issue.impact}</p>
+                                </div>
+                              )}
+                              {issue.element && (
+                                <div className="flex-1 min-w-[180px]">
+                                  <p className="shared-muted text-[10px] uppercase tracking-wider text-slate-500">
+                                    Target element
+                                  </p>
+                                  <p className="mt-0.5 break-all font-mono text-slate-300">
+                                    {issue.element}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              );
+            })}
           </section>
         )}
 
