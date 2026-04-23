@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { and, desc, eq, isNull, or, gt } from "drizzle-orm";
 import { getUserId, getOrganizationId } from "@/lib/auth/supabase-server";
 import { db } from "@/lib/db";
-import { audits, auditShares } from "@/lib/db/schema";
+import { audits, auditShares, users } from "@/lib/db/schema";
 import {
   computeExpiresAt,
   generateShareToken,
@@ -53,6 +53,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   const token = generateShareToken();
   const expiresAt = computeExpiresAt(expiry);
 
+  const dbUser = await db.query.users.findFirst({
+    where: eq(users.authUserId, userId),
+    columns: { id: true },
+  });
+
   const [share] = await db
     .insert(auditShares)
     .values({
@@ -61,7 +66,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       organizationId: orgId,
       token,
       expiresAt,
-      createdById: userId,
+      createdById: dbUser?.id ?? null,
     })
     .returning();
 
