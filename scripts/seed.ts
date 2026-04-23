@@ -491,7 +491,6 @@ async function seed() {
       id: ids.org,
       name: "Apex Demo Company",
       slug: "apex-demo",
-      clerkOrgId: "org_demo_" + createId().slice(0, 8),
       plan: "professional",
       brandLimit: 10,
       userLimit: 25,
@@ -511,7 +510,7 @@ async function seed() {
     await db.insert(schema.users).values([
       {
         id: ids.users[0],
-        clerkUserId: "user_demo_admin_" + createId().slice(0, 8),
+        authUserId: "user_demo_admin_" + createId().slice(0, 8),
         organizationId: ids.org,
         email: "admin@apex-demo.com",
         name: "Alex Thompson",
@@ -520,7 +519,7 @@ async function seed() {
       },
       {
         id: ids.users[1],
-        clerkUserId: "user_demo_editor_" + createId().slice(0, 8),
+        authUserId: "user_demo_editor_" + createId().slice(0, 8),
         organizationId: ids.org,
         email: "editor@apex-demo.com",
         name: "Jordan Lee",

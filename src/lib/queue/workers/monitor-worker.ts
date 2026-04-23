@@ -96,7 +96,7 @@ export async function processMonitorJob(job: Job): Promise<MonitorJobResult> {
           const orgId = (job.payload as { orgId?: string }).orgId;
 
           // Fetch organization members for notification distribution
-          let orgMembers: Array<{ id?: string; authUserId?: string | null; clerkUserId?: string | null }> = [];
+          let orgMembers: Array<{ id?: string; authUserId?: string | null }> = [];
           if (orgId) {
             try {
               orgMembers = await getOrganizationMembers(orgId);

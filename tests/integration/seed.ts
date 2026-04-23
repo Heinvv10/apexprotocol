@@ -82,11 +82,10 @@ export const TEST_IDS = {
 export interface SeedResult {
   organization: {
     id: string;
-    clerkOrgId: string;
   };
   users: Array<{
     id: string;
-    clerkUserId: string;
+    authUserId: string;
     email: string;
   }>;
   brands: Array<{
@@ -143,7 +142,6 @@ async function seedOrganization(
     id: TEST_IDS.ORG,
     name: "Integration Test Organization",
     slug: "integration-test-org",
-    clerkOrgId: `clerk_org_test_${TEST_IDS.ORG}`,
     plan: "professional" as const,
     brandLimit: 10,
     userLimit: 25,
@@ -208,7 +206,6 @@ async function seedOrganization(
 
   return {
     id: orgData.id,
-    clerkOrgId: orgData.clerkOrgId,
   };
 }
 
@@ -223,7 +220,7 @@ async function seedUsers(
   const usersData = [
     {
       id: TEST_IDS.USERS[0],
-      clerkUserId: `clerk_user_test_${TEST_IDS.USERS[0]}`,
+      authUserId: `auth_user_test_${TEST_IDS.USERS[0]}`,
       organizationId: orgId,
       email: "admin@integration-test.com",
       name: "Test Admin",
@@ -232,7 +229,7 @@ async function seedUsers(
     },
     {
       id: TEST_IDS.USERS[1],
-      clerkUserId: `clerk_user_test_${TEST_IDS.USERS[1]}`,
+      authUserId: `auth_user_test_${TEST_IDS.USERS[1]}`,
       organizationId: orgId,
       email: "editor@integration-test.com",
       name: "Test Editor",
@@ -246,7 +243,7 @@ async function seedUsers(
 
   return usersData.map((u) => ({
     id: u.id,
-    clerkUserId: u.clerkUserId,
+    authUserId: u.authUserId,
     email: u.email,
   }));
 }

@@ -37,7 +37,7 @@ export const systemAuditLogs = pgTable("system_audit_logs", {
     .$defaultFn(() => createId()),
 
   // Actor (who performed the action)
-  actorId: text("actor_id").references(() => users.clerkUserId),
+  actorId: text("actor_id").references(() => users.id),
   actorName: text("actor_name"),
   actorEmail: text("actor_email"),
   actorRole: text("actor_role"), // super_admin, org_admin, user, system

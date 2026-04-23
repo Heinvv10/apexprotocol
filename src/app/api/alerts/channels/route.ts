@@ -10,7 +10,7 @@ import { alertChannels } from '@/lib/db/schema/alert-rules';
 import { organizations } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
-import { getSession, currentDbUser } from "@/lib/auth/supabase-server";
+import { getSession } from "@/lib/auth/supabase-server";
 
 // GET - List alert channels
 export async function GET(request: NextRequest) {
@@ -26,17 +26,17 @@ export async function GET(request: NextRequest) {
       orgId = firstOrg.id;
     } else {
       const __session = await getSession();
-  const { orgId: clerkOrgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
-      if (!clerkOrgId) {
+      const sessionOrgId = __session?.orgId ?? null;
+      if (!sessionOrgId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      
+
       const [org] = await db
         .select()
         .from(organizations)
-        .where(eq(organizations.clerkOrgId, clerkOrgId))
+        .where(eq(organizations.id, sessionOrgId))
         .limit(1);
-      
+
       if (!org) {
         return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
       }
@@ -86,17 +86,17 @@ export async function POST(request: NextRequest) {
       orgId = firstOrg.id;
     } else {
       const __session = await getSession();
-  const { orgId: clerkOrgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
-      if (!clerkOrgId) {
+      const sessionOrgId = __session?.orgId ?? null;
+      if (!sessionOrgId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      
+
       const [org] = await db
         .select()
         .from(organizations)
-        .where(eq(organizations.clerkOrgId, clerkOrgId))
+        .where(eq(organizations.id, sessionOrgId))
         .limit(1);
-      
+
       if (!org) {
         return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
       }
@@ -140,17 +140,17 @@ export async function PUT(request: NextRequest) {
       orgId = firstOrg.id;
     } else {
       const __session = await getSession();
-  const { orgId: clerkOrgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
-      if (!clerkOrgId) {
+      const sessionOrgId = __session?.orgId ?? null;
+      if (!sessionOrgId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      
+
       const [org] = await db
         .select()
         .from(organizations)
-        .where(eq(organizations.clerkOrgId, clerkOrgId))
+        .where(eq(organizations.id, sessionOrgId))
         .limit(1);
-      
+
       if (!org) {
         return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
       }
@@ -198,17 +198,17 @@ export async function DELETE(request: NextRequest) {
       orgId = firstOrg.id;
     } else {
       const __session = await getSession();
-  const { orgId: clerkOrgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
-      if (!clerkOrgId) {
+      const sessionOrgId = __session?.orgId ?? null;
+      if (!sessionOrgId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      
+
       const [org] = await db
         .select()
         .from(organizations)
-        .where(eq(organizations.clerkOrgId, clerkOrgId))
+        .where(eq(organizations.id, sessionOrgId))
         .limit(1);
-      
+
       if (!org) {
         return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
       }

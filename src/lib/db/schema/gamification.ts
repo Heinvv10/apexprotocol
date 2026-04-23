@@ -20,7 +20,7 @@ export const userGamification = pgTable("user_gamification", {
   userId: text("user_id")
     .notNull()
     .unique()
-    .references(() => users.clerkUserId, { onDelete: "cascade" }),
+    .references(() => users.id, { onDelete: "cascade" }),
   organizationId: text("organization_id"),
 
   // XP and Level
@@ -68,7 +68,7 @@ export const userAchievements = pgTable("user_achievements", {
     .$defaultFn(() => createId()),
   userId: text("user_id")
     .notNull()
-    .references(() => users.clerkUserId, { onDelete: "cascade" }),
+    .references(() => users.id, { onDelete: "cascade" }),
   achievementId: text("achievement_id").notNull(),
   xpAwarded: integer("xp_awarded").default(0).notNull(),
   unlockedAt: timestamp("unlocked_at", { withTimezone: true }).defaultNow().notNull(),
@@ -78,14 +78,14 @@ export const userAchievements = pgTable("user_achievements", {
 export const userGamificationRelations = relations(userGamification, ({ one }) => ({
   user: one(users, {
     fields: [userGamification.userId],
-    references: [users.clerkUserId],
+    references: [users.id],
   }),
 }));
 
 export const userAchievementsRelations = relations(userAchievements, ({ one }) => ({
   user: one(users, {
     fields: [userAchievements.userId],
-    references: [users.clerkUserId],
+    references: [users.id],
   }),
 }));
 

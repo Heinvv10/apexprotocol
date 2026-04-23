@@ -23,7 +23,7 @@ export const activityLog = pgTable("activity_log", {
   brandId: text("brand_id")
     .notNull()
     .references(() => brands.id, { onDelete: "cascade" }),
-  userId: text("user_id").references(() => users.clerkUserId),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
   activityType: text("activity_type").notNull().$type<ActivityType>(),
   description: text("description").notNull(),
   metadata: jsonb("metadata").$type<Record<string, unknown>>(),
@@ -38,7 +38,7 @@ export const activityLogRelations = relations(activityLog, ({ one }) => ({
   }),
   user: one(users, {
     fields: [activityLog.userId],
-    references: [users.clerkUserId],
+    references: [users.id],
   }),
 }));
 

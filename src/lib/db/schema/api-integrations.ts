@@ -62,8 +62,8 @@ export const apiIntegrations = pgTable("api_integrations", {
   // Audit fields
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-  createdBy: text("created_by").references(() => users.clerkUserId),
-  updatedBy: text("updated_by").references(() => users.clerkUserId),
+  createdBy: text("created_by").references(() => users.id),
+  updatedBy: text("updated_by").references(() => users.id),
 });
 
 // Type exports

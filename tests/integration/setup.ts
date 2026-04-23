@@ -131,7 +131,7 @@ export function getSchema(): typeof schema {
 export interface TestContext {
   userId: string;
   orgId: string;
-  clerkUserId: string;
+  authUserId: string;
   requireAuth: () => { userId: string; orgId: string };
 }
 
@@ -141,12 +141,12 @@ export interface TestContext {
 export function createTestContext(overrides: Partial<TestContext> = {}): TestContext {
   const orgId = overrides.orgId ?? TEST_IDS.ORG;
   const userId = overrides.userId ?? TEST_IDS.USERS[0];
-  const clerkUserId = overrides.clerkUserId ?? `clerk_test_${userId}`;
+  const authUserId = overrides.authUserId ?? `auth_test_${userId}`;
 
   return {
     userId,
     orgId,
-    clerkUserId,
+    authUserId,
     requireAuth: () => ({ userId, orgId }),
   };
 }

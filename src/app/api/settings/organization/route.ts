@@ -10,12 +10,18 @@ const updateOrganizationSchema = z.object({
   name: z.string().min(1).optional(),
   branding: z
     .object({
+      themeId: z.string().optional(),
       primaryColor: z.string().optional(),
       accentColor: z.string().optional(),
       logoUrl: z.string().optional().nullable(),
+      logoDarkUrl: z.string().optional().nullable(),
       faviconUrl: z.string().optional().nullable(),
       appName: z.string().optional().nullable(),
+      tagline: z.string().optional().nullable(),
       customDomain: z.string().optional().nullable(),
+      supportEmail: z.string().optional().nullable(),
+      showPoweredBy: z.boolean().optional(),
+      customFooterText: z.string().optional().nullable(),
     })
     .optional(),
   settings: z
@@ -58,7 +64,6 @@ export async function GET(_request: NextRequest) {
           id: orgId,
           name: "My Organization",
           slug: `org-${orgId.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now().toString(36)}`,
-          clerkOrgId: orgId.startsWith("org_") ? orgId : null,
         })
         .returning();
       org = newOrg;

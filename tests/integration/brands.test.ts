@@ -740,7 +740,6 @@ describe("Brand Integration Tests", () => {
         id: otherOrgId,
         name: "Other Test Organization",
         slug: `other-test-org-${Date.now()}`,
-        clerkOrgId: `clerk_other_org_${Date.now()}`,
         plan: "starter",
         brandLimit: 3,
         userLimit: 5,

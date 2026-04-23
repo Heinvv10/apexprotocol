@@ -1222,7 +1222,7 @@ const resolvers = {
 
       try {
         // Try to get user from database
-        const userResult = await db.select().from(schema.users).where(eq(schema.users.clerkUserId, user.userId)).limit(1);
+        const userResult = await db.select().from(schema.users).where(eq(schema.users.authUserId, user.userId)).limit(1);
 
         if (userResult[0]) {
           return {

@@ -286,7 +286,6 @@ export interface MockOrganization {
   id: string;
   name: string;
   slug: string;
-  clerkOrgId: string | null;
   plan: string;
   billingEmail: string | null;
   stripeCustomerId: string | null;
@@ -308,7 +307,6 @@ export function createMockOrganization(
     id,
     name: overrides.name ?? `Test Organization ${id}`,
     slug: overrides.slug ?? `test-org-${id}`,
-    clerkOrgId: overrides.clerkOrgId ?? `clerk_org_${id}`,
     plan: overrides.plan ?? "pro",
     billingEmail: overrides.billingEmail ?? `billing@testorg-${id}.com`,
     stripeCustomerId: overrides.stripeCustomerId ?? null,
@@ -327,7 +325,7 @@ export function createMockOrganization(
 export interface MockUser {
   id: string;
   organizationId: string;
-  clerkUserId: string;
+  authUserId: string;
   email: string;
   firstName: string | null;
   lastName: string | null;
@@ -343,7 +341,7 @@ export function createMockUser(overrides: Partial<MockUser> = {}): MockUser {
   return {
     id,
     organizationId: overrides.organizationId ?? generateId("org"),
-    clerkUserId: overrides.clerkUserId ?? `clerk_user_${id}`,
+    authUserId: overrides.authUserId ?? `auth_user_${id}`,
     email: overrides.email ?? `user-${id}@test.com`,
     firstName: overrides.firstName ?? "Test",
     lastName: overrides.lastName ?? "User",

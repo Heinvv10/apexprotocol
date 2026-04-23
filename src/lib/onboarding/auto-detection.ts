@@ -5,30 +5,24 @@
 
 import { db } from "@/lib/db";
 import { organizations, brands } from "@/lib/db/schema";
-import { eq, or, count } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 
 /**
  * Mark a specific onboarding step as complete.
  *
- * Callers pass the *internal* org id (`organizations.id`) from
- * `getOrganizationId()`. The parameter name `clerkOrgId` is a legacy artifact
- * from the Clerk era — we now match on `id` first and fall back to
- * `clerkOrgId` so historical rows carrying a Clerk org id still resolve.
+ * Callers pass the internal org id from `getOrganizationId()`.
  */
 export async function markOnboardingStepComplete(
-  clerkOrgId: string,
+  organizationId: string,
   step: "brandAdded" | "monitoringConfigured" | "auditRun" | "recommendationsReviewed"
 ): Promise<void> {
   try {
     const org = await db.query.organizations.findFirst({
-      where: or(
-        eq(organizations.id, clerkOrgId),
-        eq(organizations.clerkOrgId, clerkOrgId),
-      ),
+      where: eq(organizations.id, organizationId),
     });
 
     if (!org) {
-      console.warn(`Organization not found for id/clerkOrgId: ${clerkOrgId}`);
+      console.warn(`Organization not found for id: ${organizationId}`);
       return;
     }
 
@@ -84,15 +78,10 @@ export async function markOnboardingStepComplete(
 /**
  * Check if user has any brands (for brandAdded detection)
  */
-export async function detectBrandAdded(clerkOrgId: string): Promise<void> {
+export async function detectBrandAdded(organizationId: string): Promise<void> {
   try {
-    // Same id/clerkOrgId fallback as markOnboardingStepComplete — the
-    // parameter carries the internal org id for Supabase-era callers.
     const org = await db.query.organizations.findFirst({
-      where: or(
-        eq(organizations.id, clerkOrgId),
-        eq(organizations.clerkOrgId, clerkOrgId),
-      ),
+      where: eq(organizations.id, organizationId),
     });
 
     if (!org) {
@@ -106,7 +95,7 @@ export async function detectBrandAdded(clerkOrgId: string): Promise<void> {
       .where(eq(brands.organizationId, org.id));
 
     if (brandCount[0]?.count && brandCount[0].count > 0) {
-      await markOnboardingStepComplete(clerkOrgId, "brandAdded");
+      await markOnboardingStepComplete(organizationId, "brandAdded");
     }
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -118,22 +107,22 @@ export async function detectBrandAdded(clerkOrgId: string): Promise<void> {
  * Detect monitoring configuration
  * (Called when monitoring job is created or settings are saved)
  */
-export async function detectMonitoringConfigured(clerkOrgId: string): Promise<void> {
-  await markOnboardingStepComplete(clerkOrgId, "monitoringConfigured");
+export async function detectMonitoringConfigured(organizationId: string): Promise<void> {
+  await markOnboardingStepComplete(organizationId, "monitoringConfigured");
 }
 
 /**
  * Detect audit run
  * (Called when audit is completed)
  */
-export async function detectAuditRun(clerkOrgId: string): Promise<void> {
-  await markOnboardingStepComplete(clerkOrgId, "auditRun");
+export async function detectAuditRun(organizationId: string): Promise<void> {
+  await markOnboardingStepComplete(organizationId, "auditRun");
 }
 
 /**
  * Detect recommendations reviewed
  * (Called when recommendations page is visited)
  */
-export async function detectRecommendationsReviewed(clerkOrgId: string): Promise<void> {
-  await markOnboardingStepComplete(clerkOrgId, "recommendationsReviewed");
+export async function detectRecommendationsReviewed(organizationId: string): Promise<void> {
+  await markOnboardingStepComplete(organizationId, "recommendationsReviewed");
 }

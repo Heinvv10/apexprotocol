@@ -60,17 +60,17 @@ export async function POST(request: NextRequest) {
       customerFirstName = 'Test';
       customerLastName = 'User';
     } else {
-      // Production: require Clerk auth
+      // Production: require Supabase Auth session
       const __session = await getSession();
-  const { userId, orgId: clerkOrgId } = __session ?? { userId: null, orgId: null, orgRole: null, orgSlug: null, sessionClaims: null };
-      
-      if (!userId || !clerkOrgId) {
+      const sessionOrgId = __session?.orgId ?? null;
+
+      if (!__session?.userId || !sessionOrgId) {
         return NextResponse.json(
           { error: 'Unauthorized' },
           { status: 401 }
         );
       }
-      
+
       const user = await currentDbUser();
       if (!user) {
         return NextResponse.json(
@@ -78,21 +78,21 @@ export async function POST(request: NextRequest) {
           { status: 404 }
         );
       }
-      
-      // Get organization
+
+      // Get organization by internal id
       const [org] = await db
         .select()
         .from(organizations)
-        .where(eq(organizations.clerkOrgId, clerkOrgId))
+        .where(eq(organizations.id, sessionOrgId))
         .limit(1);
-      
+
       if (!org) {
         return NextResponse.json(
           { error: 'Organization not found' },
           { status: 404 }
         );
       }
-      
+
       orgId = org.id;
       customerEmail = user.email || '';
       customerFirstName = user.name || undefined;

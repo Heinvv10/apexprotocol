@@ -256,14 +256,14 @@ describe("Edge Cases Integration Tests", () => {
         expect(result[0]).toBeUndefined();
       });
 
-      it("should return empty array for non-existent clerk user ID", async () => {
+      it("should return empty array for non-existent auth user ID", async () => {
         const db = getDb();
         const schema = getSchemaFn();
 
         const result = await db
           .select()
           .from(schema.users)
-          .where(eq(schema.users.clerkUserId, "clerk_user_nonexistent_xyz"));
+          .where(eq(schema.users.authUserId, "auth_user_nonexistent_xyz"));
 
         expect(result).toEqual([]);
       });
@@ -284,14 +284,14 @@ describe("Edge Cases Integration Tests", () => {
         expect(result[0]).toBeUndefined();
       });
 
-      it("should return empty array for non-existent clerk org ID", async () => {
+      it("should return empty array for non-existent slug", async () => {
         const db = getDb();
         const schema = getSchemaFn();
 
         const result = await db
           .select()
           .from(schema.organizations)
-          .where(eq(schema.organizations.clerkOrgId, "clerk_org_nonexistent_abc"));
+          .where(eq(schema.organizations.slug, "nonexistent-slug-abc"));
 
         expect(result).toEqual([]);
       });

@@ -21,7 +21,7 @@ export async function isSuperAdmin(): Promise<boolean> {
     const dbUser = await db
       .select({ isSuperAdmin: users.isSuperAdmin })
       .from(users)
-      .where(eq(users.clerkUserId, session.userId))
+      .where(eq(users.authUserId, session.userId))
       .limit(1);
 
     return dbUser[0]?.isSuperAdmin ?? false;
@@ -99,7 +99,7 @@ export async function grantSuperAdmin(
     const granter = await db
       .select({ isSuperAdmin: users.isSuperAdmin })
       .from(users)
-      .where(eq(users.clerkUserId, grantedByUserId))
+      .where(eq(users.authUserId, grantedByUserId))
       .limit(1);
 
     if (!granter[0]?.isSuperAdmin) {
@@ -114,7 +114,7 @@ export async function grantSuperAdmin(
         superAdminGrantedBy: grantedByUserId,
         updatedAt: new Date(),
       })
-      .where(eq(users.clerkUserId, targetUserId));
+      .where(eq(users.authUserId, targetUserId));
 
     return { success: true };
   } catch (error) {
@@ -137,7 +137,7 @@ export async function revokeSuperAdmin(
     const revoker = await db
       .select({ isSuperAdmin: users.isSuperAdmin })
       .from(users)
-      .where(eq(users.clerkUserId, revokedByUserId))
+      .where(eq(users.authUserId, revokedByUserId))
       .limit(1);
 
     if (!revoker[0]?.isSuperAdmin) {
@@ -156,7 +156,7 @@ export async function revokeSuperAdmin(
         superAdminGrantedBy: null,
         updatedAt: new Date(),
       })
-      .where(eq(users.clerkUserId, targetUserId));
+      .where(eq(users.authUserId, targetUserId));
 
     return { success: true };
   } catch (error) {
@@ -173,7 +173,7 @@ export async function revokeSuperAdmin(
 export async function listSuperAdmins(): Promise<
   Array<{
     id: string;
-    clerkUserId: string | null;
+    authUserId: string | null;
     email: string;
     name: string | null;
     superAdminGrantedAt: Date | null;
@@ -183,7 +183,7 @@ export async function listSuperAdmins(): Promise<
   return db
     .select({
       id: users.id,
-      clerkUserId: users.clerkUserId,
+      authUserId: users.authUserId,
       email: users.email,
       name: users.name,
       superAdminGrantedAt: users.superAdminGrantedAt,

@@ -101,12 +101,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create placeholder user (will be fully activated when they accept invite via Clerk)
-    // For now, create with a placeholder clerkUserId that will be updated
+    // Create placeholder user. authUserId is left null until the invitee signs in
+    // via Supabase Auth and the auth callback fills it in by email match.
     const newUser = await db
       .insert(users)
       .values({
-        clerkUserId: `pending_${Date.now()}_${Math.random().toString(36).slice(2)}`,
         organizationId: orgId,
         email: validatedData.email,
         name: validatedData.name ?? null,

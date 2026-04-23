@@ -37,7 +37,7 @@ async function isAdmin(): Promise<boolean> {
     const dbUser = await db
       .select({ isSuperAdmin: users.isSuperAdmin, role: users.role })
       .from(users)
-      .where(eq(users.clerkUserId, user.id))
+      .where(eq(users.id, user.id))
       .limit(1);
 
     if (dbUser[0]?.isSuperAdmin) {

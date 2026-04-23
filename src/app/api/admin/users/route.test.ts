@@ -59,7 +59,7 @@ const mockUpdateChain = {
     // Return updated user data based on what was set
     const updatedUser = {
       id: "test-user-id",
-      clerkUserId: "test-clerk-id",
+      authUserId: "test-auth-id",
       name: "Test User",
       email: "test@example.com",
       organizationId: "test-org-id",
@@ -105,11 +105,11 @@ vi.mock("@/lib/db", () => {
         let result: any[];
         if (selectArgs && 'count' in selectArgs) {
           result = [{ count: 1 }];
-        } else if (selectArgs && 'clerkUserId' in selectArgs) {
-          // For PATCH route queries - clerkUserId must match auth userId for self-revoke test
+        } else if (selectArgs && 'authUserId' in selectArgs) {
+          // For PATCH route queries - authUserId must match auth userId for self-revoke test
           result = [{
             id: "test-user-id",
-            clerkUserId: "test-super-admin-id", // Matches auth userId for AC-6.5 test
+            authUserId: "test-super-admin-id", // Matches auth userId for AC-6.5 test
             name: "Test User",
             email: "test@example.com",
             isActive: true,
@@ -126,7 +126,7 @@ vi.mock("@/lib/db", () => {
           // Default user list query
           result = [{
             id: "test-user-id",
-            clerkUserId: "test-super-admin-id", // Matches auth userId for consistency
+            authUserId: "test-super-admin-id", // Matches auth userId for consistency
             name: "Test User",
             email: "test@example.com",
             isActive: true,

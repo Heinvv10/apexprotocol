@@ -17,10 +17,11 @@ async function ensureDevUser() {
     return existing[0];
   }
   
-  // Create dev user
+  // Create dev user. authUserId matches DEV_SESSION.userId in supabase-server.ts
+  // so dev-mode lookups via getSession() resolve to this row.
   const newUser = await db.insert(users).values({
     id: DEV_USER_ID,
-    clerkUserId: "dev-clerk-user-id",
+    authUserId: DEV_USER_ID,
     organizationId: DEV_ORG_ID,
     email: "dev@apex.local",
     name: "Development User",

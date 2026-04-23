@@ -6,7 +6,7 @@ import { formatDate, formatTimestamp } from "@/lib/utils/formatters";
 
 interface User {
   id: string;
-  clerkUserId: string;
+  authUserId: string | null;
   name: string;
   email: string;
   organizationId: string;
@@ -404,7 +404,7 @@ export default function AdminUsersPage() {
             </div>
             <div className="space-y-4 text-gray-300">
               <p><strong>Email:</strong> {selectedUser.email}</p>
-              <p><strong>Clerk User ID:</strong> {selectedUser.clerkUserId}</p>
+              <p><strong>Auth User ID:</strong> {selectedUser.authUserId ?? "—"}</p>
               <p><strong>Organization:</strong> {selectedUser.organizationName || "No Organization"}</p>
               <p><strong>Role:</strong> {getRoleLabel(selectedUser)}</p>
               <p><strong>Status:</strong> {selectedUser.isActive ? "Active" : "Inactive"}</p>

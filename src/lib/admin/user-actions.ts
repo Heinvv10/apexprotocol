@@ -24,19 +24,6 @@ export async function getUserById(id: string): Promise<User | null> {
 }
 
 /**
- * Get a user by their Clerk user ID
- */
-export async function getUserByClerkId(clerkUserId: string): Promise<User | null> {
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.clerkUserId, clerkUserId))
-    .limit(1);
-
-  return user || null;
-}
-
-/**
  * Update a user's role
  * @returns The updated user or null if not found
  */

@@ -60,15 +60,15 @@ vi.mock("@/lib/db", () => {
 
           // Check if it's userAchievements table (has achievementId field)
           const isAchievements = tableObj && "achievementId" in tableObj;
-          // Check if it's users table (has email/clerkUserId or name fields)
-          const isUsers = tableObj && ("email" in tableObj || "clerkUserId" in tableObj || "name" in tableObj);
+          // Check if it's users table (has email/authUserId or name fields)
+          const isUsers = tableObj && ("email" in tableObj || "authUserId" in tableObj || "name" in tableObj);
 
           return {
             where: vi.fn((condition: unknown) => {
               // Detect table type for where() responses
               const tbl = table as Record<string, unknown>;
               const isAch = tbl && "achievementId" in tbl;
-              const isUsr = tbl && ("email" in tbl || "clerkUserId" in tbl || "name" in tbl);
+              const isUsr = tbl && ("email" in tbl || "authUserId" in tbl || "name" in tbl);
 
               // Create thenable object that can be awaited directly OR chained with .limit()
               const whereResult = {
@@ -126,9 +126,10 @@ vi.mock("@/lib/db", () => {
     xpAwarded: "xpAwarded",
   },
   users: {
+    id: "id",
     name: "name",
     email: "email",
-    clerkUserId: "clerkUserId",
+    authUserId: "authUserId",
   },
   };
 

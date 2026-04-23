@@ -101,9 +101,10 @@ async function mintSignInTicket(userId: string): Promise<string> {
 
 /**
  * Ensure the users + organizations rows referenced by the test user
- * exist in Neon. The Clerk webhook handles this in prod, but it doesn't
- * fire against local dev. Pooling via Neon's serverless ws driver so we
- * don't depend on psql being installed.
+ * exist in the local DB. The param names keep `clerk*` because the
+ * e2e bootstrap still mints IDs via the Clerk test API, but the stored
+ * values populate our post-migration columns (`users.id`, `users.auth_user_id`,
+ * `organizations.id`).
  */
 async function seedLocalDbRows(
   clerkUserId: string,
@@ -130,8 +131,8 @@ async function seedLocalDbRows(
       // than the Starter-plan upgrade card. Real tenants on paid
       // plans are the common test target.
       await pool.query(
-        `INSERT INTO organizations (id, name, slug, clerk_org_id, plan, brand_limit)
-         VALUES ($1, $2, $3, $1, 'professional', 25)
+        `INSERT INTO organizations (id, name, slug, plan, brand_limit)
+         VALUES ($1, $2, $3, 'professional', 25)
          ON CONFLICT (id) DO UPDATE SET
            name = EXCLUDED.name,
            plan = EXCLUDED.plan,
@@ -165,7 +166,7 @@ async function seedLocalDbRows(
     }
 
     await pool.query(
-      `INSERT INTO users (id, clerk_user_id, organization_id, email, name, role)
+      `INSERT INTO users (id, auth_user_id, organization_id, email, name, role)
        VALUES ($1, $1, $2, $3, 'E2E Tester', 'admin')
        ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, organization_id = EXCLUDED.organization_id`,
       [clerkUserId, clerkOrgId, E2E_TEST_EMAIL]

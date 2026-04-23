@@ -229,7 +229,7 @@ export async function GET(request: NextRequest) {
             const userRecords = await db
               .select({ name: users.name, email: users.email })
               .from(users)
-              .where(eq(users.clerkUserId, entry.userId))
+              .where(eq(users.id, entry.userId))
               .limit(1);
 
             const user = userRecords[0];

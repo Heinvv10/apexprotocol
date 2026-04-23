@@ -32,7 +32,7 @@ describe("Integration Test Setup Utilities", () => {
 
       expect(context.orgId).toBe(TEST_IDS.ORG);
       expect(context.userId).toBe(TEST_IDS.USERS[0]);
-      expect(context.clerkUserId).toContain("clerk_test_");
+      expect(context.authUserId).toContain("auth_test_");
       expect(typeof context.requireAuth).toBe("function");
     });
 
@@ -320,7 +320,7 @@ describe("Test Context Creation", () => {
 
     expect(context.userId).toBe("admin-user");
     expect(context.orgId).toBe("admin-org");
-    expect(context.clerkUserId).toContain("clerk_test_admin-user");
+    expect(context.authUserId).toContain("auth_test_admin-user");
   });
 });
 

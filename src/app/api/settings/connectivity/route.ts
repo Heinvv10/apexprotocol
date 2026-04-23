@@ -32,9 +32,9 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Find user by Clerk ID
+    // Find user by Supabase auth ID
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkUserId, userId),
+      where: eq(users.authUserId, userId),
     });
 
     if (!user) {
@@ -82,9 +82,9 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const validatedData = connectivitySettingsSchema.parse(body);
 
-    // Find user by Clerk ID
+    // Find user by Supabase auth ID
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkUserId, userId),
+      where: eq(users.authUserId, userId),
     });
 
     if (!user) {

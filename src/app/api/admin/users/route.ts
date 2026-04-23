@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
     const usersQuery = db
       .select({
         id: users.id,
-        clerkUserId: users.clerkUserId,
+        authUserId: users.authUserId,
         name: users.name,
         email: users.email,
         organizationId: users.organizationId,
@@ -296,7 +296,7 @@ export async function PATCH(request: NextRequest) {
     const [targetUser] = await db
       .select({
         id: users.id,
-        clerkUserId: users.clerkUserId,
+        authUserId: users.authUserId,
         name: users.name,
         email: users.email,
         isActive: users.isActive,
@@ -315,7 +315,7 @@ export async function PATCH(request: NextRequest) {
 
     // FR-6 AC-6.5: Cannot revoke own super-admin status
     if (updates.isSuperAdmin === false) {
-      if (targetUser.clerkUserId === currentUserId) {
+      if (targetUser.authUserId === currentUserId) {
         return NextResponse.json(
           { error: "Cannot revoke your own super-admin status" },
           { status: 403 }

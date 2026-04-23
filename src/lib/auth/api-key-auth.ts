@@ -228,7 +228,7 @@ export async function validateApiKey(
       };
     }
 
-    // Step 7: Fetch user and organization details
+    // Step 7: Fetch user and organization details (apiKeys.userId references users.id)
     const [userRecord] = await dbInstance
       .select({
         id: users.id,
@@ -236,7 +236,7 @@ export async function validateApiKey(
         name: users.name,
       })
       .from(users)
-      .where(eq(users.clerkUserId, keyRecord.userId))
+      .where(eq(users.id, keyRecord.userId))
       .limit(1);
 
     const [orgRecord] = await dbInstance

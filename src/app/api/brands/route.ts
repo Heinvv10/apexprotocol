@@ -309,26 +309,16 @@ export async function POST(request: NextRequest) {
 
     // Auto-detect: Mark "Add Brand" step as complete
     if (newBrand[0]) {
-      // Get clerkOrgId from organization
-      const orgData = await db
-        .select({ clerkOrgId: organizations.clerkOrgId })
-        .from(organizations)
-        .where(eq(organizations.id, orgId))
-        .limit(1);
+      // detectBrandAdded now takes the internal org id directly
+      detectBrandAdded(orgId).catch((err: Error) => {
+        console.error("Failed to auto-detect brand added:", err.message);
+      });
 
-      if (orgData[0]?.clerkOrgId) {
-        const clerkOrgId = orgData[0].clerkOrgId;
-        // Run detections in background (don't await to avoid blocking response)
-        detectBrandAdded(clerkOrgId).catch((err: Error) => {
-          console.error("Failed to auto-detect brand added:", err.message);
+      // If monitoring is enabled, mark monitoring as configured
+      if (newBrand[0].monitoringEnabled) {
+        detectMonitoringConfigured(orgId).catch((err: Error) => {
+          console.error("Failed to auto-detect monitoring configured:", err.message);
         });
-
-        // If monitoring is enabled, mark monitoring as configured
-        if (newBrand[0].monitoringEnabled) {
-          detectMonitoringConfigured(clerkOrgId).catch((err: Error) => {
-            console.error("Failed to auto-detect monitoring configured:", err.message);
-          });
-        }
       }
 
       // 🚀 POST-CREATION BACKGROUND JOB: Populate related data tables

@@ -47,9 +47,9 @@ export async function GET(_request: NextRequest) {
     // Fallback to demo org if no organization
     const effectiveOrgId = orgId || "demo-org-id";
 
-    // Get organization - try by clerkOrgId first, then by id
+    // Get organization by internal id (orgId from session is the internal cuid)
     let org = orgId ? await db.query.organizations.findFirst({
-      where: eq(organizations.clerkOrgId, orgId),
+      where: eq(organizations.id, orgId),
     }) : null;
 
     // Fallback to demo-org-id for development
@@ -131,9 +131,9 @@ export async function PATCH(request: NextRequest) {
     const { organizations } = await import("@/lib/db/schema");
     const { eq } = await import("drizzle-orm");
 
-    // Get current organization - try by clerkOrgId first, then by id
+    // Get current organization by internal id
     let org = orgId ? await db.query.organizations.findFirst({
-      where: eq(organizations.clerkOrgId, orgId),
+      where: eq(organizations.id, orgId),
     }) : null;
 
     // Fallback to demo-org-id for development
