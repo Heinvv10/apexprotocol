@@ -488,6 +488,7 @@ export async function addAuditJob(
     depth?: number;
     maxPages?: number;
     priority?: JobPriority;
+    auditId?: string;
   }
 ): Promise<Job> {
   return auditQueue.add(
@@ -497,6 +498,7 @@ export async function addAuditJob(
       url,
       depth: options?.depth ?? 2,
       maxPages: options?.maxPages ?? 50,
+      auditId: options?.auditId,
     },
     {
       priority: options?.priority,

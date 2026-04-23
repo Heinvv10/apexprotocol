@@ -4,7 +4,10 @@
  */
 
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { queryKeys, invalidateQueries } from "@/lib/query/client";
+import type { AuditStage } from "@/lib/db/schema/audits";
 
 // =============================================================================
 // Types
@@ -134,7 +137,18 @@ async function fetchAuditIssues(auditId: string): Promise<AuditIssue[]> {
   return data.issues || data;
 }
 
-async function startAudit(input: StartAuditInput): Promise<Audit> {
+export interface StartAuditResponse {
+  success: true;
+  auditId: string;
+  brandId: string;
+  jobId: string;
+  url: string;
+  status: AuditStatus;
+  startedAt: string;
+  message: string;
+}
+
+async function startAudit(input: StartAuditInput): Promise<StartAuditResponse> {
   const response = await fetch("/api/audit", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -142,7 +156,7 @@ async function startAudit(input: StartAuditInput): Promise<Audit> {
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.message || "Failed to start audit");
+    throw new Error(error.message || error.error || "Failed to start audit");
   }
   return response.json();
 }
@@ -225,22 +239,228 @@ export function useAuditIssues(
 // =============================================================================
 
 /**
- * Hook to start a new audit (F162)
+ * Hook to start a new audit (F162).
+ *
+ * Optimistic UX: we splice the new audit into the byBrand query cache
+ * immediately so the "Recent Audits" list and the LiveAuditProgress
+ * card show the run before the 5s polling cycle would pick it up.
+ * The SSE stream then takes over as the source of truth.
  */
 export function useStartAudit() {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<StartAuditResponse, Error, StartAuditInput>({
     mutationFn: startAudit,
     onSuccess: (data) => {
-      // Add to brand audits list
+      const optimistic: Audit = {
+        id: data.auditId,
+        brandId: data.brandId,
+        url: data.url,
+        status: "pending",
+        progress: 5,
+        pagesScanned: 0,
+        issuesFound: 0,
+        criticalIssues: 0,
+        startedAt: data.startedAt,
+        metadata: {
+          progress: {
+            stage: "queued" as AuditStage,
+            percent: 5,
+            message: "Queued…",
+            updatedAt: data.startedAt,
+          },
+        },
+      };
+
+      // Prepend into every cached brand-scoped list so the new row shows
+      // up regardless of which filter the UI is currently using.
+      queryClient.setQueriesData<AuditListResponse>(
+        { queryKey: queryKeys.audits.all },
+        (prev) => {
+          if (!prev || !Array.isArray(prev.audits)) return prev;
+          if (prev.audits.some((a) => a.id === optimistic.id)) return prev;
+          return {
+            ...prev,
+            audits: [optimistic, ...prev.audits],
+            total: (prev.total ?? prev.audits.length) + 1,
+          };
+        },
+      );
+
+      queryClient.setQueryData<Audit>(
+        queryKeys.audits.detail(optimistic.id),
+        optimistic,
+      );
+
+      toast.success("Audit queued", {
+        description: `Analyzing ${data.url}. This usually takes 1–3 minutes.`,
+      });
+
+      // Still fire the invalidation so the server reconciles after.
       queryClient.invalidateQueries({
         queryKey: queryKeys.audits.byBrand(data.brandId),
       });
-      // Update gamification (audit started)
       invalidateQueries.gamification(queryClient);
     },
+    onError: (err) => {
+      toast.error("Couldn't start audit", {
+        description: err.message,
+      });
+    },
   });
+}
+
+// =============================================================================
+// Live progress stream (SSE)
+// =============================================================================
+
+export interface AuditProgressSnapshot {
+  auditId: string;
+  status: AuditStatus;
+  stage: AuditStage;
+  percent: number;
+  message?: string;
+  pagesCrawled?: number;
+  totalPages?: number;
+  currentUrl?: string;
+  overallScore?: number | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  errorMessage?: string | null;
+}
+
+interface UseAuditStreamResult {
+  snapshot: AuditProgressSnapshot | null;
+  connected: boolean;
+  error: string | null;
+}
+
+/**
+ * Subscribe to the live progress stream for a single audit. Drives the
+ * LiveAuditProgress card. Auto-disconnects on terminal state and also
+ * writes the final status into the TanStack cache so other listeners
+ * (the Recent Audits list) update without waiting for a refetch.
+ */
+export function useAuditStream(auditId: string | null): UseAuditStreamResult {
+  const queryClient = useQueryClient();
+  const [snapshot, setSnapshot] = useState<AuditProgressSnapshot | null>(null);
+  const [connected, setConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const sourceRef = useRef<EventSource | null>(null);
+
+  useEffect(() => {
+    if (!auditId) {
+      setSnapshot(null);
+      setConnected(false);
+      setError(null);
+      return;
+    }
+
+    // Guard against SSR — EventSource is browser-only.
+    if (typeof window === "undefined") return;
+
+    const source = new EventSource(`/api/audit/${auditId}/stream`);
+    sourceRef.current = source;
+    setError(null);
+
+    const applySnapshot = (data: AuditProgressSnapshot) => {
+      setSnapshot(data);
+
+      // Reconcile the byBrand list + the detail query so other
+      // components don't render a stale status.
+      queryClient.setQueriesData<AuditListResponse>(
+        { queryKey: queryKeys.audits.all },
+        (prev) => {
+          if (!prev || !Array.isArray(prev.audits)) return prev;
+          let touched = false;
+          const audits = prev.audits.map((a) => {
+            if (a.id !== data.auditId) return a;
+            touched = true;
+            return {
+              ...a,
+              status: data.status,
+              progress: data.percent,
+              completedAt: data.completedAt ?? a.completedAt,
+              overallScore: data.overallScore ?? a.overallScore,
+            };
+          });
+          if (!touched) return prev;
+          return { ...prev, audits };
+        },
+      );
+
+      queryClient.setQueryData<Audit | undefined>(
+        queryKeys.audits.detail(data.auditId),
+        (prev) =>
+          prev
+            ? {
+                ...prev,
+                status: data.status,
+                progress: data.percent,
+                completedAt: data.completedAt ?? prev.completedAt,
+                overallScore: data.overallScore ?? prev.overallScore,
+              }
+            : prev,
+      );
+    };
+
+    source.addEventListener("open", () => setConnected(true));
+
+    source.addEventListener("progress", (ev) => {
+      try {
+        applySnapshot(JSON.parse((ev as MessageEvent).data) as AuditProgressSnapshot);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    });
+
+    source.addEventListener("terminal", (ev) => {
+      try {
+        const data = JSON.parse((ev as MessageEvent).data) as AuditProgressSnapshot;
+        applySnapshot(data);
+        // Invalidate so the list/detail get an authoritative refetch
+        // once the worker commits the final row.
+        queryClient.invalidateQueries({ queryKey: queryKeys.audits.all });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        source.close();
+        setConnected(false);
+      }
+    });
+
+    source.addEventListener("warning", (ev) => {
+      try {
+        const data = JSON.parse((ev as MessageEvent).data) as { message: string };
+        // Non-fatal — surface for debugging but don't block the UI.
+        setError(data.message);
+      } catch {
+        /* ignore */
+      }
+    });
+
+    source.addEventListener("timeout", () => {
+      setError("Stream timed out — refresh to reconnect");
+      source.close();
+      setConnected(false);
+    });
+
+    source.onerror = () => {
+      // EventSource reconnects by default; only flag an error if the
+      // browser has given up (readyState CLOSED).
+      if (source.readyState === EventSource.CLOSED) {
+        setConnected(false);
+      }
+    };
+
+    return () => {
+      source.close();
+      sourceRef.current = null;
+      setConnected(false);
+    };
+  }, [auditId, queryClient]);
+
+  return { snapshot, connected, error };
 }
 
 /**

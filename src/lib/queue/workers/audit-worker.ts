@@ -15,7 +15,7 @@ import {
   checkContentChunking,
   checkPageSpeed,
 } from "../../audit/checks";
-import type { AuditIssue, AuditMetadata } from "../../db/schema/audits";
+import type { AuditIssue, AuditMetadata, AuditStage } from "../../db/schema/audits";
 import {
   persistRecommendationsFromIssues,
   computeAiReadinessScore,
@@ -34,6 +34,66 @@ const WORKER_CONFIG = {
   defaultTimeout: 300000, // 5 minutes
   defaultMaxPages: 50,
 };
+
+// Stage → target % mapping. Lets the UI render a determinate bar even
+// though each stage internally is black-box work. Numbers are calibrated
+// against the average wall-clock time each phase takes on a 50-page
+// crawl; they're guidance, not a guarantee.
+const STAGE_PERCENT: Record<AuditStage, number> = {
+  queued: 5,
+  crawling: 25,
+  analyzing: 50,
+  checks: 65,
+  scoring: 80,
+  persisting: 90,
+  finalizing: 95,
+  completed: 100,
+  failed: 100,
+  cancelled: 100,
+};
+
+/**
+ * Patch the audit's metadata.progress in place. Merges with existing
+ * metadata so we don't clobber `depth`, `options`, `priority` set at
+ * creation time. Errors are swallowed — progress telemetry must never
+ * take down the audit.
+ */
+async function updateAuditProgress(
+  auditId: string,
+  stage: AuditStage,
+  message?: string,
+  extra?: { pagesCrawled?: number; totalPages?: number; currentUrl?: string },
+): Promise<void> {
+  try {
+    const row = await db.query.audits.findFirst({
+      where: eq(audits.id, auditId),
+      columns: { metadata: true },
+    });
+    const existing = (row?.metadata ?? {}) as AuditMetadata;
+    const next: AuditMetadata = {
+      ...existing,
+      progress: {
+        stage,
+        percent: STAGE_PERCENT[stage],
+        message,
+        pagesCrawled: extra?.pagesCrawled,
+        totalPages: extra?.totalPages,
+        currentUrl: extra?.currentUrl,
+        updatedAt: new Date().toISOString(),
+      },
+    };
+    await db
+      .update(audits)
+      .set({ metadata: next })
+      .where(eq(audits.id, auditId));
+  } catch (err) {
+    logger.warn("[audit-worker] progress update failed", {
+      error: err instanceof Error ? err.message : String(err),
+      auditId,
+      stage,
+    });
+  }
+}
 
 function gradeForScore(score: number): "A+" | "A" | "B" | "C" | "D" | "F" {
   if (score >= 90) return "A+";
@@ -69,18 +129,23 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
   };
 
   try {
-    const { brandId, url, depth, maxPages } = job.payload as {
+    const { brandId, url, depth, maxPages, auditId } = job.payload as {
       brandId: string;
       url: string;
       depth?: number;
       maxPages?: number;
+      auditId?: string;
     };
 
-    // Update audit status
-    const existingAudit = await db.query.audits.findFirst({
-      where: eq(audits.brandId, brandId),
-      orderBy: (audits, { desc }) => [desc(audits.createdAt)],
-    });
+    // Prefer the exact auditId from the job payload; fall back to
+    // "most recent audit for this brand" for older queued jobs that
+    // predate the auditId plumbing (pre-2026-04-23).
+    const existingAudit = auditId
+      ? await db.query.audits.findFirst({ where: eq(audits.id, auditId) })
+      : await db.query.audits.findFirst({
+          where: eq(audits.brandId, brandId),
+          orderBy: (audits, { desc }) => [desc(audits.createdAt)],
+        });
 
     if (existingAudit) {
       await db
@@ -90,6 +155,17 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
           startedAt: new Date(),
         })
         .where(eq(audits.id, existingAudit.id));
+
+      await updateAuditProgress(
+        existingAudit.id,
+        "crawling",
+        depth === 3
+          ? `Crawling up to ${maxPages ?? WORKER_CONFIG.defaultMaxPages} pages…`
+          : depth === 2
+            ? "Crawling site section…"
+            : "Fetching page…",
+        { totalPages: maxPages ?? WORKER_CONFIG.defaultMaxPages, currentUrl: url },
+      );
     }
 
     // Create crawler
@@ -111,6 +187,15 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
       );
     }
 
+    if (existingAudit) {
+      await updateAuditProgress(
+        existingAudit.id,
+        "analyzing",
+        `Analyzing ${crawlResult.pages.length} page${crawlResult.pages.length === 1 ? "" : "s"}…`,
+        { pagesCrawled: crawlResult.pages.length, totalPages: crawlResult.pages.length },
+      );
+    }
+
     // Analyze results — issue detection + category baselines (legacy path).
     const analysis = analyzeAuditResults(crawlResult);
 
@@ -125,6 +210,15 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
     const brand = await db.query.brands.findFirst({
       where: eq(brands.id, brandId),
     });
+
+    if (existingAudit) {
+      await updateAuditProgress(
+        existingAudit.id,
+        "checks",
+        "Running AI readiness checks…",
+        { pagesCrawled: crawlResult.pages.length },
+      );
+    }
 
     // Wrap external checks in safe fallbacks to prevent crashes on timeout/network errors.
     // Failures are surfaced to Sentry + the structured logger with the check label so
@@ -175,6 +269,15 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
 
     result.overallScore = scored.overall;
     result.issuesFound = allIssues.length;
+
+    if (existingAudit) {
+      await updateAuditProgress(
+        existingAudit.id,
+        "scoring",
+        "Computing GEO score…",
+        { pagesCrawled: crawlResult.pages.length },
+      );
+    }
 
     // Update audit in database
     if (existingAudit) {
@@ -308,7 +411,23 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
             }
           : {}),
         ...(performance ? { performance } : {}),
+        progress: {
+          stage: (crawlResult.success ? "completed" : "failed") as AuditStage,
+          percent: 100,
+          message: crawlResult.success
+            ? "Audit complete"
+            : "Audit failed — see errors",
+          pagesCrawled: crawlResult.pages.length,
+          totalPages: crawlResult.pages.length,
+          updatedAt: new Date().toISOString(),
+        },
       } as AuditMetadata;
+
+      await updateAuditProgress(
+        existingAudit.id,
+        "persisting",
+        "Saving results…",
+      );
 
       await db
         .update(audits)
@@ -354,6 +473,15 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
             tags: { worker: "audit", phase: "persist-recommendations" },
           });
         }
+      }
+
+      if (crawlResult.success) {
+        await updateAuditProgress(
+          existingAudit.id,
+          "finalizing",
+          "Generating recommendations…",
+          { pagesCrawled: crawlResult.pages.length },
+        );
       }
 
       // Recompute + persist the brand's GEO score now that the audit's
@@ -415,6 +543,15 @@ export async function processAuditJob(job: Job): Promise<AuditJobResult> {
           });
         }
       }
+
+      await updateAuditProgress(
+        existingAudit.id,
+        crawlResult.success ? "completed" : "failed",
+        crawlResult.success
+          ? `Audit complete — ${allIssues.length} issue${allIssues.length === 1 ? "" : "s"} found`
+          : result.errors[0] || "Audit failed",
+        { pagesCrawled: crawlResult.pages.length, totalPages: crawlResult.pages.length },
+      );
     }
 
     result.success = crawlResult.success;

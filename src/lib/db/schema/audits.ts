@@ -109,6 +109,21 @@ export interface ContentChunkingBreakdown {
   contentDepth: number;
 }
 
+// Stages the audit worker moves through. Ordered; each maps to a rough
+// progress percentage so the UI can render a stepper and a determinate
+// progress bar without waiting for the worker to emit exact numbers.
+export type AuditStage =
+  | "queued"
+  | "crawling"
+  | "analyzing"
+  | "checks"
+  | "scoring"
+  | "persisting"
+  | "finalizing"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
 // Audit metadata type
 export interface AuditMetadata {
   userAgent?: string;
@@ -117,6 +132,17 @@ export interface AuditMetadata {
     totalDuration: number;
     fetchTime?: number;
     analysisTime?: number;
+  };
+  // Live progress telemetry the worker updates at each phase boundary.
+  // Read by /api/audit/[id]/stream (SSE) to push updates to the dashboard.
+  progress?: {
+    stage: AuditStage;
+    percent: number; // 0-100
+    message?: string;
+    pagesCrawled?: number;
+    totalPages?: number;
+    currentUrl?: string;
+    updatedAt: string; // ISO — lets the SSE loop skip no-ops
   };
   pageInfo?: {
     title?: string;

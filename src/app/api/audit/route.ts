@@ -67,11 +67,11 @@ export async function POST(request: NextRequest) {
       normalizedUrl = `https://${normalizedUrl}`;
     }
 
-    // Resolve internal user ID from Clerk user ID
+    // Resolve internal user ID from Supabase auth user ID
     let internalUserId: string | null = null;
     try {
       const dbUser = await db.query.users.findFirst({
-        where: eq(users.clerkUserId, userId),
+        where: eq(users.authUserId, userId),
         columns: { id: true },
       });
       internalUserId = dbUser?.id ?? null;
@@ -96,7 +96,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Queue the audit job
+    // Queue the audit job — pass the auditId so the worker targets the
+    // exact row we just inserted. Without this the worker falls back to
+    // "most recent audit for brand", which races when a user fires two
+    // audits in quick succession.
     const job = await addAuditJob(
       brandId,
       orgId || "",
@@ -105,6 +108,7 @@ export async function POST(request: NextRequest) {
         depth: validatedData.depth === "full" ? 3 : validatedData.depth === "section" ? 2 : 1,
         maxPages: validatedData.depth === "full" ? 50 : validatedData.depth === "section" ? 25 : 1,
         priority: validatedData.priority === "high" ? 1 : validatedData.priority === "low" ? 5 : 3,
+        auditId,
       }
     );
 
@@ -120,9 +124,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       auditId,
+      brandId,
       jobId: job.id,
       url: normalizedUrl,
       status: "pending",
+      startedAt: now.toISOString(),
       message: "Audit queued successfully",
     });
   } catch (error) {

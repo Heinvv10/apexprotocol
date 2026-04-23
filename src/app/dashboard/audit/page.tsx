@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSelectedBrand } from "@/stores";
 import { useAuditsByBrand, useStartAudit, useCancelAudit, useRetryAudit, Audit } from "@/hooks/useAudit";
+import { LiveAuditProgress } from "@/components/audit/LiveAuditProgress";
 import { formatDate } from "@/lib/utils/formatters";
 
 // URL validation regex - validates http/https URLs
@@ -199,6 +200,27 @@ export default function AuditPage() {
   const hasHistory = auditHistory.length > 0;
   const isLoading = startAuditMutation.isPending;
 
+  // Track dismissed audits so the LiveAuditProgress card can be closed
+  // manually without re-appearing on the next poll.
+  const [dismissedAuditIds, setDismissedAuditIds] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+
+  // The most recent in-flight (or just-completed-and-not-yet-dismissed)
+  // audit drives the LiveAuditProgress card. We pick the newest audit
+  // that is either running or very recently finished so the card stays
+  // visible for a few seconds after completion for the user to ack.
+  const activeAuditForProgress = React.useMemo(() => {
+    const list = auditsResponse?.audits ?? [];
+    const running = list.find(
+      (a) =>
+        (a.status === "pending" || a.status === "in_progress") &&
+        !dismissedAuditIds.has(a.id),
+    );
+    if (running) return running;
+    return undefined;
+  }, [auditsResponse, dismissedAuditIds]);
+
   // Validate URL on change
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -262,6 +284,23 @@ export default function AuditPage() {
     <div className="space-y-6 relative">
       {/* Header Row: APEX branding + AI Status */}
       <BrandHeader pageName="Audit" />
+
+      {/* Live progress surface — visible whenever an audit for the
+          selected brand is queued or running. */}
+      {activeAuditForProgress && (
+        <LiveAuditProgress
+          auditId={activeAuditForProgress.id}
+          url={activeAuditForProgress.url}
+          startedAt={activeAuditForProgress.startedAt}
+          onDismiss={() =>
+            setDismissedAuditIds((prev) => {
+              const next = new Set(prev);
+              next.add(activeAuditForProgress.id);
+              return next;
+            })
+          }
+        />
+      )}
 
       {/* URL Input Form */}
       <div className="card-primary p-6">
