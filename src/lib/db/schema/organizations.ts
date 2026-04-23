@@ -29,7 +29,6 @@ export const organizations = pgTable("organizations", {
     .$defaultFn(() => createId()),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
-  clerkOrgId: text("clerk_org_id").unique(),
 
   // Subscription Plan
   plan: planEnum("plan").default("starter").notNull(),

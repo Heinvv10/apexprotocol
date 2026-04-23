@@ -18,7 +18,6 @@ export const users = pgTable("users", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => createId()),
-  clerkUserId: text("clerk_user_id").unique(),
   authUserId: text("auth_user_id").unique(),
   organizationId: text("organization_id")
     .references(() => organizations.id, { onDelete: "cascade" }),
