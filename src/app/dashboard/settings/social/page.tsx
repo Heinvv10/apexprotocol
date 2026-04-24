@@ -323,16 +323,25 @@ function SocialSettingsPageInner() {
         <div className="flex-1 flex items-center justify-center min-h-[500px]">
           <div className="text-center max-w-md space-y-4">
             <Share2 className="w-16 h-16 text-primary/40 mx-auto" />
-            <h2 className="text-xl font-semibold text-foreground">Select a Brand</h2>
+            <h2 className="text-xl font-semibold text-foreground">Add a brand first</h2>
             <p className="text-muted-foreground">
-              Choose a brand from the header dropdown to manage social connections.
+              Social connections are per-brand. Once you&apos;ve added a brand, you can link
+              LinkedIn, Twitter/X, and other accounts to it here.
             </p>
-            <Link
-              href="/dashboard/brands"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary border border-primary/30 font-medium hover:bg-primary/20 transition-all"
-            >
-              Manage Brands
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <Link
+                href="/dashboard/brands?action=new"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all"
+              >
+                Add your first brand
+              </Link>
+              <Link
+                href="/dashboard/brands"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-primary hover:bg-primary/10 font-medium transition-all"
+              >
+                Manage brands
+              </Link>
+            </div>
           </div>
         </div>
       </div>
