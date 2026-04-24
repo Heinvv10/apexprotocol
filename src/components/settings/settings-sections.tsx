@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useAPIKeys, useCreateAPIKey, useRevokeAPIKey, useNotificationPreferences, useUpdateNotificationPreferences, useIntegrations } from "@/hooks/useSettings";
 import { formatDate } from "@/lib/utils/formatters";
 import { logger } from "@/lib/logger";
+import { toast } from "sonner";
 
 // Fetch API usage stats
 interface ApiUsageStats {
@@ -470,17 +471,77 @@ export function IntegrationsSection() {
   const { data, isLoading, error } = useIntegrations();
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
 
-  const handleConnect = (integrationId: string) => {
-    // Navigate to integration-specific configuration
-    // This could open a modal or navigate to a dedicated page
+  const handleConnect = async (integrationId: string) => {
     logger.info("Connect integration:", integrationId);
-    // TODO: Implement integration-specific OAuth flows
+
+    // Dedicated OAuth endpoints per integration. Each returns {authUrl} when
+    // configured. Unconfigured providers return a 400/500 — surface that to
+    // the user as a toast instead of the old silent no-op.
+    const oauthRoutes: Record<string, string> = {
+      slack: "/api/integrations/slack?action=authUrl",
+      "google-analytics": "/api/integrations/google-analytics?action=authUrl",
+      "google-search-console": "/api/integrations/google-search-console?action=authUrl",
+      linear: "/api/integrations/linear?action=authUrl",
+      jira: "/api/integrations/jira?action=authUrl",
+      asana: "/api/integrations/asana?action=authUrl",
+      trello: "/api/integrations/trello?action=authUrl",
+    };
+
+    const route = oauthRoutes[integrationId];
+    if (!route) {
+      toast.info(`${integrationId} is not yet available`, {
+        description: "We'll email you when it goes live.",
+      });
+      return;
+    }
+
+    try {
+      const res = await fetch(route);
+      const data = await res.json();
+      if (res.ok && data?.authUrl) {
+        // New tab lets the user complete OAuth without losing the settings
+        // page context. After they grant access, the callback handler flips
+        // integration.connected = true in the DB; a refetch here picks it up.
+        window.open(data.authUrl, "_blank", "noopener,noreferrer");
+        toast.success("Opening authorization in a new tab…", {
+          description: "Complete the flow, then refresh this page.",
+        });
+        return;
+      }
+      const detail =
+        data?.error ||
+        data?.details ||
+        `This provider hasn't been configured on the server (missing OAuth keys).`;
+      toast.error(`Can't connect to ${integrationId}`, { description: detail });
+    } catch (err) {
+      toast.error(`Couldn't reach ${integrationId}`, {
+        description: err instanceof Error ? err.message : "Network error.",
+      });
+    }
   };
 
-  const handleDisconnect = (integrationId: string) => {
-    // Disconnect integration
+  const handleDisconnect = async (integrationId: string) => {
     logger.info("Disconnect integration:", integrationId);
-    // TODO: Call specific disconnect endpoint
+    if (!confirm(`Disconnect ${integrationId}?`)) return;
+    try {
+      const res = await fetch(`/api/integrations/${integrationId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "disconnect" }),
+      });
+      const data = await res.json();
+      if (res.ok && (data?.success !== false)) {
+        toast.success(`${integrationId} disconnected`);
+      } else {
+        toast.error("Disconnect failed", {
+          description: data?.error || "Please try again.",
+        });
+      }
+    } catch (err) {
+      toast.error("Disconnect failed", {
+        description: err instanceof Error ? err.message : "Network error.",
+      });
+    }
   };
 
   if (isLoading) {
@@ -964,6 +1025,8 @@ export function ApiKeysSection({ apiKeys: propKeys }: ApiKeysSectionProps) {
                   size="icon"
                   onClick={() => toggleKeyVisibility(apiKey.id)}
                   className="h-8 w-8"
+                  aria-label={showKeys[apiKey.id] ? "Hide API key" : "Show API key"}
+                  title={showKeys[apiKey.id] ? "Hide API key" : "Show API key"}
                 >
                   {showKeys[apiKey.id] ? (
                     <EyeOff className="w-4 h-4" />
@@ -976,6 +1039,8 @@ export function ApiKeysSection({ apiKeys: propKeys }: ApiKeysSectionProps) {
                   size="icon"
                   onClick={() => copyToClipboard(apiKey.key, apiKey.id)}
                   className="h-8 w-8"
+                  aria-label={copiedKey === apiKey.id ? "Copied" : "Copy API key"}
+                  title={copiedKey === apiKey.id ? "Copied!" : "Copy API key"}
                 >
                   {copiedKey === apiKey.id ? (
                     <Check className="w-4 h-4 text-success" />
@@ -989,6 +1054,8 @@ export function ApiKeysSection({ apiKeys: propKeys }: ApiKeysSectionProps) {
                   className="h-8 w-8 text-error hover:text-error hover:bg-error/10"
                   onClick={() => handleRevokeKey(apiKey.id)}
                   disabled={revokeKeyMutation.isPending || apiKey.status === "inactive"}
+                  aria-label="Revoke API key"
+                  title="Revoke API key"
                 >
                   {revokeKeyMutation.isPending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

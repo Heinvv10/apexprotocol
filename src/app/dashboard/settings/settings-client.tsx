@@ -8,6 +8,7 @@ import { ChevronDown, Trash2, User, Puzzle, Bell, Users, CreditCard, Key, Loader
 import { BrandHeader } from "@/components/layout/brand-header";
 import { ApiKeysSection, IntegrationsSection, NotificationsSection } from "@/components/settings/settings-sections";
 import { BrandingSection } from "@/components/settings/branding-section";
+import { toast } from "sonner";
 // useUserSafe replaced by Zustand store after Plan 3
 import { useAuthStore } from "@/stores/auth";
 const useUserSafe = () => ({ user: useAuthStore((s) => s.user), isLoaded: true, isSignedIn: !!useAuthStore((s) => s.user) });
@@ -124,12 +125,22 @@ function TeamSection() {
         body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
       });
       const data = await response.json();
-      if (data.success) {
+      if (response.ok && data.success) {
+        toast.success(`Invite sent to ${inviteEmail}`, {
+          description: `Role: ${inviteRole}. They'll see it on next sign-in.`,
+        });
         setInviteEmail("");
         fetchTeamMembers();
+      } else {
+        toast.error("Couldn't send invite", {
+          description: data?.error || "Please check the email and try again.",
+        });
       }
     } catch (error) {
       console.error("Failed to invite team member:", error);
+      toast.error("Couldn't send invite", {
+        description: "Network error — please try again.",
+      });
     } finally {
       setIsInviting(false);
     }
@@ -254,15 +265,32 @@ function BillingSection() {
   const fetchBillingData = async () => {
     try {
       setIsLoading(true);
-      const [subRes, usageRes] = await Promise.all([
+      // /api/settings/subscription is always authoritative for the org's plan
+      // (reads organizations.plan directly). /api/billing returns subscription
+      // records for Stripe-backed orgs, which most orgs don't have — leave it
+      // in place for the usage card, but derive the CURRENT PLAN label from
+      // the org row so starter/professional/enterprise render correctly
+      // instead of the misleading "Free".
+      const [subRes, usageRes, orgPlanRes] = await Promise.all([
         fetch("/api/billing?action=subscription"),
         fetch("/api/billing?action=usage"),
+        fetch("/api/settings/subscription"),
       ]);
       const subData = await subRes.json();
       const usageData = await usageRes.json();
+      const orgPlanData = await orgPlanRes.json();
 
       if (subData.subscription) {
         setSubscription(subData.subscription);
+      } else if (orgPlanData?.data?.currentPlan) {
+        // No Stripe subscription — fall back to the org.plan column.
+        setSubscription({
+          plan: orgPlanData.data.currentPlan,
+          status: "active",
+          currentPeriodStart: "",
+          currentPeriodEnd: "",
+          cancelAtPeriodEnd: false,
+        });
       }
       if (usageData.usage) {
         setUsage(usageData.usage);
@@ -279,14 +307,30 @@ function BillingSection() {
       const response = await fetch("/api/billing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "portal" }),
+        body: JSON.stringify({
+          action: "createPortalSession",
+          returnUrl: window.location.href,
+        }),
       });
       const data = await response.json();
-      if (data.portalUrl) {
-        window.location.href = data.portalUrl;
+      if (response.ok && data.url) {
+        window.location.href = data.url;
+        return;
       }
+      // Stripe isn't configured for SA orgs — steer users to the upgrade page
+      // instead of silently swallowing the error.
+      if (response.status === 404 && data.error === "No active subscription") {
+        window.location.href = "/dashboard/settings/upgrade";
+        return;
+      }
+      toast.error("Billing portal unavailable", {
+        description: data.error || "Please try again or contact support.",
+      });
     } catch (error) {
       console.error("Failed to open billing portal:", error);
+      toast.error("Billing portal unavailable", {
+        description: "Network error — please try again.",
+      });
     }
   };
 
@@ -616,14 +660,18 @@ export default function SettingsClient() {
 
       if (data.success) {
         setSaveStatus("success");
+        toast.success("Settings saved");
         setTimeout(() => setSaveStatus("idle"), 3000);
       } else {
         setSaveStatus("error");
         setErrorMessage(data.error || "Failed to save settings");
+        toast.error("Couldn't save settings", { description: data.error });
       }
     } catch (err) {
       setSaveStatus("error");
-      setErrorMessage(err instanceof Error ? err.message : "Failed to save settings");
+      const msg = err instanceof Error ? err.message : "Failed to save settings";
+      setErrorMessage(msg);
+      toast.error("Couldn't save settings", { description: msg });
     } finally {
       setIsSaving(false);
     }
