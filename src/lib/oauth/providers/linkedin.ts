@@ -117,8 +117,26 @@ export interface LinkedInFollowerStats {
 /**
  * Get LinkedIn OAuth credentials from API config database
  * Falls back to environment variables if not found in database
+ *
+ * When `useAgencyApp` is true, returns the BrightSphere agency app credentials
+ * (LINKEDIN_BRIGHTSPHERE_*) for Jarvis Specter agency-side posting instead of
+ * the white-label platform credentials.
  */
-async function getLinkedInCredentials(): Promise<{ clientId: string; clientSecret: string; redirectUri: string }> {
+async function getLinkedInCredentials(useAgencyApp = false): Promise<{ clientId: string; clientSecret: string; redirectUri: string }> {
+  if (useAgencyApp) {
+    const clientId = process.env.LINKEDIN_BRIGHTSPHERE_CLIENT_ID;
+    const clientSecret = process.env.LINKEDIN_BRIGHTSPHERE_CLIENT_SECRET;
+    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/settings/oauth/linkedin/callback`;
+
+    if (!clientId || !clientSecret) {
+      throw new Error(
+        "BrightSphere LinkedIn credentials not configured. Set LINKEDIN_BRIGHTSPHERE_CLIENT_ID and LINKEDIN_BRIGHTSPHERE_CLIENT_SECRET."
+      );
+    }
+
+    return { clientId, clientSecret, redirectUri };
+  }
+
   // First, try to get from database (admin API config)
   try {
     const integration = await db.query.apiIntegrations.findFirst({
@@ -173,8 +191,9 @@ export async function getAuthorizationUrl(params: {
   scopes?: string[];
   includeOrganizationScopes?: boolean;
   callbackPath?: string; // Override the callback path (e.g., '/api/oauth/linkedin/callback')
+  useAgencyApp?: boolean; // Use BrightSphere agency app credentials instead of platform app
 }): Promise<string> {
-  const { clientId, redirectUri: defaultRedirectUri } = await getLinkedInCredentials();
+  const { clientId, redirectUri: defaultRedirectUri } = await getLinkedInCredentials(params.useAgencyApp);
 
   // Allow overriding the redirect URI path for different OAuth contexts
   let redirectUri = defaultRedirectUri;
@@ -204,9 +223,10 @@ export async function getAuthorizationUrl(params: {
  */
 export async function exchangeCodeForTokens(
   code: string,
-  callbackPath?: string
+  callbackPath?: string,
+  useAgencyApp = false
 ): Promise<TokenData> {
-  const { clientId, clientSecret, redirectUri: defaultRedirectUri } = await getLinkedInCredentials();
+  const { clientId, clientSecret, redirectUri: defaultRedirectUri } = await getLinkedInCredentials(useAgencyApp);
 
   // Allow overriding the redirect URI path for different OAuth contexts
   let redirectUri = defaultRedirectUri;
@@ -252,8 +272,8 @@ export async function exchangeCodeForTokens(
  * Note: LinkedIn tokens have very long expiry (60 days) but refresh tokens
  * can be used to get new access tokens without user interaction
  */
-export async function refreshAccessToken(refreshToken: string): Promise<TokenData> {
-  const { clientId, clientSecret } = await getLinkedInCredentials();
+export async function refreshAccessToken(refreshToken: string, useAgencyApp = false): Promise<TokenData> {
+  const { clientId, clientSecret } = await getLinkedInCredentials(useAgencyApp);
 
   const response = await fetch(LINKEDIN_CONFIG.tokenUrl, {
     method: "POST",
@@ -551,6 +571,7 @@ export async function completeOAuthFlow(params: {
   organizationId?: string;
   brandId?: string;
   callbackPath?: string; // Override callback path for token exchange
+  useAgencyApp?: boolean; // Use BrightSphere agency app credentials instead of platform app
 }): Promise<{
   success: boolean;
   tokens?: TokenData;
@@ -560,10 +581,10 @@ export async function completeOAuthFlow(params: {
   error?: string;
 }> {
   try {
-    const { code, organizationId, brandId, callbackPath } = params;
+    const { code, organizationId, brandId, callbackPath, useAgencyApp } = params;
 
     // Exchange code for tokens (pass callbackPath for redirect_uri consistency)
-    const tokens = await exchangeCodeForTokens(code, callbackPath);
+    const tokens = await exchangeCodeForTokens(code, callbackPath, useAgencyApp);
 
     // Fetch profile
     const profile = await getProfile(tokens.accessToken);
