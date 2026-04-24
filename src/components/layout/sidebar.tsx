@@ -19,6 +19,7 @@ import {
   Brain,
   Sparkles,
   FlaskConical,
+  BarChart3,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -93,6 +94,11 @@ const mainNavItems: NavItem[] = [
 ];
 
 const secondaryNavItems: NavItem[] = [
+  {
+    title: "Usage",
+    href: "/dashboard/usage",
+    icon: BarChart3,
+  },
   {
     title: "Settings",
     href: "/dashboard/settings",

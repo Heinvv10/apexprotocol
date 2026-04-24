@@ -4,12 +4,21 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { logAIUsageAuto } from "./auto-log-usage";
 
 // Singleton instance
 let claudeClient: Anthropic | null = null;
 
 /**
  * Get or create Claude client instance
+ */
+/**
+ * Get or create Claude client instance.
+ *
+ * `messages.create` is wrapped to auto-log token usage to `ai_usage` on
+ * every call — so any caller using `getClaudeClient().messages.create(...)`
+ * gets tracked without needing its own instrumentation. See the matching
+ * comment in openai.ts for the same pattern.
  */
 export function getClaudeClient(): Anthropic {
   if (!claudeClient) {
@@ -22,9 +31,29 @@ export function getClaudeClient(): Anthropic {
       );
     }
 
-    claudeClient = new Anthropic({
-      apiKey,
-    });
+    const raw = new Anthropic({ apiKey });
+    const originalCreate = raw.messages.create.bind(raw.messages) as unknown as (
+      body: unknown,
+      options?: unknown,
+    ) => Promise<unknown>;
+    (raw.messages as unknown as { create: (b: unknown, o?: unknown) => Promise<unknown> }).create = async function (body: unknown, options?: unknown) {
+      const res = await originalCreate(body, options);
+      try {
+        if (res && typeof res === "object" && "usage" in res) {
+          const usage = (res as { usage?: { input_tokens?: number; output_tokens?: number } }).usage;
+          const model = String(((body as { model?: unknown })?.model) ?? "unknown");
+          logAIUsageAuto({
+            provider: "anthropic",
+            model,
+            operation: "chat",
+            inputTokens: usage?.input_tokens || 0,
+            outputTokens: usage?.output_tokens || 0,
+          });
+        }
+      } catch { /* never let logging break the call */ }
+      return res;
+    };
+    claudeClient = raw;
   }
 
   return claudeClient;
@@ -116,6 +145,14 @@ export async function sendMessage(
     throw new Error("No text content in Claude response");
   }
 
+  logAIUsageAuto({
+    provider: "anthropic",
+    model,
+    operation: "chat",
+    inputTokens: response.usage?.input_tokens || 0,
+    outputTokens: response.usage?.output_tokens || 0,
+  });
+
   return textContent.text;
 }
 
@@ -145,6 +182,14 @@ export async function sendConversation(
   if (!textContent || textContent.type !== "text") {
     throw new Error("No text content in Claude response");
   }
+
+  logAIUsageAuto({
+    provider: "anthropic",
+    model,
+    operation: "conversation",
+    inputTokens: response.usage?.input_tokens || 0,
+    outputTokens: response.usage?.output_tokens || 0,
+  });
 
   return textContent.text;
 }
