@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from 'react';
-import { z } from 'zod';
 import { generateContentSchema } from '@/lib/validations/content';
 import { StreamEvent } from '@/lib/ai/streaming';
+import { Sparkles, Target } from 'lucide-react';
+import type { FixContext } from '@/app/dashboard/create/generate/page';
 
 type ContentType = 'blog_post' | 'faq' | 'press_release';
 type AIProvider = 'claude' | 'chatgpt';
@@ -14,9 +15,65 @@ interface StreamingContentEvent {
   timestamp: number;
 }
 
-export default function GenerateContentForm() {
-  const [contentType, setContentType] = useState<ContentType>('blog_post');
-  const [keywords, setKeywords] = useState<string[]>([]);
+function deriveContentType(ctx: FixContext | null | undefined): ContentType {
+  if (!ctx) return 'blog_post';
+  const haystack = [
+    ctx.recommendation ?? '',
+    ctx.category ?? '',
+    ...(ctx.issues ?? []).map((i) => `${i.title ?? ''} ${i.type ?? ''} ${i.category ?? ''}`),
+  ]
+    .join(' ')
+    .toLowerCase();
+  if (/\b(faq|q&a|q and a|question|answer)\b/.test(haystack)) return 'faq';
+  if (/\b(press release|announcement|launch)\b/.test(haystack)) return 'press_release';
+  return 'blog_post';
+}
+
+function deriveKeywords(ctx: FixContext | null | undefined): string[] {
+  if (!ctx) return [];
+  const stop = new Set([
+    'the', 'and', 'for', 'with', 'your', 'from', 'that', 'this', 'into', 'onto',
+    'have', 'has', 'had', 'add', 'use', 'using', 'used', 'should', 'would',
+    'could', 'include', 'including', 'content', 'page', 'pages', 'site', 'issue',
+    'issues', 'fix', 'fixes', 'improve', 'improving',
+  ]);
+  const candidates = [
+    ...(ctx.issues ?? []).map((i) => i.title ?? ''),
+    ctx.recommendation ?? '',
+  ]
+    .join(' ')
+    .toLowerCase()
+    .split(/[^a-z0-9-]+/)
+    .filter((w) => w.length >= 4 && !stop.has(w));
+  const unique: string[] = [];
+  for (const w of candidates) {
+    if (!unique.includes(w)) unique.push(w);
+    if (unique.length >= 5) break;
+  }
+  // Ensure at least one keyword — generate schema requires min 1
+  if (unique.length === 0) {
+    if (ctx.category && ctx.category.length >= 2) {
+      unique.push(ctx.category.toLowerCase().slice(0, 50));
+    } else if (ctx.auditUrl) {
+      try {
+        unique.push(new URL(ctx.auditUrl).hostname.replace(/^www\./, '').slice(0, 50));
+      } catch {
+        unique.push('optimization');
+      }
+    } else {
+      unique.push('optimization');
+    }
+  }
+  return unique;
+}
+
+export default function GenerateContentForm({
+  initialContext,
+}: {
+  initialContext?: FixContext | null;
+}) {
+  const [contentType, setContentType] = useState<ContentType>(() => deriveContentType(initialContext));
+  const [keywords, setKeywords] = useState<string[]>(() => deriveKeywords(initialContext));
   const [brandVoice, setBrandVoice] = useState('professional');
   const [aiProvider, setAIProvider] = useState<AIProvider>('claude');
   const [generatedContent, setGeneratedContent] = useState('');
@@ -163,6 +220,41 @@ export default function GenerateContentForm() {
 
   return (
     <form onSubmit={(e) => handleSubmit(e, true)} className="space-y-6">
+      {initialContext && (
+        <div
+          className="card-primary border-primary/30 bg-primary/5 p-4 space-y-3"
+          data-testid="fix-context-banner"
+        >
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
+            <span className="text-sm font-semibold text-primary">
+              Fixing an audit finding
+            </span>
+          </div>
+          <p className="text-sm text-foreground leading-relaxed">
+            {initialContext.recommendation}
+          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            {initialContext.auditUrl && (
+              <span className="flex items-center gap-1">
+                <Target className="h-3 w-3" aria-hidden="true" />
+                <span className="truncate max-w-[320px]">{initialContext.auditUrl}</span>
+              </span>
+            )}
+            {initialContext.issues && initialContext.issues.length > 0 && (
+              <span>
+                {initialContext.issues.length} issue
+                {initialContext.issues.length === 1 ? '' : 's'}
+              </span>
+            )}
+            {initialContext.category && <span className="capitalize">{initialContext.category}</span>}
+          </div>
+          <p className="text-xs text-muted-foreground italic">
+            Content type and keywords below are prefilled from this finding — adjust if needed, then generate.
+          </p>
+        </div>
+      )}
+
       {/* Content Type Selection */}
       <div className="card-secondary">
         <label htmlFor="contentType" className="block text-sm font-medium text-foreground mb-2">

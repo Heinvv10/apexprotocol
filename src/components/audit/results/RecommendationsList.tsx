@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { CheckCircle2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -92,7 +91,7 @@ export function RecommendationsList({ audit }: RecommendationsListProps) {
                         )}
                       </div>
                     </div>
-                    <Link href={`/dashboard/create?context=${encodeURIComponent(JSON.stringify({ recommendation: rec.recommendation, issues: rec.issues, auditUrl: audit.url }))}`}>
+                    <Link href={`/dashboard/create/generate?context=${encodeURIComponent(JSON.stringify({ recommendation: rec.recommendation, issues: rec.issues, auditUrl: audit.url, category: rec.category }))}`}>
                       <Button
                         size="sm"
                         variant="outline"
@@ -109,13 +108,28 @@ export function RecommendationsList({ audit }: RecommendationsListProps) {
         </div>
       )}
 
-      {/* CTA */}
-      <Link href="/dashboard/create">
-        <Button className="w-full gap-2">
-          <span>Generate Content to Fix Issues</span>
-          <ArrowRight className="h-4 w-4" />
-        </Button>
-      </Link>
+      {/* CTA — seeds generator with the top-priority recommendation so users land on a prefilled form instead of a blank one */}
+      {(() => {
+        const allRecs = Object.values(categoryRecommendations).flat();
+        if (allRecs.length === 0) return null;
+        const topRec = allRecs[0];
+        const href = `/dashboard/create/generate?context=${encodeURIComponent(
+          JSON.stringify({
+            recommendation: topRec.recommendation,
+            issues: topRec.issues,
+            auditUrl: audit.url,
+            category: topRec.category,
+          })
+        )}`;
+        return (
+          <Link href={href}>
+            <Button className="w-full gap-2">
+              <span>Generate Content to Fix Issues</span>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        );
+      })()}
     </div>
   );
 }
