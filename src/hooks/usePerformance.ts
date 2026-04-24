@@ -91,21 +91,27 @@ export function usePerformanceMetrics(audit: Audit | null): PerformanceMetrics |
         ? "poor"
         : "failing";
 
-    // Load phases — only populated when the engine captured real timings.
-    // Omit synthetic defaults; the UI shows an empty state when loadPhases
-    // is empty (see PerformanceWaterfall).
-    const toNumber = (v: unknown): number =>
-      typeof v === "number" ? v : 0;
-    const loadPhases = [
-      { name: "DNS Lookup", duration: toNumber(performance.dnsLookup), color: "hsl(var(--primary))" },
-      { name: "TCP Connection", duration: toNumber(performance.tcpConnection), color: "hsl(var(--warning))" },
-      { name: "Request Time", duration: toNumber(performance.requestTime), color: "hsl(var(--error))" },
-      { name: "Response Time", duration: toNumber(performance.responseTime), color: "hsl(var(--success))" },
-      { name: "DOM Processing", duration: toNumber(performance.domProcessing), color: "hsl(var(--muted-foreground))" },
-      { name: "Resources Download", duration: toNumber(performance.resourcesDownload), color: "hsl(var(--primary) / 0.5)" },
+    // Load phases — only include phases we actually measured. The old code
+    // zero-filled missing phases, which produced a "DNS 0ms, TCP 0ms, DOM 0ms"
+    // readout that looked like real data but was entirely synthetic. Now we
+    // only list phases present in metadata.performance.
+    type PhaseKey = "dnsLookup" | "tcpConnection" | "requestTime" | "responseTime" | "domProcessing" | "resourcesDownload";
+    const phaseDefs: Array<{ key: PhaseKey; name: string; color: string }> = [
+      { key: "dnsLookup", name: "DNS Lookup", color: "hsl(var(--primary))" },
+      { key: "tcpConnection", name: "TCP Connection", color: "hsl(var(--warning))" },
+      { key: "requestTime", name: "Request Time", color: "hsl(var(--error))" },
+      { key: "responseTime", name: "Response Time", color: "hsl(var(--success))" },
+      { key: "domProcessing", name: "DOM Processing", color: "hsl(var(--muted-foreground))" },
+      { key: "resourcesDownload", name: "Resources Download", color: "hsl(var(--primary) / 0.5)" },
     ];
+    const perfRecord = performance as Record<string, unknown>;
+    const loadPhases = phaseDefs
+      .filter((p) => typeof perfRecord[p.key] === "number")
+      .map((p) => ({ name: p.name, duration: perfRecord[p.key] as number, color: p.color }));
 
-    const totalLoadTime = loadPhases.reduce((sum, phase) => sum + phase.duration, 0);
+    // totalLoadTime was previously computed here but only used by a consumer
+    // that later derived it itself (PerformanceDeepDive via loadPhases.reduce).
+    // Removed to silence a TS6133 noUnusedLocals warning.
 
     // Generate recommendations based on issues
     const recommendations = generatePerformanceRecommendations(audit, {
@@ -249,39 +255,12 @@ function generatePerformanceRecommendations(
     });
   }
 
-  // Lazy loading recommendation
-  recommendations.push({
-    id: "lazy-loading",
-    title: "Implement Lazy Loading",
-    description: "Defer loading of off-screen images and non-critical resources",
-    impact: "medium",
-    effort: "low",
-    category: "lazy-loading",
-    estimatedImprovement: 400,
-  });
-
-  // Caching recommendation
-  recommendations.push({
-    id: "browser-caching",
-    title: "Enable Browser Caching",
-    description: "Set appropriate cache headers for static resources",
-    impact: "medium",
-    effort: "low",
-    category: "caching",
-    estimatedImprovement: 500,
-  });
-
-  // Code splitting for large apps
-  recommendations.push({
-    id: "code-splitting",
-    title: "Implement Code Splitting",
-    description:
-      "Split large JavaScript bundles into smaller chunks loaded on demand",
-    impact: "low",
-    effort: "medium",
-    category: "code-splitting",
-    estimatedImprovement: 250,
-  });
+  // Historically this function pushed three unconditional recommendations
+  // (Lazy Loading +400ms, Browser Caching +500ms, Code Splitting +250ms)
+  // regardless of whether the audit actually detected the problem. The
+  // "estimated improvement" numbers were hardcoded, so every brand saw the
+  // same three identical tiles. Removed — recommendations now only fire
+  // when a real issue is detected above.
 
   return recommendations;
 }
@@ -295,43 +274,68 @@ export function generateCoreWebVitals(audit: Audit | null) {
   const metadata = (audit.metadata as any) || {};
   const performance = metadata.performance || {};
 
-  const lcp = performance.largestContentfulPaint || 3500;
-  const fid = performance.firstInputDelay || 50; // Approximation
-  const cls = performance.cumulativeLayoutShift || 0.05;
+  // Only emit metrics we actually measured. PSI returns LCP + CLS; FID is a
+  // real-user metric we don't capture synthetically (the old code defaulted
+  // to 50ms, which rendered the same FID for every audit). Returning null
+  // for a metric tells the UI to drop that card instead of faking it.
+  const lcpRaw = performance.largestContentfulPaint;
+  const fidRaw = performance.firstInputDelay;
+  const clsRaw = performance.cumulativeLayoutShift;
 
-  return [
-    {
+  type Vital = {
+    metric: "lcp" | "fid" | "cls";
+    label: string;
+    value: number;
+    unit: string;
+    good: number;
+    needsImprovement: number;
+    rating: "good" | "needsImprovement" | "poor";
+    icon: string;
+    description: string;
+  };
+  const out: Vital[] = [];
+
+  if (typeof lcpRaw === "number") {
+    out.push({
       metric: "lcp" as const,
       label: "Largest Contentful Paint",
-      value: lcp,
+      value: lcpRaw,
       unit: "ms",
       good: 2500,
       needsImprovement: 4000,
-      rating: (lcp <= 2500 ? "good" : lcp <= 4000 ? "needsImprovement" : "poor") as "good" | "needsImprovement" | "poor",
+      rating: (lcpRaw <= 2500 ? "good" : lcpRaw <= 4000 ? "needsImprovement" : "poor") as "good" | "needsImprovement" | "poor",
       icon: "📦",
       description: "Time for the largest visible element to appear",
-    },
-    {
+    });
+  }
+
+  if (typeof fidRaw === "number") {
+    out.push({
       metric: "fid" as const,
       label: "First Input Delay",
-      value: fid,
+      value: fidRaw,
       unit: "ms",
       good: 100,
       needsImprovement: 300,
-      rating: (fid <= 100 ? "good" : fid <= 300 ? "needsImprovement" : "poor") as "good" | "needsImprovement" | "poor",
+      rating: (fidRaw <= 100 ? "good" : fidRaw <= 300 ? "needsImprovement" : "poor") as "good" | "needsImprovement" | "poor",
       icon: "⚡",
-      description: "Time from user input to browser response",
-    },
-    {
+      description: "Time from user input to browser response (real-user metric)",
+    });
+  }
+
+  if (typeof clsRaw === "number") {
+    out.push({
       metric: "cls" as const,
       label: "Cumulative Layout Shift",
-      value: Number((cls * 100).toFixed(2)),
+      value: Number((clsRaw * 100).toFixed(2)),
       unit: "%",
       good: 10,
       needsImprovement: 25,
-      rating: (cls <= 0.1 ? "good" : cls <= 0.25 ? "needsImprovement" : "poor") as "good" | "needsImprovement" | "poor",
+      rating: (clsRaw <= 0.1 ? "good" : clsRaw <= 0.25 ? "needsImprovement" : "poor") as "good" | "needsImprovement" | "poor",
       icon: "🎯",
       description: "Unexpected layout changes during page load",
-    },
-  ];
+    });
+  }
+
+  return out.length > 0 ? out : null;
 }

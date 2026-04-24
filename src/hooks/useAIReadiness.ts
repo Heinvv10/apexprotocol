@@ -1,5 +1,60 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Audit } from "./useAudit";
+
+/**
+ * Real platform visibility for an audit: counts mentions per AI platform
+ * from the `brand_mentions` table for the audit's brand within the 30 days
+ * leading up to the audit. Replaces the old fabricated multipliers in
+ * useAIReadiness.
+ */
+export interface RealPlatformVisibility {
+  name: string;
+  slug: string;
+  icon: string;
+  status: "visible" | "partial" | "not-visible" | "not-tracked";
+  score: number;
+  totalMentions: number;
+  mentioned: number;
+  positive: number;
+  citations: number;
+  lastDetected: string | null;
+}
+
+export interface RealPlatformVisibilityData {
+  platforms: RealPlatformVisibility[];
+  summary: {
+    tracked: number;
+    visible: number;
+    totalMentions: number;
+    averageScore: number;
+  };
+  window: { start: string; end: string };
+  lastMentionAt: string | null;
+}
+
+export function usePlatformVisibility(auditId: string | null | undefined) {
+  const [data, setData] = useState<RealPlatformVisibilityData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!auditId) return;
+    setLoading(true);
+    setError(null);
+    fetch(`/api/audit/${auditId}/platform-visibility`, { credentials: "include" })
+      .then(async (r) => {
+        const body = await r.json();
+        if (!r.ok || !body?.success) {
+          throw new Error(body?.error || `HTTP ${r.status}`);
+        }
+        setData(body.data as RealPlatformVisibilityData);
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load"))
+      .finally(() => setLoading(false));
+  }, [auditId]);
+
+  return { data, loading, error };
+}
 
 export interface AIReadinessData {
   platformVisibility: Array<{
@@ -78,57 +133,22 @@ export function useAIReadiness(audit: Audit | null): AIReadinessData | null {
       hasStructuredContent: ca.hasStructuredContent ?? false,
     };
 
-    // Platform visibility data (simulated from audit metadata)
-    const platformVisibility = [
-      {
-        name: "ChatGPT (OpenAI)",
-        icon: "🤖",
-        status: aiReadiness.score >= 75 ? "visible" : aiReadiness.score >= 50 ? "partial" : "not-visible",
-        score: Math.round(aiReadiness.score * 0.95),
-        contentUsed: contentAnalysis.hasStructuredContent ? "FAQ Schema + FAQ Content" : "General Content",
-        lastDetected: "Today",
-      },
-      {
-        name: "Claude (Anthropic)",
-        icon: "🧠",
-        status: aiReadiness.score >= 70 ? "visible" : aiReadiness.score >= 45 ? "partial" : "not-visible",
-        score: Math.round(aiReadiness.score * 0.92),
-        contentUsed: "Long-form Content",
-        lastDetected: "Today",
-      },
-      {
-        name: "Google Gemini",
-        icon: "✨",
-        status: aiReadiness.score >= 80 ? "visible" : aiReadiness.score >= 55 ? "partial" : "not-visible",
-        score: Math.round(aiReadiness.score * 0.98),
-        contentUsed: "SERP Featured Content",
-        lastDetected: "Today",
-      },
-      {
-        name: "Perplexity",
-        icon: "🔍",
-        status: aiReadiness.score >= 65 ? "visible" : aiReadiness.score >= 40 ? "partial" : "not-visible",
-        score: Math.round(aiReadiness.score * 0.85),
-        contentUsed: "Research & Analysis",
-        lastDetected: "Today",
-      },
-      {
-        name: "DeepSeek",
-        icon: "🌊",
-        status: aiReadiness.score >= 60 ? "visible" : "partial",
-        score: Math.round(aiReadiness.score * 0.80),
-        contentUsed: "Referenced Content",
-        lastDetected: "Yesterday",
-      },
-      {
-        name: "Grok (xAI)",
-        icon: "⚡",
-        status: aiReadiness.score >= 65 ? "visible" : "partial",
-        score: Math.round(aiReadiness.score * 0.83),
-        contentUsed: "News & Analysis",
-        lastDetected: "2 days ago",
-      },
-    ];
+    // Platform visibility is now fetched separately from
+    // /api/audit/[id]/platform-visibility, which joins the audit's brand
+    // with real brand_mentions. The old code here manufactured 6 platform
+    // rows using deterministic multipliers (0.95 for ChatGPT, 0.92 for
+    // Claude, etc.) against aiReadiness.score — identical numbers for every
+    // brand with the same readiness score, and zero relation to what
+    // platforms actually returned when we queried them. Return an empty
+    // array so the UI can render the live-data component instead.
+    const platformVisibility: Array<{
+      name: string;
+      icon: string;
+      status: string;
+      score: number;
+      contentUsed: string;
+      lastDetected: string;
+    }> = [];
 
     // Content optimization data
     const contentOptimization = [
@@ -166,69 +186,33 @@ export function useAIReadiness(audit: Audit | null): AIReadinessData | null {
         impact: "high",
         icon: "📝",
       },
-      {
-        title: "E-E-A-T Signals",
-        description: "Experience, Expertise, Authoritativeness, Trustworthiness",
-        status: "partial",
-        score: 72,
-        recommendation: "Include author credentials, publication dates, and source citations",
-        impact: "medium",
-        icon: "🏆",
-      },
-      {
-        title: "Content Freshness",
-        description: "Recently updated content is prioritized by LLMs",
-        status: "partial",
-        score: 65,
-        recommendation: "Update content regularly and include last-modified dates",
-        impact: "medium",
-        icon: "🔄",
-      },
-      {
-        title: "Mobile Optimization",
-        description: "Mobile-friendly content is indexed and used by AI models",
-        status: contentAnalysis.hasStructuredContent ? "optimized" : "partial",
-        score: contentAnalysis.hasStructuredContent ? 85 : 70,
-        recommendation: "Ensure responsive design and mobile-friendly formatting",
-        impact: "medium",
-        icon: "📱",
-      },
+      // E-E-A-T, Content Freshness, and Mobile Optimization tiles used to
+      // live here with hardcoded scores (72 / 65 / 85 for every audit). We
+      // don't currently measure any of those signals — the audit crawler
+      // doesn't check for author bylines, last-modified headers, or mobile
+      // rendering — so fabricating scores misled users. Removed entirely.
+      // Future: wire checkEntityAuthority + schema analysis to populate
+      // real E-E-A-T, parse <time> / og:updated_time for freshness, run a
+      // mobile viewport audit for the mobile tile.
     ];
 
-    // Citation potential data
+    // Citation potential: the old code broadcast a fabricated 5-category
+    // breakdown (Technology / Business / Education / Health / Science) where
+    // every brand got the same deterministic multiplier on aiReadiness.score.
+    // A brand selling fibre and a brand selling vitamins saw identical
+    // "Health" scores. Without a real topic-classification step we have no
+    // basis for those categories — removed entirely.
+    //
+    // The headline citation score is still derived from aiReadiness.score,
+    // but we publish a single number instead of pretending we know per-
+    // industry likelihoods.
     const citationScore = Math.round(aiReadiness.score * 0.93);
-    const citationMetrics = [
-      {
-        category: "Technology",
-        likelihood: Math.round(aiReadiness.score * 0.95),
-        relevance: Math.round(contentAnalysis.averageReadability * 0.9),
-        authority: Math.min(100, Math.round((contentAnalysis.averageWordCount / 2000) * 100)),
-      },
-      {
-        category: "Business",
-        likelihood: Math.round(aiReadiness.score * 0.85),
-        relevance: Math.round(contentAnalysis.averageReadability * 0.85),
-        authority: Math.min(100, Math.round((contentAnalysis.averageWordCount / 1500) * 90)),
-      },
-      {
-        category: "Education",
-        likelihood: Math.round(aiReadiness.score * 0.90),
-        relevance: Math.round(contentAnalysis.averageReadability * 0.95),
-        authority: Math.min(100, Math.round((contentAnalysis.averageWordCount / 2000) * 85)),
-      },
-      {
-        category: "Health",
-        likelihood: Math.round(aiReadiness.score * 0.75),
-        relevance: Math.round(contentAnalysis.averageReadability * 0.88),
-        authority: Math.min(100, Math.round((contentAnalysis.averageWordCount / 2000) * 92)),
-      },
-      {
-        category: "Science",
-        likelihood: Math.round(aiReadiness.score * 0.88),
-        relevance: Math.round(contentAnalysis.averageReadability * 0.92),
-        authority: Math.min(100, Math.round((contentAnalysis.averageWordCount / 2000) * 95)),
-      },
-    ];
+    const citationMetrics: Array<{
+      category: string;
+      likelihood: number;
+      relevance: number;
+      authority: number;
+    }> = [];
 
     // LLM Suitability data
     const suitabilityFactors = [
@@ -241,13 +225,13 @@ export function useAIReadiness(audit: Audit | null): AIReadinessData | null {
           : undefined,
         icon: "📐",
       },
-      {
-        name: "Factual Accuracy",
-        score: 82,
-        description: "Content backed by credible sources",
-        examples: ["Citations included", "Recent data", "Expert quotes"],
-        icon: "✓",
-      },
+      // Factual Accuracy (was 82), Uniqueness (was 75), and Source Quality
+      // (was 80) were hardcoded across every audit. The crawler doesn't
+      // currently verify any of those signals — no citation-link detection,
+      // no duplicate-content analysis, no domain-authority lookup — so
+      // pretending to score them was misleading. Removed until we have real
+      // signals. Readability + Comprehensiveness remain because they come
+      // from the actual content analysis the worker persists.
       {
         name: "Readability",
         score: Math.round(contentAnalysis.averageReadability),
@@ -261,20 +245,6 @@ export function useAIReadiness(audit: Audit | null): AIReadinessData | null {
         description: "Thorough coverage of the topic",
         examples: [`${contentAnalysis.averageWordCount} avg words`, "Multiple angles", "Examples provided"],
         icon: "📚",
-      },
-      {
-        name: "Uniqueness",
-        score: 75,
-        description: "Original perspective or analysis",
-        examples: ["Original research", "Unique insights", "Proprietary data"],
-        icon: "⭐",
-      },
-      {
-        name: "Source Quality",
-        score: 80,
-        description: "Linked to authoritative sources",
-        examples: ["DOI links", "Academic sources", "Industry leaders"],
-        icon: "🔗",
       },
     ];
 
@@ -295,7 +265,12 @@ export function useAIReadiness(audit: Audit | null): AIReadinessData | null {
       citationPotential: {
         metrics: citationMetrics,
         overallScore: citationScore,
-        percentile: Math.round((citationScore / 100) * 95), // Percentile among all sites
+        // The old code derived `percentile` from citationScore alone, labelled
+        // it "Percentile among all sites", and presented that to users. We
+        // have no cross-site comparison data — there's no percentile to
+        // report — so this now reflects an honest 0 until we build a real
+        // benchmarking pipeline. The UI treats 0 as "unavailable".
+        percentile: 0,
       },
       llmSuitability: {
         factors: suitabilityFactors,

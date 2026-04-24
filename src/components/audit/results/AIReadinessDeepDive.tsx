@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Audit } from "@/hooks/useAudit";
-import { useAIReadiness } from "@/hooks/useAIReadiness";
+import { useAIReadiness, usePlatformVisibility } from "@/hooks/useAIReadiness";
 import { AIPlatformVisibility } from "../ai-readiness/AIPlatformVisibility";
 import { AIContentOptimization } from "../ai-readiness/AIContentOptimization";
 import { AICitationPotential } from "../ai-readiness/AICitationPotential";
@@ -17,6 +17,10 @@ interface AIReadinessDeepDiveProps {
 
 export function AIReadinessDeepDive({ audit }: AIReadinessDeepDiveProps) {
   const aiData = useAIReadiness(audit);
+  // Real platform visibility pulled from brand_mentions for this audit's
+  // brand. Loading state is tolerated by the child component (it renders
+  // whatever comes in, including an empty state when no mentions exist).
+  const platformLive = usePlatformVisibility(audit?.id);
 
   // The audit engine doesn't yet populate metadata.aiReadiness.score,
   // so useAIReadiness returns null. Render an honest empty state rather
@@ -39,13 +43,17 @@ export function AIReadinessDeepDive({ audit }: AIReadinessDeepDiveProps) {
     );
   }
 
+  // Prefer real platform data from brand_mentions. Fall back to the (now
+  // emptied) in-hook list only for legacy behaviour during the transition.
+  const livePlatforms = platformLive.data?.platforms ?? [];
   const avgPlatformScore =
-    aiData.platformVisibility.length > 0
+    platformLive.data?.summary?.averageScore ??
+    (aiData.platformVisibility.length > 0
       ? Math.round(
           aiData.platformVisibility.reduce((sum, p) => sum + p.score, 0) /
             aiData.platformVisibility.length
         )
-      : 0;
+      : 0);
 
   const avgOptimizationScore =
     aiData.contentOptimization.length > 0
@@ -129,8 +137,31 @@ export function AIReadinessDeepDive({ audit }: AIReadinessDeepDiveProps) {
         </div>
       </div>
 
-      {/* AI Platform Visibility */}
-      <AIPlatformVisibility platforms={aiData.platformVisibility} />
+      {/* AI Platform Visibility — live data from brand_mentions. Pass the
+          real rows when loaded; fall back to the (now empty) hook data. */}
+      <AIPlatformVisibility
+        platforms={
+          livePlatforms.length > 0
+            ? livePlatforms
+                .filter((p) => p.status !== "not-tracked")
+                .map((p) => ({
+                  name: p.name,
+                  icon: p.icon,
+                  status: p.status as "visible" | "partial" | "not-visible",
+                  score: p.score,
+                  contentUsed:
+                    p.citations > 0
+                      ? `${p.citations} citation${p.citations === 1 ? "" : "s"}`
+                      : p.mentioned > 0
+                        ? `${p.mentioned}/${p.totalMentions} mentions`
+                        : "no mentions",
+                  lastDetected: p.lastDetected
+                    ? new Date(p.lastDetected).toLocaleDateString()
+                    : undefined,
+                }))
+            : aiData.platformVisibility
+        }
+      />
 
       {/* AI Content Optimization */}
       <AIContentOptimization optimizations={aiData.contentOptimization} />

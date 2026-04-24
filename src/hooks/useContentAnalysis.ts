@@ -62,141 +62,62 @@ export function useContentAnalysis(audit: Audit | null): ContentAnalysis | null 
     // making the UI look like live analysis even without real data).
     if (!contentAnalysis) return null;
 
-    // Content Quality Analysis
+    // Content Quality Analysis — only include pages the crawler actually
+    // analysed. The old version invented /about, /blog, and /contact with
+    // completely fabricated word counts (1850 / 3200 / 450) and readability
+    // scores for every brand. We now publish a single row for the audited
+    // URL with the real numbers the worker persisted.
+    const realWordCount = typeof contentAnalysis.averageWordCount === "number"
+      ? contentAnalysis.averageWordCount
+      : null;
+    const realReadability = typeof contentAnalysis.averageReadability === "number"
+      ? contentAnalysis.averageReadability
+      : null;
+
+    const pages =
+      realWordCount !== null && realReadability !== null
+        ? [
+            {
+              url: audit.url,
+              wordCount: realWordCount,
+              readabilityScore: realReadability,
+              readabilityGrade: readabilityGradeFor(realReadability),
+              htagHierarchy: contentAnalysis.headingHierarchyValid ? "valid" : "partial",
+              // keywordDensity isn't currently captured by the worker. Omit
+              // instead of defaulting to a bogus 2.3%.
+              keywordDensity: 0,
+            },
+          ]
+        : [];
+
     const contentQuality = {
-      pages: [
-        {
-          url: audit.url,
-          wordCount: contentAnalysis.averageWordCount || 2100,
-          readabilityScore: contentAnalysis.averageReadability || 72,
-          readabilityGrade: "10th Grade",
-          htagHierarchy: contentAnalysis.headingHierarchyValid ? "valid" : "partial",
-          keywordDensity: 2.3,
-        },
-        {
-          url: new URL(audit.url).href + "about",
-          wordCount: 1850,
-          readabilityScore: 68,
-          readabilityGrade: "11th Grade",
-          htagHierarchy: "valid",
-          keywordDensity: 2.1,
-        },
-        {
-          url: new URL(audit.url).href + "blog",
-          wordCount: 3200,
-          readabilityScore: 75,
-          readabilityGrade: "9th Grade",
-          htagHierarchy: "valid",
-          keywordDensity: 2.5,
-        },
-        {
-          url: new URL(audit.url).href + "contact",
-          wordCount: 450,
-          readabilityScore: 82,
-          readabilityGrade: "8th Grade",
-          htagHierarchy: "partial",
-          keywordDensity: 1.8,
-        },
-      ],
-      averageWordCount: contentAnalysis.averageWordCount || 1875,
-      averageReadability: contentAnalysis.averageReadability || 74,
-      shortPages: 1, // Pages < 300 words
-      poorReadability: 0, // Pages < 60 readability score
+      pages,
+      averageWordCount: realWordCount ?? 0,
+      averageReadability: realReadability ?? 0,
+      shortPages: realWordCount !== null && realWordCount < 300 ? 1 : 0,
+      poorReadability: realReadability !== null && realReadability < 60 ? 1 : 0,
     };
 
-    // Keyword Opportunities
-    const keywordOpportunities = [
-      {
-        opportunity: "Add 'solution' keyword (currently underrepresented)",
-        currentMentions: 8,
-        suggestedMentions: 25,
-        estimatedImpact: "high",
-        type: "semantic" as const,
-      },
-      {
-        opportunity: "Integrate 'automation' as LSI keyword",
-        currentMentions: 3,
-        suggestedMentions: 12,
-        estimatedImpact: "high",
-        type: "lsi" as const,
-      },
-      {
-        opportunity: "Add long-tail: 'best practices for enterprise'",
-        currentMentions: 0,
-        suggestedMentions: 5,
-        estimatedImpact: "medium",
-        type: "long-tail" as const,
-      },
-      {
-        opportunity: "Leverage related search: 'ROI calculation'",
-        currentMentions: 2,
-        suggestedMentions: 8,
-        estimatedImpact: "medium",
-        type: "related" as const,
-      },
-      {
-        opportunity: "Semantic expansion: 'implementation' variant forms",
-        currentMentions: 15,
-        suggestedMentions: 22,
-        estimatedImpact: "low",
-        type: "semantic" as const,
-      },
-    ];
-
-    // Indexation Status
-    const indexationStatus = {
-      totalDiscovered: 42,
-      indexed: 38,
-      notIndexed: 4,
-      indexationRate: Math.round((38 / 42) * 100),
-      reasonsForNonIndexation: [
-        {
-          reason: "Noindex meta tag",
-          pageCount: 2,
-        },
-        {
-          reason: "Redirect chains",
-          pageCount: 1,
-        },
-        {
-          reason: "Robots.txt blocked",
-          pageCount: 1,
-        },
-      ],
+    // Keyword Opportunities / Indexation Status / Backlink Summary — none
+    // of these are measured by the current audit engine. The previous hook
+    // returned identical hardcoded arrays for every brand (e.g. the same
+    // "solution" / "automation" / "ROI calculation" keywords, the same
+    // 42 discovered / 38 indexed count, the same techcrunch.com /
+    // forbes.com backlinks). Returning empty arrays / zeros here tells
+    // each card to render its "not measured" empty state instead.
+    const keywordOpportunities: ContentAnalysis["keywordOpportunities"] = [];
+    const indexationStatus: ContentAnalysis["indexationStatus"] = {
+      totalDiscovered: 0,
+      indexed: 0,
+      notIndexed: 0,
+      indexationRate: 0,
+      reasonsForNonIndexation: [],
     };
-
-    // Backlink Summary
-    const backlinkSummary = {
-      estimatedBacklinks: 234,
-      topReferrers: [
-        {
-          domain: "techcrunch.com",
-          backlinks: 12,
-          authority: 92,
-        },
-        {
-          domain: "forbes.com",
-          backlinks: 8,
-          authority: 89,
-        },
-        {
-          domain: "medium.com",
-          backlinks: 6,
-          authority: 85,
-        },
-        {
-          domain: "producthunt.com",
-          backlinks: 5,
-          authority: 87,
-        },
-        {
-          domain: "linkedin.com",
-          backlinks: 4,
-          authority: 96,
-        },
-      ],
-      backlinksChange: 12, // +12 backlinks this month
-      backlinksTrend: "up" as const,
+    const backlinkSummary: ContentAnalysis["backlinkSummary"] = {
+      estimatedBacklinks: 0,
+      topReferrers: [],
+      backlinksChange: 0,
+      backlinksTrend: "stable",
     };
 
     return {
@@ -206,4 +127,16 @@ export function useContentAnalysis(audit: Audit | null): ContentAnalysis | null 
       backlinkSummary,
     } as ContentAnalysis;
   }, [audit]);
+}
+
+function readabilityGradeFor(score: number): string {
+  // Rough Flesch-Kincaid bucket mapping. Keeps the label informative
+  // without pretending we ran a full FK calculation.
+  if (score >= 90) return "5th Grade";
+  if (score >= 80) return "6th Grade";
+  if (score >= 70) return "7th Grade";
+  if (score >= 60) return "8-9th Grade";
+  if (score >= 50) return "10-12th Grade";
+  if (score >= 30) return "College";
+  return "College Graduate";
 }

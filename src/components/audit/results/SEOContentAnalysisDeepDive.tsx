@@ -41,25 +41,40 @@ export function SEOContentAnalysisDeepDive({ audit }: SEOContentAnalysisDeepDive
         poorReadability={contentData.contentQuality.poorReadability}
       />
 
-      {/* Keyword Opportunities */}
-      <KeywordOpportunitiesCard opportunities={contentData.keywordOpportunities} />
+      {/* Keyword Opportunities — only render when we actually measured
+          something. The hook used to emit a hardcoded list of 5 keywords
+          ("solution", "automation", "ROI calculation", etc.) for every
+          brand; it now returns []. Hide the card entirely until the audit
+          engine wires real keyword-gap analysis. */}
+      {contentData.keywordOpportunities.length > 0 && (
+        <KeywordOpportunitiesCard opportunities={contentData.keywordOpportunities} />
+      )}
 
-      {/* Indexation Status */}
-      <IndexationStatusCard
-        totalDiscovered={contentData.indexationStatus.totalDiscovered}
-        indexed={contentData.indexationStatus.indexed}
-        notIndexed={contentData.indexationStatus.notIndexed}
-        indexationRate={contentData.indexationStatus.indexationRate}
-        reasonsForNonIndexation={contentData.indexationStatus.reasonsForNonIndexation}
-      />
+      {/* Indexation Status — requires Google Search Console integration
+          which we don't currently do. The prior version reported a fake
+          42/38/4 for every brand. Hide until we wire GSC. */}
+      {contentData.indexationStatus.totalDiscovered > 0 && (
+        <IndexationStatusCard
+          totalDiscovered={contentData.indexationStatus.totalDiscovered}
+          indexed={contentData.indexationStatus.indexed}
+          notIndexed={contentData.indexationStatus.notIndexed}
+          indexationRate={contentData.indexationStatus.indexationRate}
+          reasonsForNonIndexation={contentData.indexationStatus.reasonsForNonIndexation}
+        />
+      )}
 
-      {/* Backlink Summary */}
-      <BacklinkSummaryCard
-        estimatedBacklinks={contentData.backlinkSummary.estimatedBacklinks}
-        topReferrers={contentData.backlinkSummary.topReferrers}
-        backlinksChange={contentData.backlinkSummary.backlinksChange}
-        backlinksTrend={contentData.backlinkSummary.backlinksTrend}
-      />
+      {/* Backlink Summary — the prior version listed identical hardcoded
+          referrers (techcrunch.com / forbes.com / medium.com) and a fake
+          234 backlinks for every brand. Hide until we integrate a real
+          backlink provider (Ahrefs / Moz / Majestic / etc). */}
+      {contentData.backlinkSummary.estimatedBacklinks > 0 && (
+        <BacklinkSummaryCard
+          estimatedBacklinks={contentData.backlinkSummary.estimatedBacklinks}
+          topReferrers={contentData.backlinkSummary.topReferrers}
+          backlinksChange={contentData.backlinkSummary.backlinksChange}
+          backlinksTrend={contentData.backlinkSummary.backlinksTrend}
+        />
+      )}
     </div>
   );
 }

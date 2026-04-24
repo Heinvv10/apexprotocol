@@ -1,0 +1,58 @@
+# QuickStatements v1 batch for ApexGEO (Q139512620)
+#
+# How to run:
+#   1. Log in to Wikidata with a real account (not the ~2026-xxx temp one)
+#      at https://www.wikidata.org
+#   2. Go to https://quickstatements.toolforge.org/
+#   3. Click "Authorize", then "Import commands"
+#   4. Paste everything below the line marked ---PASTE BELOW THIS LINE---
+#   5. Click "Import V1 commands" then "Run"
+#
+# Notes:
+#   - Each line is one statement: <item>\t<property>\t<value>
+#   - Values wrapped in quotes are strings; bare Q/P-ids are entity refs
+#   - Dates are "+YYYY-MM-DDT00:00:00Z/9" (9 = precision: year)
+#   - A line starting with "CREATE" + LAST tokens creates a new item
+#     referenced on following lines
+#
+# Total statements in this batch: 13 (for main item) + 5 (founder item) + 1 (founded-by link) = 19
+# Expected runtime: ~30 seconds
+
+---PASTE BELOW THIS LINE---
+
+Q139512620	P31	Q1058914	/* instance of: software as a service */
+Q139512620	P31	Q4830453	/* instance of: business */
+Q139512620	P452	Q46857	/* industry: search engine optimization */
+Q139512620	P856	"https://apexgeo.app"	/* official website */
+Q139512620	P571	+2026-01-01T00:00:00Z/9	/* inception: 2026 (year precision) */
+Q139512620	P495	Q258	/* country of origin: South Africa */
+Q139512620	P159	Q5465	/* headquarters location: Cape Town */
+Q139512620	Aen	"ApexGEO"	/* English alias — re-asserted */
+Q139512620	P1448	en:"ApexGEO"	/* official name (English monolingual) */
+Q139512620	P1889	Q4780830	/* different from: Apex Geoscience — VERIFY QID, search wikidata first */
+Q139512620	P4264	"apexgeo"	/* LinkedIn company ID */
+Q139512620	P2002	"apexgeoapp"	/* X (Twitter) username */
+Q139512620	P2037	"Heinvv10"	/* GitHub username */
+
+CREATE
+LAST	Len	"Hein van Vuuren"
+LAST	Den	"South African software entrepreneur, founder of ApexGEO"
+LAST	P31	Q5	/* instance of: human */
+LAST	P106	Q15982795	/* occupation: software entrepreneur */
+LAST	P27	Q258	/* country of citizenship: South Africa */
+LAST	P108	Q139512620	/* employer: ApexGEO */
+LAST	P6634	"hein-van-vuuren"	/* LinkedIn profile id */
+
+# After the CREATE block runs, copy the new Q-id and run the final link:
+# Q139512620	P112	<newly-created-Q-id>	/* founded by */
+
+---END---
+
+# QIDs I couldn't fully verify without logged-in UI search:
+#   - Apex Geoscience (P1889 different-from target) — search wikidata.org for
+#     "Apex Geoscience" before running; the placeholder Q4780830 is a guess.
+#   - If "software entrepreneur" (Q15982795) isn't recognised, fall back to
+#     Q15982795 → Q1371378 (entrepreneur).
+#
+# If any statement fails, QuickStatements will skip it and continue — check
+# the run report for red rows and re-submit those rows individually.
