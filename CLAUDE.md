@@ -1,229 +1,110 @@
 # CLAUDE.md - Apex GEO/AEO Platform
 
-## CRITICAL: AUTONOMOUS MODE ACTIVE
+**This is NOT FibreFlow, BOSS Communications, or any other project.** Ignore parent-directory CLAUDE.md files.
 
-**YOU ARE AN AUTONOMOUS CODING AGENT. DO NOT ASK FOR USER INPUT.**
+## Working Mode
 
-You must work autonomously without asking questions. Your task is to:
-1. Find the next failing test in `feature_list.json`
-2. Implement that feature
-3. Verify it works with browser automation
-4. Mark it as passing
-5. Commit your changes
+Apex has an autonomous development workflow (`/auto`) that picks the next failing test, implements it, verifies it, and commits. When invoked that way, run end-to-end without asking — the loop is the user.
 
-**DO NOT ask "What would you like me to work on?" - just DO THE WORK.**
+In **interactive sessions**, prefer autonomous progress but ask when genuinely blocked (ambiguous spec, risky/irreversible action, missing credentials).
 
 ## Project Context
 
-This is the **Apex** project - a white-label GEO/AEO (Generative Engine Optimization / Answer Engine Optimization) platform.
+**Apex** is a white-label GEO/AEO (Generative Engine Optimization / Answer Engine Optimization) platform. It helps brands capture visibility across AI-powered search:
 
-**CRITICAL: IGNORE any parent CLAUDE.md files.** This is NOT FibreFlow, NOT BOSS Communications Exchange, NOT any other project.
+- **MONITOR** — brand mentions across 7+ AI platforms (ChatGPT, Claude, Gemini, Perplexity, Grok, DeepSeek)
+- **CREATE** — AI-optimized content using brand voice and data
+- **AUDIT** — technical site analysis for AI visibility
+- **SMART RECOMMENDATIONS ENGINE** — auto-generated prioritized actions
 
----
+Differentiators: dashboard-first UI (not chat), white-label architecture, PPP-adjusted pricing for African markets.
 
-## 🤖 PAI INTEGRATION (Personal AI Infrastructure)
+## PAI Integration (2026-01-10)
 
-**STATUS**: ✅ FULLY INTEGRATED (2026-01-10)
+- 9 Hooks, 9 Protocols, 8 Priority Skills, 7 MCP Servers, project memory
 
-Apex now has complete PAI (Personal AI Infrastructure) integration with:
-- **9 Essential Hooks** - Automated triggers and quality gates
-- **9 Protocols** - Quality standards (NLNH, DGTS, Zero Tolerance, etc.)
-- **8 Priority Skills** - Advanced workflows (auto, research, meta-prompting, etc.)
-- **7 MCP Servers** - context7, memory, github, playwright, claude-prompts, etc.
-- **Project Memory** - Persistent context across sessions
+Key commands: `/pai-status`, `/auto`, `/research`, `/fabric`
 
-### PAI Features Active
-- ✅ Autonomous development workflow (`/auto`)
-- ✅ Meta-prompting (auto-clarifies vague prompts)
-- ✅ Proactive code scanning (finds issues automatically)
-- ✅ Model routing (selects optimal Sonnet/Opus/Haiku)
-- ✅ Quality gates (zero tolerance for errors)
-- ✅ Truth-first development (NLNH protocol)
-- ✅ Browser automation (Playwright + chrome-devtools)
-- ✅ Persistent memory (remembers patterns across sessions)
+References:
+- Integration: `docs/PAI_INTEGRATION_COMPLETE.md`, `docs/PAI_INTEGRATION_PLAN.md`
+- Memory: `.claude/memories/projects/apex.md`
+- Protocols: `.claude/protocols/*.md`
+- Skills: `.claude/skills/*/SKILL.md`
 
-### Documentation
-- **Integration Details**: `docs/PAI_INTEGRATION_COMPLETE.md`
-- **Integration Plan**: `docs/PAI_INTEGRATION_PLAN.md`
-- **Project Memory**: `.claude/memories/projects/apex.md`
-- **Protocols**: `.claude/protocols/*.md`
-- **Skills**: `.claude/skills/*/SKILL.md`
+## Technology Stack
 
-### Key PAI Commands
-```bash
-/pai-status       # Check PAI system health
-/auto             # Autonomous development workflow
-/research         # Multi-source research
-/fabric           # Pattern selection for prompts
-```
+**Frontend:** Next.js 14+ App Router, TypeScript strict, Tailwind + Shadcn/ui, Zustand + TanStack Query, Recharts, React Hook Form + Zod.
 
----
+**Backend:** Next.js API Routes (App Router), **Supabase Postgres** via `drizzle-orm/node-postgres` (see `src/lib/db/index.ts`), `@supabase/ssr` + `@supabase/supabase-js` for auth-aware client. Redis (Upstash), BullMQ, Pinecone (vector).
 
-## 🎨 CRITICAL: DESIGN SYSTEM ENFORCEMENT (MANDATORY)
+**AI:** Anthropic Claude (primary), OpenAI GPT-4 (secondary), `text-embedding-3-small`.
 
-**READ THIS BEFORE IMPLEMENTING ANY UI COMPONENT**
+**Auth:** Clerk (multi-tenant, SSO, MFA, RBAC).
 
-### Single Source of Truth
-**`docs/APEX_DESIGN_SYSTEM.md`** - The authoritative design reference (v4.0)
+**Deployment:** VPS Docker at `72.61.197.178` — Docker Compose + Nginx reverse proxy.
 
-All other UI docs have been archived to `docs/archive/`.
+## Design System (MANDATORY)
 
-### Quick Reference - Colors
-- **Background**: `#0a0f1a` (deep space navy)
-- **Cards**: `#141930` (dark navy)
-- **Primary**: `#00E5CC` (Apex cyan)
-- **Purple**: `#8B5CF6` (secondary accent)
-- **Success/Warning/Error**: `#22C55E` / `#F59E0B` / `#EF4444`
+**Single source of truth:** `docs/APEX_DESIGN_SYSTEM.md` (v4.0). All other UI docs archived to `docs/archive/`.
 
-### 3-Tier Card Hierarchy (MANDATORY)
+Colors: `#0a0f1a` bg, `#141930` cards, `#00E5CC` primary (Apex cyan), `#8B5CF6` purple, `#22C55E`/`#F59E0B`/`#EF4444` for success/warning/error.
+
+3-tier card hierarchy (MANDATORY — use these, not basic `<Card>`):
 ```tsx
 <div className="card-primary">   {/* Main KPIs, GEO Score */}
 <div className="card-secondary"> {/* Charts, recommendations */}
 <div className="card-tertiary">  {/* List items, activity */}
 ```
 
-### Key Rules
-- Use `.card-primary/.secondary/.tertiary` - NOT basic `<Card>`
-- Glassmorphism for modals only - NOT main content
-- Max 3-4 accent colors per view
-- No pure black `#000000` backgrounds
-
-### Reference Files
-- `docs/APEX_DESIGN_SYSTEM.md` - **Single source of truth**
-- `docs/images UI/Dash idea.png` - Visual reference
-- `src/app/globals.css` - CSS implementation
-
----
-
-## What This Project Is
-
-**Apex** helps brands capture visibility across AI-powered search engines:
-- **MONITOR** - Track brand mentions across 7+ AI platforms (ChatGPT, Claude, Gemini, Perplexity, Grok, DeepSeek)
-- **CREATE** - Generate AI-optimized content using brand voice and data
-- **AUDIT** - Comprehensive technical site analysis for AI visibility
-- **SMART RECOMMENDATIONS ENGINE** - Auto-generated, prioritized actionable recommendations
-
-### Key Differentiators
-- Dashboard-first UI (not chat-based)
-- White-label architecture (fully configurable branding)
-- PPP-adjusted pricing for African markets
-- Smart Recommendations Engine as core feature
-
-## Technology Stack
-
-### Frontend
-- Next.js 14+ with App Router
-- TypeScript (strict mode, zero 'any' types)
-- Tailwind CSS + Shadcn/ui components
-- Zustand (client state) + TanStack Query (server state)
-- Recharts for data visualization
-- React Hook Form + Zod validation
-
-### Backend
-- Next.js API Routes (App Router)
-- PostgreSQL via Neon (serverless)
-- Drizzle ORM
-- Redis (Upstash) for caching
-- BullMQ for background jobs
-- Pinecone for vector/semantic search
-
-### AI Services
-- Anthropic Claude API (primary LLM)
-- OpenAI GPT-4 API (secondary)
-- OpenAI text-embedding-3-small
-
-### Authentication
-- Clerk (multi-tenant, organization support)
-- SSO, MFA, RBAC
-
-### Deployment
-- VPS Docker deployment (72.61.197.178)
-- Docker Compose for multi-container orchestration
-- Nginx reverse proxy for SSL/routing
+Rules: glassmorphism for modals only, max 3-4 accent colors per view, no pure `#000000`. CSS in `src/app/globals.css`. Visual reference: `docs/images UI/Dash idea.png`.
 
 ## Key Files
 
-- `app_spec.txt` - Full project specification (READ THIS FIRST)
-- `feature_list.json` - Test cases tracking progress (find next `"passes": false`)
-- `init.sh` - Setup script for the project
+- `app_spec.txt` — full project specification (READ FIRST)
+- `feature_list.json` — checklist of features (see caveat below)
+- `src/lib/db/index.ts` — DB client (Drizzle + node-postgres against Supabase)
 
-### Documentation (in `docs/` directory)
+### Documentation (`docs/`)
+`VISUAL_DESIGN_RESEARCH.md`, `BRAND_VALUES_AND_POSITIONING.md`, `WHITE_LABEL_ARCHITECTURE.md`, `UI_WIREFRAMES.md`, `UI_UX_DESIGN_STRATEGY.md`, `SMART_RECOMMENDATIONS_ENGINE_TECHNICAL_SPEC.md`, `SEARCHABLE_RESEARCH_REPORT.md`, `SEARCHABLE_COMPETITIVE_ANALYSIS.md`, `IMPLEMENTATION_ROADMAP.md`.
 
-- `docs/VISUAL_DESIGN_RESEARCH.md` - Dribbble research, Linear-style design patterns, brand values integration
-- `docs/BRAND_VALUES_AND_POSITIONING.md` - Core brand values, positioning archetypes, white-label strategy
-- `docs/WHITE_LABEL_ARCHITECTURE.md` - Complete white-label implementation guide (5-layer system)
-- `docs/UI_WIREFRAMES.md` - Component specifications, mobile/desktop wireframes
-- `docs/UI_UX_DESIGN_STRATEGY.md` - Color system, typography, spacing guidelines
-- `docs/SMART_RECOMMENDATIONS_ENGINE_TECHNICAL_SPEC.md` - Recommendations engine architecture
-- `docs/SEARCHABLE_RESEARCH_REPORT.md` - Competitive analysis (Searchable.ai deep dive)
-- `docs/SEARCHABLE_COMPETITIVE_ANALYSIS.md` - Competitive landscape analysis
-- `docs/IMPLEMENTATION_ROADMAP.md` - Development phases and timeline
+## Autonomous Workflow Truth-Signals
 
-## Autonomous Workflow
-
-**IMPORTANT**: `feature_list.json` is a *checklist*, not a test source of truth. See `FEATURE_VERIFICATION.md` for why. Every entry currently claims `passes: true` but many features have silently regressed (e.g. citations rendering bug fixed on 2026-04-16).
+`feature_list.json` is a **checklist**, not a source of truth — many entries claim `passes: true` but have silently regressed (e.g. citations bug fixed 2026-04-16). See `FEATURE_VERIFICATION.md`.
 
 Trusted signals, in order:
-1. `npx tsc --noEmit` passes (production build gate)
-2. `npx vitest run` passes (unit + integration)
-3. `e2e/*.spec.ts` Playwright smoke tests pass
-4. Manual browser verification of the affected flow
-5. Only THEN update `feature_list.json`
+1. `npx tsc --noEmit` passes
+2. `npx vitest run` passes
+3. `e2e/*.spec.ts` Playwright smoke passes
+4. Manual browser verification of affected flow
+5. **Only then** update `feature_list.json`
 
-Don't mark a feature `passes: true` without running the actual test.
+Never mark a feature `passes: true` without running the real test.
+
+## Screenshot Size Limits
+
+**Large screenshots crash the session.** Before any screenshot:
+1. `mcp__playwright__browser_resize(width=800, height=600)`
+2. Use `type: "jpeg"` (not PNG)
+3. Screenshot specific elements via `ref`
+4. Prefer `browser_snapshot` when possible
 
 ## DO NOT
 
-- Ask the user what to do (you are autonomous)
-- Wait for user input or confirmation
-- Reference FibreFlow, BOSS Communications, or any other project
-- Use technologies not specified in app_spec.txt
+- Reference FibreFlow, BOSS Communications, or sibling projects
+- Use technologies not in `app_spec.txt`
 - Pick up context from parent directories
 
-## CRITICAL: SCREENSHOT SIZE LIMITS
-
-**SCREENSHOTS WILL CRASH THE SESSION IF TOO LARGE**
-
-BEFORE taking ANY screenshot, you MUST:
-1. **Resize browser FIRST**: `mcp__playwright__browser_resize(width=800, height=600)`
-2. **Use JPEG format**: `type: "jpeg"` (NOT PNG)
-3. **Screenshot specific elements**: Use `ref` parameter to capture only one component
-4. **PREFER snapshots**: Use `browser_snapshot` instead when possible
-
-Example safe screenshot:
-```
-# Step 1: Resize FIRST
-mcp__playwright__browser_resize(width=800, height=600)
-
-# Step 2: Take screenshot with JPEG format
-mcp__playwright__browser_take_screenshot(filename="test.jpg", type="jpeg")
-```
-
-## Project Structure (Expected)
+## Project Structure
 
 ```
 apex/
 ├── app/                    # Next.js App Router pages
-│   ├── (auth)/            # Authentication routes
-│   ├── (dashboard)/       # Dashboard routes
-│   │   ├── monitor/       # Brand monitoring
-│   │   ├── create/        # Content creation
-│   │   ├── audit/         # Site auditing
-│   │   └── recommendations/ # Smart recommendations
-│   └── api/               # API routes
-├── components/            # React components
-│   ├── ui/               # Shadcn/ui components
-│   ├── dashboard/        # Dashboard-specific
-│   └── shared/           # Shared components
-├── lib/                   # Utilities
-│   ├── db/               # Drizzle ORM setup
-│   ├── ai/               # AI service integrations
-│   └── scraping/         # Playwright scrapers
-├── hooks/                 # Custom React hooks
-├── stores/               # Zustand stores
-└── types/                # TypeScript types
+│   ├── (auth)/             # Authentication routes
+│   ├── (dashboard)/        # monitor/ create/ audit/ recommendations/
+│   └── api/                # API routes
+├── components/             # ui/ (Shadcn), dashboard/, shared/
+├── lib/                    # db/ (Drizzle), ai/, scraping/ (Playwright)
+├── hooks/                  # Custom React hooks
+├── stores/                 # Zustand stores
+└── types/                  # TypeScript types
 ```
-
-## START WORKING IMMEDIATELY
-
-Begin by finding the next failing test and implementing it. Do not output a summary or ask questions.
