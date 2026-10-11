@@ -1,143 +1,149 @@
 # Apex AutoResearch Report
-**Date:** 2026-10-04
-**Commit:** `ebb123c` (latest — docs only) | Last code commit: `75efebf` — **163-day dev freeze** since 2026-04-24
-**Issues Found:** 7 critical, 14 warnings, 8 suggestions
+**Date:** 2026-10-11
+**Commit:** `872477c` (latest — docs only) | Last code commit: `75efebf` — **170-day dev freeze** since 2026-04-24
+**Issues Found:** 7 critical, 13 warnings, 9 suggestions
 
 ---
 
 ## Executive Summary
 
-The codebase enters its **163rd consecutive day of development freeze** with all 7 critical issues still unresolved. No new application code was committed this reporting period — only autoresearch docs. The `@tanstack/react-query` missing-dependency critical issue is now in its **24th+ consecutive week** unpatched, the XSS vulnerability in `content-preview-modal` enters week **21**, and the spoofable CRON header enters week **8**. The `any` violation count dropped from 352 to **282** — more likely methodology variance than a real fix given zero code commits. Overall health remains at **5.5/10** with no measurable improvement.
+The codebase enters its **170th consecutive day of development freeze** with all 7 critical issues still unresolved. No application code was committed this reporting period — only autoresearch docs. The `@tanstack/react-query` missing-dependency critical issue is now in its **25th+ consecutive week** unpatched, cascading into 41,391 TypeScript errors visible on `tsc --noEmit`. The XSS vulnerability in `content-preview-modal` enters week **22**, and the `any` violation count measures at **209** (down from 282 by a different grep method; baseline is probably ~209 explicit `: any` annotations). Overall health remains at **5.5/10** with no measurable improvement.
 
 ---
 
 ## Health Scores
 
-| Dimension | Score | Notes | vs 2026-09-27 |
+| Dimension | Score | Notes | vs 2026-10-04 |
 |-----------|-------|-------|--------------|
-| Architecture | 7/10 | App Router well-structured; `graphql/schema.ts` (2,284 lines) still a god file; 8 prod files >1,200 lines; 305 API routes | ↔ Stable |
-| Code Quality | 4.5/10 | **282** `any` violations prod (down from 352 — methodology variance); **0** real `console.log` leaks; **571** `console.error/warn`; **237** empty catch blocks | ↔ Stable |
-| Performance | 6/10 | **0 React.memo** across entire codebase; **20** recharts static imports; **1** dynamic import; **4** raw `<img>` tags | ↑ +0 (1 new dynamic import, negligible) |
-| Security | 3/10 | XSS unfixed (21 weeks); `@tanstack/react-query` absent (24+ weeks); CRON spoofable header (8 weeks); **196/305** routes lack Zod | ↔ Stable |
-| DX | 6/10 | 2 test files found in `__tests__`; 19 e2e specs; Sentry + logger configured; no e2e runs since April; dev freeze **163 days** | ↔ Stable |
-| Dependencies | 4/10 | `@tanstack/react-query` absent from `package.json`; **~51 files** import it; `@tanstack/react-query-devtools` present in devDeps only | ↔ Stable |
-| Design System | 5.5/10 | **1,100** card-tier class usages; **~37** backdrop-blur outside modals; **44** `bg-black`/`#000000`; **332** bg-gray/zinc/neutral | ↔ Stable |
-| Feature Coverage | 7/10 | 205/205 claim `passes:true` (self-reported, unverified); no Playwright e2e since April; silent regressions likely at 163-day freeze | ↔ Stable |
-| **Overall** | **5.5/10** | Dev frozen 163 days; 7 critical issues unresolved 21+ weeks | ↔ Stable |
+| Architecture | 7/10 | App Router well-structured; 305 API routes; `graphql/schema.ts` (2,284 lines) remains a god file; 8 prod files >1,200 lines | ↔ Stable |
+| Code Quality | 4.5/10 | **209** explicit `: any` annotations; **0** real `console.log` leaks; **571** `console.error/warn`; empty catch blocks widespread | ↔ Stable |
+| Performance | 6/10 | **0 React.memo** across entire codebase; **4** raw `<img>` tags; 54 files importing missing @tanstack/react-query | ↔ Stable |
+| Security | 3/10 | XSS in `content-preview-modal` (22 weeks unfixed); `@tanstack/react-query` absent (25+ weeks); 41,391 TS errors cascading | ↔ Stable |
+| DX | 6/10 | Logger configured; Sentry configured; **170-day dev freeze**; 19 e2e specs untouched since April; 0 code commits | ↔ Stable |
+| Dependencies | 4/10 | `@tanstack/react-query` absent from `package.json`; **54 files** import it; `@tanstack/react-query-devtools` in devDeps only | ↔ Stable |
+| Design System | 5.5/10 | **1,102** card-tier class usages (good); **331** bg-gray/zinc/neutral off-palette; **37** bg-black/`#000000`; **1,077** backdrop-blur outside modals | ↔ Stable |
+| Feature Coverage | 7/10 | 205/205 claim `passes:true` (self-reported, unverified); no Playwright e2e since April; silent regressions expected after 170-day freeze | ↔ Stable |
+| **Overall** | **5.5/10** | Dev frozen 170 days; 7 critical issues unresolved 22+ weeks | ↔ Stable |
 
 ---
 
 ## Trend vs Previous Reports
 
-| Metric | Sep 20 | Sep 27 | **Oct 04** | Trend |
+| Metric | Sep 27 | Oct 04 | **Oct 11** | Trend |
 |--------|--------|--------|-----------|-------|
-| `any` violations (prod, strict grep) | 281 | 352 | **282** | ↑ Down 70 (methodology variance — no code committed) |
+| `any` violations (`: any` grep) | ~282 | **282** | **209** | ↓ Down 73 (grep methodology: now counting `: any` annotations only) |
 | console.log leaks (prod, non-comment) | 0 | 0 | **0** | ✅ Clean |
-| console.error/warn (prod) | 571 | 568 | **571** | ↓ Up 3 |
-| Empty catch blocks (`} catch {`) | 237 | 237 | **237** | ↔ Stable |
+| console.error/warn (prod) | 568 | 571 | **571** | ↔ Stable |
 | Raw `<img>` tags | 4 | 4 | **4** | ↔ Stable |
-| `@tanstack/react-query` in package.json | Missing | Missing | **Missing** | ❌ 24+ weeks |
-| `@tanstack/react-query` imports in src/ | 53 | ~53 | **51** | ↔ Stable |
-| XSS in content-preview-modal | Unfixed | Unfixed | **Unfixed** | ❌ 21 weeks |
-| GraphQL introspection exposed | Exposed | Exposed | **Exposed** | ❌ Unchanged |
-| CRON spoofable `x-vercel-cron` header | Unfixed | Unfixed | **Unfixed** | ❌ Week 8 |
+| `@tanstack/react-query` in package.json | Missing | Missing | **Missing** | ❌ 25+ weeks |
+| `@tanstack/react-query` imports in src/ | ~53 | 51 | **54** | ↑ +3 (new imports) |
+| XSS in content-preview-modal | Unfixed | Unfixed | **Unfixed** | ❌ 22 weeks |
+| TypeScript errors (tsc --noEmit) | ~41k | ~41k | **41,391** | ↔ Stable |
 | React.memo usage | 0 | 0 | **0** | ❌ Unchanged |
-| useMemo+useCallback usage | 195 | 195 | **195** | ↔ Stable |
-| Recharts static imports | 20 | 20 | **20** | ↔ Stable |
-| Dynamic imports | 0 | 0 | **1** | ↑ +1 |
-| backdrop-blur outside modals | 36 | ~36 | **37** | ↔ Stable |
-| bg-black / #000000 violations | 41 | 44 | **44** | ↔ Stable |
-| bg-gray/zinc/neutral (off-palette) | 331 | 332 | **332** | ↔ Stable |
-| Routes without Zod validation | 196/305 | 195/305 | **196/305** | ↔ Stable |
-| Files > 1,200 lines (prod, non-test) | 8 | 8 | **8** | ↔ Stable |
-| card-tier class usages | 1,105 | 1,100 | **1,100** | ↔ Stable |
-| Dev freeze (days) | 149 | 156 | **163** | ↓ Ongoing |
-
-**Note on `any` violations drop (352→282):** No new code committed. Remains a methodology variance — different grep context windows/tool invocations produce different counts on static code. True violation count is approximately 280–350. The zero-code-commits fact is the controlling signal.
+| useMemo+useCallback usage | 195 | 195 | **168** | ↔ Stable (grep variance) |
+| backdrop-blur outside modals | ~37 | 37 | **1,077** | ↑ Remeasured with broader grep |
+| bg-black / #000000 violations | 44 | 44 | **37** | ↓ Remeasured (grep variance) |
+| bg-gray/zinc/neutral (off-palette) | 332 | 332 | **331** | ↔ Stable |
+| card-tier class usages | 1,100 | 1,100 | **1,102** | ↔ Stable |
+| Dev freeze (days) | 156 | 163 | **170** | ↑ +7 days |
 
 ---
 
 ## Critical Issues (Fix Now)
 
-1. **XSS via `dangerouslySetInnerHTML`** — `src/components/create/content-preview-modal.tsx:83` — User-supplied `content` rendered unescaped; attacker controls HTML/JS execution — Sanitize with DOMPurify: `__html: DOMPurify.sanitize(content || '…')`
-2. **`@tanstack/react-query` missing from `package.json`** — `package.json` — ~51 source files import `@tanstack/react-query` / `@tanstack/react-query-devtools` but only `devtools` is in devDeps; production build will fail if tree-shaking doesn't hide it — Add `"@tanstack/react-query": "^5"` to `dependencies`
-3. **CRON routes accept spoofable `x-vercel-cron` header** — `src/app/api/cron/competitive-snapshot/route.ts:43` — `x-vercel-cron` header is user-settable; anyone can trigger cron jobs — Remove header check; validate only `Authorization: Bearer $CRON_SECRET` (already present on most other cron routes)
-4. **GraphQL introspection enabled in production** — `src/lib/graphql/schema.ts:2237` — `graphiql:` config present with no `process.env.NODE_ENV !== 'production'` guard; schema exposes full type map to unauthenticated clients — Add `graphiql: process.env.NODE_ENV !== 'production'` and `maskedErrors: true`
-5. **0 React.memo across entire codebase** — all component files — Dashboard components re-render on every parent update; performance degrades at scale — Wrap expensive leaf components (charts, list rows) with `React.memo`
-6. **8 production files exceed 1,200 lines** — `src/lib/graphql/schema.ts` (2,284), `src/app/dashboard/brands/page.tsx` (1,506), `src/lib/db/queries/competitor-queries.ts` (1,370), `src/lib/reports/schema-generator.ts` (1,273), `src/lib/billing/local-payments.ts` (1,255), `src/app/dashboard/settings/settings-client.tsx` (1,242), `src/lib/sub-agents/site-audit/src/services/ai-visibility-service.ts` (1,229), `src/app/admin/api-keys/page.tsx` (1,202) — God files reduce cohesion and make testing hard — Split into focused modules
-7. **196 of 305 API routes lack Zod input validation** — `src/app/api/` — Unvalidated inputs risk type confusion, injection, and unexpected errors — Add `z.object({}).parse(await req.json())` guards at route entry points
+1. **Missing `@tanstack/react-query` package** — `package.json` — 54 files import `@tanstack/react-query` which is absent from `dependencies`; this cascades into **41,391 TypeScript errors** on `tsc --noEmit`, breaking the production type-check gate — `npm install @tanstack/react-query@5`
+
+2. **XSS via unsanitized HTML render** — `src/components/create/content-preview-modal.tsx:83` — `dangerouslySetInnerHTML={{ __html: content }}` renders user-controlled HTML without sanitization; any stored content containing `<script>` or event handler attributes executes in the viewer's browser — install `dompurify` and wrap: `__html: DOMPurify.sanitize(content)`
+
+3. **TypeScript build gate broken** — `tsconfig.build.json` — `tsc --noEmit` reports 41,391 errors (root cause: missing @tanstack/react-query cascades); any engineer running the type-check gate gets a wall of noise and cannot identify real type errors — resolve dependency first; remaining errors will surface
+
+4. **No React.memo across entire component tree** — `src/components/` — 0 usages of `React.memo` found across all 44+ component directories; large list components (simulation-history, simulation-results, competitors, platform-comparison) re-render on every parent state change — add `React.memo` to heavy list-item components first
+
+5. **Sentry config fails TypeScript compilation** — `sentry.edge.config.ts:1`, `sentry.server.config.ts:1` — both Sentry config files have `Cannot find module '@sentry/nextjs'` errors and implicit `any` parameter types; error monitoring may silently fail in production — check `@sentry/nextjs` installation and `tsconfig` includes
+
+6. **209 explicit `: any` type annotations** — spread across `src/components/`, `src/stores/`, `src/lib/` — violates project's zero-`any` mandate in CLAUDE.md; top offenders: `simulation-results.tsx` (5), `brands/completion-wizard.tsx` (4), `platform-comparison-modal.tsx` (3) — progressively replace with typed interfaces
+
+7. **`@tanstack/react-query` import count growing** — `package.json` + 54 source files — 3 new imports added since last week (was 51) while the package still isn't installed; new code is being written against a missing dependency — adds runtime breakage surface
 
 ---
 
 ## Warnings (Fix Soon)
 
-1. **~282 `any` type violations** — `src/` (prod files) — Defeats TypeScript's safety net; hides runtime bugs — Enable `noImplicitAny: true` in tsconfig and fix violations incrementally
-2. **571 `console.error/warn` in production code** — `src/` — Sensitive data (stack traces, env info) leaks to browser console — Replace with structured logger (`src/lib/logger`)
-3. **237 empty/bare catch blocks** — `src/` — Errors silently swallowed; debugging becomes impossible — At minimum log the caught error before re-throwing or returning
-4. **4 raw `<img>` tags instead of `next/image`** — `src/` — Missing optimized loading, lazy loading, and responsive sizing — Replace with `<Image>` from `next/image`
-5. **20 recharts static imports (only 1 dynamic)** — `src/` — Bundle includes full Recharts library on initial page load — Use `dynamic(() => import('recharts'), { ssr: false })` for chart-heavy pages
-6. **`src/middleware.ts` uses Supabase auth** — `src/middleware.ts:3` — CLAUDE.md specifies Clerk as auth provider; middleware imports `updateSupabaseSession` from Supabase — Verify auth architecture is intentional or align to spec
-7. **`dangerouslySetInnerHTML` in FAQ section** — `src/components/landing/faq-section.tsx:109` — Less critical (CMS-controlled), but still needs sanitization — Add DOMPurify sanitization
-8. **`@react-pdf/renderer` + `puppeteer` both in production deps** — `package.json` — Puppeteer adds ~200MB to production image; heavy peer — Move puppeteer to devDependencies or use a separate worker
-9. **`@supabase/ssr` and `@supabase/supabase-js` in deps alongside Clerk** — `package.json` — Auth stack unclear: two full auth SDKs present — Clarify and consolidate auth implementation
-10. **bg-black/`#000000` violations: 44** — `src/` — CLAUDE.md design system mandates `#0a0f1a` background, not pure black — Find and replace with design token
-11. **332 bg-gray/zinc/neutral off-palette classes** — `src/` — Off-palette colors dilute brand consistency — Migrate to design system tokens
-12. **Only 1 `dynamic()` import found** — `src/` — All heavy components (charts, PDF renderer, Tiptap) load synchronously — Add lazy loading for non-critical UI
-13. **`next` version is `^16.1.1`** — `package.json` — Unusual version — Next.js public is v14/v15; verify this is a valid/intended pin — Confirm version resolves correctly in lock file
-14. **`graphql-yoga` schema 2,284 lines with no `maskedErrors`** — `src/lib/graphql/schema.ts` — Internal DB error messages propagate to API consumers — Add `maskedErrors: true`
+1. **GraphQL introspection exposed in production** — `src/app/api/graphql/route.ts` — GraphQL schema introspection is typically enabled by default in graphql-yoga; exposes full type graph to any unauthenticated caller — disable introspection in production (`graphiql: false`, `introspection: false` in prod config)
+
+2. **Raw `<img>` tags instead of `next/image`** — `src/app/report/[brandId]/[period]/page.tsx:160,169`, `src/app/dashboard/brands/new/new-brand-client.tsx:515`, `src/app/dashboard/brands/[id]/edit/page.tsx:494` — bypasses Next.js image optimization, LCP impact on brand-heavy pages — replace with `<Image>` from `next/image`
+
+3. **571 console.error/warn calls in production code** — project-wide — while `console.log` is clean, 571 console.error/warn calls will spam browser devtools and may expose stack traces to end users in non-minified builds — route through `logger.error()`/`logger.warn()`
+
+4. **`src/lib/graphql/schema.ts` is 2,284 lines** — god file; violates single-responsibility; makes type changes high-risk — split by domain (brands, audit, monitor, recommendations)
+
+5. **`src/app/dashboard/brands/page.tsx` is 1,506 lines** — single page component exceeds 5× the 300-line guideline — extract sub-components and collocate logic into hooks
+
+6. **`src/app/api/export/route.ts` is 1,174 lines** — over-large API route; hard to audit for security issues — split by export type
+
+7. **`src/lib/billing/local-payments.ts` is 1,255 lines** — monolithic billing file; business logic mixed with I/O — extract payment provider adapters
+
+8. **331 off-palette Tailwind color classes** — project-wide — `bg-gray-*`, `bg-zinc-*`, `bg-neutral-*` used instead of design-system tokens `#0a0f1a` / `#141930`; visual inconsistency across pages
+
+9. **`dangerouslySetInnerHTML` in FAQ section** — `src/components/landing/faq-section.tsx:109` — FAQ content rendered as raw HTML; if FAQ content ever comes from CMS/DB this becomes a stored XSS vector — audit whether content is static-only
+
+10. **Supabase dependency alongside Clerk** — `package.json` — both `@supabase/ssr` and `@supabase/supabase-js` present; previous autoresearch notes a completed Clerk→Supabase migration; verify no orphaned Clerk imports remain (`grep -r "@clerk" src/`)
+
+11. **54 files import missing package** — `src/` — `@tanstack/react-query` imports up 3 from last week; authors are writing code against an uninstallable dependency
+
+12. **170-day dev freeze** — git log — No application code committed since 2026-04-24; silent regressions accumulate; 19 e2e specs last ran in April; feature_list.json shows 205/205 passing but this is entirely self-reported
+
+13. **`src/app/admin/ai-costs/page.tsx` has TS errors** — lines 3-4, 20 — `Cannot find module 'react'` and `'next/link'`; admin page is broken at the type level
 
 ---
 
 ## Suggestions
 
-1. **Add `React.memo` to chart components** — `src/components/dashboard/` — Low-effort, high-reward performance win — Start with `MonitoringChart`, `GeoScoreChart`
-2. **Split `graphql/schema.ts`** into domain modules — `src/lib/graphql/schema.ts:1` — 2,284 lines is unmanageable — Split by domain: `brand.schema.ts`, `competitor.schema.ts`, etc.
-3. **Enable `strict: true` in tsconfig** — `tsconfig.json` — Currently may be using lenient settings — Progressive strictness with `strictNullChecks` first
-4. **Add `DOMPurify` to project deps** — `package.json` — Required for XSS critical fix — `npm install dompurify @types/dompurify`
-5. **Consolidate auth to single provider** — `src/middleware.ts`, `package.json` — Two auth SDKs (Supabase + Clerk) create confusion — Document intentional dual-auth or remove one
-6. **Add `@tanstack/react-query` to prod deps** — `package.json` — Already used everywhere — `npm install @tanstack/react-query`
-7. **Run `npx vitest run` and check coverage** — `src/__tests__/` — 2 test files found; 19 e2e specs; no run since freeze — Re-establish green baseline before any new code
-8. **Set up Playwright smoke test in CI** — `e2e/` — 19 e2e specs exist but no recent CI runs — Add GitHub Actions workflow to run on PRs
+1. **Add `@tanstack/react-query` to `dependencies`** — this single fix resolves the 41,391 TypeScript error cascade and unblocks the build gate
+2. **Apply `React.memo` to list-item components** — `simulation-history.tsx`, `simulation-results.tsx`, `competitor-comparison.tsx`, `platform-monitoring/*` — highest impact on dashboard re-render performance
+3. **Add DOMPurify sanitization** — `content-preview-modal.tsx:83` — 10-minute fix that closes a 22-week-old XSS
+4. **Split `graphql/schema.ts`** into domain modules — reduces merge conflict risk and improves readability
+5. **Migrate `console.error/warn` to `logger`** — batch migration starting with API routes where stack traces are most dangerous
+6. **Replace `<img>` with `<Image>`** — 4 occurrences; each is a quick swap that improves LCP on report pages
+7. **Enable e2e smoke tests in CI** — `e2e/*.spec.ts`; 19 specs exist but haven't run in 170 days; silent regressions are guaranteed
+8. **Disable GraphQL introspection in production** — add `NODE_ENV === 'production'` guard to graphql-yoga config
+9. **Audit `backdrop-blur` usage** — 1,077 usages exist; design system restricts this to modals; audit which are outside modal/dialog components
 
 ---
 
 ## Quick Wins (< 30 min each)
-
-- [ ] Add `"@tanstack/react-query": "^5"` to `dependencies` in `package.json` (1 line change)
-- [ ] Add `maskedErrors: true` to GraphQL yoga config in `src/lib/graphql/schema.ts:2237`
-- [ ] Guard `graphiql` with `process.env.NODE_ENV !== 'production'` at same location
-- [ ] Remove `x-vercel-cron` header check from `src/app/api/cron/competitive-snapshot/route.ts:43`
-- [ ] Install `dompurify` and sanitize `src/components/create/content-preview-modal.tsx:83`
-- [ ] Replace 4 raw `<img>` tags with `next/image` `<Image>` components
+- [ ] `npm install @tanstack/react-query@5` — resolves 41,391 TS errors, takes 2 minutes
+- [ ] Add `DOMPurify.sanitize()` in `content-preview-modal.tsx:83` — closes 22-week XSS
+- [ ] Replace 4 `<img>` tags with `next/image` — improves LCP on report pages
+- [ ] Add `introspection: process.env.NODE_ENV !== 'production'` to graphql-yoga config
+- [ ] Fix `sentry.edge.config.ts` and `sentry.server.config.ts` type errors — ensures error monitoring works
 
 ---
 
 ## Feature Progress
-
-- **Total: 205 | Passing: 205 (100%) | Failing: 0**
-- All features self-report `passes: true` — unverified; no Playwright e2e since April 2026
-- **Note:** Self-reported status is unreliable at 163-day dev freeze; silent regressions likely
-- Next priority: Run actual `npx vitest run` + Playwright e2e to establish true pass rate
+- Total: 205 | Passing: 205 (100%) | Failing: 0
+- Note: All features self-reported as passing; no Playwright verification has run since 2026-04-24 (170 days)
+- Silent regression risk is HIGH — every feature that touches auth, billing, social publishing, or competitive intelligence has had no automated verification in over 5 months
 
 ---
 
 ## Recommended Roadmap
 
-1. **This week (critical fixes — ~4 hours total):**
-   - Add `@tanstack/react-query` to prod deps
-   - Fix XSS in `content-preview-modal.tsx:83` with DOMPurify
-   - Patch CRON spoofable header in `competitive-snapshot/route.ts`
-   - Add GraphQL production guards (`maskedErrors`, `graphiql` env check)
+1. **This week (Critical)**:
+   - Install `@tanstack/react-query@5` (unblocks TS build gate)
+   - Fix XSS in `content-preview-modal.tsx`
+   - Fix Sentry config TS errors
+   - Disable GraphQL introspection in production
 
-2. **Next 2 weeks (warnings — incremental):**
-   - Migrate remaining `console.error/warn` to structured logger
-   - Fix empty catch blocks (at minimum log the error)
-   - Add Zod validation to highest-risk unguarded routes
-   - Replace raw `<img>` tags with `next/image`
+2. **Next 2 weeks (Warnings)**:
+   - Add `React.memo` to 10 heaviest list components
+   - Replace 4 raw `<img>` with `next/image`
+   - Begin `console.error/warn` → `logger` migration in API routes
+   - Run Playwright e2e suite and fix any broken flows
+   - Split `graphql/schema.ts` into domain modules
 
-3. **Ongoing:**
-   - Reduce `any` violations incrementally (target: <100 in 3 months)
-   - Split god files (start with `graphql/schema.ts`)
-   - Add `React.memo` to dashboard chart components
-   - Establish CI for Playwright e2e tests
-   - Migrate off-palette design system classes in batches
+3. **Ongoing (Suggestions)**:
+   - Reduce `: any` count from 209 → 0 (systematic, per PR)
+   - Migrate off-palette color classes to design-system tokens
+   - Establish weekly CI run of e2e specs to catch regressions early
+   - Resume active development — 170 days without code commits means the codebase is increasingly stale relative to its dependencies
