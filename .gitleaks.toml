@@ -1,0 +1,106 @@
+# Gitleaks configuration for apexprotocol.
+#
+# Ported 2026-11-25 from Heinvv10/ApexGEO's .gitleaks.toml (this repo shares
+# its history). Extends the upstream default ruleset (so real-secret detection
+# is unchanged) and allowlists specific, known-fake values. Keep this allowlist
+# TIGHT — prefer pinning an exact throwaway VALUE over allowlisting a whole
+# file, so a real credential committed to that same file is still caught.
+#
+# Without this file the scheduled full-history scan reported 52 findings, almost
+# all placeholders and vendored third-party fixtures. With it: 6, all real.
+#
+# SYNTAX NOTE: gitleaks 8.24.3 (the version gitleaks-action@v3 installs) honours
+# only the SINGULAR global `[allowlist]` table. `[[allowlists]]` parses without
+# error and is then silently ignored. So this is one block: `paths` and
+# `regexes` are OR'd, and `regexes` matches against the detected secret. Do not
+# split it into `[[allowlists]]`.
+#
+# DELIBERATELY NOT ALLOWLISTED — these are real and are waiting on rotation.
+# This repo is PUBLIC. The scheduled scan is EXPECTED to stay red until they
+# are rotated and purged from history:
+#   - UNIVERSAL_API_KEYS_SETUP.md:47   64-hex value in CRON_SECRET position
+#   - UNIVERSAL_API_KEYS_SETUP.md:58   live-format Google API key
+#   - .auto-claude/specs/001-graphql-resolver-database-connections/task_logs.json:14323
+#     a live-format OpenAI project key and a real Stripe TEST key, captured in an
+#     agent log.
+# Do not silence any of these to make CI green. Rotate, then purge from history.
+# 2026-11-25: the UNIVERSAL_API_KEYS_SETUP.md values were redacted from the
+# current tree (placeholders). They remain in history, so the findings above
+# still fire on the full-history scan until rotation + purge.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known-fake fixtures, doc placeholders, and vendored third-party source"
+
+# Whole-file allowlists. Used only where EVERY match in the file is a fixture or
+# third-party, and the file holds no credential of ours.
+paths = [
+  # Vendored open-source fabric skill repo (three checkout copies + one backup).
+  # Contains jwt.io's example token and Anthropic's public OAuth client id.
+  # Anchored with ^ deliberately: unanchored, these are substring matches and
+  # would silence any future path that merely CONTAINS ".../fabric-repo/"
+  # somewhere, not just these vendored checkouts at the repo root.
+  '''^\.claude/skills/.*/fabric-repo/''',
+  '''^\.claude\.backup-[0-9-]+/skills/.*/fabric-repo/''',
+  # Crypto unit tests. Their fixtures use Apex's real `apx_` key prefix, so they
+  # are allowlisted BY PATH rather than by an `^apx_` regex — a leaked apx_ key
+  # anywhere else must still fire.
+  '''^tests/lib/crypto/''',
+  # A cuid brand id in a one-off verification script.
+  '''^scripts/verify-audit-metadata\.ts$''',
+  # An AES-GCM auth tag captured in a stored test-failure log — test output.
+  '''^docs/audit/phase-1-baseline-test-failures\.txt$''',
+  # Prints which LinkedIn env vars are set; the value matched is the public
+  # CLIENT ID. The client SECRET is not in the repo.
+  '''^scripts/check-linkedin-config\.js$''',
+]
+
+# Value allowlists — matched against the detected secret, so they are precise:
+# a real key sitting in the same file as a placeholder is still reported.
+regexes = [
+  # Throwaway HMAC key set in the impersonation tests (src/lib/auth/__tests__/
+  # impersonation.test.ts + src/app/api/admin/impersonation/route.test.ts).
+  # Not a real credential — IMPERSONATION_SECRET in prod is a distinct value.
+  '''test-impersonation-secret-0123456789''',
+  # Throwaway Google Places key in src/lib/local-evidence/places/__tests__/
+  # service.test.ts (commit da341c19). Deliberately shaped like a real AIza key
+  # so the header-forwarding and redaction tests exercise the real code path;
+  # the literal says it is not a key. Pinned exactly, not by prefix.
+  '''^AIzaSyTOTALLY-not-a-real-key-0123456789$''',
+
+  # -- Literal doc / .env.example placeholders --------------------------------
+  # The repo's standing stand-in for a Stripe key. Not a key — the word
+  # "placeholder" IS the value.
+  '''^sk_test_placeholder$''',
+  # Obvious fixtures: sk-proj-test-key-5678, test_api_key_12345.
+  '''^sk-proj-test-key-\d+$''',
+  '''^test_api_key_\d+$''',
+  # curl examples in docs/: -H "Authorization: Bearer YOUR_TOKEN" and friends
+  # (YOUR_TOKEN, YOUR_AUTH_TOKEN, YOUR_CLERK_TOKEN).
+  '''^YOUR_[A-Z_]+$''',
+  # A curl example that uses the env-var NAME as the stand-in value.
+  '''^CRON_SECRET$''',
+
+  # -- Public-by-design identifiers ------------------------------------------
+  # Clerk PUBLISHABLE keys are meant to ship in the browser, and Clerk was
+  # removed from Apex in the 2026-04 migration, so these are also dead.
+  '''^pk_test_[A-Za-z0-9]+$''',
+
+  # -- generic-api-key false positives: the captured value is not a secret ----
+  # Social-proof evidence docs: "…ApiCounts: `reply_count=0`".
+  '''^reply_count=\d+$''',
+  # Audit report quoting a feature flag.
+  '''^ENABLE_QUORA_SCRAPE=(?:true|false)$''',
+  # Frozen synthetic measurement-cohort comparability hash. This is derived
+  # fixture metadata, not a credential; pin the exact value so every other
+  # high-entropy string in the same migration/tests remains scanned.
+  '''^54b91cd78887070721dcea08728e6a2ebdd38335393a0c89b4d7429c706d66ca$''',
+  # Docs/tests where the value the rule captured is a source path.
+  '''^src/(?:app|lib)/[A-Za-z0-9_./-]*$''',
+  # Planning prose in docs/superpowers/plans/2026-08-25-pr-01b2-provider-
+  # boundary-shadow-capture.md (commits 68ed67a54e07, aa142e9c9860): the rule
+  # captured the words after "no-key, " in a task list. Pinned exactly.
+  '''^absent/forged$''',
+]

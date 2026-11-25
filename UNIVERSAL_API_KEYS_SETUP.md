@@ -44,7 +44,7 @@ A complete universal API keys management system has been implemented. This allow
 
 ### 7. Environment Configuration
 **File**: `.env.local`
-- Generated encryption key: `ad416710f32e16e0d51d1e22a55ac7566d3ac7430adb75e17971e3c031831990`
+- Generated encryption key: `REDACTED_ENCRYPTION_KEY`
 - Ready for DATABASE_URL configuration
 
 ## 🔐 API Keys Provided
@@ -55,7 +55,7 @@ You provided the following API keys to be stored:
 
 2. **Anthropic**: `REDACTED_ANTHROPIC_KEY`
 
-3. **Gemini**: `AIzaSyAPZQNuFnoLK01QZPqR8MwBtCt8Pd7UE8I`
+3. **Gemini**: `REDACTED_GEMINI_KEY`
 
 ## 📋 Next Steps
 
